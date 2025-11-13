@@ -1,6 +1,5 @@
 import type React from 'react';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
-import useLocalStorage from '../hooks/useLocalStorage';
 
 type Translations = { [key: string]: any };
 
@@ -18,22 +17,44 @@ const getInitialLocale = (): Locale => {
   if (typeof window === 'undefined') {
     return 'en'; // Default to English on server
   }
-  // Get the full language code (e.g., 'es-CO', 'pt-BR', 'en-US')
+  
+  // Check if user has manually set a locale before
+  const savedLocale = localStorage.getItem('shelfLocale');
+  const userHasSetLocale = localStorage.getItem('shelfLocaleSetByUser');
+  
+  // If user has explicitly set a locale, use it
+  if (userHasSetLocale === 'true' && savedLocale) {
+    return savedLocale as Locale;
+  }
+  
+  // Otherwise, detect from browser
   const fullLang = navigator.language || navigator.languages?.[0] || 'en';
   const browserLang = fullLang.split(/[-_]/)[0].toLowerCase();
-  
+
   // Map of supported languages
   const supportedLocales: Locale[] = ['en', 'es', 'pt'];
-  
+
   // Return the browser language if supported, otherwise default to English
-  return supportedLocales.includes(browserLang as Locale) ? (browserLang as Locale) : 'en';
+  const detectedLocale = supportedLocales.includes(browserLang as Locale) ? (browserLang as Locale) : 'en';
+  
+  // Save the detected locale (but not marked as user-set)
+  localStorage.setItem('shelfLocale', detectedLocale);
+  
+  return detectedLocale;
 };
 
 export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [locale, setLocale] = useLocalStorage<Locale>('shelfLocale', getInitialLocale());
+  const [locale, setLocale] = useState<Locale>(getInitialLocale());
   const [translations, setTranslations] = useState<{ en: Translations; es: Translations; pt: Translations } | null>(
     null,
   );
+
+  // Custom setLocale that marks it as user-set
+  const handleSetLocale = useCallback((newLocale: Locale) => {
+    setLocale(newLocale);
+    localStorage.setItem('shelfLocale', newLocale);
+    localStorage.setItem('shelfLocaleSetByUser', 'true');
+  }, []);
 
   // Effect to load translation files from the server
   useEffect(() => {
@@ -108,7 +129,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 
   return (
-    <I18nContext.Provider value={{ locale, setLocale, t }}>
+    <I18nContext.Provider value={{ locale, setLocale: handleSetLocale, t }}>
       {translations ? (
         children
       ) : (

@@ -15,7 +15,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onLoginClick }) =
   const handleStartFree = () => {
     // Check if user has seen the welcome message before
     const hasSeenWelcome = localStorage.getItem('shelfWelcomeSeen') === 'true';
-    
+
     if (!hasSeenWelcome) {
       setShowWelcomeModal(true);
     } else {
