@@ -2,6 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { useI18n } from '../context/I18nContext';
 import WelcomeModal from './WelcomeModal';
+import LanguageSelector from './LanguageSelector';
 
 interface LandingPageProps {
   onNavigate: () => void;
@@ -39,9 +40,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onLoginClick }) =
     <div className="bg-background text-foreground min-h-screen flex flex-col">
       <header className="py-4 px-6 md:px-12 flex justify-between items-center relative z-10">
         <h1 className="text-2xl font-bold tracking-widest">[ {t('appName')} ]</h1>
-        <button onClick={onLoginClick} className="font-semibold hover:text-yellow-300 transition-all active:scale-95">
-          {t('auth.login')}
-        </button>
+        <div className="flex items-center gap-4">
+          <LanguageSelector />
+          <button onClick={onLoginClick} className="font-semibold hover:text-yellow-300 transition-all active:scale-95">
+            {t('auth.login')}
+          </button>
+        </div>
       </header>
 
       <main className="relative flex-1 flex flex-col items-center justify-center text-center p-6 pt-16 sm:pt-4">
