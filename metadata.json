@@ -1,0 +1,22 @@
+{
+  "name": "Shelf.",
+  "short_name": "Shelf.",
+  "description": "Shelf. Every item in its place. The simple, modern, and powerful way to manage your business inventory. Free to use, forever.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#1e1e1e",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "requestFramePermissions": []
+}
