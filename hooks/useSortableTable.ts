@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -12,7 +12,7 @@ export const useSortableTable = <T extends object>(data: T[], defaultSortConfig:
 
   const sortedItems = useMemo(() => {
     if (!data) return [];
-    let sortableItems = [...data];
+    const sortableItems = [...data];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         const aValue = a[sortConfig.key];
@@ -23,11 +23,9 @@ export const useSortableTable = <T extends object>(data: T[], defaultSortConfig:
 
         // String comparison for dates (YYYY-MM-DD) and text
         if (typeof aValue === 'string' && typeof bValue === 'string') {
-          return sortConfig.direction === 'asc'
-            ? aValue.localeCompare(bValue)
-            : bValue.localeCompare(aValue);
+          return sortConfig.direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
         }
-        
+
         // Numeric comparison
         if (aValue < bValue) {
           return sortConfig.direction === 'asc' ? -1 : 1;
@@ -51,7 +49,7 @@ export const useSortableTable = <T extends object>(data: T[], defaultSortConfig:
 
   const getSortIndicator = (key: keyof T) => {
     if (!sortConfig || sortConfig.key !== key) {
-        return null;
+      return null;
     }
     return sortConfig.direction === 'asc' ? '▲' : '▼';
   };

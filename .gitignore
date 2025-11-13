@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+easyinventary-d8dbd-firebase-adminsdk-fbsvc-4decb3d051.json

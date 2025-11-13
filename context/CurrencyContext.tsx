@@ -1,5 +1,5 @@
-
-import React, { createContext, useContext, ReactNode, useCallback } from 'react';
+import type React from 'react';
+import { createContext, type ReactNode, useCallback, useContext } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
 
 type NumberFormat = 'en-US' | 'de-DE';
@@ -18,32 +18,30 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [currencyCode, setCurrencyCode] = useLocalStorage<string>('currencyCode', 'USD');
   const [numberFormat, setNumberFormat] = useLocalStorage<NumberFormat>('numberFormat', 'en-US');
 
-  const formatCurrency = useCallback((value: number): string => {
-    if (typeof value !== 'number') {
-      return '';
-    }
-    try {
-      return new Intl.NumberFormat(numberFormat, {
-        style: 'currency',
-        currency: currencyCode,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(value);
-    } catch (e) {
-      console.error('Error formatting currency (falling back):', e);
-      // Fallback for invalid currency codes, though UI should prevent this.
-      return `${currencyCode} ${value.toFixed(2)}`;
-    }
-  }, [currencyCode, numberFormat]);
-  
+  const formatCurrency = useCallback(
+    (value: number): string => {
+      if (typeof value !== 'number') {
+        return '';
+      }
+      try {
+        return new Intl.NumberFormat(numberFormat, {
+          style: 'currency',
+          currency: currencyCode,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(value);
+      } catch (e) {
+        console.error('Error formatting currency (falling back):', e);
+        // Fallback for invalid currency codes, though UI should prevent this.
+        return `${currencyCode} ${value.toFixed(2)}`;
+      }
+    },
+    [currencyCode, numberFormat],
+  );
 
   const value = { currencyCode, setCurrencyCode, numberFormat, setNumberFormat, formatCurrency };
 
-  return (
-    <CurrencyContext.Provider value={value}>
-      {children}
-    </CurrencyContext.Provider>
-  );
+  return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>;
 };
 
 export const useCurrency = () => {

@@ -1,6 +1,16 @@
-import React, { createContext, useContext, Dispatch, ReactNode } from 'react';
+import type React from 'react';
+import { createContext, type Dispatch, type ReactNode, useContext } from 'react';
 import usePersistedReducer from '../hooks/usePersistedReducer';
-import { AppState, Product, Sale, Client, Supplier, RestoreStatePayload, PurchaseOrder, ImportProductsPayload } from '../types';
+import type {
+  AppState,
+  Client,
+  ImportProductsPayload,
+  Product,
+  PurchaseOrder,
+  RestoreStatePayload,
+  Sale,
+  Supplier,
+} from '../types';
 
 const initialState: AppState = {
   products: [],
@@ -35,130 +45,135 @@ const appReducer = (state: AppState, action: Action): AppState => {
     case 'UPDATE_PRODUCT':
       return {
         ...state,
-        products: state.products.map(p => p.id === action.payload.id ? action.payload : p),
+        products: state.products.map((p) => (p.id === action.payload.id ? action.payload : p)),
       };
     case 'DELETE_PRODUCT':
-      return { ...state, products: state.products.filter(p => p.id !== action.payload) };
-    
+      return { ...state, products: state.products.filter((p) => p.id !== action.payload) };
+
     case 'IMPORT_PRODUCTS': {
-        const { products: newProductsData, strategy } = action.payload;
-        const existingSkus = new Map<string, Product>();
-        state.products.forEach(p => {
-            if(p.sku) existingSkus.set(p.sku, p);
-        });
+      const { products: newProductsData, strategy } = action.payload;
+      const existingSkus = new Map<string, Product>();
+      state.products.forEach((p) => {
+        if (p.sku) existingSkus.set(p.sku, p);
+      });
 
-        const productsToAdd: Product[] = [];
-        const productsToUpdate: Map<string, Product> = new Map();
+      const productsToAdd: Product[] = [];
+      const productsToUpdate: Map<string, Product> = new Map();
 
-        newProductsData.forEach(newProductData => {
-            const sku = newProductData.sku;
-            if (sku && existingSkus.has(sku)) { // SKU exists
-                if (strategy === 'update') {
-                    const existingProduct = existingSkus.get(sku)!;
-                    const updatedProduct = { ...existingProduct, ...newProductData };
-                    productsToUpdate.set(updatedProduct.id, updatedProduct);
-                }
-                // If strategy is 'skip', do nothing.
-            } else { // New product or no SKU
-                productsToAdd.push({
-                    id: `${new Date().toISOString()}_${Math.random()}`, // unique ID
-                    ...newProductData,
-                });
+      newProductsData.forEach((newProductData) => {
+        const sku = newProductData.sku;
+        if (sku && existingSkus.has(sku)) {
+          // SKU exists
+          if (strategy === 'update') {
+            const existingProduct = existingSkus.get(sku);
+            if (existingProduct) {
+              const updatedProduct = { ...existingProduct, ...newProductData };
+              productsToUpdate.set(updatedProduct.id, updatedProduct);
             }
-        });
+          }
+          // If strategy is 'skip', do nothing.
+        } else {
+          // New product or no SKU
+          productsToAdd.push({
+            id: `${new Date().toISOString()}_${Math.random()}`, // unique ID
+            ...newProductData,
+          });
+        }
+      });
 
-        const updatedProductList = state.products.map(p => {
-            if (productsToUpdate.has(p.id)) {
-                return productsToUpdate.get(p.id)!;
-            }
-            return p;
-        });
+      const updatedProductList = state.products.map((p) => {
+        if (productsToUpdate.has(p.id)) {
+          const updated = productsToUpdate.get(p.id);
+          return updated || p;
+        }
+        return p;
+      });
 
-        return { ...state, products: [...updatedProductList, ...productsToAdd] };
+      return { ...state, products: [...updatedProductList, ...productsToAdd] };
     }
 
     case 'ADD_SALE': {
-        const newProducts = [...state.products];
-        for (const item of action.payload.items) {
-            const productIndex = newProducts.findIndex(p => p.id === item.productId);
-            if (productIndex !== -1) {
-                newProducts[productIndex] = {
-                    ...newProducts[productIndex],
-                    quantity: newProducts[productIndex].quantity - item.quantity,
-                };
-            }
+      const newProducts = [...state.products];
+      for (const item of action.payload.items) {
+        const productIndex = newProducts.findIndex((p) => p.id === item.productId);
+        if (productIndex !== -1) {
+          newProducts[productIndex] = {
+            ...newProducts[productIndex],
+            quantity: newProducts[productIndex].quantity - item.quantity,
+          };
         }
-        
-        const salePayload = { ...action.payload };
-        if (salePayload.clientId) {
-            const client = state.clients.find(c => c.id === salePayload.clientId);
-            if (client) {
-                salePayload.clientName = client.name;
-            }
-        }
+      }
 
-        return {
-            ...state,
-            products: newProducts,
-            sales: [...state.sales, salePayload],
-        };
+      const salePayload = { ...action.payload };
+      if (salePayload.clientId) {
+        const client = state.clients.find((c) => c.id === salePayload.clientId);
+        if (client) {
+          salePayload.clientName = client.name;
+        }
+      }
+
+      return {
+        ...state,
+        products: newProducts,
+        sales: [...state.sales, salePayload],
+      };
     }
-      
+
     case 'ADD_CLIENT':
       return { ...state, clients: [...state.clients, action.payload] };
     case 'UPDATE_CLIENT':
       return {
         ...state,
-        clients: state.clients.map(c => c.id === action.payload.id ? action.payload : c),
+        clients: state.clients.map((c) => (c.id === action.payload.id ? action.payload : c)),
       };
     case 'DELETE_CLIENT':
-      return { ...state, clients: state.clients.filter(c => c.id !== action.payload) };
+      return { ...state, clients: state.clients.filter((c) => c.id !== action.payload) };
 
     case 'ADD_SUPPLIER':
       return { ...state, suppliers: [...state.suppliers, action.payload] };
     case 'UPDATE_SUPPLIER':
       return {
         ...state,
-        suppliers: state.suppliers.map(s => s.id === action.payload.id ? action.payload : s),
+        suppliers: state.suppliers.map((s) => (s.id === action.payload.id ? action.payload : s)),
       };
     case 'DELETE_SUPPLIER':
-      return { ...state, suppliers: state.suppliers.filter(s => s.id !== action.payload) };
-      
-    case 'ADD_PURCHASE_ORDER':
-        return { ...state, purchaseOrders: [...state.purchaseOrders, action.payload] };
-    case 'UPDATE_PURCHASE_ORDER': {
-        const oldPO = state.purchaseOrders.find(po => po.id === action.payload.id);
-        const newPO = action.payload;
-        let products = state.products;
+      return { ...state, suppliers: state.suppliers.filter((s) => s.id !== action.payload) };
 
-        // If status changed from pending to received, update stock
-        if (oldPO?.status === 'pending' && newPO.status === 'received') {
-            products = state.products.map(p => {
-                const poItem = newPO.items.find(item => item.productId === p.id);
-                if (poItem) {
-                    return { ...p, quantity: p.quantity + poItem.quantity };
-                }
-                return p;
-            });
-        }
-        
-        return {
-            ...state,
-            products,
-            purchaseOrders: state.purchaseOrders.map(po => po.id === newPO.id ? newPO : po),
-        };
+    case 'ADD_PURCHASE_ORDER':
+      return { ...state, purchaseOrders: [...state.purchaseOrders, action.payload] };
+    case 'UPDATE_PURCHASE_ORDER': {
+      const oldPO = state.purchaseOrders.find((po) => po.id === action.payload.id);
+      const newPO = action.payload;
+      let products = state.products;
+
+      // If status changed from pending to received, update stock
+      if (oldPO?.status === 'pending' && newPO.status === 'received') {
+        products = state.products.map((p) => {
+          const poItem = newPO.items.find((item) => item.productId === p.id);
+          if (poItem) {
+            return { ...p, quantity: p.quantity + poItem.quantity };
+          }
+          return p;
+        });
+      }
+
+      return {
+        ...state,
+        products,
+        purchaseOrders: state.purchaseOrders.map((po) => (po.id === newPO.id ? newPO : po)),
+      };
     }
     case 'DELETE_PURCHASE_ORDER':
-        return { ...state, purchaseOrders: state.purchaseOrders.filter(po => po.id !== action.payload) };
+      return { ...state, purchaseOrders: state.purchaseOrders.filter((po) => po.id !== action.payload) };
 
     case 'RESTORE_STATE':
       // Ensure all parts of the state are present, falling back to initial state if not.
       return {
-          products: action.payload.products || [],
-          sales: action.payload.sales || [],
-          clients: action.payload.clients || [],
-          suppliers: action.payload.suppliers || [],
-          purchaseOrders: action.payload.purchaseOrders || [],
+        products: action.payload.products || [],
+        sales: action.payload.sales || [],
+        clients: action.payload.clients || [],
+        suppliers: action.payload.suppliers || [],
+        purchaseOrders: action.payload.purchaseOrders || [],
       };
     case 'RESET_DATA':
       return initialState;
@@ -178,11 +193,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = usePersistedReducer(appReducer, initialState, 'shelfState');
 
-  return (
-    <AppContext.Provider value={{ state, dispatch }}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={{ state, dispatch }}>{children}</AppContext.Provider>;
 };
 
 export const useAppContext = () => {

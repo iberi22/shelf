@@ -48,20 +48,20 @@ export interface Supplier {
 }
 
 export interface PurchaseOrderItem {
-    productId: string;
-    productName: string;
-    quantity: number;
-    cost: number;
+  productId: string;
+  productName: string;
+  quantity: number;
+  cost: number;
 }
 
 export interface PurchaseOrder {
-    id: string;
-    supplierId: string;
-    supplierName: string;
-    items: PurchaseOrderItem[];
-    status: 'pending' | 'received';
-    orderDate: string; // YYYY-MM-DD
-    receivedDate?: string; // YYYY-MM-DD
+  id: string;
+  supplierId: string;
+  supplierName: string;
+  items: PurchaseOrderItem[];
+  status: 'pending' | 'received';
+  orderDate: string; // YYYY-MM-DD
+  receivedDate?: string; // YYYY-MM-DD
 }
 
 export interface User {
@@ -97,8 +97,8 @@ export interface AppState {
 export type ImportStrategy = 'skip' | 'update';
 
 export interface ImportProductsPayload {
-    products: Omit<Product, 'id'>[];
-    strategy: ImportStrategy;
+  products: Omit<Product, 'id'>[];
+  strategy: ImportStrategy;
 }
 
 export type RestoreStatePayload = AppState;

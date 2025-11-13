@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import type React from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import { auth, db, firebaseReady } from '../firebase';
-import { User } from '../types';
-import { useUI } from './UIContext';
+import type { User } from '../types';
 import { useI18n } from './I18nContext';
+import { useUI } from './UIContext';
 
 interface AuthContextType {
   user: User | null;
@@ -83,9 +84,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const value = { user, isLoading, login, signup, logout, getIdToken };
 
   return (
-    <AuthContext.Provider value={value}>
-      {!isLoading ? children : null /* Or a global loader */}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={value}>{!isLoading ? children : null /* Or a global loader */}</AuthContext.Provider>
   );
 };
 

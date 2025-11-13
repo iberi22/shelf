@@ -1,8 +1,8 @@
-import React from 'react';
+import type React from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Client } from '../types';
-import ContactManagementPage from './ContactManagementPage';
 import { useI18n } from '../context/I18nContext';
+import type { Client } from '../types';
+import ContactManagementPage from './ContactManagementPage';
 
 const Clients: React.FC = () => {
   const { state, dispatch } = useAppContext();

@@ -1,7 +1,10 @@
+import { type Dispatch, useEffect, useReducer } from 'react';
 
-import { useReducer, useEffect, Dispatch } from 'react';
-
-function usePersistedReducer<T, A>(reducer: (state: T, action: A) => T, initialState: T, localStorageKey: string): [T, Dispatch<A>] {
+function usePersistedReducer<T, A>(
+  reducer: (state: T, action: A) => T,
+  initialState: T,
+  localStorageKey: string,
+): [T, Dispatch<A>] {
   const [state, dispatch] = useReducer(reducer, initialState, (initial: T): T => {
     if (typeof window === 'undefined') {
       return initial;

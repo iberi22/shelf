@@ -173,7 +173,7 @@
       "formats": {
         "en-US": "1,234.56 (Punto decimal)",
         "de-DE": "1.234,56 (Coma decimal)"
-       },
+      },
       "currencies": {
         "USD": "USD - Dólar estadounidense",
         "EUR": "EUR - Euro",
@@ -186,7 +186,7 @@
       }
     },
     "data": {
-        "title": "Gestión de Datos"
+      "title": "Gestión de Datos"
     },
     "backup": {
       "button": "Crear Copia",
@@ -202,49 +202,49 @@
       "genericError": "Ocurrió un error durante la restauración."
     },
     "import": {
-        "button": "Importar CSV",
-        "cardDescription": "Añade o actualiza productos en masa desde un archivo CSV.",
-        "title": "Importar Productos desde CSV",
-        "description": "Sube un archivo CSV para añadir o actualizar múltiples productos a la vez. Para mejores resultados, descarga y usa nuestra plantilla.",
-        "downloadTemplate": "Descargar Plantilla",
-        "selectFile": "Selecciona un archivo .csv",
-        "noFileSelected": "Ningún archivo seleccionado",
-        "conflictStrategy": "Si un producto con el mismo SKU ya existe:",
-        "strategySkip": "Omitirlo (mantener existente)",
-        "strategyUpdate": "Actualizarlo (sobrescribir con nuevos datos)",
-        "importing": "Importando...",
-        "success": "Se importaron {{count}} productos con éxito.",
-        "error": "La importación falló: {{error}}",
-        "invalidHeaderError": "Archivo CSV no válido. Por favor, asegúrate de que las cabeceras coincidan con la plantilla."
+      "button": "Importar CSV",
+      "cardDescription": "Añade o actualiza productos en masa desde un archivo CSV.",
+      "title": "Importar Productos desde CSV",
+      "description": "Sube un archivo CSV para añadir o actualizar múltiples productos a la vez. Para mejores resultados, descarga y usa nuestra plantilla.",
+      "downloadTemplate": "Descargar Plantilla",
+      "selectFile": "Selecciona un archivo .csv",
+      "noFileSelected": "Ningún archivo seleccionado",
+      "conflictStrategy": "Si un producto con el mismo SKU ya existe:",
+      "strategySkip": "Omitirlo (mantener existente)",
+      "strategyUpdate": "Actualizarlo (sobrescribir con nuevos datos)",
+      "importing": "Importando...",
+      "success": "Se importaron {{count}} productos con éxito.",
+      "error": "La importación falló: {{error}}",
+      "invalidHeaderError": "Archivo CSV no válido. Por favor, asegúrate de que las cabeceras coincidan con la plantilla."
     },
     "reset": {
-        "button": "Reiniciar Datos",
-        "description": "Elimina permanentemente todos los datos de este dispositivo.",
-        "confirmation": "¿Estás absolutamente seguro? Esto eliminará todos tus datos locales de forma permanente.",
-        "success": "Todos los datos han sido reiniciados."
+      "button": "Reiniciar Datos",
+      "description": "Elimina permanentemente todos los datos de este dispositivo.",
+      "confirmation": "¿Estás absolutamente seguro? Esto eliminará todos tus datos locales de forma permanente.",
+      "success": "Todos los datos han sido reiniciados."
     },
     "team": {
-        "title": "Gestión de Equipo",
-        "description": "Invita y gestiona miembros del equipo para colaborar en tu inventario.",
-        "invite": "Invitar Miembro",
-        "proFeatureDescription": "Actualiza al plan PYME para invitar a miembros del equipo y establecer permisos.",
-        "inviteTitle": "Invitar a un Nuevo Miembro",
-        "inviteDescription": "Introduce el correo de la persona que quieres invitar y asígnale un rol.",
-        "role": "Rol",
-        "roles": {
-            "owner": "Propietario",
-            "admin": "Admin",
-            "member": "Miembro"
-        },
-        "sendInvitation": "Enviar Invitación",
-        "emailPlaceholder": "miembro@ejemplo.com"
+      "title": "Gestión de Equipo",
+      "description": "Invita y gestiona miembros del equipo para colaborar en tu inventario.",
+      "invite": "Invitar Miembro",
+      "proFeatureDescription": "Actualiza al plan PYME para invitar a miembros del equipo y establecer permisos.",
+      "inviteTitle": "Invitar a un Nuevo Miembro",
+      "inviteDescription": "Introduce el correo de la persona que quieres invitar y asígnale un rol.",
+      "role": "Rol",
+      "roles": {
+        "owner": "Propietario",
+        "admin": "Admin",
+        "member": "Miembro"
+      },
+      "sendInvitation": "Enviar Invitación",
+      "emailPlaceholder": "miembro@ejemplo.com"
     },
     "feedback": {
-        "title": "Sugerencias y Soporte",
-        "description": "¿Tienes una idea o encontraste un error? ¡Cuéntanos!",
-        "placeholder": "Tu mensaje...",
-        "button": "Enviar Sugerencia",
-        "success": "¡Gracias! Tu sugerencia ha sido enviada."
+      "title": "Sugerencias y Soporte",
+      "description": "¿Tienes una idea o encontraste un error? ¡Cuéntanos!",
+      "placeholder": "Tu mensaje...",
+      "button": "Enviar Sugerencia",
+      "success": "¡Gracias! Tu sugerencia ha sido enviada."
     }
   },
   "auth": {
@@ -331,11 +331,11 @@
       ]
     },
     "features": {
-        "cloudSync": "Sincronización en la Nube",
-        "aiAssistant": "Asistente de IA",
-        "noAds": "Experiencia Sin Anuncios",
-        "advancedReports": "Reportes Avanzados",
-        "prioritySupport": "Soporte Prioritario"
+      "cloudSync": "Sincronización en la Nube",
+      "aiAssistant": "Asistente de IA",
+      "noAds": "Experiencia Sin Anuncios",
+      "advancedReports": "Reportes Avanzados",
+      "prioritySupport": "Soporte Prioritario"
     }
   },
   "landing": {
@@ -345,20 +345,20 @@
     "featuresTitle": "¿Por qué elegir Shelf.?",
     "footer": "Todos los derechos reservados.",
     "feature1": {
-        "title": "Simple e Intuitivo",
-        "description": "Sin configuraciones complicadas. Empieza a gestionar tu inventario en minutos con una interfaz limpia y amigable."
+      "title": "Simple e Intuitivo",
+      "description": "Sin configuraciones complicadas. Empieza a gestionar tu inventario en minutos con una interfaz limpia y amigable."
     },
     "feature2": {
-        "title": "Seguimiento de Ventas",
-        "description": "Registra ventas al instante y mira cómo tu stock se actualiza automáticamente. No vuelvas a sobrevender."
+      "title": "Seguimiento de Ventas",
+      "description": "Registra ventas al instante y mira cómo tu stock se actualiza automáticamente. No vuelvas a sobrevender."
     },
     "feature3": {
-        "title": "Funciona Sin Conexión",
-        "description": "Funciona perfectamente sin conexión a internet. Tus datos siempre están disponibles, en tu dispositivo."
+      "title": "Funciona Sin Conexión",
+      "description": "Funciona perfectamente sin conexión a internet. Tus datos siempre están disponibles, en tu dispositivo."
     },
     "feature4": {
-        "title": "Sincronización (Pro)",
-        "description": "Actualiza a Pro para sincronizar tus datos en todos tus dispositivos, manteniéndolos seguros y actualizados."
+      "title": "Sincronización (Pro)",
+      "description": "Actualiza a Pro para sincronizar tus datos en todos tus dispositivos, manteniéndolos seguros y actualizados."
     }
   }
 }

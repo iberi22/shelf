@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import type React from 'react';
+import { useEffect } from 'react';
 
 declare global {
   interface Window {
@@ -18,7 +19,7 @@ const AdSenseUnit: React.FC<AdSenseUnitProps> = ({ adSlot, adClient, className, 
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (e) {
-      console.error("AdSense error:", e);
+      console.error('AdSense error:', e);
     }
   }, []);
 
@@ -38,7 +39,9 @@ const AdSenseUnit: React.FC<AdSenseUnitProps> = ({ adSlot, adClient, className, 
           data-full-width-responsive="true"
         ></ins>
       ) : (
-        <div className="flex items-center justify-center h-full bg-[#1e1e1e] text-xs text-[#F5F5DC]/50">[AdSense Dev Placeholder]</div>
+        <div className="flex items-center justify-center h-full bg-[#1e1e1e] text-xs text-[#F5F5DC]/50">
+          [AdSense Dev Placeholder]
+        </div>
       )}
     </div>
   );

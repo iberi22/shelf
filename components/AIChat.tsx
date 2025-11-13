@@ -1,9 +1,9 @@
-
-import React, { useState } from 'react';
-import { useI18n } from '../context/I18nContext';
+import type React from 'react';
+import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { ChatMessage } from '../types';
+import { useI18n } from '../context/I18nContext';
+import type { ChatMessage } from '../types';
 
 const AIChat: React.FC = () => {
   const { t } = useI18n();
@@ -21,7 +21,7 @@ const AIChat: React.FC = () => {
     if (!input.trim() || isLoading || isAIDisabled) return;
 
     const userMessage: ChatMessage = { role: 'user', text: input };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
     setError(null);
@@ -29,14 +29,14 @@ const AIChat: React.FC = () => {
     try {
       const token = await getIdToken();
       if (!token) {
-        throw new Error("Authentication error. Please log in again.");
+        throw new Error('Authentication error. Please log in again.');
       }
 
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           prompt: input,
@@ -48,9 +48,9 @@ const AIChat: React.FC = () => {
       });
 
       if (response.status === 401 || response.status === 403) {
-          throw new Error(t('reports.aiErrorNetwork')); // Generic message for auth failure
+        throw new Error(t('reports.aiErrorNetwork')); // Generic message for auth failure
       }
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || t('reports.aiErrorNetwork'));
@@ -58,44 +58,45 @@ const AIChat: React.FC = () => {
 
       const data = await response.json();
       const modelMessage: ChatMessage = { role: 'model', text: data.text };
-      setMessages(prev => [...prev, modelMessage]);
-
+      setMessages((prev) => [...prev, modelMessage]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : t('reports.aiError');
       setError(errorMessage);
       console.error(err);
-       // Revert optimistic UI update on error
-      setMessages(prev => prev.filter(msg => msg !== userMessage));
+      // Revert optimistic UI update on error
+      setMessages((prev) => prev.filter((msg) => msg !== userMessage));
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const getWelcomeMessage = () => {
-      if (isAIDisabled) {
-          return t('reports.aiDisabledWelcome');
-      }
-      return t('reports.aiWelcome');
-  }
+    if (isAIDisabled) {
+      return t('reports.aiDisabledWelcome');
+    }
+    return t('reports.aiWelcome');
+  };
 
   return (
     <div className="flex flex-col h-[60vh] p-4">
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         {messages.length === 0 && (
-             <div className="flex justify-start">
-                <div className="max-w-xs md:max-w-md p-3 rounded-lg bg-[#F5F5DC]/10">
-                    <p className="text-sm whitespace-pre-wrap">{getWelcomeMessage()}</p>
-                </div>
+          <div className="flex justify-start">
+            <div className="max-w-xs md:max-w-md p-3 rounded-lg bg-[#F5F5DC]/10">
+              <p className="text-sm whitespace-pre-wrap">{getWelcomeMessage()}</p>
             </div>
+          </div>
         )}
         {messages.map((msg, index) => (
           <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-xs md:max-w-md p-3 rounded-lg ${msg.role === 'user' ? 'bg-[#F5F5DC] text-[#121212]' : 'bg-[#F5F5DC]/10'}`}>
+            <div
+              className={`max-w-xs md:max-w-md p-3 rounded-lg ${msg.role === 'user' ? 'bg-[#F5F5DC] text-[#121212]' : 'bg-[#F5F5DC]/10'}`}
+            >
               <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
             </div>
           </div>
         ))}
-         {isLoading && (
+        {isLoading && (
           <div className="flex justify-start">
             <div className="max-w-xs md:max-w-md p-3 rounded-lg bg-[#F5F5DC]/10">
               <p className="text-sm animate-pulse">{t('reports.aiThinking')}</p>
@@ -105,7 +106,7 @@ const AIChat: React.FC = () => {
       </div>
 
       {error && <p className="text-red-400 text-sm my-2 text-center">{error}</p>}
-      
+
       <div className="mt-4 flex gap-2 border-t border-[#F5F5DC]/20 pt-4">
         <input
           type="text"

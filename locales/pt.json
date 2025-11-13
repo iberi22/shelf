@@ -170,7 +170,7 @@
       "symbolDescription": "Selecione sua moeda principal.",
       "format": "Formato de Número",
       "formatDescription": "Escolha seu separador de milhar/decimal preferido.",
-       "formats": {
+      "formats": {
         "en-US": "1,234.56 (Ponto decimal)",
         "de-DE": "1.234,56 (Vírgula decimal)"
       },
@@ -186,11 +186,11 @@
       }
     },
     "data": {
-        "title": "Gerenciamento de Dados"
+      "title": "Gerenciamento de Dados"
     },
     "backup": {
       "button": "Criar Backup",
-       "description": "Exporte todos os dados locais para um arquivo JSON para segurança.",
+      "description": "Exporte todos os dados locais para um arquivo JSON para segurança.",
       "success": "Backup criado com sucesso!"
     },
     "restore": {
@@ -202,49 +202,49 @@
       "genericError": "Ocorreu um erro durante a restauração."
     },
     "import": {
-        "button": "Importar de CSV",
-        "cardDescription": "Adicione ou atualize produtos em massa a partir de um arquivo CSV.",
-        "title": "Importar Produtos de CSV",
-        "description": "Carregue um arquivo CSV para adicionar ou atualizar vários produtos de uma vez. Para melhores resultados, baixe e use nosso modelo.",
-        "downloadTemplate": "Baixar Modelo",
-        "selectFile": "Selecione um arquivo .csv",
-        "noFileSelected": "Nenhum arquivo selecionado",
-        "conflictStrategy": "Se um produto com o mesmo SKU já existir:",
-        "strategySkip": "Ignorá-lo (manter existente)",
-        "strategyUpdate": "Atualizá-lo (sobrescrever com novos dados)",
-        "importing": "Importando...",
-        "success": "{{count}} produtos importados com sucesso.",
-        "error": "A importação falhou: {{error}}",
-        "invalidHeaderError": "Arquivo CSV inválido. Certifique-se de que os cabeçalhos correspondem ao modelo."
+      "button": "Importar de CSV",
+      "cardDescription": "Adicione ou atualize produtos em massa a partir de um arquivo CSV.",
+      "title": "Importar Produtos de CSV",
+      "description": "Carregue um arquivo CSV para adicionar ou atualizar vários produtos de uma vez. Para melhores resultados, baixe e use nosso modelo.",
+      "downloadTemplate": "Baixar Modelo",
+      "selectFile": "Selecione um arquivo .csv",
+      "noFileSelected": "Nenhum arquivo selecionado",
+      "conflictStrategy": "Se um produto com o mesmo SKU já existir:",
+      "strategySkip": "Ignorá-lo (manter existente)",
+      "strategyUpdate": "Atualizá-lo (sobrescrever com novos dados)",
+      "importing": "Importando...",
+      "success": "{{count}} produtos importados com sucesso.",
+      "error": "A importação falhou: {{error}}",
+      "invalidHeaderError": "Arquivo CSV inválido. Certifique-se de que os cabeçalhos correspondem ao modelo."
     },
-     "reset": {
-        "button": "Redefinir Dados",
-        "description": "Exclua permanentemente todos os dados deste dispositivo.",
-        "confirmation": "Você tem certeza absoluta? Isso excluirá todos os seus dados locais permanentemente.",
-        "success": "Todos os dados foram redefinidos."
+    "reset": {
+      "button": "Redefinir Dados",
+      "description": "Exclua permanentemente todos os dados deste dispositivo.",
+      "confirmation": "Você tem certeza absoluta? Isso excluirá todos os seus dados locais permanentemente.",
+      "success": "Todos os dados foram redefinidos."
     },
     "team": {
-        "title": "Gestão de Equipe",
-        "description": "Convide e gerencie membros da equipe para colaborar no seu estoque.",
-        "invite": "Convidar Membro",
-        "proFeatureDescription": "Atualize para o plano PME para convidar membros da equipe e definir permissões.",
-        "inviteTitle": "Convidar um Novo Membro",
-        "inviteDescription": "Insira o e-mail da pessoa que você deseja convidar e atribua uma função.",
-        "role": "Função",
-        "roles": {
-            "owner": "Proprietário",
-            "admin": "Admin",
-            "member": "Membro"
-        },
-        "sendInvitation": "Enviar Convite",
-        "emailPlaceholder": "membro@exemplo.com"
+      "title": "Gestão de Equipe",
+      "description": "Convide e gerencie membros da equipe para colaborar no seu estoque.",
+      "invite": "Convidar Membro",
+      "proFeatureDescription": "Atualize para o plano PME para convidar membros da equipe e definir permissões.",
+      "inviteTitle": "Convidar um Novo Membro",
+      "inviteDescription": "Insira o e-mail da pessoa que você deseja convidar e atribua uma função.",
+      "role": "Função",
+      "roles": {
+        "owner": "Proprietário",
+        "admin": "Admin",
+        "member": "Membro"
+      },
+      "sendInvitation": "Enviar Convite",
+      "emailPlaceholder": "membro@exemplo.com"
     },
     "feedback": {
-        "title": "Feedback e Suporte",
-        "description": "Tem uma ideia ou encontrou um bug? Conte para nós!",
-        "placeholder": "Sua mensagem...",
-        "button": "Enviar Feedback",
-        "success": "Obrigado! Seu feedback foi enviado."
+      "title": "Feedback e Suporte",
+      "description": "Tem uma ideia ou encontrou um bug? Conte para nós!",
+      "placeholder": "Sua mensagem...",
+      "button": "Enviar Feedback",
+      "success": "Obrigado! Seu feedback foi enviado."
     }
   },
   "auth": {
@@ -331,11 +331,11 @@
       ]
     },
     "features": {
-        "cloudSync": "Sincronização na Nuvem",
-        "aiAssistant": "Assistente de IA",
-        "noAds": "Experiência Sem Anúncios",
-        "advancedReports": "Relatórios Avançados",
-        "prioritySupport": "Suporte Prioritário"
+      "cloudSync": "Sincronização na Nuvem",
+      "aiAssistant": "Assistente de IA",
+      "noAds": "Experiência Sem Anúncios",
+      "advancedReports": "Relatórios Avançados",
+      "prioritySupport": "Suporte Prioritário"
     }
   },
   "landing": {
@@ -345,20 +345,20 @@
     "featuresTitle": "Por que escolher o Shelf.?",
     "footer": "Todos os direitos reservados.",
     "feature1": {
-        "title": "Simples e Intuitivo",
-        "description": "Sem configurações complicadas. Comece a rastrear seu estoque em minutos com uma interface limpa e amigável."
+      "title": "Simples e Intuitivo",
+      "description": "Sem configurações complicadas. Comece a rastrear seu estoque em minutos com uma interface limpa e amigável."
     },
     "feature2": {
-        "title": "Rastreamento de Vendas",
-        "description": "Registre vendas rapidamente e veja seus níveis de estoque serem atualizados automaticamente. Nunca mais sobrevenda."
+      "title": "Rastreamento de Vendas",
+      "description": "Registre vendas rapidamente e veja seus níveis de estoque serem atualizados automaticamente. Nunca mais sobrevenda."
     },
     "feature3": {
-        "title": "Funciona Offline",
-        "description": "Funciona perfeitamente sem conexão com a internet. Seus dados estão sempre disponíveis, no seu dispositivo."
+      "title": "Funciona Offline",
+      "description": "Funciona perfeitamente sem conexão com a internet. Seus dados estão sempre disponíveis, no seu dispositivo."
     },
     "feature4": {
-        "title": "Sincronização (Pro)",
-        "description": "Atualize para Pro para sincronizar seus dados em todos os seus dispositivos, garantindo que estejam seguros e sempre atualizados."
+      "title": "Sincronização (Pro)",
+      "description": "Atualize para Pro para sincronizar seus dados em todos os seus dispositivos, garantindo que estejam seguros e sempre atualizados."
     }
   }
 }
