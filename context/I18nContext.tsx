@@ -17,16 +17,16 @@ const getInitialLocale = (): Locale => {
   if (typeof window === 'undefined') {
     return 'en'; // Default to English on server
   }
-  
+
   // Check if user has manually set a locale before
   const savedLocale = localStorage.getItem('shelfLocale');
   const userHasSetLocale = localStorage.getItem('shelfLocaleSetByUser');
-  
+
   // If user has explicitly set a locale, use it
   if (userHasSetLocale === 'true' && savedLocale) {
     return savedLocale as Locale;
   }
-  
+
   // Otherwise, detect from browser
   const fullLang = navigator.language || navigator.languages?.[0] || 'en';
   const browserLang = fullLang.split(/[-_]/)[0].toLowerCase();
@@ -36,10 +36,10 @@ const getInitialLocale = (): Locale => {
 
   // Return the browser language if supported, otherwise default to English
   const detectedLocale = supportedLocales.includes(browserLang as Locale) ? (browserLang as Locale) : 'en';
-  
+
   // Save the detected locale (but not marked as user-set)
   localStorage.setItem('shelfLocale', detectedLocale);
-  
+
   return detectedLocale;
 };
 

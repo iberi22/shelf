@@ -2,6 +2,7 @@ import type React from 'react';
 import { NAV_ITEMS } from '../constants';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
+import LanguageSelector from './LanguageSelector';
 
 interface SidebarProps {
   activeComponent: string;
@@ -10,15 +11,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, onLoginClick }) => {
-  const { t, locale, setLocale } = useI18n();
+  const { t } = useI18n();
   const { user, logout } = useAuth();
-
-  const handleLanguageChange = () => {
-    const locales: ('en' | 'es' | 'pt')[] = ['en', 'es', 'pt'];
-    const currentIndex = locales.indexOf(locale);
-    const nextIndex = (currentIndex + 1) % locales.length;
-    setLocale(locales[nextIndex]);
-  };
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-primary border-r border-foreground/20">
@@ -45,15 +39,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, 
           ))}
         </ul>
       </nav>
-      <div className="p-4 border-t border-foreground/20">
-        <button
-          data-testid="language-toggle-button"
-          onClick={handleLanguageChange}
-          className="w-full mb-4 text-center flex items-center justify-center gap-2 text-sm text-foreground/60 hover:text-foreground transition-all active:scale-95"
-        >
-          <span className="text-lg">🌐</span>
-          <span>{locale.toUpperCase()}</span>
-        </button>
+      <div className="p-4 border-t border-foreground/20 space-y-4">
+        <div className="flex justify-center">
+          <LanguageSelector />
+        </div>
         {user ? (
           <div className="text-center">
             <p className="text-sm text-foreground/70 truncate">{user.email}</p>
