@@ -1,16 +1,16 @@
-
-import React, { useState } from 'react';
-import Sidebar, { MobileBottomNav } from './components/Sidebar';
+import type React from 'react';
+import { useState } from 'react';
+import { DesktopAdColumn, MobileAdBars } from './components/Ads';
+import Clients from './components/Clients';
 import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
-import Sales from './components/Sales';
-import Clients from './components/Clients';
-import Suppliers from './components/Suppliers';
 import PurchaseOrders from './components/PurchaseOrders';
 import Reports from './components/Reports';
+import Sales from './components/Sales';
 import Settings from './components/Settings';
+import Sidebar, { MobileBottomNav } from './components/Sidebar';
+import Suppliers from './components/Suppliers';
 import { useAuth } from './context/AuthContext';
-import { DesktopAdColumn, MobileAdBars } from './components/Ads';
 
 interface MainAppProps {
   onLoginClick: () => void;
@@ -51,10 +51,12 @@ const MainApp: React.FC<MainAppProps> = ({ onLoginClick }) => {
       <div className={`flex flex-col flex-1 ${showAds ? 'md:ml-40' : ''}`}>
         {showAds && <MobileAdBars />}
         <div className="flex flex-1 overflow-hidden">
-            <Sidebar activeComponent={activeComponent} setActiveComponent={setActiveComponent} onLoginClick={onLoginClick} />
-            <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto pb-20 md:pb-8">
-                {renderComponent()}
-            </main>
+          <Sidebar
+            activeComponent={activeComponent}
+            setActiveComponent={setActiveComponent}
+            onLoginClick={onLoginClick}
+          />
+          <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto pb-20 md:pb-8">{renderComponent()}</main>
         </div>
         <MobileBottomNav activeComponent={activeComponent} setActiveComponent={setActiveComponent} />
       </div>

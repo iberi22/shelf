@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode, Html5QrcodeResult } from 'html5-qrcode';
+import { Html5Qrcode, type Html5QrcodeResult } from 'html5-qrcode';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../context/I18nContext';
 
 interface BarcodeScannerProps {
@@ -17,7 +18,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
     const startScanner = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       try {
         const cameras = await Html5Qrcode.getCameras();
         if (cameras && cameras.length > 0) {
@@ -30,21 +31,16 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
             rememberLastUsedCamera: true,
           };
 
-          const handleScanSuccess = (decodedText: string, decodedResult: Html5QrcodeResult) => {
+          const handleScanSuccess = (decodedText: string, _decodedResult: Html5QrcodeResult) => {
             onScan(decodedText);
             stopScanner();
           };
 
-          const handleScanError = (errorMessage: string) => {
+          const handleScanError = (_errorMessage: string) => {
             // This callback is called frequently, so we typically ignore errors unless debugging
           };
 
-          await qrCodeScanner.start(
-            { facingMode: 'environment' },
-            config,
-            handleScanSuccess,
-            handleScanError
-          );
+          await qrCodeScanner.start({ facingMode: 'environment' }, config, handleScanSuccess, handleScanError);
         } else {
           setError(t('scanner.noCameras'));
         }
@@ -53,19 +49,19 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
           setError(t('scanner.permissionDenied'));
         } else {
           setError(t('scanner.genericError'));
-          console.error("Scanner init error:", err);
+          console.error('Scanner init error:', err);
         }
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     const stopScanner = () => {
-        if (scannerRef.current && scannerRef.current.isScanning) {
-            scannerRef.current.stop().catch(err => {
-              console.error('Failed to stop the scanner.', err);
-            });
-        }
+      if (scannerRef.current?.isScanning) {
+        scannerRef.current.stop().catch((err) => {
+          console.error('Failed to stop the scanner.', err);
+        });
+      }
     };
 
     startScanner();
@@ -79,18 +75,18 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
       <div className="bg-[#1e1e1e] p-4 md:p-6 rounded-lg shadow-xl border border-[#F5F5DC]/30 max-w-md w-full m-4">
         <h3 className="text-lg font-bold mb-4 text-center">{t('scanner.title')}</h3>
-        <div 
-          id="reader" 
-          style={{ width: '100%', borderRadius: '8px', overflow: 'hidden', minHeight: '250px' }} 
+        <div
+          id="reader"
+          style={{ width: '100%', borderRadius: '8px', overflow: 'hidden', minHeight: '250px' }}
           className="bg-[#121212] flex items-center justify-center text-center text-[#F5F5DC]/70"
         >
           {isLoading && <p>{t('scanner.checking')}</p>}
           {error && (
             <div className="p-4">
-                <p className="font-semibold text-red-400">{error}</p>
-                {error === t('scanner.permissionDenied') && (
-                    <p className="text-xs mt-2">{t('scanner.permissionDeniedHelp')}</p>
-                )}
+              <p className="font-semibold text-red-400">{error}</p>
+              {error === t('scanner.permissionDenied') && (
+                <p className="text-xs mt-2">{t('scanner.permissionDeniedHelp')}</p>
+              )}
             </div>
           )}
         </div>

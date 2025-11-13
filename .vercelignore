@@ -1,0 +1,11 @@
+node_modules
+.git
+.github
+functions
+docs
+*.log
+*.md
+!README.md
+.env.local
+.env.development
+.env.test

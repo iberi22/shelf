@@ -1,5 +1,4 @@
-
-import { useState, Dispatch, SetStateAction } from 'react';
+import { type Dispatch, type SetStateAction, useState } from 'react';
 
 function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] {
   // Get from local storage then

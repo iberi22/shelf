@@ -1,7 +1,6 @@
-
-import React from 'react';
-import { StatCardData } from '../types';
+import type React from 'react';
 import { useI18n } from '../context/I18nContext';
+import type { StatCardData } from '../types';
 
 const StatCard: React.FC<StatCardData> = ({ titleKey, value, icon, change, changeType }) => {
   const { t } = useI18n();
@@ -15,11 +14,7 @@ const StatCard: React.FC<StatCardData> = ({ titleKey, value, icon, change, chang
       </div>
       <div className="mt-2">
         <p className="text-3xl font-bold">{value}</p>
-        {change && (
-          <p className={`text-xs ${changeColor} mt-1`}>
-            {change}
-          </p>
-        )}
+        {change && <p className={`text-xs ${changeColor} mt-1`}>{change}</p>}
       </div>
     </div>
   );

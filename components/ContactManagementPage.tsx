@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import Modal from './Modal';
-import { Client, Supplier } from '../types';
+import type React from 'react';
+import { useState } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useSortableTable } from '../hooks/useSortableTable';
+import type { Client, Supplier } from '../types';
 import ContactForm from './ContactForm';
+import Modal from './Modal';
 
 type Contact = Client | Supplier;
 
@@ -41,7 +42,11 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const { t } = useI18n();
-  const { items: sortedContacts, requestSort, getSortIndicator } = useSortableTable<Contact>(contacts, { key: 'name', direction: 'asc' });
+  const {
+    items: sortedContacts,
+    requestSort,
+    getSortIndicator,
+  } = useSortableTable<Contact>(contacts, { key: 'name', direction: 'asc' });
 
   const handleOpenModal = (contact: Contact | null = null) => {
     setEditingContact(contact);
@@ -68,7 +73,7 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
     }
   };
 
-  const SortableHeader: React.FC<{ sortKey: keyof Contact; labelKey: string; }> = ({ sortKey, labelKey }) => (
+  const SortableHeader: React.FC<{ sortKey: keyof Contact; labelKey: string }> = ({ sortKey, labelKey }) => (
     <th className="p-4">
       <button
         data-testid={`sort-by-${sortKey}`}
@@ -86,7 +91,11 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold">{title}</h2>
-        <button onClick={() => handleOpenModal()} className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95" data-testid={`add-${contactType}-button`}>
+        <button
+          onClick={() => handleOpenModal()}
+          className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95"
+          data-testid={`add-${contactType}-button`}
+        >
           {addContactText}
         </button>
       </div>
@@ -103,19 +112,43 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
               </tr>
             </thead>
             <tbody>
-              {sortedContacts.length > 0 ? sortedContacts.map(contact => (
-                <tr key={contact.id} data-testid={`${contactType}-row-${contact.id}`} className="border-t border-[#F5F5DC]/20 hover:bg-foreground/5 transition-colors duration-200">
-                  <td className="p-4">{contact.name}</td>
-                  <td className="p-4">{contact.phone}</td>
-                  <td className="p-4">{contact.email || t('common.notAvailable')}</td>
-                  <td className="p-4">
-                    <button onClick={() => handleOpenModal(contact)} className="mr-2 text-yellow-400 transition-transform active:scale-95" aria-label={t('common.editItem', { item: contact.name })} data-testid={`edit-${contactType}-${contact.id}`}>✏️</button>
-                    <button onClick={() => handleDelete(contact.id)} className="text-red-400 transition-transform active:scale-95" aria-label={t('common.deleteItem', { item: contact.name })} data-testid={`delete-${contactType}-${contact.id}`}>🗑️</button>
-                  </td>
-                </tr>
-              )) : (
+              {sortedContacts.length > 0 ? (
+                sortedContacts.map((contact) => (
+                  <tr
+                    key={contact.id}
+                    data-testid={`${contactType}-row-${contact.id}`}
+                    className="border-t border-[#F5F5DC]/20 hover:bg-foreground/5 transition-colors duration-200"
+                  >
+                    <td className="p-4">{contact.name}</td>
+                    <td className="p-4">{contact.phone}</td>
+                    <td className="p-4">{contact.email || t('common.notAvailable')}</td>
+                    <td className="p-4">
+                      <button
+                        onClick={() => handleOpenModal(contact)}
+                        className="mr-2 text-yellow-400 transition-transform active:scale-95"
+                        aria-label={t('common.editItem', { item: contact.name })}
+                        data-testid={`edit-${contactType}-${contact.id}`}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => handleDelete(contact.id)}
+                        className="text-red-400 transition-transform active:scale-95"
+                        aria-label={t('common.deleteItem', { item: contact.name })}
+                        data-testid={`delete-${contactType}-${contact.id}`}
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
-                  <td colSpan={4} className="text-center p-8 text-[#F5F5DC]/70" data-testid={`empty-${contactType}s-message`}>
+                  <td
+                    colSpan={4}
+                    className="text-center p-8 text-[#F5F5DC]/70"
+                    data-testid={`empty-${contactType}s-message`}
+                  >
                     {emptyMessage}
                   </td>
                 </tr>
@@ -126,7 +159,11 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
       </div>
 
       {isModalOpen && (
-        <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingContact ? editContactText : addContactText}>
+        <Modal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          title={editingContact ? editContactText : addContactText}
+        >
           <ContactForm
             contact={editingContact}
             onSave={handleSaveContact}

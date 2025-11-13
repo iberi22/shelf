@@ -200,42 +200,42 @@
       "genericError": "An error occurred during restoration."
     },
     "import": {
-        "button": "Import CSV",
-        "cardDescription": "Bulk add or update products from a CSV file.",
-        "title": "Import Products from CSV",
-        "description": "Upload a CSV file to add or update multiple products at once. For best results, download and use our template.",
-        "downloadTemplate": "Download Template",
-        "selectFile": "Select a .csv file",
-        "noFileSelected": "No file selected",
-        "conflictStrategy": "If a product with the same SKU already exists:",
-        "strategySkip": "Skip it (keep existing)",
-        "strategyUpdate": "Update it (overwrite with new data)",
-        "importing": "Importing...",
-        "success": "Successfully imported {{count}} products.",
-        "error": "Import failed: {{error}}",
-        "invalidHeaderError": "Invalid CSV file. Please make sure the headers match the template."
+      "button": "Import CSV",
+      "cardDescription": "Bulk add or update products from a CSV file.",
+      "title": "Import Products from CSV",
+      "description": "Upload a CSV file to add or update multiple products at once. For best results, download and use our template.",
+      "downloadTemplate": "Download Template",
+      "selectFile": "Select a .csv file",
+      "noFileSelected": "No file selected",
+      "conflictStrategy": "If a product with the same SKU already exists:",
+      "strategySkip": "Skip it (keep existing)",
+      "strategyUpdate": "Update it (overwrite with new data)",
+      "importing": "Importing...",
+      "success": "Successfully imported {{count}} products.",
+      "error": "Import failed: {{error}}",
+      "invalidHeaderError": "Invalid CSV file. Please make sure the headers match the template."
     },
     "reset": {
-        "button": "Reset Data",
-        "description": "Permanently delete all data from this device.",
-        "confirmation": "Are you absolutely sure? This will delete all your local data permanently.",
-        "success": "All data has been reset."
+      "button": "Reset Data",
+      "description": "Permanently delete all data from this device.",
+      "confirmation": "Are you absolutely sure? This will delete all your local data permanently.",
+      "success": "All data has been reset."
     },
     "team": {
-        "title": "Team Management",
-        "description": "Invite and manage team members to collaborate on your inventory.",
-        "invite": "Invite Member",
-        "proFeatureDescription": "Upgrade to the PYME plan to invite team members and set permissions.",
-        "inviteTitle": "Invite a New Team Member",
-        "inviteDescription": "Enter the email of the person you want to invite and assign them a role.",
-        "role": "Role",
-        "roles": {
-            "owner": "Owner",
-            "admin": "Admin",
-            "member": "Member"
-        },
-        "sendInvitation": "Send Invitation",
-        "emailPlaceholder": "member@example.com"
+      "title": "Team Management",
+      "description": "Invite and manage team members to collaborate on your inventory.",
+      "invite": "Invite Member",
+      "proFeatureDescription": "Upgrade to the PYME plan to invite team members and set permissions.",
+      "inviteTitle": "Invite a New Team Member",
+      "inviteDescription": "Enter the email of the person you want to invite and assign them a role.",
+      "role": "Role",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member"
+      },
+      "sendInvitation": "Send Invitation",
+      "emailPlaceholder": "member@example.com"
     },
     "feedback": {
       "title": "Feedback & Support",
@@ -329,11 +329,11 @@
       ]
     },
     "features": {
-        "cloudSync": "Cloud Sync & Backup",
-        "aiAssistant": "AI Assistant",
-        "noAds": "Ad-Free Experience",
-        "advancedReports": "Advanced Reports",
-        "prioritySupport": "Priority Support"
+      "cloudSync": "Cloud Sync & Backup",
+      "aiAssistant": "AI Assistant",
+      "noAds": "Ad-Free Experience",
+      "advancedReports": "Advanced Reports",
+      "prioritySupport": "Priority Support"
     }
   },
   "landing": {
@@ -343,20 +343,20 @@
     "featuresTitle": "Why Choose Shelf.?",
     "footer": "All rights reserved.",
     "feature1": {
-        "title": "Simple & Intuitive",
-        "description": "No complicated setups. Start tracking your inventory in minutes with a clean, user-friendly interface."
+      "title": "Simple & Intuitive",
+      "description": "No complicated setups. Start tracking your inventory in minutes with a clean, user-friendly interface."
     },
     "feature2": {
-        "title": "Sales Tracking",
-        "description": "Record sales on the fly and watch your stock levels update automatically. Never oversell again."
+      "title": "Sales Tracking",
+      "description": "Record sales on the fly and watch your stock levels update automatically. Never oversell again."
     },
     "feature3": {
-        "title": "Offline First",
-        "description": "Works perfectly without an internet connection. Your data is always available, right on your device."
+      "title": "Offline First",
+      "description": "Works perfectly without an internet connection. Your data is always available, right on your device."
     },
     "feature4": {
-        "title": "Cloud Sync (Pro)",
-        "description": "Upgrade to sync your data across all your devices, ensuring it's safe and always up-to-date."
+      "title": "Cloud Sync (Pro)",
+      "description": "Upgrade to sync your data across all your devices, ensuring it's safe and always up-to-date."
     }
   }
 }

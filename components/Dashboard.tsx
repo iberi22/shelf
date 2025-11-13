@@ -1,11 +1,11 @@
-
-import React, { useState, useMemo } from 'react';
-import StatCard from './StatCard';
+import type React from 'react';
+import { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { useI18n } from '../context/I18nContext';
-import ProFeatureCard from './ProFeatureCard';
 import { useCurrency } from '../context/CurrencyContext';
+import { useI18n } from '../context/I18nContext';
 import useLocalStorage from '../hooks/useLocalStorage';
+import ProFeatureCard from './ProFeatureCard';
+import StatCard from './StatCard';
 
 const Dashboard: React.FC = () => {
   const { state } = useAppContext();
@@ -14,43 +14,44 @@ const Dashboard: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   // Define all possible stat cards with their key and how to calculate their value
-  const allStatsDefinitions = useMemo(() => [
-    {
-      titleKey: 'dashboard.totalRevenue',
-      icon: '💰',
-      getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.totalPrice, 0)),
-    },
-    {
-      titleKey: 'dashboard.totalProfit',
-      icon: '💹',
-      getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.profit, 0)),
-    },
-    {
-      titleKey: 'dashboard.totalSales',
-      icon: '🛒',
-      getValue: () => state.sales.length.toString(),
-    },
-    {
-      titleKey: 'dashboard.totalProducts',
-      icon: '📦',
-      getValue: () => state.products.reduce((acc, product) => acc + product.quantity, 0).toString(),
-    },
-  ], [state.sales, state.products, formatCurrency]);
+  const allStatsDefinitions = useMemo(
+    () => [
+      {
+        titleKey: 'dashboard.totalRevenue',
+        icon: '💰',
+        getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.totalPrice, 0)),
+      },
+      {
+        titleKey: 'dashboard.totalProfit',
+        icon: '💹',
+        getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.profit, 0)),
+      },
+      {
+        titleKey: 'dashboard.totalSales',
+        icon: '🛒',
+        getValue: () => state.sales.length.toString(),
+      },
+      {
+        titleKey: 'dashboard.totalProducts',
+        icon: '📦',
+        getValue: () => state.products.reduce((acc, product) => acc + product.quantity, 0).toString(),
+      },
+    ],
+    [state.sales, state.products, formatCurrency],
+  );
 
   const [cardVisibility, setCardVisibility] = useLocalStorage(
     'dashboardCardVisibility',
-    allStatsDefinitions.reduce((acc, stat) => ({ ...acc, [stat.titleKey]: true }), {} as Record<string, boolean>)
+    allStatsDefinitions.reduce((acc, stat) => ({ ...acc, [stat.titleKey]: true }), {} as Record<string, boolean>),
   );
 
   const handleVisibilityChange = (titleKey: string) => {
     // FIX: Replaced out-of-scope variable `stat` with the function parameter `titleKey`.
-    setCardVisibility(prev => ({ ...prev, [titleKey]: !prev[titleKey] }));
+    setCardVisibility((prev) => ({ ...prev, [titleKey]: !prev[titleKey] }));
   };
 
   const statsToDisplay = useMemo(() => {
-    return isEditing
-      ? allStatsDefinitions
-      : allStatsDefinitions.filter(stat => cardVisibility[stat.titleKey]);
+    return isEditing ? allStatsDefinitions : allStatsDefinitions.filter((stat) => cardVisibility[stat.titleKey]);
   }, [isEditing, allStatsDefinitions, cardVisibility]);
 
   return (
@@ -68,12 +69,12 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {statsToDisplay.map((stat) => (
-          <div 
-            key={stat.titleKey} 
+          <div
+            key={stat.titleKey}
             data-testid={`stat-card-${stat.titleKey}`}
             className={`relative transition-opacity duration-300 ${isEditing && !cardVisibility[stat.titleKey] ? 'opacity-40 hover:opacity-100' : 'opacity-100'}`}
           >
-             {isEditing && (
+            {isEditing && (
               <div className="absolute top-2 right-2 z-10 p-1 bg-background/50 rounded-full">
                 <input
                   type="checkbox"
@@ -85,48 +86,41 @@ const Dashboard: React.FC = () => {
                 />
               </div>
             )}
-            <StatCard 
-                titleKey={stat.titleKey}
-                value={stat.getValue()}
-                icon={stat.icon}
-            />
+            <StatCard titleKey={stat.titleKey} value={stat.getValue()} icon={stat.icon} />
           </div>
         ))}
         {/* Message when no cards are visible */}
         {!isEditing && statsToDisplay.length === 0 && (
-            <div className="col-span-full text-center p-8 bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 rounded-lg flex flex-col items-center gap-4" data-testid="no-stats-visible-message">
-                <p className="text-foreground/70">{t('dashboard.noCardsVisible')}</p>
-                <button
-                    onClick={() => setIsEditing(true)}
-                    className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
-                >
-                    {t('dashboard.customize')}
-                </button>
+          <div
+            className="col-span-full text-center p-8 bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 rounded-lg flex flex-col items-center gap-4"
+            data-testid="no-stats-visible-message"
+          >
+            <p className="text-foreground/70">{t('dashboard.noCardsVisible')}</p>
+            <button
+              onClick={() => setIsEditing(true)}
+              className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
+            >
+              {t('dashboard.customize')}
+            </button>
           </div>
         )}
       </div>
-      
+
       <div className="mt-12">
         <h3 className="text-2xl font-bold mb-4">{t('dashboard.proFeaturesTitle')}</h3>
-        <p className="text-[#F5F5DC]/70 mb-6 max-w-3xl">
-          {t('dashboard.proFeaturesDescription')}
-        </p>
+        <p className="text-[#F5F5DC]/70 mb-6 max-w-3xl">{t('dashboard.proFeaturesDescription')}</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <ProFeatureCard 
-                icon="🤖"
-                titleKey="reports.aiAssistantTitle"
-                descriptionKey="dashboard.pro.aiDescription"
-            />
-            <ProFeatureCard 
-                icon="☁️"
-                titleKey="dashboard.pro.cloudSyncTitle"
-                descriptionKey="dashboard.pro.cloudSyncDescription"
-            />
-             <ProFeatureCard 
-                icon="🚫"
-                titleKey="dashboard.pro.noAdsTitle"
-                descriptionKey="dashboard.pro.noAdsDescription"
-            />
+          <ProFeatureCard icon="🤖" titleKey="reports.aiAssistantTitle" descriptionKey="dashboard.pro.aiDescription" />
+          <ProFeatureCard
+            icon="☁️"
+            titleKey="dashboard.pro.cloudSyncTitle"
+            descriptionKey="dashboard.pro.cloudSyncDescription"
+          />
+          <ProFeatureCard
+            icon="🚫"
+            titleKey="dashboard.pro.noAdsTitle"
+            descriptionKey="dashboard.pro.noAdsDescription"
+          />
         </div>
       </div>
     </div>

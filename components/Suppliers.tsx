@@ -1,8 +1,8 @@
-import React from 'react';
+import type React from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Supplier } from '../types';
-import ContactManagementPage from './ContactManagementPage';
 import { useI18n } from '../context/I18nContext';
+import type { Supplier } from '../types';
+import ContactManagementPage from './ContactManagementPage';
 
 const Suppliers: React.FC = () => {
   const { state, dispatch } = useAppContext();

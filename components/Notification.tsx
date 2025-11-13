@@ -7,7 +7,8 @@ interface NotificationProps {
 }
 
 const Notification: React.FC<NotificationProps> = ({ message, type, onClose }) => {
-  const baseClasses = 'fixed top-5 left-1/2 -translate-x-1/2 w-full max-w-md p-4 rounded-lg text-center shadow-lg z-[150] animate-fade-in-down';
+  const baseClasses =
+    'fixed top-5 left-1/2 -translate-x-1/2 w-full max-w-md p-4 rounded-lg text-center shadow-lg z-[150] animate-fade-in-down';
   const typeClasses = {
     error: 'bg-red-500/90 border border-red-400 text-[#F5F5DC]',
     success: 'bg-green-500/90 border border-green-400 text-[#F5F5DC]',
@@ -21,11 +22,7 @@ const Notification: React.FC<NotificationProps> = ({ message, type, onClose }) =
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  return (
-    <div className={`${baseClasses} ${typeClasses[type]}`}>
-      {message}
-    </div>
-  );
+  return <div className={`${baseClasses} ${typeClasses[type]}`}>{message}</div>;
 };
 
 export default Notification;

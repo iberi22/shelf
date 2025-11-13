@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import type React from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
 
 interface NotificationState {
-    message: string;
-    type: 'error' | 'success' | 'info';
+  message: string;
+  type: 'error' | 'success' | 'info';
 }
 
 interface UIContextProps {
@@ -37,7 +38,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
   const openSubscriptionModal = useCallback(() => setSubscriptionModalOpen(true), []);
   const closeSubscriptionModal = useCallback(() => setSubscriptionModalOpen(false), []);
-  
+
   const showNotification = useCallback((message: string, type: NotificationState['type']) => {
     setNotification({ message, type });
   }, []);
@@ -47,18 +48,20 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   return (
-    <UIContext.Provider value={{ 
-        isLoading, 
-        loadingMessage, 
-        showLoading, 
+    <UIContext.Provider
+      value={{
+        isLoading,
+        loadingMessage,
+        showLoading,
         hideLoading,
         isSubscriptionModalOpen,
         openSubscriptionModal,
         closeSubscriptionModal,
         notification,
         showNotification,
-        hideNotification
-    }}>
+        hideNotification,
+      }}
+    >
       {children}
     </UIContext.Provider>
   );
