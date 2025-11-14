@@ -123,12 +123,12 @@ const Settings: React.FC = () => {
         <div className="grid gap-8 md:grid-cols-1">
           {/* General Settings */}
           <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-6 rounded-lg">
-            <h3 className="text-xl font-bold">{t('settings.general.title')}</h3>
+            <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.general.title')}</h3>
             <div className="mt-4">
               <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-[#F5F5DC]/90">
                 {t('settings.lowStockThreshold')}
               </label>
-              <p className="text-xs text-[#F5F5DC]/60 mb-2">{t('settings.lowStockThresholdDescription')}</p>
+              <p className="text-xs text-[#F5F5DC]/70 mb-2">{t('settings.lowStockThresholdDescription')}</p>
               <input
                 id="lowStockThreshold"
                 data-testid="low-stock-input"
@@ -143,13 +143,13 @@ const Settings: React.FC = () => {
 
           {/* Currency Settings */}
           <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-6 rounded-lg">
-            <h3 className="text-xl font-bold">{t('settings.currency.title')}</h3>
+            <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.currency.title')}</h3>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="currencySymbol" className="block text-sm font-medium text-[#F5F5DC]/90">
                   {t('settings.currency.symbol')}
                 </label>
-                <p className="text-xs text-[#F5F5DC]/60 mb-2">{t('settings.currency.symbolDescription')}</p>
+                <p className="text-xs text-[#F5F5DC]/70 mb-2">{t('settings.currency.symbolDescription')}</p>
                 <select
                   id="currencySymbol"
                   data-testid="currency-select"
@@ -168,7 +168,7 @@ const Settings: React.FC = () => {
                 <label htmlFor="numberFormat" className="block text-sm font-medium text-[#F5F5DC]/90">
                   {t('settings.currency.format')}
                 </label>
-                <p className="text-xs text-[#F5F5DC]/60 mb-2">{t('settings.currency.formatDescription')}</p>
+                <p className="text-xs text-[#F5F5DC]/70 mb-2">{t('settings.currency.formatDescription')}</p>
                 <select
                   id="numberFormat"
                   data-testid="number-format-select"
@@ -187,8 +187,8 @@ const Settings: React.FC = () => {
           <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-6 rounded-lg">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-xl font-bold">{t('settings.team.title')}</h3>
-                <p className="text-xs text-[#F5F5DC]/60 mt-1">{t('settings.team.description')}</p>
+                <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.team.title')}</h3>
+                <p className="text-xs text-[#F5F5DC]/70 mt-1">{t('settings.team.description')}</p>
               </div>
               {isPyme ? (
                 <button
@@ -220,8 +220,8 @@ const Settings: React.FC = () => {
 
           {/* Feedback and Support */}
           <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-6 rounded-lg">
-            <h3 className="text-xl font-bold">{t('settings.feedback.title')}</h3>
-            <p className="text-xs text-[#F5F5DC]/60 mt-1 mb-4">{t('settings.feedback.description')}</p>
+            <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.feedback.title')}</h3>
+            <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">{t('settings.feedback.description')}</p>
             <textarea
               data-testid="feedback-textarea"
               value={feedback}
@@ -241,12 +241,12 @@ const Settings: React.FC = () => {
 
           {/* Data Management */}
           <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-6 rounded-lg">
-            <h3 className="text-xl font-bold">{t('settings.data.title')}</h3>
+            <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.data.title')}</h3>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Import */}
               <div className="flex flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
-                <h4 className="font-bold">{t('settings.import.button')}</h4>
-                <p className="text-xs text-foreground/70 flex-grow">{t('settings.import.cardDescription')}</p>
+                <h4 className="font-bold text-[#F5F5DC]">{t('settings.import.button')}</h4>
+                <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.import.cardDescription')}</p>
                 <button
                   onClick={() => setIsImportModalOpen(true)}
                   className="w-full mt-2 text-sm bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95"
@@ -257,8 +257,8 @@ const Settings: React.FC = () => {
 
               {/* Backup */}
               <div className="flex flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
-                <h4 className="font-bold">{t('settings.backup.button')}</h4>
-                <p className="text-xs text-foreground/70 flex-grow">{t('settings.backup.description')}</p>
+                <h4 className="font-bold text-[#F5F5DC]">{t('settings.backup.button')}</h4>
+                <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.backup.description')}</p>
                 <button
                   onClick={handleCreateBackup}
                   className="w-full mt-2 text-sm bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95"
@@ -269,8 +269,8 @@ const Settings: React.FC = () => {
 
               {/* Restore */}
               <div className="flex flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
-                <h4 className="font-bold">{t('settings.restore.button')}</h4>
-                <p className="text-xs text-foreground/70 flex-grow">{t('settings.restore.description')}</p>
+                <h4 className="font-bold text-[#F5F5DC]">{t('settings.restore.button')}</h4>
+                <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.restore.description')}</p>
                 <input
                   type="file"
                   accept="application/json"
@@ -290,7 +290,7 @@ const Settings: React.FC = () => {
               {/* Reset */}
               <div className="flex flex-col gap-2 p-4 rounded-md bg-background/50 border border-red-500/30">
                 <h4 className="font-bold text-red-400">{t('settings.reset.button')}</h4>
-                <p className="text-xs text-foreground/70 flex-grow">{t('settings.reset.description')}</p>
+                <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.reset.description')}</p>
                 <button
                   onClick={handleResetData}
                   className="w-full mt-2 text-sm bg-transparent border border-red-500/50 text-red-400 font-bold py-2 px-4 rounded-lg hover:bg-red-500/10 transition-colors active:scale-95"
