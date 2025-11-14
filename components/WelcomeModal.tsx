@@ -30,8 +30,8 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
             <div className="flex items-start gap-3">
               <div className="text-3xl">💾</div>
               <div>
-                <h3 className="font-bold text-lg mb-1">{t('welcome.localMode')}</h3>
-                <p className="text-foreground/70 text-sm">{t('welcome.localModeDesc')}</p>
+                <h3 className="font-bold text-lg mb-1 text-[#F5F5DC]">{t('welcome.localMode')}</h3>
+                <p className="text-[#F5F5DC]/80 text-sm">{t('welcome.localModeDesc')}</p>
               </div>
             </div>
           </div>
@@ -41,8 +41,8 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
             <div className="flex items-start gap-3">
               <div className="text-3xl">⚠️</div>
               <div>
-                <h3 className="font-bold text-lg mb-1">{t('welcome.backupResponsibility')}</h3>
-                <p className="text-foreground/70 text-sm">{t('welcome.backupResponsibilityDesc')}</p>
+                <h3 className="font-bold text-lg mb-1 text-[#F5F5DC]">{t('welcome.backupResponsibility')}</h3>
+                <p className="text-[#F5F5DC]/80 text-sm">{t('welcome.backupResponsibilityDesc')}</p>
               </div>
             </div>
           </div>
@@ -52,8 +52,8 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
             <div className="flex items-start gap-3">
               <div className="text-3xl">☁️</div>
               <div>
-                <h3 className="font-bold text-lg mb-1">{t('welcome.upgradeOption')}</h3>
-                <p className="text-foreground/70 text-sm">{t('welcome.upgradeOptionDesc')}</p>
+                <h3 className="font-bold text-lg mb-1 text-[#F5F5DC]">{t('welcome.upgradeOption')}</h3>
+                <p className="text-[#F5F5DC]/80 text-sm">{t('welcome.upgradeOptionDesc')}</p>
               </div>
             </div>
           </div>
@@ -68,7 +68,7 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
             onChange={(e) => setDontShowAgain(e.target.checked)}
             className="w-4 h-4 rounded border-foreground/30 bg-primary text-foreground focus:ring-2 focus:ring-foreground/50"
           />
-          <label htmlFor="dontShowAgain" className="text-sm text-foreground/70 cursor-pointer">
+          <label htmlFor="dontShowAgain" className="text-sm text-[#F5F5DC]/80 cursor-pointer">
             {t('welcome.dontShowAgain')}
           </label>
         </div>

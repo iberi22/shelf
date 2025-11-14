@@ -19,7 +19,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
       >
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold">{title}</h3>
+          <h3 className="text-xl font-bold text-[#F5F5DC]">{title}</h3>
           <button
             onClick={onClose}
             className="text-2xl text-[#F5F5DC]/70 hover:text-[#F5F5DC] transition-all active:scale-95"

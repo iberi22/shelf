@@ -150,16 +150,16 @@ const Reports: React.FC = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold mb-2">{t('reports.title')}</h2>
-        <p className="text-foreground/70">{t('reports.description')}</p>
+        <h2 className="text-3xl font-bold mb-2 text-[#F5F5DC]">{t('reports.title')}</h2>
+        <p className="text-foreground/80">{t('reports.description')}</p>
       </div>
 
       {/* Filters Section */}
       <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-4 rounded-lg">
-        <h3 className="text-lg font-bold mb-4">{t('reports.filters.title')}</h3>
+        <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">{t('reports.filters.title')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="text-xs text-foreground/70">{t('reports.filters.dateRange')}</label>
+            <label className="text-xs text-[#F5F5DC]/80">{t('reports.filters.dateRange')}</label>
             <div className="flex gap-2">
               <input
                 type="date"
@@ -178,7 +178,7 @@ const Reports: React.FC = () => {
             </div>
           </div>
           <div>
-            <label htmlFor="productFilter" className="text-xs text-foreground/70">{t('reports.filters.product')}</label>
+            <label htmlFor="productFilter" className="text-xs text-[#F5F5DC]/80">{t('reports.filters.product')}</label>
             <select
               id="productFilter"
               value={selectedProductId}
@@ -197,7 +197,7 @@ const Reports: React.FC = () => {
             </select>
           </div>
           <div>
-            <label htmlFor="clientFilter" className="text-xs text-foreground/70">{t('reports.filters.client')}</label>
+            <label htmlFor="clientFilter" className="text-xs text-[#F5F5DC]/80">{t('reports.filters.client')}</label>
             <select
               id="clientFilter"
               value={selectedClientId}
@@ -230,7 +230,7 @@ const Reports: React.FC = () => {
         <div className="space-y-8">
           {/* Sales over Time Chart */}
           <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-4 rounded-lg">
-            <h3 className="text-lg font-bold mb-4">{t('reports.salesOverTime')}</h3>
+            <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">{t('reports.salesOverTime')}</h3>
             <div className="relative h-72">
               <Line options={chartOptions} data={chartData} />
             </div>
@@ -239,9 +239,9 @@ const Reports: React.FC = () => {
           {/* Top Products */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-4 rounded-lg">
-              <h3 className="text-lg font-bold mb-4">
+              <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">
                 {t('reports.topProducts')}{' '}
-                <span className="text-sm font-normal text-foreground/70">({t('reports.byRevenue')})</span>
+                <span className="text-sm font-normal text-[#F5F5DC]/80">({t('reports.byRevenue')})</span>
               </h3>
               <ul className="space-y-2">
                 {topProducts.byRevenue.map((p, i) => (
@@ -255,9 +255,9 @@ const Reports: React.FC = () => {
               </ul>
             </div>
             <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-4 rounded-lg">
-              <h3 className="text-lg font-bold mb-4">
+              <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">
                 {t('reports.topProducts')}{' '}
-                <span className="text-sm font-normal text-foreground/70">({t('reports.byProfit')})</span>
+                <span className="text-sm font-normal text-[#F5F5DC]/80">({t('reports.byProfit')})</span>
               </h3>
               <ul className="space-y-2">
                 {topProducts.byProfit.map((p, i) => (
@@ -273,7 +273,7 @@ const Reports: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="text-center py-16 text-foreground/70">
+        <div className="text-center py-16 text-[#F5F5DC]/80">
           <p>{t('reports.noDataForPeriod')}</p>
         </div>
       )}
@@ -281,7 +281,7 @@ const Reports: React.FC = () => {
       {/* AI Assistant Section */}
       <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 rounded-lg overflow-hidden">
         <div className="p-4 bg-[#F5F5DC]/10">
-          <h3 className="text-lg font-bold flex items-center gap-2">
+          <h3 className="text-lg font-bold flex items-center gap-2 text-[#F5F5DC]">
             <span className="text-xl">🤖</span>
             {t('reports.aiAssistantTitle')}
           </h3>
