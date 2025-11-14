@@ -358,5 +358,17 @@
       "title": "Cloud Sync (Pro)",
       "description": "Upgrade to sync your data across all your devices, ensuring it's safe and always up-to-date."
     }
+  },
+  "welcome": {
+    "title": "Welcome to Shelf!",
+    "subtitle": "Before you begin, here are a few important things to know:",
+    "localMode": "Local-First Data",
+    "localModeDesc": "Your data is stored securely on this device. No internet connection is needed to manage your inventory.",
+    "backupResponsibility": "Your Data, Your Responsibility",
+    "backupResponsibilityDesc": "Since data is stored locally, it's crucial to make regular backups. You can export your data in the Settings menu.",
+    "upgradeOption": "Cloud Sync & More",
+    "upgradeOptionDesc": "For automated backups, multi-device sync, and AI-powered reports, consider upgrading to a Pro plan at any time.",
+    "dontShowAgain": "Don't show this again",
+    "getStarted": "Get Started"
   }
 }
