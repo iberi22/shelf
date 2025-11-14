@@ -55,7 +55,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onLoginClick }) =
           </div>
           <h2 className="text-4xl md:text-6xl font-extrabold leading-tight break-words">{t('appName')}</h2>
           <p className="mt-6 text-lg md:text-xl text-foreground/80">{t('landing.title')}</p>
-          <p className="mt-4 text-md md:text-lg text-foreground/70 max-w-xl mx-auto">{t('landing.subtitle')}</p>
+          <p className="mt-4 text-md md:text-lg text-[#F5F5DC]/80 max-w-xl mx-auto">{t('landing.subtitle')}</p>
           <button
             onClick={handleStartFree}
             className="mt-10 bg-foreground text-background font-bold py-3 px-8 rounded-lg text-lg hover:bg-opacity-80 transition-all transform hover:scale-105 active:scale-95"
@@ -67,7 +67,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onLoginClick }) =
 
       <section id="features" className="py-16 md:py-24 bg-primary border-t border-foreground/20">
         <div className="container mx-auto px-6">
-          <h3 className="text-3xl font-bold text-center mb-12">{t('landing.featuresTitle')}</h3>
+          <h3 className="text-3xl font-bold text-center mb-12 text-[#F5F5DC]">{t('landing.featuresTitle')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature) => (
               <div
@@ -75,8 +75,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onLoginClick }) =
                 className="text-center p-6 bg-background rounded-lg border border-foreground/10"
               >
                 <div className="text-5xl mb-4">{feature.icon}</div>
-                <h4 className="text-xl font-bold mb-2">{t(feature.titleKey)}</h4>
-                <p className="text-foreground/70">{t(feature.descriptionKey)}</p>
+                <h4 className="text-xl font-bold mb-2 text-[#F5F5DC]">{t(feature.titleKey)}</h4>
+                <p className="text-[#F5F5DC]/80">{t(feature.descriptionKey)}</p>
               </div>
             ))}
           </div>

@@ -76,7 +76,7 @@ const PurchaseOrders: React.FC = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold">{t('purchases.title')}</h2>
+        <h2 className="text-3xl font-bold text-[#F5F5DC]">{t('purchases.title')}</h2>
         <button
           onClick={() => handleOpenModal()}
           className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95"
