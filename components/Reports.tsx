@@ -155,7 +155,7 @@ const Reports: React.FC = () => {
       </div>
 
       {/* Filters Section */}
-      <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-4 rounded-lg">
+      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
         <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">{t('reports.filters.title')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
@@ -229,7 +229,7 @@ const Reports: React.FC = () => {
       {filteredSales.length > 0 ? (
         <div className="space-y-8">
           {/* Sales over Time Chart */}
-          <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-4 rounded-lg">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
             <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">{t('reports.salesOverTime')}</h3>
             <div className="relative h-72">
               <Line options={chartOptions} data={chartData} />
@@ -238,7 +238,7 @@ const Reports: React.FC = () => {
 
           {/* Top Products */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-4 rounded-lg">
+            <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
               <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">
                 {t('reports.topProducts')}{' '}
                 <span className="text-sm font-normal text-[#F5F5DC]/80">({t('reports.byRevenue')})</span>
@@ -254,7 +254,7 @@ const Reports: React.FC = () => {
                 ))}
               </ul>
             </div>
-            <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-4 rounded-lg">
+            <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
               <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">
                 {t('reports.topProducts')}{' '}
                 <span className="text-sm font-normal text-[#F5F5DC]/80">({t('reports.byProfit')})</span>

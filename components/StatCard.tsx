@@ -7,7 +7,7 @@ const StatCard: React.FC<StatCardData> = ({ titleKey, value, icon, change, chang
   const changeColor = changeType === 'positive' ? 'text-green-400' : 'text-red-400';
 
   return (
-    <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-5 rounded-lg">
+    <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-5 rounded-lg">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-[#F5F5DC]/70">{t(titleKey)}</p>
         <span className="text-2xl">{icon}</span>
