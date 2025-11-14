@@ -358,7 +358,13 @@
     },
     "feature4": {
       "title": "Sincronização (Pro)",
-      "description": "Atualize para Pro para sincronizar seus dados em todos os seus dispositivos, garantindo que estejam seguros e sempre atualizados."
+      "description": "Atualize para o Pro para sincronizar seus dados em todos os seus dispositivos, mantendo-os seguros e atualizados."
     }
+  },
+  "update": {
+    "title": "Nova versão disponível",
+    "message": "Uma nova versão do Shelf. está disponível. Recarregue o aplicativo para obter os recursos e melhorias mais recentes.",
+    "reload": "Atualizar agora",
+    "later": "Mais tarde"
   }
 }
