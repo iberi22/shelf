@@ -92,10 +92,10 @@ const Dashboard: React.FC = () => {
         {/* Message when no cards are visible */}
         {!isEditing && statsToDisplay.length === 0 && (
           <div
-            className="col-span-full text-center p-8 bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 rounded-lg flex flex-col items-center gap-4"
+            className="col-span-full text-center p-8 bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg flex flex-col items-center gap-4"
             data-testid="no-stats-visible-message"
           >
-            <p className="text-foreground/70">{t('dashboard.noCardsVisible')}</p>
+            <p className="text-[#F5F5DC]/80">{t('dashboard.noCardsVisible')}</p>
             <button
               onClick={() => setIsEditing(true)}
               className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"

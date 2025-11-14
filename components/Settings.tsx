@@ -122,7 +122,7 @@ const Settings: React.FC = () => {
 
         <div className="grid gap-8 md:grid-cols-1">
           {/* General Settings */}
-          <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-6 rounded-lg">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.general.title')}</h3>
             <div className="mt-4">
               <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-[#F5F5DC]/90">
@@ -142,7 +142,7 @@ const Settings: React.FC = () => {
           </div>
 
           {/* Currency Settings */}
-          <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-6 rounded-lg">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.currency.title')}</h3>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
@@ -184,7 +184,7 @@ const Settings: React.FC = () => {
           </div>
 
           {/* Team Management */}
-          <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-6 rounded-lg">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg">
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.team.title')}</h3>
@@ -219,7 +219,7 @@ const Settings: React.FC = () => {
           </div>
 
           {/* Feedback and Support */}
-          <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-6 rounded-lg">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.feedback.title')}</h3>
             <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">{t('settings.feedback.description')}</p>
             <textarea
@@ -240,7 +240,7 @@ const Settings: React.FC = () => {
           </div>
 
           {/* Data Management */}
-          <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-6 rounded-lg">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.data.title')}</h3>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Import */}
