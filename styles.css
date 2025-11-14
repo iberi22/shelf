@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html,
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+  
+  #root {
+    @apply bg-background;
+    min-height: 100vh;
+  }
+}
+
 @layer utilities {
   @keyframes slide-up {
     from {
