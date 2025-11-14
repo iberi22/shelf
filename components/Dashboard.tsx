@@ -106,9 +106,9 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      <div className="mt-12">
-        <h3 className="text-2xl font-bold mb-4">{t('dashboard.proFeaturesTitle')}</h3>
-        <p className="text-[#F5F5DC]/70 mb-6 max-w-3xl">{t('dashboard.proFeaturesDescription')}</p>
+      <div className="mt-12 bg-[#0d0d0d] p-8 rounded-xl border border-[#F5F5DC]/20">
+        <h3 className="text-3xl font-bold mb-3 text-[#F5F5DC]">{t('dashboard.proFeaturesTitle')}</h3>
+        <p className="text-[#F5F5DC]/80 mb-8 max-w-3xl text-base leading-relaxed">{t('dashboard.proFeaturesDescription')}</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <ProFeatureCard icon="🤖" titleKey="reports.aiAssistantTitle" descriptionKey="dashboard.pro.aiDescription" />
           <ProFeatureCard
