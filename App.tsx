@@ -4,6 +4,7 @@ import LoginModal from './components/LoginModal';
 import Notification from './components/Notification';
 import SignupModal from './components/SignupModal';
 import SubscriptionModal from './components/SubscriptionModal';
+import UpdateNotification from './components/UpdateNotification';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import { CurrencyProvider } from './context/CurrencyContext';
@@ -35,6 +36,7 @@ const AppContainer = () => {
   return (
     <>
       <MainApp onLoginClick={openLoginModal} />
+      <UpdateNotification />
       {activeModal === 'login' && <LoginModal onClose={closeModal} onSwitchToSignup={switchToSignup} />}
       {activeModal === 'signup' && <SignupModal onClose={closeModal} onSwitchToLogin={switchToLogin} />}
       <SubscriptionModal />

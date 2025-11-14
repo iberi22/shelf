@@ -356,7 +356,13 @@
     },
     "feature4": {
       "title": "Cloud Sync (Pro)",
-      "description": "Upgrade to sync your data across all your devices, ensuring it's safe and always up-to-date."
+      "description": "Upgrade to Pro to sync your data across all your devices, keeping them safe and up-to-date."
     }
+  },
+  "update": {
+    "title": "New version available",
+    "message": "A new version of Shelf. is available. Reload the app to get the latest features and improvements.",
+    "reload": "Update now",
+    "later": "Later"
   }
 }
