@@ -13,15 +13,15 @@ const ProFeatureCard: React.FC<ProFeatureCardProps> = ({ icon, titleKey, descrip
   const { openSubscriptionModal } = useUI();
 
   return (
-    <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 p-5 rounded-lg flex flex-col items-start h-full">
-      <div className="flex items-center mb-3">
-        <span className="text-3xl mr-3">{icon}</span>
-        <h4 className="text-lg font-bold text-[#F5F5DC]">{t(titleKey)}</h4>
+    <div className="bg-[#1a1a1a] border-2 border-[#F5F5DC]/30 p-6 rounded-lg flex flex-col items-start h-full shadow-lg hover:border-yellow-400/50 transition-all">
+      <div className="flex items-center mb-4">
+        <span className="text-4xl mr-3">{icon}</span>
+        <h4 className="text-xl font-bold text-[#F5F5DC]">{t(titleKey)}</h4>
       </div>
-      <p className="text-sm text-[#F5F5DC]/70 flex-grow mb-4">{t(descriptionKey)}</p>
+      <p className="text-base text-[#F5F5DC]/90 flex-grow mb-5 leading-relaxed">{t(descriptionKey)}</p>
       <button
         onClick={openSubscriptionModal}
-        className="mt-auto text-sm font-semibold text-[#121212] bg-yellow-400 px-4 py-2 rounded-lg hover:bg-yellow-300 transition-all active:scale-95"
+        className="w-full mt-auto text-sm font-bold text-[#121212] bg-yellow-400 px-5 py-3 rounded-lg hover:bg-yellow-300 transition-all active:scale-95 shadow-md"
       >
         {t('learnMore')}
       </button>

@@ -57,7 +57,7 @@ const Dashboard: React.FC = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold">{t('dashboard.title')}</h2>
+        <h2 className="text-3xl font-bold text-[#F5F5DC]">{t('dashboard.title')}</h2>
         <button
           data-testid="dashboard-customize-button"
           onClick={() => setIsEditing(!isEditing)}
@@ -92,10 +92,10 @@ const Dashboard: React.FC = () => {
         {/* Message when no cards are visible */}
         {!isEditing && statsToDisplay.length === 0 && (
           <div
-            className="col-span-full text-center p-8 bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 rounded-lg flex flex-col items-center gap-4"
+            className="col-span-full text-center p-8 bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg flex flex-col items-center gap-4"
             data-testid="no-stats-visible-message"
           >
-            <p className="text-foreground/70">{t('dashboard.noCardsVisible')}</p>
+            <p className="text-[#F5F5DC]/80">{t('dashboard.noCardsVisible')}</p>
             <button
               onClick={() => setIsEditing(true)}
               className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
@@ -106,9 +106,9 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      <div className="mt-12">
-        <h3 className="text-2xl font-bold mb-4">{t('dashboard.proFeaturesTitle')}</h3>
-        <p className="text-[#F5F5DC]/70 mb-6 max-w-3xl">{t('dashboard.proFeaturesDescription')}</p>
+      <div className="mt-12 bg-[#0d0d0d] p-8 rounded-xl border border-[#F5F5DC]/20">
+        <h3 className="text-3xl font-bold mb-3 text-[#F5F5DC]">{t('dashboard.proFeaturesTitle')}</h3>
+        <p className="text-[#F5F5DC]/80 mb-8 max-w-3xl text-base leading-relaxed">{t('dashboard.proFeaturesDescription')}</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <ProFeatureCard icon="🤖" titleKey="reports.aiAssistantTitle" descriptionKey="dashboard.pro.aiDescription" />
           <ProFeatureCard

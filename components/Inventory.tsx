@@ -91,7 +91,7 @@ const Inventory: React.FC = () => {
   return (
     <div>
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-        <h2 className="text-3xl font-bold">{t('inventory.title')}</h2>
+        <h2 className="text-3xl font-bold text-[#F5F5DC]">{t('inventory.title')}</h2>
         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
           <div className="relative flex-grow">
             <input
@@ -123,7 +123,7 @@ const Inventory: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 rounded-lg overflow-hidden">
+      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[800px]">
             <thead className="bg-[#F5F5DC]/10">
