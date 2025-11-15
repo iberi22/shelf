@@ -74,7 +74,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
       <div className="bg-[#1e1e1e] p-4 md:p-6 rounded-lg shadow-xl border border-[#F5F5DC]/30 max-w-md w-full m-4">
-        <h3 className="text-lg font-bold mb-4 text-center">{t('scanner.title')}</h3>
+        <h3 className="text-lg font-bold mb-4 text-center text-[#F5F5DC]">{t('scanner.title')}</h3>
         <div
           id="reader"
           style={{ width: '100%', borderRadius: '8px', overflow: 'hidden', minHeight: '250px' }}
