@@ -77,6 +77,7 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
         <div className="flex justify-center pt-2">
           <button
             onClick={handleClose}
+            data-testid="welcome-modal-get-started-button"
             className="bg-foreground text-background font-bold py-3 px-8 rounded-lg hover:bg-opacity-80 transition-all transform hover:scale-105 active:scale-95"
           >
             {t('welcome.getStarted')}
