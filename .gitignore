@@ -25,3 +25,8 @@ dist-ssr
 
 .vercel
 easyinventary-d8dbd-firebase-adminsdk-fbsvc-4decb3d051.json
+
+# Test artifacts
+cypress/downloads/
+playwright-report/
+test-results/

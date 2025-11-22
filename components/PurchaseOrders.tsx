@@ -80,6 +80,7 @@ const PurchaseOrders: React.FC = () => {
         <button
           onClick={() => handleOpenModal()}
           className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95"
+          data-testid="add-purchase-order-button"
         >
           {t('purchases.addPurchaseOrder')}
         </button>
@@ -266,7 +267,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} data-testid="purchase-order-form">
       <div className="space-y-4">
         <div>
           <select
@@ -274,6 +275,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
             onChange={(e) => setSupplierId(e.target.value)}
             className={`w-full p-2 bg-[#121212] border rounded-md ${errors.supplierId ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
             disabled={isEditingReceived}
+            data-testid="purchase-order-supplier-select"
           >
             <option value="" disabled>
               {t('purchases.form.selectSupplier')}
@@ -295,6 +297,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
                 onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
                 className="flex-grow p-2 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md"
                 disabled={isEditingReceived}
+                data-testid={`purchase-order-item-product-${index}`}
               >
                 <option value="">Select Product</option>
                 {state.products.map((p) => (
@@ -310,6 +313,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
                 min="1"
                 className="w-20 p-2 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md"
                 disabled={isEditingReceived}
+                data-testid={`purchase-order-item-quantity-${index}`}
               />
               <input
                 type="number"
@@ -319,12 +323,14 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
                 step="0.01"
                 className="w-24 p-2 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md"
                 disabled={isEditingReceived}
+                data-testid={`purchase-order-item-cost-${index}`}
               />
               {!isEditingReceived && (
                 <button
                   type="button"
                   onClick={() => removeItem(index)}
                   className="text-red-400 transition-transform active:scale-95"
+                  data-testid={`remove-purchase-order-item-button-${index}`}
                 >
                   🗑️
                 </button>
@@ -337,6 +343,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
             type="button"
             onClick={addItem}
             className="text-sm font-bold text-yellow-400 hover:text-yellow-300 transition-transform active:scale-95"
+            data-testid="add-purchase-order-item-button"
           >
             {t('purchases.form.addItem')}
           </button>
@@ -349,6 +356,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
           type="button"
           onClick={onCancel}
           className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95"
+          data-testid="cancel-purchase-order-button"
         >
           {t('common.cancel')}
         </button>
@@ -356,6 +364,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
           type="submit"
           className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95"
           disabled={isEditingReceived}
+          data-testid="save-purchase-order-button"
         >
           {t('common.save')}
         </button>
