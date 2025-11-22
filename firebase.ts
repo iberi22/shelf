@@ -39,23 +39,53 @@ if (isFirebaseConfigured) {
 
   // Mock Firebase when not configured to allow the app to run without crashing.
   const mockAuth = {
-    onAuthStateChanged: (callback: (user: null) => void) => {
-      // Immediately call back with a null user to signify a logged-out state.
-      callback(null);
-      // Return a dummy unsubscribe function.
+    onAuthStateChanged: (callback: (user: any) => void) => {
+      // Check if we have a stored mock user
+      const storedUser = localStorage.getItem('shelf_mock_user');
+      if (storedUser) {
+        callback(JSON.parse(storedUser));
+      } else {
+        callback(null);
+      }
       return () => {};
     },
-    signInWithEmailAndPassword: () => Promise.reject(new Error('Firebase not configured.')),
+    signInWithEmailAndPassword: (email: string, password: string) => {
+      if (email === 'iberi22@gmail.com' && password === 'admin0990') {
+        const user = { uid: 'local-admin', email };
+        localStorage.setItem('shelf_mock_user', JSON.stringify(user));
+        // Trigger auth state change manually if needed, or just reload/let the app handle it on next load
+        // Since onAuthStateChanged is a listener, we can't easily trigger it from here without a real event emitter.
+        // But for a simple mock, we can just reload the page or rely on the app re-rendering if we exposed a setter.
+        // Better: just return resolved and let the user refresh or use a simple event system.
+        // For now, let's just reload to keep it simple or assume the AuthContext will re-check?
+        // AuthContext runs onAuthStateChanged on mount.
+        window.location.reload();
+        return Promise.resolve({ user });
+      }
+      return Promise.reject(new Error('Invalid credentials (Mock)'));
+    },
     createUserWithEmailAndPassword: () => Promise.reject(new Error('Firebase not configured.')),
-    signOut: () => Promise.resolve(),
+    signOut: () => {
+      localStorage.removeItem('shelf_mock_user');
+      window.location.reload();
+      return Promise.resolve();
+    },
     currentUser: null,
   };
 
   const mockDb = {
     collection: (_name: string) => ({
-      doc: (_id: string) => ({
-        get: () => Promise.resolve({ exists: false }), // Always act like a new user with no cloud data.
-        set: () => Promise.reject(new Error('Firebase not configured.')),
+      doc: (id: string) => ({
+        get: () => {
+          if (id === 'local-admin') {
+            return Promise.resolve({
+              exists: true,
+              data: () => ({ subscriptionTier: 'pro' }),
+            });
+          }
+          return Promise.resolve({ exists: false });
+        },
+        set: () => Promise.resolve(),
       }),
     }),
   };

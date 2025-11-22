@@ -85,7 +85,15 @@
       "selectProduct": "Selecciona un producto...",
       "addItem": "+ Añadir Ítem",
       "selectClientOptional": "Selecciona un cliente (opcional)"
-    }
+    },
+    "receipt": {
+      "title": "Recibo de Venta",
+      "generate": "Generar Recibo"
+    },
+    "share": {
+      "whatsapp": "Compartir en WhatsApp"
+    },
+    "proFeatureRequired": "Esta función solo está disponible para usuarios Pro."
   },
   "clients": {
     "title": "Clientes",

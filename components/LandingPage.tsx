@@ -1,8 +1,8 @@
 import type React from 'react';
 import { useState } from 'react';
 import { useI18n } from '../context/I18nContext';
-import WelcomeModal from './WelcomeModal';
 import LanguageSelector from './LanguageSelector';
+import WelcomeModal from './WelcomeModal';
 
 interface LandingPageProps {
   onNavigate: () => void;

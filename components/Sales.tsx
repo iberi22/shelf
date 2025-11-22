@@ -1,3 +1,5 @@
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
@@ -17,6 +19,56 @@ const Sales: React.FC = () => {
     requestSort,
     getSortIndicator,
   } = useSortableTable<Sale>(state.sales, { key: 'date', direction: 'desc' });
+
+  const generateReceipt = (sale: Sale) => {
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFontSize(20);
+    doc.text(t('sales.receipt.title') || 'Sales Receipt', 14, 22);
+
+    doc.setFontSize(10);
+    doc.text(`${t('sales.date')}: ${new Date(sale.date).toLocaleDateString()}`, 14, 30);
+    doc.text(`${t('sales.id')}: ${sale.id.slice(0, 8)}`, 14, 35);
+    if (sale.clientName) {
+      doc.text(`${t('common.client')}: ${sale.clientName}`, 14, 40);
+    }
+
+    // Table
+    const tableColumn = [t('common.product'), t('common.quantity'), t('common.price'), t('sales.total')];
+    const tableRows = sale.items.map((item) => [
+      item.productName,
+      item.quantity,
+      formatCurrency(item.price),
+      formatCurrency(item.price * item.quantity),
+    ]);
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 50,
+    });
+
+    // Total
+    const finalY = (doc as any).lastAutoTable.finalY || 50;
+    doc.text(`${t('sales.total')}: ${formatCurrency(sale.totalPrice)}`, 14, finalY + 10);
+
+    doc.save(`receipt_${sale.id}.pdf`);
+  };
+
+  const shareOnWhatsApp = (sale: Sale) => {
+    const text = `
+*${t('sales.receipt.title') || 'Sales Receipt'}*
+${t('sales.date')}: ${new Date(sale.date).toLocaleDateString()}
+${t('sales.total')}: ${formatCurrency(sale.totalPrice)}
+
+${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCurrency(item.price * item.quantity)}`).join('\n')}
+    `.trim();
+
+    const encodedText = encodeURIComponent(text);
+    const url = `https://wa.me/?text=${encodedText}`;
+    window.open(url, '_blank');
+  };
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -71,6 +123,7 @@ const Sales: React.FC = () => {
                 <SortableHeader sortKey="totalPrice" labelKey="sales.total" />
                 <SortableHeader sortKey="profit" labelKey="sales.profit" />
                 <th className="p-4">{t('common.client')}</th>
+                <th className="p-4">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -88,6 +141,22 @@ const Sales: React.FC = () => {
                     <td className="p-4">{formatCurrency(sale.totalPrice)}</td>
                     <td className="p-4">{formatCurrency(sale.profit)}</td>
                     <td className="p-4">{sale.clientName || t('common.notAvailable')}</td>
+                    <td className="p-4 flex gap-2">
+                      <button
+                        onClick={() => generateReceipt(sale)}
+                        className="text-blue-400 hover:text-blue-300 transition-colors"
+                        title={t('sales.receipt.generate') || 'Generate Receipt'}
+                      >
+                        📄
+                      </button>
+                      <button
+                        onClick={() => shareOnWhatsApp(sale)}
+                        className="text-green-400 hover:text-green-300 transition-colors"
+                        title={t('sales.share.whatsapp') || 'Share on WhatsApp'}
+                      >
+                        📱
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
