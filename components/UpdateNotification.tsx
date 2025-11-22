@@ -1,6 +1,6 @@
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useI18n } from '../context/I18nContext';
 
 const UpdateNotification: React.FC = () => {
@@ -75,10 +75,7 @@ const UpdateNotification: React.FC = () => {
           >
             {t('update.reload')}
           </button>
-          <button
-            onClick={close}
-            className="px-4 py-2 text-[#F5F5DC]/80 hover:text-[#F5F5DC] transition-colors"
-          >
+          <button onClick={close} className="px-4 py-2 text-[#F5F5DC]/80 hover:text-[#F5F5DC] transition-colors">
             {t('update.later')}
           </button>
         </div>

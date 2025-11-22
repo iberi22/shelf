@@ -178,7 +178,9 @@ const Reports: React.FC = () => {
             </div>
           </div>
           <div>
-            <label htmlFor="productFilter" className="text-xs text-[#F5F5DC]/80">{t('reports.filters.product')}</label>
+            <label htmlFor="productFilter" className="text-xs text-[#F5F5DC]/80">
+              {t('reports.filters.product')}
+            </label>
             <select
               id="productFilter"
               value={selectedProductId}
@@ -197,7 +199,9 @@ const Reports: React.FC = () => {
             </select>
           </div>
           <div>
-            <label htmlFor="clientFilter" className="text-xs text-[#F5F5DC]/80">{t('reports.filters.client')}</label>
+            <label htmlFor="clientFilter" className="text-xs text-[#F5F5DC]/80">
+              {t('reports.filters.client')}
+            </label>
             <select
               id="clientFilter"
               value={selectedClientId}

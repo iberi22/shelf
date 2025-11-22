@@ -85,7 +85,15 @@
       "selectProduct": "Select a product...",
       "addItem": "+ Add Item",
       "selectClientOptional": "Select a client (optional)"
-    }
+    },
+    "receipt": {
+      "title": "Sales Receipt",
+      "generate": "Generate Receipt"
+    },
+    "share": {
+      "whatsapp": "Share on WhatsApp"
+    },
+    "proFeatureRequired": "This feature is only available for Pro users."
   },
   "clients": {
     "title": "Clients",

@@ -7,26 +7,30 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'android-chrome-192x192.png', 'android-chrome-512x512.png'],
       manifest: {
-        name: 'Shelf - Inventory Management',
+        name: 'Shelf - Gestión de Inventario',
         short_name: 'Shelf',
-        description: 'Gestión de inventario simple y potente para tu negocio',
+        description: 'Gestión de inventario simple y potente para tu negocio. Funciona 100% offline.',
         theme_color: '#1e1e1e',
         background_color: '#121212',
         display: 'standalone',
         start_url: '/',
+        scope: '/',
+        orientation: 'portrait',
         icons: [
           {
             src: '/android-chrome-192x192.png',
             sizes: '192x192',
             type: 'image/png',
+            purpose: 'any maskable',
           },
           {
             src: '/android-chrome-512x512.png',
             sizes: '512x512',
             type: 'image/png',
+            purpose: 'any maskable',
           },
         ],
       },
