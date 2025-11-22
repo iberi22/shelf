@@ -67,7 +67,7 @@ const Dashboard: React.FC = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
         {statsToDisplay.map((stat) => (
           <div
             key={stat.titleKey}
@@ -111,7 +111,7 @@ const Dashboard: React.FC = () => {
         <p className="text-[#F5F5DC]/80 mb-8 max-w-3xl text-base leading-relaxed">
           {t('dashboard.proFeaturesDescription')}
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           <ProFeatureCard icon="🤖" titleKey="reports.aiAssistantTitle" descriptionKey="dashboard.pro.aiDescription" />
           <ProFeatureCard
             icon="☁️"

@@ -120,9 +120,9 @@ const Settings: React.FC = () => {
       <div>
         <h2 className="text-3xl font-bold mb-6">{t('settings.title')}</h2>
 
-        <div className="grid gap-8 md:grid-cols-1">
+        <div className="grid gap-6 md:gap-8 lg:grid-cols-1">
           {/* General Settings */}
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.general.title')}</h3>
             <div className="mt-4">
               <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-[#F5F5DC]/90">
@@ -142,9 +142,9 @@ const Settings: React.FC = () => {
           </div>
 
           {/* Currency Settings */}
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.currency.title')}</h3>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div>
                 <label htmlFor="currencySymbol" className="block text-sm font-medium text-[#F5F5DC]/90">
                   {t('settings.currency.symbol')}
@@ -184,7 +184,7 @@ const Settings: React.FC = () => {
           </div>
 
           {/* Team Management */}
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.team.title')}</h3>
@@ -219,7 +219,7 @@ const Settings: React.FC = () => {
           </div>
 
           {/* Feedback and Support */}
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.feedback.title')}</h3>
             <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">{t('settings.feedback.description')}</p>
             <textarea
@@ -240,9 +240,9 @@ const Settings: React.FC = () => {
           </div>
 
           {/* Data Management */}
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.data.title')}</h3>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Import */}
               <div className="flex flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
                 <h4 className="font-bold text-[#F5F5DC]">{t('settings.import.button')}</h4>
