@@ -157,7 +157,7 @@ const Reports: React.FC = () => {
       {/* Filters Section */}
       <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
         <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">{t('reports.filters.title')}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="text-xs text-[#F5F5DC]/80">{t('reports.filters.dateRange')}</label>
             <div className="flex gap-2">
@@ -223,7 +223,7 @@ const Reports: React.FC = () => {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <StatCard titleKey="reports.summary.revenue" value={formatCurrency(summaryStats.revenue)} icon="💰" />
         <StatCard titleKey="reports.summary.profit" value={formatCurrency(summaryStats.profit)} icon="💹" />
         <StatCard titleKey="reports.summary.sales" value={summaryStats.sales.toString()} icon="🛒" />
@@ -241,7 +241,7 @@ const Reports: React.FC = () => {
           </div>
 
           {/* Top Products */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
             <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
               <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">
                 {t('reports.topProducts')}{' '}
