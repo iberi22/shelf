@@ -20,8 +20,8 @@ describe('Inventory', () => {
 
   it('should export the inventory to a CSV file', () => {
     cy.get('[data-testid="export-csv-button"]').click();
-    cy.task('downloads', 'cypress/downloads').then(files => {
-      const fileName = files.find(file => file.startsWith('shelf_productos'));
+    cy.task('downloads', 'cypress/downloads').then((files) => {
+      const fileName = files.find((file) => file.startsWith('shelf_productos'));
       expect(fileName).to.exist;
       cy.readFile(`cypress/downloads/${fileName}`).should('exist');
     });
