@@ -378,6 +378,7 @@
     "upgradeOptionDesc": "For automated backups, multi-device sync, and AI-powered reports, consider upgrading to a Pro plan at any time.",
     "dontShowAgain": "Don't show this again",
     "getStarted": "Get Started"
+  },
   "update": {
     "title": "New version available",
     "message": "A new version of Shelf. is available. Reload the app to get the latest features and improvements.",
