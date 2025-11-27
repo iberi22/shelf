@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useState } from 'react';
 import { DesktopAdColumn, MobileAdBars } from './components/Ads';
+import Arqueo from './components/Arqueo';
 import Clients from './components/Clients';
 import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
@@ -35,6 +36,8 @@ const MainApp: React.FC<MainAppProps> = ({ onLoginClick }) => {
         return <Suppliers />;
       case 'nav.purchases':
         return <PurchaseOrders />;
+      case 'nav.arqueo':
+        return <Arqueo />;
       case 'nav.reports':
         return <Reports />;
       case 'nav.settings':

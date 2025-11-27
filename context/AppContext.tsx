@@ -203,3 +203,6 @@ export const useAppContext = () => {
   }
   return context;
 };
+
+// Alias for convenience
+export const useApp = useAppContext;

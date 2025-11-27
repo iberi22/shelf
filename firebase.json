@@ -16,6 +16,10 @@
         "function": "stripeWebhook"
       },
       {
+        "source": "/api/extractInvoice",
+        "function": "extractInvoice"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
