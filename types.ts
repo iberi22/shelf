@@ -107,3 +107,48 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
 }
+
+export interface InvoiceLineItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+  confidence: number; // 0-1 confidence score
+}
+
+export interface ExtractedInvoiceData {
+  supplierName?: string;
+  invoiceNumber?: string;
+  invoiceDate?: string;
+  items: InvoiceLineItem[];
+  subtotal?: number;
+  tax?: number;
+  total?: number;
+}
+
+export interface InvoiceOCRResult {
+  id: string;
+  imageUrl: string; // Base64 or Firebase Storage URL
+  extractedData: ExtractedInvoiceData;
+  rawOCRText?: string; // Full OCR text for debugging
+  status: 'pending' | 'reviewed' | 'applied';
+  createdAt: string;
+  appliedToPurchaseOrderId?: string;
+  userId?: string;
+}
+
+export interface ScannedInvoice {
+  id: string;
+  ocrResultId: string;
+  confirmedData: ExtractedInvoiceData;
+  createdAt: string;
+  appliedAt?: string;
+}
+
+export interface ArqueoSession {
+  id: string;
+  createdAt: string;
+  invoices: ScannedInvoice[];
+  createdProducts: string[]; // Product IDs created from invoices
+  status: 'open' | 'closed';
+}

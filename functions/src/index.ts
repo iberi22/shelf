@@ -139,6 +139,110 @@ export const createCheckoutSession = functions.https.onRequest(async (request, r
   }
 });
 
+export const extractInvoice = functions.https.onRequest(
+  async (request: functions.https.Request, response: functions.Response) => {
+    if (cors(request, response)) return;
+
+    if (request.method !== 'POST') {
+      response.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    const decodedToken = await verifyToken(request.headers.authorization);
+    if (!decodedToken) {
+      response.status(403).send({ error: 'Unauthorized' });
+      return;
+    }
+
+    try {
+      // Verify Pro subscription
+      const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+      const tier = userDoc.data()?.subscriptionTier;
+      if (tier !== 'pro' && tier !== 'pyme') {
+        response.status(403).send({ error: 'Pro subscription required for invoice OCR' });
+        return;
+      }
+
+      const { imageBase64, mimeType, existingProducts } = request.body;
+
+      if (!imageBase64 || !mimeType) {
+        response.status(400).send({ error: 'imageBase64 and mimeType are required' });
+        return;
+      }
+
+      // Remove data URI prefix if present (e.g., "data:image/jpeg;base64,")
+      const cleanBase64 = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
+
+      const systemInstruction = `You are an invoice data extraction specialist.
+Your task is to extract structured data from invoice images, including handwritten invoices.
+Be precise with numbers and totals. Extract all line items accurately.
+Match items to existing products when possible based on description similarity.
+Return data as valid JSON.`;
+
+      const extractionPrompt = `Extract invoice data from this image and return ONLY valid JSON (no markdown, no code blocks) with this exact schema:
+{
+  "supplierName": "string or null",
+  "invoiceNumber": "string or null",
+  "invoiceDate": "YYYY-MM-DD or null",
+  "items": [
+    {
+      "description": "string",
+      "quantity": number,
+      "unitPrice": number,
+      "total": number,
+      "confidence": number (0-1)
+    }
+  ],
+  "subtotal": number or null,
+  "tax": number or null,
+  "total": number
+}
+${existingProducts && existingProducts.length > 0 ? `\nExisting products for matching: ${JSON.stringify(existingProducts.slice(0, 20))}` : ''}`;
+
+      const geminiResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [
+          {
+            inlineData: {
+              data: cleanBase64,
+              mimeType,
+            },
+          },
+          extractionPrompt,
+        ],
+        config: {
+          systemInstruction,
+          temperature: 0.1,
+        },
+      });
+
+      const responseText = geminiResponse.text.trim();
+
+      // Parse JSON - handle potential markdown code blocks
+      let extractedData: any;
+      try {
+        // Try to extract JSON from markdown code blocks if present
+        const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || responseText.match(/({[\s\S]*})/);
+        const jsonStr = jsonMatch ? jsonMatch[1] : responseText;
+        extractedData = JSON.parse(jsonStr);
+      } catch {
+        console.error('Failed to parse Gemini response:', responseText);
+        response.status(500).send({ error: 'Failed to parse invoice data from image' });
+        return;
+      }
+
+      response.status(200).send({
+        success: true,
+        extractedData,
+        rawResponse: responseText,
+      });
+    } catch (error) {
+      console.error('Invoice extraction error:', error);
+      response.status(500).send({ error: 'Failed to extract invoice data' });
+    }
+  },
+);
+
 export const stripeWebhook = functions.https.onRequest(async (request, response) => {
   const sig = request.headers['stripe-signature'] as string;
   let event: Stripe.Event;
