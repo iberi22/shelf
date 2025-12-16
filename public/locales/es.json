@@ -47,6 +47,7 @@
     "totalProducts": "Productos en Stock",
     "proFeaturesTitle": "Desbloquea Funciones Pro",
     "proFeaturesDescription": "Mejora tu experiencia con sincronización en la nube, reportes avanzados con IA y una interfaz sin anuncios para llevar tu negocio al siguiente nivel.",
+    "hideProSection": "Ocultar",
     "customize": "Personalizar",
     "toggleVisibility": "Cambiar visibilidad",
     "noCardsVisible": "No hay tarjetas visibles. Personaliza tu dashboard para ver tus estadísticas.",
@@ -56,6 +57,16 @@
       "cloudSyncDescription": "Mantén tus datos seguros y accesibles en todos tus dispositivos, automáticamente.",
       "noAdsTitle": "Experiencia Sin Anuncios",
       "noAdsDescription": "Concéntrate en lo más importante con una interfaz limpia y sin interrupciones."
+    },
+    "proCharts": {
+      "title": "Indicadores Pro",
+      "description": "Vista previa de gráficas avanzadas. Solo se muestra una rotando; todas están bajo un velo.",
+      "showProCta": "Mostrar",
+      "proOnlyNote": "Solo para usuarios Pro",
+      "previewTag": "Vista previa",
+      "revenueTrendTitle": "Tendencia de ingresos",
+      "productMixTitle": "Mix de productos",
+      "stockHealthTitle": "Salud de inventario"
     }
   },
   "inventory": {

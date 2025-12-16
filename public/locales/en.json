@@ -47,6 +47,7 @@
     "totalProducts": "Total Products in Stock",
     "proFeaturesTitle": "Unlock Pro Features",
     "proFeaturesDescription": "Upgrade your experience with cloud sync, advanced AI reports, and an ad-free interface to take your business to the next level.",
+    "hideProSection": "Hide",
     "customize": "Customize",
     "toggleVisibility": "Toggle visibility",
     "noCardsVisible": "No cards are visible. Customize your dashboard to see your stats.",
@@ -56,6 +57,16 @@
       "cloudSyncDescription": "Keep your data safe and accessible across all your devices, automatically.",
       "noAdsTitle": "Ad-Free Experience",
       "noAdsDescription": "Focus on what matters most with a clean, uninterrupted interface."
+    },
+    "proCharts": {
+      "title": "Pro Indicators",
+      "description": "Preview of advanced charts. One rotates at a time; all remain under a translucent veil.",
+      "showProCta": "Show",
+      "proOnlyNote": "Pro users only",
+      "previewTag": "Preview",
+      "revenueTrendTitle": "Revenue trend",
+      "productMixTitle": "Product mix",
+      "stockHealthTitle": "Inventory health"
     }
   },
   "inventory": {
