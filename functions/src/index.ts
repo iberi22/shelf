@@ -216,7 +216,12 @@ ${existingProducts && existingProducts.length > 0 ? `\nExisting products for mat
         },
       });
 
-      const responseText = geminiResponse.text.trim();
+      const responseText = (geminiResponse.text ?? '').trim();
+      if (!responseText) {
+        console.error('Gemini response text was empty:', geminiResponse);
+        response.status(500).send({ error: 'Failed to extract invoice data from image' });
+        return;
+      }
 
       // Parse JSON - handle potential markdown code blocks
       let extractedData: any;

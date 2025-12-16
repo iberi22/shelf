@@ -1,9 +1,12 @@
 {
   "compilerOptions": {
+    "esModuleInterop": true,
     "module": "commonjs",
+    "moduleResolution": "node",
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "lib",
+    "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
     "target": "es2017"
