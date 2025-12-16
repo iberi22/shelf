@@ -47,6 +47,7 @@
     "totalProducts": "Produtos em Estoque",
     "proFeaturesTitle": "Desbloqueie Recursos Pro",
     "proFeaturesDescription": "Melhore sua experiência com sincronização na nuvem, relatórios avançados de IA e uma interface sem anúncios para levar seu negócio ao próximo nível.",
+    "hideProSection": "Ocultar",
     "customize": "Personalizar",
     "toggleVisibility": "Alternar visibilidade",
     "noCardsVisible": "Nenhum card visível. Personalize seu dashboard para ver suas estatísticas.",
@@ -56,6 +57,16 @@
       "cloudSyncDescription": "Mantenha seus dados seguros e acessíveis em todos os seus dispositivos, automaticamente.",
       "noAdsTitle": "Experiência Sem Anúncios",
       "noAdsDescription": "Concentre-se no que mais importa com uma interface limpa e sem interruções."
+    },
+    "proCharts": {
+      "title": "Indicadores Pro",
+      "description": "Prévia de gráficos avançados. Um gira por vez; todos ficam sob um véu translúcido.",
+      "showProCta": "Mostrar",
+      "proOnlyNote": "Somente para usuários Pro",
+      "previewTag": "Prévia",
+      "revenueTrendTitle": "Tendência de receita",
+      "productMixTitle": "Mix de produtos",
+      "stockHealthTitle": "Saúde do estoque"
     }
   },
   "inventory": {
