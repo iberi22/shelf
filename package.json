@@ -43,5 +43,8 @@
     "vite": "^7.3.0",
     "vite-plugin-pwa": "^1.2.0",
     "workbox-window": "^7.4.0"
+  },
+  "overrides": {
+    "rollup": "^4.59.0"
   }
 }
