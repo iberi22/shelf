@@ -111,7 +111,7 @@ Your task is to answer questions and provide insights based *only* on the provid
         const dataContext = JSON.stringify(inventoryData, null, 2);
         const fullPrompt = `Here is the current business data:\n\`\`\`json\n${dataContext}\n\`\`\`\n\nBased on the data above, please answer the following question: "${prompt}"`;
         const geminiResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: fullPrompt,
             config: { systemInstruction, temperature: 0.2 },
         });
@@ -213,7 +213,7 @@ Return data as valid JSON.`;
 }
 ${existingProducts && existingProducts.length > 0 ? `\nExisting products for matching: ${JSON.stringify(existingProducts.slice(0, 20))}` : ''}`;
         const geminiResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: [
                 {
                     inlineData: {
