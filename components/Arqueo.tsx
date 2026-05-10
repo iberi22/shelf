@@ -146,43 +146,61 @@ export default function Arqueo() {
   const handleApplyInvoiceToInventory = () => {
     if (!currentSession) return;
 
-    // Create products from all invoices in the session
+    const toAdd: Product[] = [];
+    const toUpdate: Product[] = [];
     const createdProductIds: string[] = [];
 
-    currentSession.invoices.forEach((invoice) => {
-      invoice.confirmedData.items.forEach((item) => {
-        // Check if product already exists
-        const existingProduct = state.products.find(
-          (p: Product) => p.name.toLowerCase() === item.description.toLowerCase(),
-        );
+    // Group items by name (case-insensitive) across all invoices in the session
+    const consolidatedItems = new Map<string, { name: string; quantity: number; unitPrice: number }>();
 
-        if (!existingProduct) {
-          const newProduct: Product = {
-            id: `prod_${Date.now()}_${Math.random()}`,
+    for (const invoice of currentSession.invoices) {
+      for (const item of invoice.confirmedData.items) {
+        const nameKey = item.description.toLowerCase();
+        const existingConsolidated = consolidatedItems.get(nameKey);
+        if (existingConsolidated) {
+          consolidatedItems.set(nameKey, {
+            ...existingConsolidated,
+            quantity: existingConsolidated.quantity + item.quantity,
+            unitPrice: item.unitPrice,
+          });
+        } else {
+          consolidatedItems.set(nameKey, {
             name: item.description,
             quantity: item.quantity,
-            price: item.unitPrice,
-            cost: item.unitPrice,
-          };
-
-          dispatch({
-            type: 'ADD_PRODUCT',
-            payload: newProduct,
-          });
-
-          createdProductIds.push(newProduct.id);
-        } else {
-          // Update existing product quantity
-          dispatch({
-            type: 'UPDATE_PRODUCT',
-            payload: {
-              ...existingProduct,
-              quantity: existingProduct.quantity + item.quantity,
-            },
+            unitPrice: item.unitPrice,
           });
         }
-      });
+      }
+    }
+
+    // Determine which products to add and which to update
+    consolidatedItems.forEach((data, nameKey) => {
+      const existingProduct = state.products.find((p: Product) => p.name.toLowerCase() === nameKey);
+
+      if (existingProduct) {
+        toUpdate.push({
+          ...existingProduct,
+          quantity: existingProduct.quantity + data.quantity,
+        });
+      } else {
+        const newProduct: Product = {
+          id: `prod_${Date.now()}_${Math.random()}`,
+          name: data.name,
+          quantity: data.quantity,
+          price: data.unitPrice,
+          cost: data.unitPrice,
+        };
+        toAdd.push(newProduct);
+        createdProductIds.push(newProduct.id);
+      }
     });
+
+    if (toAdd.length > 0 || toUpdate.length > 0) {
+      dispatch({
+        type: 'BATCH_UPDATE_PRODUCTS',
+        payload: { toAdd, toUpdate },
+      });
+    }
 
     // Mark session as closed
     const closedSession: ArqueoSession = {
@@ -191,8 +209,9 @@ export default function Arqueo() {
       status: 'closed',
     };
 
-    setSessions([...sessions, closedSession]);
-    localStorage.setItem('arqueo_sessions', JSON.stringify([...sessions, closedSession]));
+    const updatedSessions = [...sessions, closedSession];
+    setSessions(updatedSessions);
+    localStorage.setItem('arqueo_sessions', JSON.stringify(updatedSessions));
 
     setCurrentSession(null);
   };
