@@ -2,7 +2,7 @@
 
 ## Core Objective
 
-Create a simple, modern, and powerful inventory management PWA named "Shelf." that is intuitive for small business owners. The app should be offline-first, cloud-syncable for premium users, and monetizable through ads (for free users) and subscriptions (for Pro features).
+Create a simple, modern, and powerful inventory management PWA named "Shelf." that is 100% offline-first, with local-only data storage and Local AI (WASM) for intelligence. The app should be completely independent of cloud backends.
 
 ## Target Audience
 
