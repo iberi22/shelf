@@ -52,30 +52,21 @@ Stripe needs to know where to send events like `checkout.session.completed`.
 
 ## Step 4: Set Secrets in Firebase
 
-Now you have three critical pieces of information:
+Now you have four critical pieces of information:
 -   Your **Stripe Secret Key** (`sk_...`)
 -   Your **Webhook Signing Secret** (`whsec_...`)
--   Your **Price IDs** (`price_...`)
+-   Your **Pro Plan Price ID** (`price_...`)
+-   Your **PYME Plan Price ID** (`price_...`)
 
 1.  **Set the secrets:** Open your terminal in the project directory and run these commands, pasting your keys when prompted:
     ```bash
     firebase functions:secrets:set STRIPE_SECRET_KEY
     firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
+    firebase functions:secrets:set STRIPE_PRO_PRICE_ID
+    firebase functions:secrets:set STRIPE_PYME_PRICE_ID
     ```
 
-2.  **Update the code with Price IDs:**
-    -   Open the file `functions/src/index.ts`.
-    -   Find the `priceIds` object inside the `createCheckoutSession` function.
-    -   Replace the placeholder strings with your actual Price IDs.
-    ```typescript
-    // functions/src/index.ts
-    const priceIds: Record<string, string> = {
-        pro: "price_1P...abc", // <-- Paste your Pro plan Price ID here
-        pyme: "price_1P...xyz", // <-- Paste your PYME plan Price ID here
-    };
-    ```
-
-3.  **Deploy your functions:** The final step is to deploy your functions so they have access to the secrets and the updated code.
+2.  **Deploy your functions:** The final step is to deploy your functions so they have access to the secrets.
     ```bash
     firebase deploy --only functions
     ```
