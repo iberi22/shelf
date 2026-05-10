@@ -46,14 +46,14 @@ const db = admin.firestore();
 // Per guidelines, the API key must be in process.env.API_KEY
 // In Cloud Functions, this is set as a runtime environment variable.
 if (!process.env.API_KEY) {
-    console.error('Gemini API Key not found in environment variable API_KEY.');
+    throw new Error('Gemini API Key not found in environment variable API_KEY.');
 }
 // Initialize Stripe with secret key and webhook secret from environment variables
 if (!process.env.STRIPE_SECRET_KEY) {
-    console.error('Stripe secret key not found in environment variables.');
+    throw new Error('Stripe secret key not found in environment variables.');
 }
 if (!process.env.STRIPE_WEBHOOK_SECRET) {
-    console.error('Stripe webhook secret not found in environment variables.');
+    throw new Error('Stripe webhook secret not found in environment variables.');
 }
 const stripe = new stripe_1.default(process.env.STRIPE_SECRET_KEY);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
