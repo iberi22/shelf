@@ -36,7 +36,7 @@ const cors = (request: functions.https.Request, response: functions.Response) =>
 };
 
 const verifyToken = async (authorization: string | undefined): Promise<admin.auth.DecodedIdToken | null> => {
-  if (!authorization || !authorization.startsWith('Bearer ')) {
+  if (!authorization?.startsWith('Bearer ')) {
     return null;
   }
   const idToken = authorization.split('Bearer ')[1];
