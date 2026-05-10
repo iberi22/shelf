@@ -9,20 +9,20 @@ const db = admin.firestore();
 // Per guidelines, the API key must be in process.env.API_KEY
 // In Cloud Functions, this is set as a runtime environment variable.
 if (!process.env.API_KEY) {
-  console.error('Gemini API Key not found in environment variable API_KEY.');
+  throw new Error('Gemini API Key not found in environment variable API_KEY.');
 }
 // Initialize Stripe with secret key and webhook secret from environment variables
 if (!process.env.STRIPE_SECRET_KEY) {
-  console.error('Stripe secret key not found in environment variables.');
+  throw new Error('Stripe secret key not found in environment variables.');
 }
 if (!process.env.STRIPE_WEBHOOK_SECRET) {
-  console.error('Stripe webhook secret not found in environment variables.');
+  throw new Error('Stripe webhook secret not found in environment variables.');
 }
 if (!process.env.STRIPE_PRO_PRICE_ID) {
-  console.error('Stripe Pro Price ID not found in environment variables.');
+  throw new Error('Stripe Pro Price ID not found in environment variables.');
 }
 if (!process.env.STRIPE_PYME_PRICE_ID) {
-  console.error('Stripe PYME Price ID not found in environment variables.');
+  throw new Error('Stripe PYME Price ID not found in environment variables.');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
@@ -42,7 +42,7 @@ const cors = (request: functions.https.Request, response: functions.Response) =>
 };
 
 const verifyToken = async (authorization: string | undefined): Promise<admin.auth.DecodedIdToken | null> => {
-  if (!authorization || !authorization.startsWith('Bearer ')) {
+  if (!authorization?.startsWith('Bearer ')) {
     return null;
   }
   const idToken = authorization.split('Bearer ')[1];
@@ -89,7 +89,7 @@ Your task is to answer questions and provide insights based *only* on the provid
       const fullPrompt = `Here is the current business data:\n\`\`\`json\n${dataContext}\n\`\`\`\n\nBased on the data above, please answer the following question: "${prompt}"`;
 
       const geminiResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         contents: fullPrompt,
         config: { systemInstruction, temperature: 0.2 },
       });
@@ -204,7 +204,7 @@ Return data as valid JSON.`;
 ${existingProducts && existingProducts.length > 0 ? `\nExisting products for matching: ${JSON.stringify(existingProducts.slice(0, 20))}` : ''}`;
 
       const geminiResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         contents: [
           {
             inlineData: {

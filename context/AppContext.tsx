@@ -36,6 +36,7 @@ type Action =
   | { type: 'UPDATE_PURCHASE_ORDER'; payload: PurchaseOrder }
   | { type: 'DELETE_PURCHASE_ORDER'; payload: string }
   | { type: 'RESTORE_STATE'; payload: RestoreStatePayload }
+  | { type: 'BATCH_UPDATE_PRODUCTS'; payload: { toAdd: Product[]; toUpdate: Product[] } }
   | { type: 'RESET_DATA' };
 
 const appReducer = (state: AppState, action: Action): AppState => {
@@ -49,6 +50,18 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
     case 'DELETE_PRODUCT':
       return { ...state, products: state.products.filter((p) => p.id !== action.payload) };
+
+    case 'BATCH_UPDATE_PRODUCTS': {
+      const { toAdd, toUpdate } = action.payload;
+      const updatedIds = new Set(toUpdate.map((p) => p.id));
+      const updatedProducts = state.products.map((p) => {
+        if (updatedIds.has(p.id)) {
+          return toUpdate.find((up) => up.id === p.id) || p;
+        }
+        return p;
+      });
+      return { ...state, products: [...updatedProducts, ...toAdd] };
+    }
 
     case 'IMPORT_PRODUCTS': {
       const { products: newProductsData, strategy } = action.payload;
