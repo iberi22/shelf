@@ -370,6 +370,12 @@
       "description": "Actualiza a Pro para sincronizar tus datos en todos tus dispositivos, manteniéndolos seguros y actualizados."
     }
   },
+  "sync": {
+    "status": "Estado de Sincronización",
+    "localOnly": "Solo Local",
+    "cloudSynced": "Sincronizado",
+    "syncing": "Sincronizando..."
+  },
   "update": {
     "title": "Nueva versión disponible",
     "message": "Hay una actualización de Shelf. disponible. Recarga la aplicación para obtener las últimas funciones y mejoras.",

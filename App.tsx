@@ -11,12 +11,14 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import { I18nProvider } from './context/I18nContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
 import { UIProvider, useUI } from './context/UIContext';
+import useErrorMonitoring from './hooks/useErrorMonitoring';
 import useLocalStorage from './hooks/useLocalStorage';
 import MainApp from './MainApp';
 
 type ModalType = 'login' | 'signup' | null;
 
 const AppContainer = () => {
+  useErrorMonitoring();
   const [hasVisited, setHasVisited] = useLocalStorage('hasVisited', false);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const { isLoading, loadingMessage, notification, hideNotification } = useUI();
