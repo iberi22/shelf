@@ -18,6 +18,12 @@ if (!process.env.STRIPE_SECRET_KEY) {
 if (!process.env.STRIPE_WEBHOOK_SECRET) {
   throw new Error('Stripe webhook secret not found in environment variables.');
 }
+if (!process.env.STRIPE_PRO_PRICE_ID) {
+  throw new Error('Stripe Pro Price ID not found in environment variables.');
+}
+if (!process.env.STRIPE_PYME_PRICE_ID) {
+  throw new Error('Stripe PYME Price ID not found in environment variables.');
+}
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
 
@@ -83,7 +89,7 @@ Your task is to answer questions and provide insights based *only* on the provid
       const fullPrompt = `Here is the current business data:\n\`\`\`json\n${dataContext}\n\`\`\`\n\nBased on the data above, please answer the following question: "${prompt}"`;
 
       const geminiResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         contents: fullPrompt,
         config: { systemInstruction, temperature: 0.2 },
       });
@@ -109,15 +115,13 @@ export const createCheckoutSession = functions.https.onRequest(async (request, r
   const { planId, returnUrl } = request.body;
   const { uid } = decodedToken;
 
-  // IMPORTANT: Replace these with your actual Price IDs from your Stripe Dashboard.
-  // See docs/STRIPE_SETUP.md for instructions.
-  const priceIds: Record<string, string> = {
-    pro: 'YOUR_PRO_PLAN_PRICE_ID',
-    pyme: 'YOUR_PYME_PLAN_PRICE_ID',
+  const priceIds: Record<string, string | undefined> = {
+    pro: process.env.STRIPE_PRO_PRICE_ID,
+    pyme: process.env.STRIPE_PYME_PRICE_ID,
   };
 
   const priceId = priceIds[planId];
-  if (!priceId || priceId.startsWith('YOUR_')) {
+  if (!priceId) {
     response.status(400).send({ error: 'Invalid plan ID or Price ID not configured.' });
     return;
   }
@@ -200,7 +204,7 @@ Return data as valid JSON.`;
 ${existingProducts && existingProducts.length > 0 ? `\nExisting products for matching: ${JSON.stringify(existingProducts.slice(0, 20))}` : ''}`;
 
       const geminiResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         contents: [
           {
             inlineData: {

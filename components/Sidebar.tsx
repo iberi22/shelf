@@ -2,6 +2,7 @@ import type React from 'react';
 import { NAV_ITEMS } from '../constants';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import LanguageSelector from './LanguageSelector';
 
 interface SidebarProps {
@@ -13,6 +14,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, onLoginClick }) => {
   const { t } = useI18n();
   const { user, logout } = useAuth();
+  const { isPro } = useSubscription();
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-primary border-r border-foreground/20">
@@ -44,8 +46,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, 
           <LanguageSelector />
         </div>
         {user ? (
-          <div className="text-center">
+          <div className="text-center px-2">
             <p className="text-sm text-foreground/70 truncate">{user.email}</p>
+            <div className="flex items-center justify-center gap-2 mt-1">
+              <div
+                className={`w-2 h-2 rounded-full ${isPro ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500'}`}
+              />
+              <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">
+                {isPro ? t('sync.cloudSynced') : t('sync.localOnly')}
+              </p>
+            </div>
             <button
               data-testid="logout-button"
               onClick={logout}

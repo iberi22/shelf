@@ -380,6 +380,12 @@
     "dontShowAgain": "Don't show this again",
     "getStarted": "Get Started"
   },
+  "sync": {
+    "status": "Sync Status",
+    "localOnly": "Local Only",
+    "cloudSynced": "Cloud Synced",
+    "syncing": "Syncing..."
+  },
   "update": {
     "title": "New version available",
     "message": "A new version of Shelf. is available. Reload the app to get the latest features and improvements.",
