@@ -1,12 +1,10 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { useI18n } from '../context/I18nContext';
 import { p2pManager, type SyncMessage } from '../lib/p2p';
 
 const P2PSyncManager: React.FC = () => {
   const { state, dispatch } = useAppContext();
-  const { t } = useI18n();
   const [targetId, setTargetId] = useState('');
 
   useEffect(() => {
@@ -53,7 +51,7 @@ const P2PSyncManager: React.FC = () => {
     return () => {
       // p2pManager.disconnect();
     };
-  }, [dispatch]);
+  }, [dispatch, state.sales, state.clients, state.suppliers, state.purchaseOrders, state.products, state.auditLogs]);
 
   const handleConnect = () => {
     if (targetId) {

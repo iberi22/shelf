@@ -1,5 +1,5 @@
 import { type DataConnection, Peer } from 'peerjs';
-import type { AppState, P2PRole, PeerInfo } from './types';
+import type { AppState, P2PRole, PeerInfo } from '../types';
 
 export type SyncMessage =
   | { type: 'STATE_UPDATE'; payload: Partial<AppState> }
@@ -17,8 +17,6 @@ class P2PManager {
   public role: P2PRole = 'collaborator';
   private peers: PeerInfo[] = [];
 
-  constructor() {}
-
   public init(peerId?: string) {
     if (this.peer) return;
 
@@ -26,7 +24,7 @@ class P2PManager {
 
     this.peer.on('open', (id) => {
       this.localPeerId = id;
-      console.log('My peer ID is: ' + id);
+      console.log(`My peer ID is: ${id}`);
       // Master node is admin by default
       if (peerId === 'shelf-master') {
         this.role = 'admin';
@@ -48,7 +46,9 @@ class P2PManager {
       this.updatePeerList(conn.peer, 'collaborator');
 
       conn.on('data', (data) => {
-        this.onMessageCallbacks.forEach((cb) => cb(data as SyncMessage, conn.peer));
+        for (const cb of this.onMessageCallbacks) {
+          cb(data as SyncMessage, conn.peer);
+        }
       });
 
       conn.on('close', () => {
@@ -75,7 +75,7 @@ class P2PManager {
 
   public sendTo(peerId: string, message: SyncMessage) {
     const conn = this.connections.get(peerId);
-    if (conn && conn.open) {
+    if (conn?.open) {
       conn.send(message);
     }
   }
@@ -88,7 +88,9 @@ class P2PManager {
   }
 
   private notifyConnectionChange() {
-    this.onConnectionChangeCallbacks.forEach((cb) => cb([...this.peers]));
+    for (const cb of this.onConnectionChangeCallbacks) {
+      cb([...this.peers]);
+    }
   }
 
   public onMessage(cb: (message: SyncMessage, fromPeerId: string) => void) {
@@ -100,7 +102,9 @@ class P2PManager {
   }
 
   public disconnect() {
-    this.connections.forEach((conn) => conn.close());
+    for (const conn of Array.from(this.connections.values())) {
+      conn.close();
+    }
     this.connections.clear();
     this.peer?.destroy();
     this.peer = null;

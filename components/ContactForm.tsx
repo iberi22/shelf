@@ -36,7 +36,14 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, onSave, onCancel, na
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onSave({ name, phone, email });
+      onSave({
+        name,
+        phone,
+        email,
+        isActive: true,
+        updatedBy: 'system',
+        updatedAt: new Date().toISOString(),
+      });
     }
   };
 

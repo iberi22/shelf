@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.0.0",
+    "@mlc-ai/web-llm": "^0.2.83",
     "chart.js": "^4.5.1",
     "cypress-downloadfile": "^1.2.4",
     "firebase": "^12.13.0",
@@ -28,7 +29,8 @@
     "peerjs": "^1.5.5",
     "react": "^19.2.6",
     "react-chartjs-2": "^5.3.1",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",

@@ -11,8 +11,8 @@ export default function Arqueo() {
 
   const [showScanner, setShowScanner] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [extractionError, setExtractionError] = useState<string>('');
+  const [isExtracting, _setIsExtracting] = useState(false);
+  const [extractionError, _setExtractionError] = useState<string>('');
   const [currentExtractedData, setCurrentExtractedData] = useState<ExtractedInvoiceData | null>(null);
   const [currentImageBase64, setCurrentImageBase64] = useState<string>('');
   const [currentSession, setCurrentSession] = useState<ArqueoSession | null>(null);
@@ -42,53 +42,11 @@ export default function Arqueo() {
     );
   }
 
-  const handleImageCapture = async (imageBase64: string, mimeType: string) => {
+  const handleScanComplete = (imageBase64: string, extractedData: ExtractedInvoiceData) => {
     setShowScanner(false);
-    setIsExtracting(true);
-    setExtractionError('');
     setCurrentImageBase64(imageBase64);
-
-    try {
-      // Get products for matching
-      const productsForMatching = state.products.slice(0, 20).map((p: Product) => ({
-        id: p.id,
-        name: p.name,
-        sku: p.sku,
-      }));
-
-      const response = await fetch('/api/extractInvoice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${await getIdToken()}`,
-        },
-        body: JSON.stringify({
-          imageBase64,
-          mimeType,
-          existingProducts: productsForMatching,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to extract invoice');
-      }
-
-      const { extractedData } = await response.json();
-      setCurrentExtractedData(extractedData);
-      setShowConfirmation(true);
-    } catch (error) {
-      console.error('Extraction error:', error);
-      setExtractionError(error instanceof Error ? error.message : 'Failed to extract invoice data');
-    } finally {
-      setIsExtracting(false);
-    }
-  };
-
-  const getIdToken = async (): Promise<string> => {
-    // In real app, get from auth context
-    const token = localStorage.getItem('firebase_token') || '';
-    return token;
+    setCurrentExtractedData(extractedData);
+    setShowConfirmation(true);
   };
 
   const handleConfirmInvoice = (confirmedData: ExtractedInvoiceData) => {
@@ -189,6 +147,9 @@ export default function Arqueo() {
           quantity: data.quantity,
           price: data.unitPrice,
           cost: data.unitPrice,
+          isActive: true,
+          updatedBy: 'system',
+          updatedAt: new Date().toISOString(),
         };
         toAdd.push(newProduct);
         createdProductIds.push(newProduct.id);
@@ -357,7 +318,7 @@ export default function Arqueo() {
       <InvoiceScannerModal
         isOpen={showScanner}
         onClose={() => setShowScanner(false)}
-        onImageCapture={handleImageCapture}
+        onScanComplete={handleScanComplete}
         isLoading={isExtracting}
       />
 

@@ -23,7 +23,7 @@ const getAuthErrorMessageKey = (errorCode: string): string => {
 
 const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSwitchToSignup }) => {
   const { t } = useI18n();
-  const { login } = useAuth();
+  const { login, loginAsGuest } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -71,6 +71,26 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSwitchToSignup }) =>
           className="w-full bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 disabled:bg-opacity-50"
         >
           {isLoading ? t('auth.loading') : t('auth.login')}
+        </button>
+
+        <div className="relative flex items-center py-2">
+          <div className="flex-grow border-t border-[#F5F5DC]/20"></div>
+          <span className="flex-shrink mx-4 text-[#F5F5DC]/40 text-xs uppercase">{t('auth.or')}</span>
+          <div className="flex-grow border-t border-[#F5F5DC]/20"></div>
+        </div>
+
+        <button
+          type="button"
+          onClick={async () => {
+            setIsLoading(true);
+            await loginAsGuest();
+            setIsLoading(false);
+            onClose();
+          }}
+          disabled={isLoading}
+          className="w-full bg-[#121212] text-[#F5F5DC] border border-[#F5F5DC] font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 disabled:opacity-50"
+        >
+          {t('auth.loginGuest')}
         </button>
         <p className="text-center text-sm text-[#F5F5DC]/70">
           {t('auth.noAccount')}{' '}

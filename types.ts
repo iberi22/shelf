@@ -70,6 +70,7 @@ export interface User {
   uid: string;
   email: string | null;
   subscriptionTier: 'free' | 'pro' | 'pyme';
+  isGuest?: boolean;
 }
 
 export type UserRole = 'owner' | 'admin' | 'member';

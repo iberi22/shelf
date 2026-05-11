@@ -17,7 +17,11 @@ interface AdSenseUnitProps {
 const AdSenseUnit: React.FC<AdSenseUnitProps> = ({ adSlot, adClient, className, style }) => {
   useEffect(() => {
     // Dynamically inject AdSense script if not already present
-    if (adClient && adClient !== 'ca-pub-placeholder' && !document.querySelector(`script[src*="adsbygoogle.js?client=${adClient}"]`)) {
+    if (
+      adClient &&
+      adClient !== 'ca-pub-placeholder' &&
+      !document.querySelector(`script[src*="adsbygoogle.js?client=${adClient}"]`)
+    ) {
       const script = document.createElement('script');
       script.async = true;
       script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adClient}`;

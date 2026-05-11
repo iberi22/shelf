@@ -10,6 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
+  loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   getIdToken: () => Promise<string | null>;
 }
@@ -23,40 +24,72 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { t } = useI18n();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: any) => {
+    const initAuth = async () => {
       setIsLoading(true);
-      if (firebaseUser) {
-        // Check for user document in Firestore to get subscription tier
-        const userDocRef = db.collection('users').doc(firebaseUser.uid);
-        const docSnap = await userDocRef.get();
 
-        if (docSnap.exists) {
-          const userData = docSnap.data();
-          setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            subscriptionTier: userData?.subscriptionTier || 'free',
-          });
-        } else {
-          // Create a user document for new sign-ups
-          const newUser: Omit<User, 'uid' | 'email'> = { subscriptionTier: 'free' };
-          await userDocRef.set(newUser);
-          setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            subscriptionTier: 'free',
-          });
-        }
-      } else {
-        setUser(null);
+      // Check for guest user in localStorage first
+      const guestUser = localStorage.getItem('guest_user');
+      if (guestUser) {
+        setUser(JSON.parse(guestUser));
+        setIsLoading(false);
+        return;
       }
+
+      const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: any) => {
+        setIsLoading(true);
+        if (firebaseUser) {
+          try {
+            // Check for user document in Firestore to get subscription tier
+            const userDocRef = db.collection('users').doc(firebaseUser.uid);
+            const docSnap = await userDocRef.get();
+
+            if (docSnap.exists) {
+              const userData = docSnap.data();
+              setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                subscriptionTier: userData?.subscriptionTier || 'free',
+              });
+            } else {
+              // Create a user document for new sign-ups
+              const newUser: Omit<User, 'uid' | 'email'> = { subscriptionTier: 'free' };
+              await userDocRef.set(newUser);
+              setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                subscriptionTier: 'free',
+              });
+            }
+          } catch (error) {
+            console.error('Error fetching user data from Firestore:', error);
+            // Fallback for offline or error
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              subscriptionTier: 'free',
+            });
+          }
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      });
+
+      // Wait for firebase to be ready before unsubscribing the loading state
+      await firebaseReady;
       setIsLoading(false);
+
+      return unsubscribe;
+    };
+
+    let unsubscribe: (() => void) | undefined;
+    initAuth().then((unsub) => {
+      unsubscribe = unsub;
     });
 
-    // Wait for firebase to be ready before unsubscribing the loading state
-    firebaseReady.then(() => setIsLoading(false));
-
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -67,13 +100,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await auth.createUserWithEmailAndPassword(email, password);
   };
 
+  const loginAsGuest = async () => {
+    const guestUser: User = {
+      uid: `guest_${Date.now()}`,
+      email: null,
+      subscriptionTier: 'pyme', // Guests get full access for offline demo
+      isGuest: true,
+    };
+    localStorage.setItem('guest_user', JSON.stringify(guestUser));
+    setUser(guestUser);
+  };
+
   const logout = async () => {
     showLoading(t('auth.loggingOut'));
-    await auth.signOut();
+    if (user?.isGuest) {
+      localStorage.removeItem('guest_user');
+      setUser(null);
+    } else {
+      await auth.signOut();
+    }
     hideLoading();
   };
 
   const getIdToken = async (): Promise<string | null> => {
+    if (user?.isGuest) {
+      return 'guest-token';
+    }
     const currentUser = auth.currentUser;
     if (!currentUser) {
       return null;
@@ -81,7 +133,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return currentUser.getIdToken();
   };
 
-  const value = { user, isLoading, login, signup, logout, getIdToken };
+  const value = { user, isLoading, login, signup, loginAsGuest, logout, getIdToken };
 
   return (
     <AuthContext.Provider value={value}>{!isLoading ? children : null /* Or a global loader */}</AuthContext.Provider>

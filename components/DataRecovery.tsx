@@ -1,11 +1,9 @@
 import type React from 'react';
 import { useAppContext } from '../context/AppContext';
-import { useI18n } from '../context/I18nContext';
 import type { AuditEntry } from '../types';
 
 const DataRecovery: React.FC = () => {
   const { state, dispatch } = useAppContext();
-  const { t } = useI18n();
 
   const inactiveProducts = state.products.filter((p) => p.isActive === false);
   const inactiveClients = state.clients.filter((c) => c.isActive === false);
