@@ -5,8 +5,14 @@ export interface NavItem {
   icon: string;
 }
 
-export interface Product {
+export interface BaseEntity {
   id: string;
+  isActive: boolean;
+  updatedBy: string; // Peer ID
+  updatedAt: string; // ISO String
+}
+
+export interface Product extends BaseEntity {
   name: string;
   sku?: string;
   quantity: number;
@@ -23,8 +29,7 @@ export interface SaleItem {
   cost: number; // cost per unit at the time of sale
 }
 
-export interface Sale {
-  id: string;
+export interface Sale extends BaseEntity {
   date: string; // ISO string or similar
   items: SaleItem[];
   totalPrice: number;
@@ -33,15 +38,13 @@ export interface Sale {
   clientName?: string;
 }
 
-export interface Client {
-  id: string;
+export interface Client extends BaseEntity {
   name: string;
   phone: string;
   email?: string;
 }
 
-export interface Supplier {
-  id: string;
+export interface Supplier extends BaseEntity {
   name: string;
   phone: string;
   email?: string;
@@ -54,8 +57,7 @@ export interface PurchaseOrderItem {
   cost: number;
 }
 
-export interface PurchaseOrder {
-  id: string;
+export interface PurchaseOrder extends BaseEntity {
   supplierId: string;
   supplierName: string;
   items: PurchaseOrderItem[];
@@ -72,10 +74,29 @@ export interface User {
 
 export type UserRole = 'owner' | 'admin' | 'member';
 
+export type P2PRole = 'admin' | 'collaborator';
+
 export interface TeamMember {
   id: string;
   email: string | null;
   role: UserRole;
+}
+
+export interface PeerInfo {
+  id: string;
+  role: P2PRole;
+  lastSeen: string;
+  isMaster?: boolean;
+}
+
+export interface AuditEntry {
+  id: string;
+  timestamp: string;
+  peerId: string;
+  action: string;
+  entityId?: string;
+  entityType?: 'product' | 'sale' | 'client' | 'supplier' | 'purchaseOrder';
+  details?: any;
 }
 
 export interface StatCardData {
@@ -92,12 +113,16 @@ export interface AppState {
   clients: Client[];
   suppliers: Supplier[];
   purchaseOrders: PurchaseOrder[];
+  auditLogs: AuditEntry[];
+  peers: PeerInfo[];
+  localPeerId: string | null;
+  role: P2PRole;
 }
 
 export type ImportStrategy = 'skip' | 'update';
 
 export interface ImportProductsPayload {
-  products: Omit<Product, 'id'>[];
+  products: Omit<Product, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>[];
   strategy: ImportStrategy;
 }
 

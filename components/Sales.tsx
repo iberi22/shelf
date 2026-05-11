@@ -14,11 +14,14 @@ const Sales: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { t } = useI18n();
   const { formatCurrency } = useCurrency();
+
+  const activeSales = useMemo(() => state.sales.filter((s) => s.isActive !== false), [state.sales]);
+
   const {
     items: sortedSales,
     requestSort,
     getSortIndicator,
-  } = useSortableTable<Sale>(state.sales, { key: 'date', direction: 'desc' });
+  } = useSortableTable<Sale>(activeSales, { key: 'date', direction: 'desc' });
 
   const generateReceipt = (sale: Sale) => {
     const doc = new jsPDF();
@@ -78,11 +81,11 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
     setIsModalOpen(false);
   };
 
-  const handleSaveSale = (saleData: Omit<Sale, 'id'>) => {
-    const newSale: Sale = {
+  const handleSaveSale = (saleData: Omit<Sale, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>) => {
+    const newSale = {
       id: new Date().toISOString(),
       ...saleData,
-    };
+    } as Sale;
     dispatch({ type: 'ADD_SALE', payload: newSale });
     handleCloseModal();
   };
@@ -161,7 +164,7 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="text-center p-8 text-[#F5F5DC]/70" data-testid="empty-sales-message">
+                  <td colSpan={6} className="text-center p-8 text-[#F5F5DC]/70" data-testid="empty-sales-message">
                     {t('sales.empty')}
                   </td>
                 </tr>
@@ -181,7 +184,7 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
 };
 
 interface SaleFormProps {
-  onSave: (saleData: Omit<Sale, 'id'>) => void;
+  onSave: (saleData: Omit<Sale, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>) => void;
   onCancel: () => void;
 }
 
@@ -194,7 +197,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
   const [errors, setErrors] = useState<{ general?: string; items?: { [key: number]: string } }>({});
 
   const availableProducts = useMemo(() => {
-    return state.products.filter((p) => p.quantity > 0);
+    return state.products.filter((p) => p.quantity > 0 && p.isActive !== false);
   }, [state.products]);
 
   const handleItemChange = (index: number, field: 'productId' | 'quantity' | 'price', value: string) => {
@@ -365,11 +368,13 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
             className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
           >
             <option value="">{t('sales.form.selectClientOptional')}</option>
-            {state.clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
+            {state.clients
+              .filter((c) => c.isActive !== false)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
           </select>
         </div>
       </div>

@@ -3,8 +3,11 @@ import { createContext, type Dispatch, type ReactNode, useContext } from 'react'
 import usePersistedReducer from '../hooks/usePersistedReducer';
 import type {
   AppState,
+  AuditEntry,
   Client,
   ImportProductsPayload,
+  P2PRole,
+  PeerInfo,
   Product,
   PurchaseOrder,
   RestoreStatePayload,
@@ -18,6 +21,10 @@ const initialState: AppState = {
   clients: [],
   suppliers: [],
   purchaseOrders: [],
+  auditLogs: [],
+  peers: [],
+  localPeerId: null,
+  role: 'admin',
 };
 
 type Action =
@@ -37,30 +44,73 @@ type Action =
   | { type: 'DELETE_PURCHASE_ORDER'; payload: string }
   | { type: 'RESTORE_STATE'; payload: RestoreStatePayload }
   | { type: 'BATCH_UPDATE_PRODUCTS'; payload: { toAdd: Product[]; toUpdate: Product[] } }
+  | { type: 'SET_LOCAL_PEER_ID'; payload: string }
+  | { type: 'UPDATE_PEERS'; payload: PeerInfo[] }
+  | { type: 'SET_ROLE'; payload: P2PRole }
+  | { type: 'SYNC_STATE'; payload: Partial<AppState> }
+  | { type: 'RECOVER_ITEM'; payload: { type: AuditEntry['entityType']; id: string } }
   | { type: 'RESET_DATA' };
 
+const createAuditEntry = (
+  state: AppState,
+  action: string,
+  entityId?: string,
+  entityType?: AuditEntry['entityType'],
+  details?: any,
+): AuditEntry => ({
+  id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+  timestamp: new Date().toISOString(),
+  peerId: state.localPeerId || 'local',
+  action,
+  entityId,
+  entityType,
+  details,
+});
+
+const enrich = (state: AppState, item: any) => ({
+  isActive: true,
+  updatedAt: new Date().toISOString(),
+  updatedBy: state.localPeerId || 'local',
+  ...item,
+});
+
 const appReducer = (state: AppState, action: Action): AppState => {
+  let newState: AppState;
+
   switch (action.type) {
     case 'ADD_PRODUCT':
-      return { ...state, products: [...state.products, action.payload] };
+      newState = { ...state, products: [...state.products, enrich(state, action.payload)] };
+      break;
     case 'UPDATE_PRODUCT':
-      return {
+      newState = {
         ...state,
-        products: state.products.map((p) => (p.id === action.payload.id ? action.payload : p)),
+        products: state.products.map((p) => (p.id === action.payload.id ? enrich(state, action.payload) : p)),
       };
+      break;
     case 'DELETE_PRODUCT':
-      return { ...state, products: state.products.filter((p) => p.id !== action.payload) };
+      newState = {
+        ...state,
+        products: state.products.map((p) =>
+          p.id === action.payload
+            ? { ...p, isActive: false, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' }
+            : p,
+        ),
+      };
+      break;
 
     case 'BATCH_UPDATE_PRODUCTS': {
       const { toAdd, toUpdate } = action.payload;
-      const updatedIds = new Set(toUpdate.map((p) => p.id));
+      const enrichedToAdd = toAdd.map((p) => enrich(state, p));
+      const enrichedToUpdate = toUpdate.map((p) => enrich(state, p));
+      const updatedIds = new Set(enrichedToUpdate.map((p) => p.id));
       const updatedProducts = state.products.map((p) => {
         if (updatedIds.has(p.id)) {
-          return toUpdate.find((up) => up.id === p.id) || p;
+          return enrichedToUpdate.find((up) => up.id === p.id) || p;
         }
         return p;
       });
-      return { ...state, products: [...updatedProducts, ...toAdd] };
+      newState = { ...state, products: [...updatedProducts, ...enrichedToAdd] };
+      break;
     }
 
     case 'IMPORT_PRODUCTS': {
@@ -76,21 +126,20 @@ const appReducer = (state: AppState, action: Action): AppState => {
       newProductsData.forEach((newProductData) => {
         const sku = newProductData.sku;
         if (sku && existingSkus.has(sku)) {
-          // SKU exists
           if (strategy === 'update') {
             const existingProduct = existingSkus.get(sku);
             if (existingProduct) {
-              const updatedProduct = { ...existingProduct, ...newProductData };
+              const updatedProduct = enrich(state, { ...existingProduct, ...newProductData });
               productsToUpdate.set(updatedProduct.id, updatedProduct);
             }
           }
-          // If strategy is 'skip', do nothing.
         } else {
-          // New product or no SKU
-          productsToAdd.push({
-            id: `${new Date().toISOString()}_${Math.random()}`, // unique ID
-            ...newProductData,
-          });
+          productsToAdd.push(
+            enrich(state, {
+              id: `${new Date().toISOString()}_${Math.random()}`,
+              ...newProductData,
+            }) as Product,
+          );
         }
       });
 
@@ -102,7 +151,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
         return p;
       });
 
-      return { ...state, products: [...updatedProductList, ...productsToAdd] };
+      newState = { ...state, products: [...updatedProductList, ...productsToAdd] };
+      break;
     }
 
     case 'ADD_SALE': {
@@ -110,14 +160,14 @@ const appReducer = (state: AppState, action: Action): AppState => {
       for (const item of action.payload.items) {
         const productIndex = newProducts.findIndex((p) => p.id === item.productId);
         if (productIndex !== -1) {
-          newProducts[productIndex] = {
+          newProducts[productIndex] = enrich(state, {
             ...newProducts[productIndex],
             quantity: newProducts[productIndex].quantity - item.quantity,
-          };
+          });
         }
       }
 
-      const salePayload = { ...action.payload };
+      const salePayload = enrich(state, action.payload);
       if (salePayload.clientId) {
         const client = state.clients.find((c) => c.id === salePayload.clientId);
         if (client) {
@@ -125,75 +175,162 @@ const appReducer = (state: AppState, action: Action): AppState => {
         }
       }
 
-      return {
+      newState = {
         ...state,
         products: newProducts,
         sales: [...state.sales, salePayload],
       };
+      break;
     }
 
     case 'ADD_CLIENT':
-      return { ...state, clients: [...state.clients, action.payload] };
+      newState = { ...state, clients: [...state.clients, enrich(state, action.payload)] };
+      break;
     case 'UPDATE_CLIENT':
-      return {
+      newState = {
         ...state,
-        clients: state.clients.map((c) => (c.id === action.payload.id ? action.payload : c)),
+        clients: state.clients.map((c) => (c.id === action.payload.id ? enrich(state, action.payload) : c)),
       };
+      break;
     case 'DELETE_CLIENT':
-      return { ...state, clients: state.clients.filter((c) => c.id !== action.payload) };
+      newState = {
+        ...state,
+        clients: state.clients.map((c) =>
+          c.id === action.payload
+            ? { ...c, isActive: false, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' }
+            : c,
+        ),
+      };
+      break;
 
     case 'ADD_SUPPLIER':
-      return { ...state, suppliers: [...state.suppliers, action.payload] };
+      newState = { ...state, suppliers: [...state.suppliers, enrich(state, action.payload)] };
+      break;
     case 'UPDATE_SUPPLIER':
-      return {
+      newState = {
         ...state,
-        suppliers: state.suppliers.map((s) => (s.id === action.payload.id ? action.payload : s)),
+        suppliers: state.suppliers.map((s) => (s.id === action.payload.id ? enrich(state, action.payload) : s)),
       };
+      break;
     case 'DELETE_SUPPLIER':
-      return { ...state, suppliers: state.suppliers.filter((s) => s.id !== action.payload) };
+      newState = {
+        ...state,
+        suppliers: state.suppliers.map((s) =>
+          s.id === action.payload
+            ? { ...s, isActive: false, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' }
+            : s,
+        ),
+      };
+      break;
 
     case 'ADD_PURCHASE_ORDER':
-      return { ...state, purchaseOrders: [...state.purchaseOrders, action.payload] };
+      newState = { ...state, purchaseOrders: [...state.purchaseOrders, enrich(state, action.payload)] };
+      break;
     case 'UPDATE_PURCHASE_ORDER': {
       const oldPO = state.purchaseOrders.find((po) => po.id === action.payload.id);
       const newPO = action.payload;
       let products = state.products;
 
-      // If status changed from pending to received, update stock
       if (oldPO?.status === 'pending' && newPO.status === 'received') {
         products = state.products.map((p) => {
           const poItem = newPO.items.find((item) => item.productId === p.id);
           if (poItem) {
-            return { ...p, quantity: p.quantity + poItem.quantity };
+            return enrich(state, { ...p, quantity: p.quantity + poItem.quantity });
           }
           return p;
         });
       }
 
-      return {
+      newState = {
         ...state,
         products,
-        purchaseOrders: state.purchaseOrders.map((po) => (po.id === newPO.id ? newPO : po)),
+        purchaseOrders: state.purchaseOrders.map((po) => (po.id === newPO.id ? enrich(state, newPO) : po)),
       };
+      break;
     }
     case 'DELETE_PURCHASE_ORDER':
-      return { ...state, purchaseOrders: state.purchaseOrders.filter((po) => po.id !== action.payload) };
+      newState = {
+        ...state,
+        purchaseOrders: state.purchaseOrders.map((po) =>
+          po.id === action.payload
+            ? { ...po, isActive: false, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' }
+            : po,
+        ),
+      };
+      break;
+
+    case 'SET_LOCAL_PEER_ID':
+      return { ...state, localPeerId: action.payload };
+
+    case 'UPDATE_PEERS':
+      return { ...state, peers: action.payload };
+
+    case 'SET_ROLE':
+      return { ...state, role: action.payload };
+
+    case 'SYNC_STATE':
+      return { ...state, ...action.payload };
+
+    case 'RECOVER_ITEM': {
+      const { type, id } = action.payload;
+      const metadata = { isActive: true, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' };
+      switch (type) {
+        case 'product':
+          newState = { ...state, products: state.products.map((p) => (p.id === id ? { ...p, ...metadata } : p)) };
+          break;
+        case 'client':
+          newState = { ...state, clients: state.clients.map((c) => (c.id === id ? { ...c, ...metadata } : c)) };
+          break;
+        case 'supplier':
+          newState = { ...state, suppliers: state.suppliers.map((s) => (s.id === id ? { ...s, ...metadata } : s)) };
+          break;
+        case 'purchaseOrder':
+          newState = {
+            ...state,
+            purchaseOrders: state.purchaseOrders.map((po) => (po.id === id ? { ...po, ...metadata } : po)),
+          };
+          break;
+        default:
+          return state;
+      }
+      break;
+    }
 
     case 'RESTORE_STATE':
-      // Ensure all parts of the state are present, falling back to initial state if not.
-      return {
-        products: action.payload.products || [],
-        sales: action.payload.sales || [],
-        clients: action.payload.clients || [],
-        suppliers: action.payload.suppliers || [],
-        purchaseOrders: action.payload.purchaseOrders || [],
-      };
+      return { ...initialState, ...action.payload };
+
     case 'RESET_DATA':
       return initialState;
 
     default:
       return state;
   }
+
+  // Audit Logging for state-mutating actions
+  const mutationActions = ['ADD', 'UPDATE', 'DELETE', 'IMPORT', 'BATCH', 'RECOVER'];
+  if (mutationActions.some((prefix) => action.type.startsWith(prefix))) {
+    const auditEntry = createAuditEntry(
+      state,
+      action.type,
+      (action as any).payload?.id ||
+        (typeof (action as any).payload === 'string' ? (action as any).payload : undefined),
+      action.type.toLowerCase().includes('product')
+        ? 'product'
+        : action.type.toLowerCase().includes('sale')
+          ? 'sale'
+          : action.type.toLowerCase().includes('client')
+            ? 'client'
+            : action.type.toLowerCase().includes('supplier')
+              ? 'supplier'
+              : action.type.toLowerCase().includes('purchase')
+                ? 'purchaseOrder'
+                : undefined,
+      action.type.includes('IMPORT') || action.type.includes('BATCH') ? action.payload : undefined,
+    );
+    newState.auditLogs = [auditEntry, ...newState.auditLogs].slice(0, 1000);
+  }
+
+  return newState;
 };
 
 interface AppContextType {
@@ -217,5 +354,4 @@ export const useAppContext = () => {
   return context;
 };
 
-// Alias for convenience
 export const useApp = useAppContext;

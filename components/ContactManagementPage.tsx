@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useSortableTable } from '../hooks/useSortableTable';
 import type { Client, Supplier } from '../types';
@@ -42,11 +42,14 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const { t } = useI18n();
+
+  const activeContacts = useMemo(() => contacts.filter((c) => c.isActive !== false), [contacts]);
+
   const {
     items: sortedContacts,
     requestSort,
     getSortIndicator,
-  } = useSortableTable<Contact>(contacts, { key: 'name', direction: 'asc' });
+  } = useSortableTable<Contact>(activeContacts, { key: 'name', direction: 'asc' });
 
   const handleOpenModal = (contact: Contact | null = null) => {
     setEditingContact(contact);
@@ -60,7 +63,7 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
 
   const handleSaveContact = (contactData: Omit<Contact, 'id'>) => {
     if (editingContact) {
-      onUpdate({ ...editingContact, ...contactData });
+      onUpdate({ ...editingContact, ...contactData } as Contact);
     } else {
       onAdd(contactData);
     }
