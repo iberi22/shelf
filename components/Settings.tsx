@@ -8,8 +8,11 @@ import { useSubscription } from '../context/SubscriptionContext';
 import { useUI } from '../context/UIContext';
 import useLocalStorage from '../hooks/useLocalStorage';
 import type { RestoreStatePayload, TeamMember } from '../types';
+import AuditLogViewer from './AuditLogViewer';
+import DataRecovery from './DataRecovery';
 import ImportCSVModal from './ImportCSVModal';
 import InviteMemberModal from './InviteMemberModal';
+import P2PSyncManager from './P2PSyncManager';
 
 const CURRENCIES = [
   { code: 'USD', nameKey: 'settings.currency.currencies.USD' },
@@ -115,9 +118,11 @@ const Settings: React.FC = () => {
     setFeedback('');
   };
 
+  const isAdmin = state.role === 'admin';
+
   return (
     <>
-      <div>
+      <div className="pb-10">
         <h2 className="text-3xl font-bold mb-6">{t('settings.title')}</h2>
 
         <div className="grid gap-6 md:gap-8 lg:grid-cols-1">
@@ -140,6 +145,15 @@ const Settings: React.FC = () => {
               />
             </div>
           </div>
+
+          {/* Peer-to-Peer Synchronization */}
+          <P2PSyncManager />
+
+          {/* Audit Logs (Admin Only) */}
+          {isAdmin && <AuditLogViewer />}
+
+          {/* Data Recovery */}
+          <DataRecovery />
 
           {/* Currency Settings */}
           <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">

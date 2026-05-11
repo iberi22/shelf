@@ -16,11 +16,15 @@ const Inventory: React.FC = () => {
   const { t } = useI18n();
   const { formatCurrency } = useCurrency();
   const [lowStockThreshold] = useLocalStorage('lowStockThreshold', 5);
+
+  // Only show active products in inventory view
+  const activeProducts = useMemo(() => state.products.filter((p) => p.isActive !== false), [state.products]);
+
   const {
     items: sortedProducts,
     requestSort,
     getSortIndicator,
-  } = useSortableTable<Product>(state.products, { key: 'name', direction: 'asc' });
+  } = useSortableTable<Product>(activeProducts, { key: 'name', direction: 'asc' });
   const [filter, setFilter] = useState('');
 
   const filteredProducts = useMemo(() => {
@@ -40,14 +44,14 @@ const Inventory: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const handleSaveProduct = (productData: Omit<Product, 'id'>) => {
+  const handleSaveProduct = (productData: Omit<Product, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>) => {
     if (editingProduct) {
-      dispatch({ type: 'UPDATE_PRODUCT', payload: { ...editingProduct, ...productData } });
+      dispatch({ type: 'UPDATE_PRODUCT', payload: { ...editingProduct, ...productData } as Product });
     } else {
-      const newProduct: Product = {
+      const newProduct = {
         id: new Date().toISOString(),
         ...productData,
-      };
+      } as Product;
       dispatch({ type: 'ADD_PRODUCT', payload: newProduct });
     }
     handleCloseModal();
@@ -61,7 +65,7 @@ const Inventory: React.FC = () => {
 
   const handleExportCSV = () => {
     const headers = ['id', 'name', 'sku', 'quantity', 'price', 'cost', 'imageUrl'];
-    const rows = state.products.map((p) =>
+    const rows = activeProducts.map((p) =>
       [p.id, p.name, p.sku || '', p.quantity, p.price, p.cost, p.imageUrl || ''].join(','),
     );
     const csvContent = `data:text/csv;charset=utf-8,${[headers.join(','), ...rows].join('\n')}`;
@@ -213,7 +217,7 @@ const Inventory: React.FC = () => {
 
 interface ProductFormProps {
   product: Product | null;
-  onSave: (productData: Omit<Product, 'id'>) => void;
+  onSave: (productData: Omit<Product, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>) => void;
   onCancel: () => void;
 }
 

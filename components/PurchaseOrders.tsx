@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
@@ -13,11 +13,14 @@ const PurchaseOrders: React.FC = () => {
   const [editingPO, setEditingPO] = useState<PurchaseOrder | null>(null);
   const { t } = useI18n();
   const { showNotification } = useUI();
+
+  const activePOs = useMemo(() => state.purchaseOrders.filter((po) => po.isActive !== false), [state.purchaseOrders]);
+
   const {
     items: sortedPOs,
     requestSort,
     getSortIndicator,
-  } = useSortableTable<PurchaseOrder>(state.purchaseOrders, { key: 'orderDate', direction: 'desc' });
+  } = useSortableTable<PurchaseOrder>(activePOs, { key: 'orderDate', direction: 'desc' });
 
   const handleOpenModal = (po: PurchaseOrder | null = null) => {
     setEditingPO(po);
@@ -29,14 +32,14 @@ const PurchaseOrders: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const handleSavePO = (poData: Omit<PurchaseOrder, 'id'>) => {
+  const handleSavePO = (poData: Omit<PurchaseOrder, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>) => {
     if (editingPO) {
-      dispatch({ type: 'UPDATE_PURCHASE_ORDER', payload: { ...editingPO, ...poData } });
+      dispatch({ type: 'UPDATE_PURCHASE_ORDER', payload: { ...editingPO, ...poData } as PurchaseOrder });
     } else {
-      const newPO: PurchaseOrder = {
+      const newPO = {
         id: new Date().toISOString(),
         ...poData,
-      };
+      } as PurchaseOrder;
       dispatch({ type: 'ADD_PURCHASE_ORDER', payload: newPO });
     }
     handleCloseModal();
@@ -169,7 +172,7 @@ const PurchaseOrders: React.FC = () => {
 
 interface PurchaseOrderFormProps {
   purchaseOrder: PurchaseOrder | null;
-  onSave: (poData: Omit<PurchaseOrder, 'id'>) => void;
+  onSave: (poData: Omit<PurchaseOrder, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>) => void;
   onCancel: () => void;
 }
 
@@ -280,11 +283,13 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
             <option value="" disabled>
               {t('purchases.form.selectSupplier')}
             </option>
-            {state.suppliers.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
+            {state.suppliers
+              .filter((s) => s.isActive !== false)
+              .map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
           </select>
           {errors.supplierId && <p className="text-red-400 text-xs mt-1">{errors.supplierId}</p>}
         </div>
@@ -300,11 +305,13 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
                 data-testid={`purchase-order-item-product-${index}`}
               >
                 <option value="">Select Product</option>
-                {state.products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
+                {state.products
+                  .filter((p) => p.isActive !== false)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
               </select>
               <input
                 type="number"
