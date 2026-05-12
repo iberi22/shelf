@@ -23,7 +23,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { t } = useI18n();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: any) => {
       setIsLoading(true);
       if (firebaseUser) {
         // Check for user document in Firestore to get subscription tier
