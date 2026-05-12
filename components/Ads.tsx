@@ -1,11 +1,10 @@
 import type React from 'react';
 import AdSenseUnit from './AdSenseUnit'; // Import the new component
 
-// IMPORTANT: Replace these placeholder values with your actual AdSense IDs.
-// For better security and management, consider using environment variables.
-const AD_CLIENT_ID = 'ca-pub-XXXXXXXXXXXXXXXX';
-const DESKTOP_AD_SLOT_ID = 'YYYYYYYYYY';
-const MOBILE_AD_SLOT_ID = 'ZZZZZZZZZZ';
+// For better security and management, we use environment variables.
+const AD_CLIENT_ID = import.meta.env.VITE_ADSENSE_CLIENT_ID || 'ca-pub-placeholder';
+const DESKTOP_AD_SLOT_ID = import.meta.env.VITE_ADSENSE_DESKTOP_SLOT_ID || '0000000000';
+const MOBILE_AD_SLOT_ID = import.meta.env.VITE_ADSENSE_MOBILE_SLOT_ID || '0000000000';
 
 export const DesktopAdColumn: React.FC = () => {
   return (

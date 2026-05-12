@@ -16,12 +16,21 @@ interface AdSenseUnitProps {
 
 const AdSenseUnit: React.FC<AdSenseUnitProps> = ({ adSlot, adClient, className, style }) => {
   useEffect(() => {
+    // Dynamically inject AdSense script if not already present
+    if (adClient && adClient !== 'ca-pub-placeholder' && !document.querySelector(`script[src*="adsbygoogle.js?client=${adClient}"]`)) {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adClient}`;
+      script.crossOrigin = 'anonymous';
+      document.head.appendChild(script);
+    }
+
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (e) {
       console.error('AdSense error:', e);
     }
-  }, []);
+  }, [adClient]);
 
   // In this environment, Vite's import.meta.env is not available at runtime.
   // We fall back to checking the hostname to determine if we are in a dev environment.
