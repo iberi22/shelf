@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import LandingPage from './components/LandingPage';
+import LockScreen from './components/LockScreen';
 import LoginModal from './components/LoginModal';
 import Notification from './components/Notification';
 import SignupModal from './components/SignupModal';
 import SubscriptionModal from './components/SubscriptionModal';
 import UpdateNotification from './components/UpdateNotification';
 import { AppProvider } from './context/AppContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { I18nProvider } from './context/I18nContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
@@ -22,6 +23,7 @@ const AppContainer = () => {
   const [hasVisited, setHasVisited] = useLocalStorage('hasVisited', false);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const { isLoading, loadingMessage, notification, hideNotification } = useUI();
+  const { isLocked } = useAuth();
 
   const showMainApp = () => setHasVisited(true);
 
@@ -33,6 +35,10 @@ const AppContainer = () => {
 
   if (!hasVisited) {
     return <LandingPage onNavigate={showMainApp} onLoginClick={openLoginModal} />;
+  }
+
+  if (isLocked) {
+    return <LockScreen />;
   }
 
   return (

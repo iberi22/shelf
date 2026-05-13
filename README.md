@@ -39,7 +39,7 @@ Upgrade to a Pro plan to unlock:
 ### Prerequisites
 
 -   Node.js (v18 or higher)
--   npm or yarn
+-   pnpm (v9 or higher)
 -   Firebase Account (for Pro features and deployment)
 
 ### Local Development
@@ -52,12 +52,12 @@ Upgrade to a Pro plan to unlock:
 
 2.  **Install dependencies:**
     ```bash
-    npm install
+    pnpm install
     ```
 
 3.  **Run the development server:**
     ```bash
-    npm run dev
+    pnpm run dev
     ```
     The app will be available at `http://localhost:5173`.
 

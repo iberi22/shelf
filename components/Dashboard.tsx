@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import useLocalStorage from '../hooks/useLocalStorage';
 import ProChartsTeaserCard from './ProChartsTeaserCard';
 import ProFeatureCard from './ProFeatureCard';
@@ -12,6 +13,7 @@ const Dashboard: React.FC = () => {
   const { state } = useAppContext();
   const { t } = useI18n();
   const { formatCurrency } = useCurrency();
+  const { isPro } = useSubscription();
   const [isEditing, setIsEditing] = useState(false);
   const [isProSectionHidden, setIsProSectionHidden] = useState(false);
 
@@ -108,44 +110,51 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {isProSectionHidden ? (
-        <ProChartsTeaserCard onShowProFeatures={() => setIsProSectionHidden(false)} />
-      ) : (
-        <div className="mt-12 bg-[#0d0d0d] p-8 rounded-xl border border-[#F5F5DC]/20">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-3xl font-bold mb-3 text-[#F5F5DC]">{t('dashboard.proFeaturesTitle')}</h3>
-              <p className="text-[#F5F5DC]/80 mb-8 max-w-3xl text-base leading-relaxed">
-                {t('dashboard.proFeaturesDescription')}
-              </p>
-            </div>
-            <button
-              onClick={() => setIsProSectionHidden(true)}
-              className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
-            >
-              {t('dashboard.hideProSection')}
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            <ProFeatureCard
-              icon="🤖"
-              titleKey="reports.aiAssistantTitle"
-              descriptionKey="dashboard.pro.aiDescription"
-            />
-            <ProFeatureCard
-              icon="☁️"
-              titleKey="dashboard.pro.cloudSyncTitle"
-              descriptionKey="dashboard.pro.cloudSyncDescription"
-            />
-            <ProFeatureCard
-              icon="🚫"
-              titleKey="dashboard.pro.noAdsTitle"
-              descriptionKey="dashboard.pro.noAdsDescription"
-            />
-          </div>
+      {isPro && (
+        <div className="mt-8">
+          <ProChartsTeaserCard onShowProFeatures={() => {}} />
         </div>
       )}
+
+      {!isPro &&
+        (isProSectionHidden ? (
+          <ProChartsTeaserCard onShowProFeatures={() => setIsProSectionHidden(false)} />
+        ) : (
+          <div className="mt-12 bg-[#0d0d0d] p-8 rounded-xl border border-[#F5F5DC]/20">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-3xl font-bold mb-3 text-[#F5F5DC]">{t('dashboard.proFeaturesTitle')}</h3>
+                <p className="text-[#F5F5DC]/80 mb-8 max-w-3xl text-base leading-relaxed">
+                  {t('dashboard.proFeaturesDescription')}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsProSectionHidden(true)}
+                className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
+              >
+                {t('dashboard.hideProSection')}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              <ProFeatureCard
+                icon="🤖"
+                titleKey="reports.aiAssistantTitle"
+                descriptionKey="dashboard.pro.aiDescription"
+              />
+              <ProFeatureCard
+                icon="☁️"
+                titleKey="dashboard.pro.cloudSyncTitle"
+                descriptionKey="dashboard.pro.cloudSyncDescription"
+              />
+              <ProFeatureCard
+                icon="🚫"
+                titleKey="dashboard.pro.noAdsTitle"
+                descriptionKey="dashboard.pro.noAdsDescription"
+              />
+            </div>
+          </div>
+        ))}
     </div>
   );
 };

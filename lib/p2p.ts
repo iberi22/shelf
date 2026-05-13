@@ -1,5 +1,5 @@
 import { type DataConnection, Peer } from 'peerjs';
-import type { AppState, P2PRole, PeerInfo } from './types';
+import type { AppState, P2PRole, PeerInfo } from '../types';
 
 export type SyncMessage =
   | { type: 'STATE_UPDATE'; payload: Partial<AppState> }
@@ -24,7 +24,7 @@ class P2PManager {
 
     this.peer = peerId ? new Peer(peerId) : new Peer();
 
-    this.peer.on('open', (id) => {
+    this.peer.on('open', (id: string) => {
       this.localPeerId = id;
       console.log('My peer ID is: ' + id);
       // Master node is admin by default
@@ -33,11 +33,11 @@ class P2PManager {
       }
     });
 
-    this.peer.on('connection', (conn) => {
+    this.peer.on('connection', (conn: DataConnection) => {
       this.handleConnection(conn);
     });
 
-    this.peer.on('error', (err) => {
+    this.peer.on('error', (err: any) => {
       console.error('PeerJS error:', err);
     });
   }
@@ -47,7 +47,7 @@ class P2PManager {
       this.connections.set(conn.peer, conn);
       this.updatePeerList(conn.peer, 'collaborator');
 
-      conn.on('data', (data) => {
+      conn.on('data', (data: any) => {
         this.onMessageCallbacks.forEach((cb) => cb(data as SyncMessage, conn.peer));
       });
 

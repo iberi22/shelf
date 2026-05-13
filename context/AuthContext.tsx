@@ -12,6 +12,10 @@ interface AuthContextType {
   signup: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   getIdToken: () => Promise<string | null>;
+  isLocked: boolean;
+  hasAppLock: boolean;
+  unlockApp: (pin: string) => boolean;
+  setAppLock: (pin: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +25,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const { showLoading, hideLoading } = useUI();
   const { t } = useI18n();
+  const [isLocked, setIsLocked] = useState(false);
+  const [appLockPin, setAppLockPin] = useState<string | null>(() => localStorage.getItem('appLockPin'));
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: any) => {
@@ -31,11 +37,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const docSnap = await userDocRef.get();
 
         if (docSnap.exists) {
-          const userData = docSnap.data();
           setUser({
             uid: firebaseUser.uid,
             email: firebaseUser.email,
-            subscriptionTier: userData?.subscriptionTier || 'free',
+            subscriptionTier: 'pro',
           });
         } else {
           // Create a user document for new sign-ups
@@ -44,7 +49,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setUser({
             uid: firebaseUser.uid,
             email: firebaseUser.email,
-            subscriptionTier: 'free',
+            subscriptionTier: 'pro',
           });
         }
       } else {
@@ -52,6 +57,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       setIsLoading(false);
     });
+
+    // Handle App Lock on initial load
+    const savedPin = localStorage.getItem('appLockPin');
+    if (savedPin) {
+      setIsLocked(true);
+    }
 
     // Wait for firebase to be ready before unsubscribing the loading state
     firebaseReady.then(() => setIsLoading(false));
@@ -81,7 +92,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return currentUser.getIdToken();
   };
 
-  const value = { user, isLoading, login, signup, logout, getIdToken };
+  const unlockApp = (pin: string): boolean => {
+    if (pin === appLockPin) {
+      setIsLocked(false);
+      return true;
+    }
+    return false;
+  };
+
+  const setAppLock = (pin: string | null) => {
+    if (pin) {
+      localStorage.setItem('appLockPin', pin);
+      setAppLockPin(pin);
+      setIsLocked(true);
+    } else {
+      localStorage.removeItem('appLockPin');
+      setAppLockPin(null);
+      setIsLocked(false);
+    }
+  };
+
+  const value = {
+    user,
+    isLoading,
+    login,
+    signup,
+    logout,
+    getIdToken,
+    isLocked,
+    hasAppLock: !!appLockPin,
+    unlockApp,
+    setAppLock,
+  };
 
   return (
     <AuthContext.Provider value={value}>{!isLoading ? children : null /* Or a global loader */}</AuthContext.Provider>

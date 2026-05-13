@@ -31,13 +31,18 @@ const Settings: React.FC = () => {
   const { showNotification, openSubscriptionModal } = useUI();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [lowStockThreshold, setLowStockThreshold] = useLocalStorage('lowStockThreshold', 5);
+  const [geminiApiKey, setGeminiApiKey] = useLocalStorage('geminiApiKey', '');
+  const [openCodeGoKey, setOpenCodeGoKey] = useLocalStorage('openCodeGoKey', '');
+  const [openCodeGoModel, setOpenCodeGoModel] = useLocalStorage('openCodeGoModel', 'gpt-4o');
+  const [aiProxyUrl, setAiProxyUrl] = useLocalStorage('aiProxyUrl', '');
   const { currencyCode, setCurrencyCode, numberFormat, setNumberFormat } = useCurrency();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isInviteModalOpen, setInviteModalOpen] = useState(false);
   const [feedback, setFeedback] = useState('');
 
   const { isPyme } = useSubscription();
-  const { user } = useAuth();
+  const { user, hasAppLock, setAppLock } = useAuth();
+  const [newPin, setNewPin] = useState('');
 
   // Mocked team data for UI demonstration
   const [team] = useState<TeamMember[]>([
@@ -232,6 +237,70 @@ const Settings: React.FC = () => {
             </div>
           </div>
 
+          {/* AI Settings */}
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
+            <h3 className="text-xl font-bold text-[#F5F5DC]">🤖 {t('settings.ai.title') || 'Configuración de IA'}</h3>
+            <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">
+              {t('settings.ai.description') || 'Configura tus propias llaves para el asistente de IA.'}
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="geminiApiKey" className="block text-sm font-medium text-[#F5F5DC]/90">
+                  Gemini API Key
+                </label>
+                <input
+                  id="geminiApiKey"
+                  type="password"
+                  value={geminiApiKey}
+                  onChange={(e) => setGeminiApiKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="openCodeGoKey" className="block text-sm font-medium text-[#F5F5DC]/90">
+                  OpenCodeGo Key
+                </label>
+                <input
+                  id="openCodeGoKey"
+                  type="password"
+                  value={openCodeGoKey}
+                  onChange={(e) => setOpenCodeGoKey(e.target.value)}
+                  placeholder="sk-..."
+                  className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC] mb-3"
+                />
+
+                <label htmlFor="openCodeGoModel" className="block text-sm font-medium text-[#F5F5DC]/90">
+                  Modelo de OpenCodeGo
+                </label>
+                <input
+                  id="openCodeGoModel"
+                  type="text"
+                  value={openCodeGoModel}
+                  onChange={(e) => setOpenCodeGoModel(e.target.value)}
+                  placeholder="ej. deepseek-v4-flash, gpt-4o"
+                  className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="aiProxyUrl" className="block text-sm font-medium text-[#F5F5DC]/90">
+                  {t('settings.ai.proxyUrl') || 'URL del Proxy Local (Opcional)'}
+                </label>
+                <input
+                  id="aiProxyUrl"
+                  type="text"
+                  value={aiProxyUrl}
+                  onChange={(e) => setAiProxyUrl(e.target.value)}
+                  placeholder="http://localhost:3000"
+                  className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Feedback and Support */}
           <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.feedback.title')}</h3>
@@ -251,6 +320,67 @@ const Settings: React.FC = () => {
             >
               {t('settings.feedback.button')}
             </button>
+          </div>
+
+          {/* App Lock Settings */}
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
+            <h3 className="text-xl font-bold text-[#F5F5DC]">🔒 {t('settings.security.title') || 'Seguridad'}</h3>
+            <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">
+              {t('settings.security.description') || 'Configura un PIN para proteger el acceso a la aplicación.'}
+            </p>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="block text-sm font-medium text-[#F5F5DC]/90">
+                    {t('settings.security.appLock') || 'Bloqueo de Aplicación'}
+                  </label>
+                  <p className="text-xs text-[#F5F5DC]/60">{hasAppLock ? 'Protegido con PIN' : 'Sin protección'}</p>
+                </div>
+                {hasAppLock && (
+                  <button
+                    onClick={() => setAppLock(null)}
+                    className="text-sm font-bold text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    {t('settings.security.disable') || 'Desactivar'}
+                  </button>
+                )}
+              </div>
+
+              {!hasAppLock ? (
+                <div className="flex gap-3">
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={8}
+                    value={newPin}
+                    onChange={(e) => setNewPin(e.target.value)}
+                    placeholder="Nuevo PIN (ej. 1234)"
+                    className="flex-1 p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                  />
+                  <button
+                    onClick={() => {
+                      if (newPin.length >= 4) {
+                        setAppLock(newPin);
+                        setNewPin('');
+                        showNotification('PIN configurado correctamente', 'success');
+                      } else {
+                        showNotification('El PIN debe tener al menos 4 dígitos', 'error');
+                      }
+                    }}
+                    className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all text-sm"
+                  >
+                    {t('settings.security.enable') || 'Activar'}
+                  </button>
+                </div>
+              ) : (
+                <div className="p-3 bg-[#F5F5DC]/5 rounded-lg border border-[#F5F5DC]/10">
+                  <p className="text-xs text-[#F5F5DC]/60 italic">
+                    {t('settings.security.lockedNote') || 'La aplicación se bloqueará automáticamente al recargar.'}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Data Management */}

@@ -31,12 +31,12 @@ Write-Host "📋 Verificando dependencias..." -ForegroundColor Cyan
 
 if (-not (Test-Command firebase)) {
     Write-Host "❌ Firebase CLI no está instalado" -ForegroundColor Red
-    Write-Host "Instalarlo con: npm install -g firebase-tools" -ForegroundColor Yellow
+    Write-Host "Instalarlo con: pnpm install -g firebase-tools" -ForegroundColor Yellow
     exit 1
 }
 
-if (-not (Test-Command npm)) {
-    Write-Host "❌ npm no está instalado" -ForegroundColor Red
+if (-not (Test-Command pnpm)) {
+    Write-Host "❌ pnpm no está instalado" -ForegroundColor Red
     exit 1
 }
 
@@ -98,7 +98,7 @@ if ($Target -eq "functions" -or $Target -eq "all") {
 # Ejecutar tests
 if (-not $SkipTests) {
     Write-Host "🧪 Ejecutando linter..." -ForegroundColor Cyan
-    npm run lint:fix
+    pnpm run lint:fix
     
     if ($LASTEXITCODE -ne 0) {
         Write-Host "❌ Lint falló" -ForegroundColor Red
@@ -112,7 +112,7 @@ if (-not $SkipTests) {
 # Build
 if (-not $SkipBuild -and ($Target -eq "hosting" -or $Target -eq "all")) {
     Write-Host "📦 Construyendo aplicación..." -ForegroundColor Cyan
-    npm run build
+    pnpm run build
     
     if ($LASTEXITCODE -ne 0) {
         Write-Host "❌ Build falló" -ForegroundColor Red
@@ -127,7 +127,7 @@ if (-not $SkipBuild -and ($Target -eq "hosting" -or $Target -eq "all")) {
 if ($Target -eq "functions" -or $Target -eq "all") {
     Write-Host "📦 Compilando Cloud Functions..." -ForegroundColor Cyan
     Push-Location functions
-    npm run build
+    pnpm run build
     Pop-Location
     
     if ($LASTEXITCODE -ne 0) {

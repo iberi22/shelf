@@ -3,30 +3,153 @@ import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import type { ChatMessage } from '../types';
 
 const AIChat: React.FC = () => {
   const { t } = useI18n();
   const { state } = useAppContext();
-  const { user, getIdToken } = useAuth();
+  const { getIdToken } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasProAccess = user && (user.subscriptionTier === 'pro' || user.subscriptionTier === 'pyme');
-  const isAIDisabled = !hasProAccess;
+  const { isPro } = useSubscription();
+  const isAIDisabled = !isPro;
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading || isAIDisabled) return;
+
+    setError(null);
+    const savedGeminiKey = localStorage.getItem('geminiApiKey')?.replace(/"/g, '');
+    const savedOpenCodeGoKey = localStorage.getItem('openCodeGoKey')?.replace(/"/g, '');
+    const savedOpenCodeGoModel = localStorage.getItem('openCodeGoModel')?.replace(/"/g, '') || 'gpt-4o';
 
     const userMessage: ChatMessage = { role: 'user', text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
-    setError(null);
 
     try {
+      // Priority 1: Gemini Nano (window.ai) - Built-in Chrome feature
+      try {
+        // @ts-expect-error - window.ai is experimental
+        if (window.ai && (await window.ai.canCreateTextSession()) === 'readily') {
+          // @ts-expect-error
+          const session = await window.ai.createTextSession();
+          const prompt = `You are an AI assistant for a business inventory app called Shelf. 
+          Below is the current inventory and sales data for context.
+          Inventory: ${JSON.stringify(state.products.slice(0, 20))}
+          Recent Sales: ${JSON.stringify(state.sales.slice(0, 20))}
+          
+          User Question: ${input}`;
+
+          const result = await session.prompt(prompt);
+          const modelMessage: ChatMessage = { role: 'model', text: result };
+          setMessages((prev) => [...prev, modelMessage]);
+          setIsLoading(false);
+          session.destroy(); // Clean up
+          return;
+        }
+      } catch (geminiNanoErr) {
+        console.log('Gemini Nano (window.ai) not available or failed:', geminiNanoErr);
+      }
+
+      // Priority 2: Direct Gemini API (if key is provided)
+      if (savedGeminiKey) {
+        try {
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${savedGeminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      {
+                        text: `You are an AI assistant for Shelf. Context:
+                  Inventory: ${JSON.stringify(state.products.slice(0, 20))}
+                  Sales: ${JSON.stringify(state.sales.slice(0, 20))}
+                  User: ${input}`,
+                      },
+                    ],
+                  },
+                ],
+              }),
+            },
+          );
+          if (response.ok) {
+            const data = await response.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
+            setMessages((prev) => [...prev, { role: 'model', text }]);
+            setIsLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error('Gemini API call failed:', err);
+        }
+      }
+
+      // Priority 3: OpenCodeGo (if key is provided)
+      if (savedOpenCodeGoKey) {
+        try {
+          const response = await fetch('https://api.opencodego.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${savedOpenCodeGoKey}`,
+            },
+            body: JSON.stringify({
+              model: savedOpenCodeGoModel,
+              messages: [
+                { role: 'system', content: 'You are an AI assistant for an inventory app.' },
+                { role: 'user', content: `Inventory: ${JSON.stringify(state.products.slice(0, 20))}. User: ${input}` },
+              ],
+            }),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            const text = data.choices?.[0]?.message?.content || 'No response';
+            setMessages((prev) => [...prev, { role: 'model', text }]);
+            setIsLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error('OpenCodeGo API call failed:', err);
+        }
+      }
+
+      // Priority 4: Local Ollama instance (Proxied)
+      try {
+        const ollamaResponse = await fetch('/ollama-api/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'llama3',
+            prompt: `You are an AI assistant for a business inventory app called Shelf. 
+            Below is the current inventory and sales data for context.
+            Inventory: ${JSON.stringify(state.products.slice(0, 30))}
+            Recent Sales: ${JSON.stringify(state.sales.slice(0, 30))}
+            
+            User Question: ${input}`,
+            stream: false,
+          }),
+        });
+
+        if (ollamaResponse.ok) {
+          const ollamaData = await ollamaResponse.json();
+          const modelMessage: ChatMessage = { role: 'model', text: ollamaData.response };
+          setMessages((prev) => [...prev, modelMessage]);
+          setIsLoading(false);
+          return;
+        }
+      } catch (ollamaErr) {
+        console.log('Local Ollama not available, falling back to cloud API...', ollamaErr);
+      }
+
+      // Fallback: Cloud API (Current implementation)
       const token = await getIdToken();
       if (!token) {
         throw new Error('Authentication error. Please log in again.');
@@ -41,14 +164,14 @@ const AIChat: React.FC = () => {
         body: JSON.stringify({
           prompt: input,
           inventoryData: {
-            products: state.products.slice(0, 50), // Send a bit more context
+            products: state.products.slice(0, 50),
             sales: state.sales.slice(0, 50),
           },
         }),
       });
 
       if (response.status === 401 || response.status === 403) {
-        throw new Error(t('reports.aiErrorNetwork')); // Generic message for auth failure
+        throw new Error(t('reports.aiErrorNetwork'));
       }
 
       if (!response.ok) {
@@ -63,7 +186,6 @@ const AIChat: React.FC = () => {
       const errorMessage = err instanceof Error ? err.message : t('reports.aiError');
       setError(errorMessage);
       console.error(err);
-      // Revert optimistic UI update on error
       setMessages((prev) => prev.filter((msg) => msg !== userMessage));
     } finally {
       setIsLoading(false);

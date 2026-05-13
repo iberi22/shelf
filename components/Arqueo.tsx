@@ -181,14 +181,20 @@ export default function Arqueo() {
         toUpdate.push({
           ...existingProduct,
           quantity: existingProduct.quantity + data.quantity,
+          updatedAt: new Date().toISOString(),
+          updatedBy: 'me',
         });
       } else {
+        const timestamp = new Date().toISOString();
         const newProduct: Product = {
           id: `prod_${Date.now()}_${Math.random()}`,
           name: data.name,
           quantity: data.quantity,
           price: data.unitPrice,
           cost: data.unitPrice,
+          isActive: true,
+          updatedAt: timestamp,
+          updatedBy: 'me',
         };
         toAdd.push(newProduct);
         createdProductIds.push(newProduct.id);

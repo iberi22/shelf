@@ -45,12 +45,24 @@ const Inventory: React.FC = () => {
   };
 
   const handleSaveProduct = (productData: Omit<Product, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>) => {
+    const timestamp = new Date().toISOString();
     if (editingProduct) {
-      dispatch({ type: 'UPDATE_PRODUCT', payload: { ...editingProduct, ...productData } as Product });
+      dispatch({
+        type: 'UPDATE_PRODUCT',
+        payload: {
+          ...editingProduct,
+          ...productData,
+          updatedAt: timestamp,
+          updatedBy: 'me', // Fallback for now
+        } as Product,
+      });
     } else {
       const newProduct = {
-        id: new Date().toISOString(),
+        id: timestamp,
         ...productData,
+        isActive: true,
+        updatedAt: timestamp,
+        updatedBy: 'me', // Fallback for now
       } as Product;
       dispatch({ type: 'ADD_PRODUCT', payload: newProduct });
     }

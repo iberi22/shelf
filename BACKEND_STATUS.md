@@ -23,7 +23,7 @@
   - firebase-admin@12.7.0
   - firebase-functions@5.1.1
   - stripe@15.12.0
-  - typescript@5.9.3
+  - typescript@5.9.3 (pnpm managed)
 
 ### 3. Configuración Firebase
 - ✅ `firebase.json` configurado con rewrites a las 4 funciones
@@ -184,16 +184,15 @@ gcloud services list --enabled --project=easyinventary-d8dbd
 
 ## ⏭️ Próximos Pasos Inmediatos
 
-1. **Crear functions/.env**:
+1. **Configurar secrets**:
    ```bash
-   cd functions
-   # Editar .env con tus claves reales
-   code .env
+   firebase functions:secrets:set API_KEY
+   firebase functions:secrets:set STRIPE_SECRET_KEY
+   firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
    ```
 
 2. **Desplegar Cloud Functions**:
    ```bash
-   cd ..
    firebase deploy --only functions
    ```
 
