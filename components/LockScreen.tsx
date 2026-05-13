@@ -9,9 +9,9 @@ const LockScreen: React.FC = () => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = unlockApp(pin);
+    const success = await unlockApp(pin);
     if (!success) {
       setError(true);
       setPin('');
@@ -19,8 +19,10 @@ const LockScreen: React.FC = () => {
     }
   };
 
+  const MAX_PIN_LENGTH = 8;
+
   const handleNumberClick = (num: string) => {
-    if (pin.length < 8) {
+    if (pin.length < MAX_PIN_LENGTH) {
       setPin((prev) => prev + num);
       setError(false);
     }
@@ -44,8 +46,8 @@ const LockScreen: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="flex justify-center gap-3 mb-10">
-            {[...Array(6)].map((_, i) => (
+          <div className="flex justify-center gap-3 mb-10 flex-wrap">
+            {[...Array(Math.max(6, pin.length))].map((_, i) => (
               <div
                 key={i}
                 className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${

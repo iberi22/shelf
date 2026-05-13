@@ -14,11 +14,19 @@ interface AuthContextType {
   getIdToken: () => Promise<string | null>;
   isLocked: boolean;
   hasAppLock: boolean;
-  unlockApp: (pin: string) => boolean;
-  setAppLock: (pin: string | null) => void;
+  unlockApp: (pin: string) => Promise<boolean>;
+  setAppLock: (pin: string | null) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const hashPin = async (pin: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+};
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -92,18 +100,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return currentUser.getIdToken();
   };
 
-  const unlockApp = (pin: string): boolean => {
-    if (pin === appLockPin) {
+  const unlockApp = async (pin: string): Promise<boolean> => {
+    if (!appLockPin) return true;
+    const hashedInput = await hashPin(pin);
+
+    // Support legacy plain-text pins for one-time migration
+    if (hashedInput === appLockPin || pin === appLockPin) {
+      // If it was a legacy pin, migrate it now
+      if (pin === appLockPin && pin.length !== 64) {
+        await setAppLock(pin);
+      }
       setIsLocked(false);
       return true;
     }
     return false;
   };
 
-  const setAppLock = (pin: string | null) => {
+  const setAppLock = async (pin: string | null) => {
     if (pin) {
-      localStorage.setItem('appLockPin', pin);
-      setAppLockPin(pin);
+      const hashedPin = pin.length === 64 ? pin : await hashPin(pin);
+      localStorage.setItem('appLockPin', hashedPin);
+      setAppLockPin(hashedPin);
       setIsLocked(true);
     } else {
       localStorage.removeItem('appLockPin');

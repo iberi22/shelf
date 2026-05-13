@@ -31,6 +31,12 @@ const AIChat: React.FC = () => {
     setInput('');
     setIsLoading(true);
 
+    const contextData = {
+      products: state.products.slice(0, 30).map((p) => ({ name: p.name, quantity: p.quantity, price: p.price })),
+      sales: state.sales.slice(0, 20).map((s) => ({ date: s.date, total: s.totalPrice })),
+    };
+    const contextString = JSON.stringify(contextData);
+
     try {
       // Priority 1: Gemini Nano (window.ai) - Built-in Chrome feature
       try {
@@ -40,8 +46,7 @@ const AIChat: React.FC = () => {
           const session = await window.ai.createTextSession();
           const prompt = `You are an AI assistant for a business inventory app called Shelf. 
           Below is the current inventory and sales data for context.
-          Inventory: ${JSON.stringify(state.products.slice(0, 20))}
-          Recent Sales: ${JSON.stringify(state.sales.slice(0, 20))}
+          Data: ${contextString}
           
           User Question: ${input}`;
 
@@ -70,8 +75,7 @@ const AIChat: React.FC = () => {
                     parts: [
                       {
                         text: `You are an AI assistant for Shelf. Context:
-                  Inventory: ${JSON.stringify(state.products.slice(0, 20))}
-                  Sales: ${JSON.stringify(state.sales.slice(0, 20))}
+                  Data: ${contextString}
                   User: ${input}`,
                       },
                     ],
@@ -87,8 +91,16 @@ const AIChat: React.FC = () => {
             setIsLoading(false);
             return;
           }
+
+          if (response.status === 401 || response.status === 403) {
+            throw new Error('Gemini API Key invalid or expired.');
+          }
+          if (response.status === 429) {
+            throw new Error('Gemini API rate limit exceeded.');
+          }
         } catch (err) {
           console.error('Gemini API call failed:', err);
+          if (err instanceof Error && err.message.includes('Gemini')) throw err;
         }
       }
 
@@ -105,7 +117,7 @@ const AIChat: React.FC = () => {
               model: savedOpenCodeGoModel,
               messages: [
                 { role: 'system', content: 'You are an AI assistant for an inventory app.' },
-                { role: 'user', content: `Inventory: ${JSON.stringify(state.products.slice(0, 20))}. User: ${input}` },
+                { role: 'user', content: `Context: ${contextString}. User: ${input}` },
               ],
             }),
           });
@@ -116,8 +128,16 @@ const AIChat: React.FC = () => {
             setIsLoading(false);
             return;
           }
+
+          if (response.status === 401) {
+            throw new Error('OpenCodeGo API Key invalid.');
+          }
+          if (response.status === 429) {
+            throw new Error('OpenCodeGo rate limit exceeded.');
+          }
         } catch (err) {
           console.error('OpenCodeGo API call failed:', err);
+          if (err instanceof Error && err.message.includes('OpenCodeGo')) throw err;
         }
       }
 
@@ -130,8 +150,7 @@ const AIChat: React.FC = () => {
             model: 'llama3',
             prompt: `You are an AI assistant for a business inventory app called Shelf. 
             Below is the current inventory and sales data for context.
-            Inventory: ${JSON.stringify(state.products.slice(0, 30))}
-            Recent Sales: ${JSON.stringify(state.sales.slice(0, 30))}
+            Data: ${contextString}
             
             User Question: ${input}`,
             stream: false,
@@ -201,6 +220,10 @@ const AIChat: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[60vh] p-4">
+      <p className="text-[10px] text-[#F5F5DC]/40 text-center mb-2 px-4 italic">
+        {t('reports.aiPrivacyNote') ||
+          'Note: A limited subset of your inventory and sales data is sent to the AI provider to give context to your questions.'}
+      </p>
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         {messages.length === 0 && (
           <div className="flex justify-start">
