@@ -268,6 +268,8 @@
     "passwordPlaceholder": "Password",
     "confirmPasswordPlaceholder": "Confirm Password",
     "passwordMismatch": "Passwords do not match.",
+    "or": "or",
+    "loginGuest": "Enter as Guest (Offline Mode)",
     "error": {
       "generic": "An unexpected error occurred. Please try again.",
       "invalid-credential": "Invalid email or password. Please try again.",

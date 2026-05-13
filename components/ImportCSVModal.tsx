@@ -60,8 +60,8 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
           cost: parseFloat(cost) || 0,
           imageUrl: imageUrl || undefined,
           isActive: true,
+          updatedBy: 'system',
           updatedAt: new Date().toISOString(),
-          updatedBy: 'import',
         };
       });
 

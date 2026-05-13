@@ -41,8 +41,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, onSave, onCancel, na
         phone,
         email,
         isActive: true,
+        updatedBy: 'system',
         updatedAt: new Date().toISOString(),
-        updatedBy: 'me',
       });
     }
   };

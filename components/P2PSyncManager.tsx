@@ -51,7 +51,7 @@ const P2PSyncManager: React.FC = () => {
     return () => {
       // p2pManager.disconnect();
     };
-  }, [dispatch]);
+  }, [dispatch, state.sales, state.clients, state.suppliers, state.purchaseOrders, state.products, state.auditLogs]);
 
   const handleConnect = () => {
     if (targetId) {

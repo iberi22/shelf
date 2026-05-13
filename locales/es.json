@@ -270,6 +270,8 @@
     "passwordPlaceholder": "Contraseña",
     "confirmPasswordPlaceholder": "Confirmar Contraseña",
     "passwordMismatch": "Las contraseñas no coinciden.",
+    "or": "o",
+    "loginGuest": "Entrar como Invitado (Modo Offline)",
     "error": {
       "generic": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
       "invalid-credential": "Correo o contraseña no válidos. Inténtalo de nuevo.",
