@@ -33,6 +33,8 @@ const Settings: React.FC = () => {
   const [lowStockThreshold, setLowStockThreshold] = useLocalStorage('lowStockThreshold', 5);
   const [geminiApiKey, setGeminiApiKey] = useLocalStorage('geminiApiKey', '');
   const [openCodeGoKey, setOpenCodeGoKey] = useLocalStorage('openCodeGoKey', '');
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
+  const [showOpenCodeGoKey, setShowOpenCodeGoKey] = useState(false);
   const [openCodeGoModel, setOpenCodeGoModel] = useLocalStorage('openCodeGoModel', 'gpt-4o');
   const [aiProxyUrl, setAiProxyUrl] = useLocalStorage('aiProxyUrl', '');
   const { currencyCode, setCurrencyCode, numberFormat, setNumberFormat } = useCurrency();
@@ -246,12 +248,21 @@ const Settings: React.FC = () => {
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="geminiApiKey" className="block text-sm font-medium text-[#F5F5DC]/90">
-                  Gemini API Key
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label htmlFor="geminiApiKey" className="block text-sm font-medium text-[#F5F5DC]/90">
+                    Gemini API Key
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowGeminiKey(!showGeminiKey)}
+                    className="text-xs text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
+                  >
+                    {showGeminiKey ? 'Ocultar' : 'Mostrar'}
+                  </button>
+                </div>
                 <input
                   id="geminiApiKey"
-                  type="password"
+                  type={showGeminiKey ? 'text' : 'password'}
                   value={geminiApiKey}
                   onChange={(e) => setGeminiApiKey(e.target.value)}
                   placeholder="AIzaSy..."
@@ -260,12 +271,21 @@ const Settings: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="openCodeGoKey" className="block text-sm font-medium text-[#F5F5DC]/90">
-                  OpenCodeGo Key
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label htmlFor="openCodeGoKey" className="block text-sm font-medium text-[#F5F5DC]/90">
+                    OpenCodeGo Key
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowOpenCodeGoKey(!showOpenCodeGoKey)}
+                    className="text-xs text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
+                  >
+                    {showOpenCodeGoKey ? 'Ocultar' : 'Mostrar'}
+                  </button>
+                </div>
                 <input
                   id="openCodeGoKey"
-                  type="password"
+                  type={showOpenCodeGoKey ? 'text' : 'password'}
                   value={openCodeGoKey}
                   onChange={(e) => setOpenCodeGoKey(e.target.value)}
                   placeholder="sk-..."
@@ -359,9 +379,9 @@ const Settings: React.FC = () => {
                     className="flex-1 p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
                   />
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (newPin.length >= 4) {
-                        setAppLock(newPin);
+                        await setAppLock(newPin);
                         setNewPin('');
                         showNotification('PIN configurado correctamente', 'success');
                       } else {

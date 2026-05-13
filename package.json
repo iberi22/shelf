@@ -47,6 +47,6 @@
     "workbox-window": "^7.4.1"
   },
   "overrides": {
-    "rollup": "^4.59.0"
+    "rollup": "^4.60.3"
   }
 }
