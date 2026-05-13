@@ -11,7 +11,7 @@ import Sales from './components/Sales';
 import Settings from './components/Settings';
 import Sidebar, { MobileBottomNav } from './components/Sidebar';
 import Suppliers from './components/Suppliers';
-import { useAuth } from './context/AuthContext';
+import { useSubscription } from './context/SubscriptionContext';
 
 interface MainAppProps {
   onLoginClick: () => void;
@@ -19,8 +19,8 @@ interface MainAppProps {
 
 const MainApp: React.FC<MainAppProps> = ({ onLoginClick }) => {
   const [activeComponent, setActiveComponent] = useState('nav.summary');
-  const { user } = useAuth();
-  const showAds = !user || user.subscriptionTier === 'free'; // Show ads for free or anonymous users
+  const { isFree } = useSubscription();
+  const showAds = isFree; // No ads if pro/pyme (always true now)
 
   const renderComponent = () => {
     switch (activeComponent) {

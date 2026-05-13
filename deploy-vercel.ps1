@@ -26,7 +26,7 @@ function Assert-Command {
   }
 }
 
-Assert-Command npm
+Assert-Command pnpm
 Assert-Command node
 
 Write-Host "Deploy to Vercel ($Environment)" -ForegroundColor Cyan
@@ -43,28 +43,28 @@ if ($resolvedToken) {
 
 if (-not $SkipInstall) {
   Write-Host "Installing dependencies..." -ForegroundColor Cyan
-  npm ci
+  pnpm install --frozen-lockfile
 }
 
 if (-not $SkipBuild) {
   Write-Host "Building app (Vite)..." -ForegroundColor Cyan
-  npm run build
+  pnpm run build
 }
 
 # Sync Vercel project settings + env vars to local machine
 Write-Host "Pulling Vercel project settings..." -ForegroundColor Cyan
-npx --yes vercel@latest pull --yes --environment=$Environment @tokenArg
+pnpm dlx vercel@latest pull --yes --environment=$Environment @tokenArg
 
 Write-Host "Building with Vercel (prebuilt output)..." -ForegroundColor Cyan
 if ($Environment -eq 'production') {
-  npx --yes vercel@latest build --prod @tokenArg
+  pnpm dlx vercel@latest build --prod @tokenArg
 } else {
-  npx --yes vercel@latest build @tokenArg
+  pnpm dlx vercel@latest build @tokenArg
 }
 
 Write-Host "Deploying..." -ForegroundColor Cyan
 if ($Environment -eq 'production') {
-  npx --yes vercel@latest deploy --prebuilt --prod @tokenArg
+  pnpm dlx vercel@latest deploy --prebuilt --prod @tokenArg
 } else {
-  npx --yes vercel@latest deploy --prebuilt @tokenArg
+  pnpm dlx vercel@latest deploy --prebuilt @tokenArg
 }

@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useI18n } from '../context/I18nContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import { useUI } from '../context/UIContext';
 
 interface ProFeatureCardProps {
@@ -10,6 +11,7 @@ interface ProFeatureCardProps {
 
 const ProFeatureCard: React.FC<ProFeatureCardProps> = ({ icon, titleKey, descriptionKey }) => {
   const { t } = useI18n();
+  const { isPro } = useSubscription();
   const { openSubscriptionModal } = useUI();
 
   return (
@@ -19,12 +21,14 @@ const ProFeatureCard: React.FC<ProFeatureCardProps> = ({ icon, titleKey, descrip
         <h4 className="text-xl font-bold text-[#F5F5DC]">{t(titleKey)}</h4>
       </div>
       <p className="text-base text-[#F5F5DC]/90 flex-grow mb-5 leading-relaxed">{t(descriptionKey)}</p>
-      <button
-        onClick={openSubscriptionModal}
-        className="w-full mt-auto text-sm font-bold text-[#121212] bg-yellow-400 px-5 py-3 rounded-lg hover:bg-yellow-300 transition-all active:scale-95 shadow-md"
-      >
-        {t('learnMore')}
-      </button>
+      {!isPro && (
+        <button
+          onClick={openSubscriptionModal}
+          className="w-full mt-auto text-sm font-bold text-[#121212] bg-yellow-400 px-5 py-3 rounded-lg hover:bg-yellow-300 transition-all active:scale-95 shadow-md"
+        >
+          {t('learnMore')}
+        </button>
+      )}
     </div>
   );
 };

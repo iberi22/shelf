@@ -14,6 +14,7 @@ import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { useI18n } from '../context/I18nContext';
+import { useSubscription } from '../context/SubscriptionContext';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
 
@@ -38,6 +39,7 @@ const ProChartsTeaserCard: React.FC<ProChartsTeaserCardProps> = ({
   rotateEveryMs = defaultRotateEveryMs,
 }) => {
   const { t } = useI18n();
+  const { isPro } = useSubscription();
   const [activeChartIndex, setActiveChartIndex] = useState<number>(() => Math.floor(Math.random() * 3));
 
   useEffect(() => {
@@ -174,12 +176,15 @@ const ProChartsTeaserCard: React.FC<ProChartsTeaserCardProps> = ({
             {t('dashboard.proCharts.description')}
           </p>
         </div>
-        <button
-          onClick={onShowProFeatures}
-          className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
-        >
-          {t('dashboard.proCharts.showProCta')}
-        </button>
+        {/* CTA hidden when already Pro */}
+        {!isPro && (
+          <button
+            onClick={onShowProFeatures}
+            className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
+          >
+            {t('dashboard.proCharts.showProCta')}
+          </button>
+        )}
       </div>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
@@ -194,16 +199,19 @@ const ProChartsTeaserCard: React.FC<ProChartsTeaserCardProps> = ({
             >
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-bold text-[#F5F5DC]">{chart.title}</h4>
-                {isActive && (
+                {/* Tag hidden when already Pro */}
+                {isActive && !isPro && (
                   <span className="text-xs font-bold text-yellow-400">{t('dashboard.proCharts.previewTag')}</span>
                 )}
               </div>
 
               <div className="h-[200px]">{chart.render()}</div>
 
-              <div className={`absolute inset-0 ${veilOpacityClass} flex items-end justify-start p-4`}>
-                <div className="text-xs font-bold text-[#F5F5DC]/90">{t('dashboard.proCharts.proOnlyNote')}</div>
-              </div>
+              {!isPro && (
+                <div className={`absolute inset-0 ${veilOpacityClass} flex items-end justify-start p-4`}>
+                  <div className="text-xs font-bold text-[#F5F5DC]/90">{t('dashboard.proCharts.proOnlyNote')}</div>
+                </div>
+              )}
             </div>
           );
         })}

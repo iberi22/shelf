@@ -1,7 +1,6 @@
 import type React from 'react';
 import { createContext, type ReactNode, useContext, useMemo } from 'react';
 import type { User } from '../types';
-import { useAuth } from './AuthContext';
 
 interface SubscriptionContextType {
   isPro: boolean;
@@ -13,17 +12,15 @@ interface SubscriptionContextType {
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
-  const tier = user?.subscriptionTier ?? 'free';
 
   const value = useMemo(
     () => ({
-      isPro: tier === 'pro' || tier === 'pyme',
-      isPyme: tier === 'pyme',
-      isFree: tier === 'free',
-      tier: tier,
+      isPro: true,
+      isPyme: true,
+      isFree: false,
+      tier: 'pro' as const,
     }),
-    [tier],
+    [],
   );
 
   return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;

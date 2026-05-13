@@ -159,13 +159,13 @@ export const extractInvoice = functions.https.onRequest(
     }
 
     try {
-      // Verify Pro subscription
-      const userDoc = await db.collection('users').doc(decodedToken.uid).get();
-      const tier = userDoc.data()?.subscriptionTier;
-      if (tier !== 'pro' && tier !== 'pyme') {
-        response.status(403).send({ error: 'Pro subscription required for invoice OCR' });
-        return;
-      }
+      // Verify Pro subscription (Bypassed)
+      // const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+      // const tier = userDoc.data()?.subscriptionTier;
+      // if (tier !== 'pro' && tier !== 'pyme') {
+      //   response.status(403).send({ error: 'Pro subscription required for invoice OCR' });
+      //   return;
+      // }
 
       const { imageBase64, mimeType, existingProducts } = request.body;
 
