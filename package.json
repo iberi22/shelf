@@ -10,11 +10,16 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "preview": "vite preview",
-    "vercel:pull:preview": "npx --yes vercel@latest pull --yes --environment=preview",
-    "vercel:pull:production": "npx --yes vercel@latest pull --yes --environment=production",
-    "vercel:build": "npx --yes vercel@latest build",
-    "vercel:deploy:preview": "npx --yes vercel@latest deploy --prebuilt",
-    "vercel:deploy:production": "npx --yes vercel@latest deploy --prebuilt --prod"
+    "vercel:pull:preview": "pnpm dlx vercel@latest pull --yes --environment=preview",
+    "vercel:pull:production": "pnpm dlx vercel@latest pull --yes --environment=production",
+    "vercel:build": "pnpm dlx vercel@latest build",
+    "vercel:deploy:preview": "pnpm dlx vercel@latest deploy --prebuilt",
+    "vercel:deploy:production": "pnpm dlx vercel@latest deploy --prebuilt --prod",
+    "audit": "pnpm audit",
+    "audit:fix": "pnpm audit --fix",
+    "outdated": "pnpm outdated",
+    "install:ci": "pnpm install --frozen-lockfile",
+    "verify:deps": "pnpm audit && pnpm outdated"
   },
   "dependencies": {
     "@google/genai": "^2.0.0",
@@ -50,5 +55,10 @@
   },
   "overrides": {
     "rollup": "^4.59.0"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.12.0"
   }
 }
