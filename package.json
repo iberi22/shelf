@@ -22,15 +22,15 @@
     "verify:deps": "pnpm audit && pnpm outdated"
   },
   "dependencies": {
-    "@google/genai": "^2.0.0",
+    "@google/genai": "^2.6.0",
     "@mlc-ai/web-llm": "^0.2.83",
     "chart.js": "^4.5.1",
     "cypress-downloadfile": "^1.2.4",
     "firebase": "^12.13.0",
-    "firebase-admin": "^13.9.0",
+    "firebase-admin": "^13.10.0",
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",
-    "jspdf-autotable": "^5.0.2",
+    "jspdf-autotable": "^5.0.8",
     "peerjs": "^1.5.5",
     "react": "^19.2.6",
     "react-chartjs-2": "^5.3.1",
@@ -40,21 +40,21 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
     "@tailwindcss/postcss": "^4.3.0",
-    "@types/react": "^19.2.7",
+    "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.5.0",
     "cypress": "^15.14.2",
-    "postcss": "^8.5.14",
-    "rollup": "^4.59.0",
+    "postcss": "^8.5.15",
+    "rollup": "^4.60.4",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
-    "vite": "^8.0.11",
+    "vite": "^8.0.14",
     "vite-plugin-pwa": "^1.3.0",
     "workbox-window": "^7.4.0"
   },
   "overrides": {
-    "rollup": "^4.59.0"
+    "rollup": "^4.60.4"
   },
   "packageManager": "pnpm@9.12.0",
   "engines": {
