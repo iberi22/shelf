@@ -209,13 +209,17 @@ const AIChat: React.FC = () => {
         {messages.length === 0 && !isInitializing && (
           <div className="flex justify-start">
             <div className="max-w-xs md:max-w-md p-3 rounded-lg bg-[#F5F5DC]/10">
-              <p className="text-sm whitespace-pre-wrap">{isAIDisabled ? t('reports.aiDisabledWelcome') : t('reports.aiWelcome')}</p>
+              <p className="text-sm whitespace-pre-wrap">
+                {isAIDisabled ? t('reports.aiDisabledWelcome') : t('reports.aiWelcome')}
+              </p>
             </div>
           </div>
         )}
         {messages.map((msg, index) => (
           <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-xs md:max-w-md p-3 rounded-lg ${msg.role === 'user' ? 'bg-[#F5F5DC] text-[#121212]' : 'bg-[#F5F5DC]/10'}`}>
+            <div
+              className={`max-w-xs md:max-w-md p-3 rounded-lg ${msg.role === 'user' ? 'bg-[#F5F5DC] text-[#121212]' : 'bg-[#F5F5DC]/10'}`}
+            >
               <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
             </div>
           </div>

@@ -101,9 +101,7 @@ const LockScreen: React.FC = () => {
         </form>
       </div>
 
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
+      <style>{`
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
           25% { transform: translateX(-8px); }
@@ -112,9 +110,7 @@ const LockScreen: React.FC = () => {
         .animate-shake {
           animation: shake 0.2s ease-in-out 0s 2;
         }
-      `,
-        }}
-      />
+      `}</style>
     </div>
   );
 };

@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, []);
+  }, [appLockPin]);
 
   const login = async (email: string, password: string) => {
     await auth.signInWithEmailAndPassword(email, password);
