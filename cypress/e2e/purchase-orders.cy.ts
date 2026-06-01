@@ -15,17 +15,17 @@ describe('Purchase Orders', () => {
       phone: '1234567890',
       email: 'test@supplier.com',
     });
-    cy.get('[data-testid="nav-item-nav.inventory"]').click();
+    cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
     cy.contains('tr', 'Test Product').then(($row) => {
       const id = $row.attr('data-testid').replace('product-row-', '');
       Cypress.env('productId', id);
     });
-    cy.get('[data-testid="nav-item-nav.suppliers"]').click();
+    cy.get('[data-testid="nav-item-nav.suppliers"]').last().click();
     cy.contains('tr', 'Test Supplier').then(($row) => {
       const id = $row.attr('data-testid').replace('supplier-row-', '');
       Cypress.env('supplierId', id);
     });
-    cy.get('[data-testid="nav-item-nav.purchases"]').click();
+    cy.get('[data-testid="nav-item-nav.purchases"]').last().click();
   });
 
   it('should add a new purchase order', () => {

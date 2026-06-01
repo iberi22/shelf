@@ -3,7 +3,7 @@ describe('Settings', () => {
     cy.visit('/');
     cy.contains('Empieza Gratis').click();
     cy.get('[data-testid="welcome-modal-get-started-button"]').click();
-    cy.get('[data-testid="nav-item-nav.settings"]').click();
+    cy.get('[data-testid="nav-item-nav.settings"]').last().click();
   });
 
   it('should change the currency', () => {

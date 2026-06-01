@@ -35,36 +35,36 @@ describe('Catalog', () => {
   });
 
   it('should navigate to Catalog section', () => {
-    cy.get('[data-testid="nav-item-nav.catalog"]').click();
+    cy.get('[data-testid="nav-item-nav.catalog"]').last().click();
     cy.contains('Generar Catálogo').should('be.visible');
   });
 
   it('should show all products selected by default', () => {
-    cy.get('[data-testid="nav-item-nav.catalog"]').click();
+    cy.get('[data-testid="nav-item-nav.catalog"]').last().click();
     cy.contains('3 de 3 productos seleccionados').should('be.visible');
     cy.get('[data-testid="catalog-product-card"]').should('have.length', 3);
   });
 
   it('should allow deselecting a product', () => {
-    cy.get('[data-testid="nav-item-nav.catalog"]').click();
+    cy.get('[data-testid="nav-item-nav.catalog"]').last().click();
     cy.get('[data-testid="catalog-product-card"]').first().click();
     cy.contains('2 de 3 productos seleccionados').should('be.visible');
   });
 
   it('should toggle price visibility', () => {
-    cy.get('[data-testid="nav-item-nav.catalog"]').click();
+    cy.get('[data-testid="nav-item-nav.catalog"]').last().click();
     cy.get('[data-testid="catalog-show-prices"]').uncheck({ force: true });
     cy.get('[data-testid="catalog-product-price"]').should('not.exist');
   });
 
   it('should toggle product descriptions', () => {
-    cy.get('[data-testid="nav-item-nav.catalog"]').click();
+    cy.get('[data-testid="nav-item-nav.catalog"]').last().click();
     cy.get('[data-testid="catalog-show-descriptions"]').uncheck({ force: true });
     cy.get('[data-testid="catalog-product-sku"]').should('not.exist');
   });
 
   it('should export HTML catalog file', () => {
-    cy.get('[data-testid="nav-item-nav.catalog"]').click();
+    cy.get('[data-testid="nav-item-nav.catalog"]').last().click();
 
     // Change catalog name
     cy.get('[data-testid="catalog-name-input"]').clear().type('El Mundo de las Materas');
@@ -78,7 +78,7 @@ describe('Catalog', () => {
   });
 
   it('should filter by "Solo productos seleccionados"', () => {
-    cy.get('[data-testid="nav-item-nav.catalog"]').click();
+    cy.get('[data-testid="nav-item-nav.catalog"]').last().click();
 
     // Deselect one product
     cy.get('[data-testid="catalog-product-card"]').last().click();
@@ -90,7 +90,7 @@ describe('Catalog', () => {
   });
 
   it('should select all and deselect all', () => {
-    cy.get('[data-testid="nav-item-nav.catalog"]').click();
+    cy.get('[data-testid="nav-item-nav.catalog"]').last().click();
 
     // Deselect all first
     cy.get('[data-testid="catalog-deselect-all"]').click();
@@ -102,7 +102,7 @@ describe('Catalog', () => {
   });
 
   it('should update catalog preview when settings change', () => {
-    cy.get('[data-testid="nav-item-nav.catalog"]').click();
+    cy.get('[data-testid="nav-item-nav.catalog"]').last().click();
 
     // Change subtitle
     cy.get('[data-testid="catalog-subtitle-input"]').clear().type('Catálogo de Materas 2026');

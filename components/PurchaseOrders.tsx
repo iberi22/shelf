@@ -162,11 +162,16 @@ const PurchaseOrders: React.FC = () => {
       <div className="md:hidden grid grid-cols-1 gap-3">
         {sortedPOs.length > 0 ? (
           sortedPOs.map((po) => (
-            <div key={po.id} className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform">
+            <div
+              key={po.id}
+              className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
+            >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm text-[#F5F5DC] truncate">{po.supplierName}</p>
-                  <p className="text-xs text-[#F5F5DC]/50 mt-0.5">{t('purchases.orderDate')}: {po.orderDate}</p>
+                  <p className="text-xs text-[#F5F5DC]/50 mt-0.5">
+                    {t('purchases.orderDate')}: {po.orderDate}
+                  </p>
                 </div>
                 <span
                   className={`flex-shrink-0 px-2 py-1 text-xs font-semibold rounded-full ${po.status === 'received' ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'}`}

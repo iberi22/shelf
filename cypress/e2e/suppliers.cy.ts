@@ -3,7 +3,7 @@ describe('Suppliers', () => {
     cy.visit('/');
     cy.contains('Empieza Gratis').click();
     cy.get('[data-testid="welcome-modal-get-started-button"]').click();
-    cy.get('[data-testid="nav-item-nav.suppliers"]').click();
+    cy.get('[data-testid="nav-item-nav.suppliers"]').last().click();
   });
 
   it('should add a new supplier', () => {

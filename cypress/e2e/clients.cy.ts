@@ -3,7 +3,7 @@ describe('Clients', () => {
     cy.visit('/');
     cy.contains('Empieza Gratis').click();
     cy.get('[data-testid="welcome-modal-get-started-button"]').click();
-    cy.get('[data-testid="nav-item-nav.clients"]').click();
+    cy.get('[data-testid="nav-item-nav.clients"]').last().click();
   });
 
   it('should add and then edit a new client', () => {

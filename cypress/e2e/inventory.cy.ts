@@ -11,7 +11,7 @@ describe('Inventory', () => {
       price: '100',
       cost: '50',
     });
-    cy.get('[data-testid="nav-item-nav.inventory"]').click();
+    cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
   });
 
   it('should add a new product to the inventory', () => {

@@ -10,12 +10,12 @@ describe('Sales', () => {
       price: '100',
       cost: '50',
     });
-    cy.get('[data-testid="nav-item-nav.inventory"]').click();
+    cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
     cy.contains('tr', 'Test Product').then(($row) => {
       const id = $row.attr('data-testid').replace('product-row-', '');
       Cypress.env('productId', id);
     });
-    cy.get('[data-testid="nav-item-nav.sales"]').click();
+    cy.get('[data-testid="nav-item-nav.sales"]').last().click();
   });
 
   it('should add a new sale', () => {

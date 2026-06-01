@@ -3,7 +3,7 @@
 import 'cypress-downloadfile/lib/downloadFileCommand';
 
 Cypress.Commands.add('addProduct', (product) => {
-  cy.get('[data-testid="nav-item-nav.inventory"]').click();
+  cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
   cy.get('body').then(($body) => {
     if ($body.find(`td:contains("${product.name}")`).length === 0) {
       cy.get('[data-testid="add-product-button"]').click();
@@ -18,7 +18,7 @@ Cypress.Commands.add('addProduct', (product) => {
 });
 
 Cypress.Commands.add('addSupplier', (supplier) => {
-  cy.get('[data-testid="nav-item-nav.suppliers"]').click();
+  cy.get('[data-testid="nav-item-nav.suppliers"]').last().click();
   cy.get('body').then(($body) => {
     if ($body.find(`td:contains("${supplier.name}")`).length === 0) {
       cy.get('[data-testid="add-supplier-button"]').click();
