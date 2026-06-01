@@ -89,9 +89,10 @@ const PurchaseOrders: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
+      {/* Desktop table */}
+      <div className="hidden md:block bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[600px] md:min-w-[700px]">
+          <table className="w-full text-left min-w-[700px]">
             <thead className="bg-[#F5F5DC]/10">
               <tr>
                 <SortableHeader sortKey="supplierName" labelKey="common.supplier" />
@@ -155,6 +156,56 @@ const PurchaseOrders: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden grid grid-cols-1 gap-3">
+        {sortedPOs.length > 0 ? (
+          sortedPOs.map((po) => (
+            <div key={po.id} className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform">
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm text-[#F5F5DC] truncate">{po.supplierName}</p>
+                  <p className="text-xs text-[#F5F5DC]/50 mt-0.5">{t('purchases.orderDate')}: {po.orderDate}</p>
+                </div>
+                <span
+                  className={`flex-shrink-0 px-2 py-1 text-xs font-semibold rounded-full ${po.status === 'received' ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'}`}
+                >
+                  {po.status === 'received' ? t('purchases.statusReceived') : t('purchases.statusPending')}
+                </span>
+              </div>
+              <p className="text-xs text-[#F5F5DC]/70 mb-3">
+                {t('common.items')}: {po.items.reduce((sum, item) => sum + item.quantity, 0)}
+              </p>
+              <div className="flex gap-2 pt-2 border-t border-[#F5F5DC]/10">
+                <button
+                  onClick={() => handleOpenModal(po)}
+                  className="flex-1 bg-transparent border border-yellow-500/50 text-yellow-400 font-bold py-2.5 px-3 rounded-lg hover:bg-yellow-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
+                >
+                  ✏️ {t('common.edit')}
+                </button>
+                {po.status === 'pending' && (
+                  <button
+                    onClick={() => handleMarkAsReceived(po)}
+                    className="flex-1 bg-transparent border border-green-500/50 text-green-400 font-bold py-2.5 px-3 rounded-lg hover:bg-green-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
+                  >
+                    ✔️ {t('purchases.markAsReceived')}
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(po.id)}
+                  className="flex-1 bg-transparent border border-red-500/50 text-red-400 font-bold py-2.5 px-3 rounded-lg hover:bg-red-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
+                >
+                  🗑️ {t('common.delete')}
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center p-8 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg">
+            {t('purchases.empty')}
+          </div>
+        )}
       </div>
 
       {isModalOpen && (
@@ -276,7 +327,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
           <select
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
-            className={`w-full p-2 bg-[#121212] border rounded-md ${errors.supplierId ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
+            className={`w-full p-2.5 bg-[#121212] border rounded-md min-h-[44px] ${errors.supplierId ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
             disabled={isEditingReceived}
             data-testid="purchase-order-supplier-select"
           >
@@ -296,11 +347,11 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
 
         <div className="space-y-2">
           {items.map((item, index) => (
-            <div key={index} className="flex items-center gap-2 p-2 rounded-md bg-[#121212]">
+            <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-md bg-[#121212]">
               <select
                 value={item.productId}
                 onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
-                className="flex-grow p-2 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md"
+                className="w-full sm:flex-1 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md min-h-[44px]"
                 disabled={isEditingReceived}
                 data-testid={`purchase-order-item-product-${index}`}
               >
@@ -313,35 +364,37 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
                     </option>
                   ))}
               </select>
-              <input
-                type="number"
-                value={item.quantity}
-                onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                min="1"
-                className="w-20 p-2 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md"
-                disabled={isEditingReceived}
-                data-testid={`purchase-order-item-quantity-${index}`}
-              />
-              <input
-                type="number"
-                value={item.cost}
-                onChange={(e) => handleItemChange(index, 'cost', e.target.value)}
-                min="0"
-                step="0.01"
-                className="w-24 p-2 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md"
-                disabled={isEditingReceived}
-                data-testid={`purchase-order-item-cost-${index}`}
-              />
-              {!isEditingReceived && (
-                <button
-                  type="button"
-                  onClick={() => removeItem(index)}
-                  className="text-red-400 transition-transform active:scale-95"
-                  data-testid={`remove-purchase-order-item-button-${index}`}
-                >
-                  🗑️
-                </button>
-              )}
+              <div className="grid grid-cols-2 sm:flex gap-2">
+                <input
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                  min="1"
+                  className="w-full sm:w-20 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md min-h-[44px]"
+                  disabled={isEditingReceived}
+                  data-testid={`purchase-order-item-quantity-${index}`}
+                />
+                <input
+                  type="number"
+                  value={item.cost}
+                  onChange={(e) => handleItemChange(index, 'cost', e.target.value)}
+                  min="0"
+                  step="0.01"
+                  className="w-full sm:w-24 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md min-h-[44px]"
+                  disabled={isEditingReceived}
+                  data-testid={`purchase-order-item-cost-${index}`}
+                />
+                {!isEditingReceived && (
+                  <button
+                    type="button"
+                    onClick={() => removeItem(index)}
+                    className="bg-transparent border border-red-500/50 text-red-400 font-bold py-2.5 px-3 rounded-lg hover:bg-red-500/10 transition-all active:scale-95 flex-shrink-0 text-sm min-h-[44px]"
+                    data-testid={`remove-purchase-order-item-button-${index}`}
+                  >
+                    🗑️
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -349,27 +402,27 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
           <button
             type="button"
             onClick={addItem}
-            className="text-sm font-bold text-yellow-400 hover:text-yellow-300 transition-transform active:scale-95"
+            className="w-full bg-transparent border border-yellow-500/50 text-yellow-400 font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
             data-testid="add-purchase-order-item-button"
           >
-            {t('purchases.form.addItem')}
+            + {t('purchases.form.addItem')}
           </button>
         )}
         {errors.general && <p className="text-red-400 text-xs mt-1">{errors.general}</p>}
       </div>
 
-      <div className="flex justify-end gap-4 mt-6">
+      <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 w-full">
         <button
           type="button"
           onClick={onCancel}
-          className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95"
+          className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2.5 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 min-h-[44px]"
           data-testid="cancel-purchase-order-button"
         >
           {t('common.cancel')}
         </button>
         <button
           type="submit"
-          className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95"
+          className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95 min-h-[44px]"
           disabled={isEditingReceived}
           data-testid="save-purchase-order-button"
         >
