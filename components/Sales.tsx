@@ -105,20 +105,21 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-[#F5F5DC]">{t('sales.title')}</h2>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC]">{t('sales.title')}</h2>
         <button
           onClick={handleOpenModal}
-          className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95"
+          className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
           data-testid="add-sale-button"
         >
           {t('sales.addSale')}
         </button>
       </div>
 
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
+      {/* Desktop table */}
+      <div className="hidden md:block bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[600px] md:min-w-[700px]">
+          <table className="w-full text-left min-w-[700px]">
             <thead className="bg-[#F5F5DC]/10">
               <tr>
                 <SortableHeader sortKey="date" labelKey="sales.date" />
@@ -138,7 +139,7 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
                     className="border-t border-[#F5F5DC]/20 hover:bg-foreground/5 transition-colors duration-200"
                   >
                     <td className="p-4">{new Date(sale.date).toLocaleDateString()}</td>
-                    <td className="p-4">
+                    <td className="p-4 max-w-[120px] md:max-w-none truncate" title={sale.items.map((item) => `${item.productName} (x${item.quantity})`).join(', ')}>
                       {sale.items.map((item) => `${item.productName} (x${item.quantity})`).join(', ')}
                     </td>
                     <td className="p-4">{formatCurrency(sale.totalPrice)}</td>
@@ -172,6 +173,55 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden grid grid-cols-1 gap-3">
+        {sortedSales.length > 0 ? (
+          sortedSales.map((sale) => (
+            <div
+              key={sale.id}
+              className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <p className="text-xs text-[#F5F5DC]/50">{t('sales.date')}</p>
+                  <p className="text-sm font-bold">{new Date(sale.date).toLocaleDateString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-green-400">{formatCurrency(sale.totalPrice)}</p>
+                  <p className="text-xs">{t('sales.profit')}: <span className="text-green-400">{formatCurrency(sale.profit)}</span></p>
+                </div>
+              </div>
+              <div className="text-xs text-[#F5F5DC]/70 mb-2 line-clamp-2">
+                {sale.items.map((item) => `${item.productName} (x${item.quantity})`).join(', ')}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#F5F5DC]/50">{sale.clientName || t('common.notAvailable')}</span>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => generateReceipt(sale)}
+                    className="bg-transparent border border-blue-500/50 text-blue-400 font-bold py-2 px-3 rounded-lg text-xs hover:bg-blue-500/10 transition-all active:scale-95 min-h-[44px]"
+                    title={t('sales.receipt.generate') || 'Generate Receipt'}
+                  >
+                    📄 {t('sales.receipt.generate') || 'Receipt'}
+                  </button>
+                  <button
+                    onClick={() => shareOnWhatsApp(sale)}
+                    className="bg-transparent border border-green-500/50 text-green-400 font-bold py-2 px-3 rounded-lg text-xs hover:bg-green-500/10 transition-all active:scale-95 min-h-[44px]"
+                    title={t('sales.share.whatsapp') || 'Share on WhatsApp'}
+                  >
+                    📱 WhatsApp
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center p-8 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg" data-testid="empty-sales-message">
+            {t('sales.empty')}
+          </div>
+        )}
       </div>
 
       {isModalOpen && (
@@ -300,12 +350,12 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
         {items.map((item, index) => {
           const product = state.products.find((p) => p.id === item.productId);
           return (
-            <div key={index} className="flex flex-col gap-2 p-2 rounded-md bg-[#121212]">
+            <div key={index} className="flex flex-col gap-2 p-3 rounded-md bg-[#121212]">
               <div className="flex items-center gap-2">
                 <select
                   value={item.productId}
                   onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
-                  className="flex-grow p-2 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md"
+                  className="flex-1 min-w-0 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md text-sm min-h-[44px]"
                   data-testid={`sale-item-product-${index}`}
                 >
                   <option value="" disabled>
@@ -319,12 +369,12 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
                   data-testid={`remove-sale-item-button-${index}`}
                   type="button"
                   onClick={() => removeItem(index)}
-                  className="text-red-400 transition-transform active:scale-95"
+                  className="bg-transparent border border-red-500/50 text-red-400 font-bold py-2.5 px-3 rounded-lg hover:bg-red-500/10 transition-all active:scale-95 flex-shrink-0 text-sm min-h-[44px]"
                 >
                   🗑️
                 </button>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <input
                   data-testid={`sale-item-quantity-${index}`}
                   type="number"
@@ -333,7 +383,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
                   onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                   min="1"
                   max={product?.quantity}
-                  className="w-1/2 p-2 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md"
+                  className="w-full p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md text-sm min-h-[44px]"
                 />
                 <input
                   data-testid={`sale-item-price-${index}`}
@@ -343,7 +393,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
                   onChange={(e) => handleItemChange(index, 'price', e.target.value)}
                   min="0"
                   step="0.01"
-                  className="w-1/2 p-2 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md"
+                  className="w-full p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md text-sm min-h-[44px]"
                 />
               </div>
               {errors.items?.[index] && <p className="text-red-400 text-xs">{errors.items[index]}</p>}
@@ -354,9 +404,9 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
           data-testid="add-sale-item-button"
           type="button"
           onClick={addItem}
-          className="text-sm font-bold text-yellow-400 hover:text-yellow-300 transition-transform active:scale-95"
+          className="w-full bg-transparent border border-yellow-500/50 text-yellow-400 font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
         >
-          {t('sales.form.addItem')}
+          + {t('sales.form.addItem')}
         </button>
         {errors.general && <p className="text-red-400 text-xs mt-1">{errors.general}</p>}
 
@@ -365,7 +415,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
             data-testid="sale-client-select"
             value={clientId || ''}
             onChange={(e) => setClientId(e.target.value || undefined)}
-            className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+            className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 min-h-[44px]"
           >
             <option value="">{t('sales.form.selectClientOptional')}</option>
             {state.clients
@@ -379,7 +429,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
         </div>
       </div>
 
-      <div className="flex justify-between items-center mt-6 border-t border-[#F5F5DC]/20 pt-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-6 border-t border-[#F5F5DC]/20 pt-4 gap-4">
         <div>
           <p className="text-sm text-[#F5F5DC]/70">
             {t('sales.total')}: <span className="font-bold text-lg text-[#F5F5DC]">{formatCurrency(totalPrice)}</span>
@@ -388,19 +438,19 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
             {t('sales.profit')}: <span className="font-semibold text-green-400">{formatCurrency(totalProfit)}</span>
           </p>
         </div>
-        <div className="flex justify-end gap-4">
+        <div className="flex flex-col sm:flex-row justify-end gap-3 w-full sm:w-auto">
           <button
             data-testid="cancel-sale-button"
             type="button"
             onClick={onCancel}
-            className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95"
+            className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2.5 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 min-h-[44px]"
           >
             {t('common.cancel')}
           </button>
           <button
             data-testid="save-sale-button"
             type="submit"
-            className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95"
+            className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95 min-h-[44px]"
           >
             {t('common.save')}
           </button>

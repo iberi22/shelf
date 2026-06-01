@@ -107,30 +107,30 @@ const Inventory: React.FC = () => {
   return (
     <div>
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-        <h2 className="text-3xl font-bold text-[#F5F5DC]">{t('inventory.title')}</h2>
-        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC]">{t('inventory.title')}</h2>
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <div className="relative flex-grow">
             <input
               type="text"
               placeholder={t('inventory.searchPlaceholder')}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full p-2 pl-8 bg-[#121212] border border-[#F5F5DC]/30 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+              className="w-full p-2 pl-8 bg-[#121212] border border-[#F5F5DC]/30 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5F5DC] text-sm"
               data-testid="inventory-search-input"
             />
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#F5F5DC]/50">🔍</span>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-2 sm:gap-4">
             <button
               onClick={handleExportCSV}
-              className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 flex-grow md:flex-grow-0"
+              className="flex-1 sm:flex-none bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
               data-testid="export-csv-button"
             >
               {t('common.exportCsv')}
             </button>
             <button
               onClick={() => handleOpenModal()}
-              className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 flex-grow md:flex-grow-0"
+              className="flex-1 sm:flex-none bg-[#F5F5DC] text-[#121212] font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
               data-testid="add-product-button"
             >
               {t('inventory.addProduct')}
@@ -139,9 +139,10 @@ const Inventory: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
+      {/* Desktop table */}
+      <div className="hidden md:block bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[600px] md:min-w-[700px]">
+          <table className="w-full text-left min-w-[700px]">
             <thead className="bg-[#F5F5DC]/10">
               <tr>
                 <th className="p-4">{t('common.image')}</th>
@@ -170,7 +171,7 @@ const Inventory: React.FC = () => {
                         </div>
                       )}
                     </td>
-                    <td className="p-4">{product.name}</td>
+                    <td className="p-4 max-w-[120px] md:max-w-none truncate" title={product.name}>{product.name}</td>
                     <td className="p-4">{product.sku || t('common.notAvailable')}</td>
                     <td className="p-4">
                       {product.quantity}
@@ -212,6 +213,68 @@ const Inventory: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden grid grid-cols-1 gap-3">
+        {filteredProducts.length > 0 ? (
+          filteredProducts.map((product) => (
+            <div
+              key={product.id}
+              data-testid={`product-card-${product.id}`}
+              className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="h-14 w-14 rounded-md object-cover" />
+                  ) : (
+                    <div className="h-14 w-14 rounded-md bg-[#F5F5DC]/10 flex items-center justify-center text-2xl">
+                      📦
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-sm text-[#F5F5DC] truncate" title={product.name}>{product.name}</h3>
+                  {product.sku && (
+                    <p className="text-xs text-[#F5F5DC]/50 mt-0.5">{t('common.sku')}: {product.sku}</p>
+                  )}
+                  <div className="flex items-center gap-3 mt-2 text-sm">
+                    <span className="text-[#F5F5DC]/80">
+                      {t('common.quantity')}: <strong>{product.quantity}</strong>
+                      {product.quantity > 0 && product.quantity <= lowStockThreshold && (
+                        <span className="text-yellow-400 ml-1" title={t('inventory.lowStock')}>⚠️</span>
+                      )}
+                    </span>
+                    <span className="text-[#F5F5DC]/80">
+                      {t('common.price')}: <strong>{formatCurrency(product.price)}</strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-3 pt-2 border-t border-[#F5F5DC]/10">
+                <button
+                  onClick={() => handleOpenModal(product)}
+                  className="flex-1 bg-transparent border border-yellow-500/50 text-yellow-400 font-bold py-2.5 px-3 rounded-lg hover:bg-yellow-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
+                  data-testid={`edit-product-${product.id}`}
+                >
+                  ✏️ {t('common.edit')}
+                </button>
+                <button
+                  onClick={() => handleDelete(product.id)}
+                  className="flex-1 bg-transparent border border-red-500/50 text-red-400 font-bold py-2.5 px-3 rounded-lg hover:bg-red-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
+                  data-testid={`delete-product-${product.id}`}
+                >
+                  🗑️ {t('common.delete')}
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center p-8 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg" data-testid="empty-inventory-message">
+            {t('inventory.empty')}
+          </div>
+        )}
       </div>
 
       {isModalOpen && (
@@ -307,8 +370,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
       {isScannerOpen && <BarcodeScanner onScan={handleScanSuccess} onClose={handleScannerClose} />}
       <form onSubmit={handleSubmit} data-testid="product-form">
         <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="w-24 h-24 bg-[#121212] border border-[#F5F5DC]/30 rounded-md flex items-center justify-center flex-shrink-0">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#121212] border border-[#F5F5DC]/30 rounded-md flex items-center justify-center flex-shrink-0">
               {imageUrl ? (
                 <img src={imageUrl} alt={t('common.product')} className="w-full h-full object-cover rounded-md" />
               ) : (
@@ -400,7 +463,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
             />
             {errors.quantity && <p className="text-red-400 text-xs mt-1">{errors.quantity}</p>}
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <input
                 data-testid="product-price-input"
@@ -429,7 +492,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
             </div>
           </div>
         </div>
-        <div className="flex justify-end gap-4 mt-6">
+        <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
           <button
             data-testid="cancel-product-button"
             type="button"
