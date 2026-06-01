@@ -14,17 +14,18 @@ const UpdateNotification: React.FC = () => {
   } = useRegisterSW({
     onRegistered(r) {
       console.log('Service Worker registrado correctamente');
-      // Verificar actualizaciones cada hora
-      r &&
-        setInterval(
-          () => {
-            r.update();
-          },
-          60 * 60 * 1000,
-        ); // 1 hora
+      if (r) {
+        // Primera verificaci�n inmediata
+        setTimeout(() => r.update(), 3000);
+        // Luego cada 5 minutos
+        setInterval(() => r.update(), 5 * 60 * 1000);
+      }
     },
     onRegisterError(error) {
       console.log('Error al registrar Service Worker', error);
+    },
+    onNeedRefresh() {
+      console.log('Nueva versi�n de Shelf disponible');
     },
   });
 

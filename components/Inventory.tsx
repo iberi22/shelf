@@ -1,5 +1,22 @@
 import type React from 'react';
 import { useMemo, useState } from 'react';
+
+const isValidHexColor = (color: string): boolean => /^#[0-9a-f]{6}$/i.test(color);
+
+const PRESET_COLORS = [
+  { name: 'Negro', hex: '#1a1a1a' },
+  { name: 'Marfil', hex: '#FFFFF0' },
+  { name: 'Blanco', hex: '#FFFFFF' },
+  { name: 'Terracota', hex: '#E2725B' },
+  { name: 'Rojo', hex: '#CC3333' },
+  { name: 'Azul', hex: '#3355CC' },
+  { name: 'Verde', hex: '#338833' },
+  { name: 'Marrón', hex: '#8B4513' },
+  { name: 'Beige', hex: '#F5F5DC' },
+  { name: 'Gris', hex: '#808080' },
+  { name: 'Oro', hex: '#D4A017' },
+  { name: 'Plateado', hex: '#C0C0C0' },
+];
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
@@ -29,8 +46,15 @@ const Inventory: React.FC = () => {
 
   const filteredProducts = useMemo(() => {
     if (!filter) return sortedProducts;
+    const q = filter.toLowerCase();
     return sortedProducts.filter(
-      (p) => p.name.toLowerCase().includes(filter.toLowerCase()) || p.sku?.toLowerCase().includes(filter.toLowerCase()),
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.sku?.toLowerCase().includes(q) ||
+        p.color?.toLowerCase().includes(q) ||
+        p.dimensions?.toLowerCase().includes(q) ||
+        p.capacity?.toLowerCase().includes(q) ||
+        p.material?.toLowerCase().includes(q),
     );
   }, [sortedProducts, filter]);
 
@@ -76,9 +100,9 @@ const Inventory: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    const headers = ['id', 'name', 'sku', 'quantity', 'price', 'cost', 'imageUrl'];
+    const headers = ['id', 'name', 'sku', 'color', 'dimensions', 'capacity', 'material', 'quantity', 'price', 'cost', 'imageUrl'];
     const rows = activeProducts.map((p) =>
-      [p.id, p.name, p.sku || '', p.quantity, p.price, p.cost, p.imageUrl || ''].join(','),
+      [p.id, p.name, p.sku || '', p.color || '', p.dimensions || '', p.capacity || '', p.material || '', p.quantity, p.price, p.cost, p.imageUrl || ''].join(','),
     );
     const csvContent = `data:text/csv;charset=utf-8,${[headers.join(','), ...rows].join('\n')}`;
     const encodedUri = encodeURI(csvContent);
@@ -139,19 +163,24 @@ const Inventory: React.FC = () => {
         </div>
       </div>
 
-      {/* Desktop table */}
+      {/* Tablet+ table: muestra esencial + expandible */}
       <div className="hidden md:block bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[700px]">
+          <table className="w-full text-left">
             <thead className="bg-[#F5F5DC]/10">
-              <tr>
-                <th className="p-4">{t('common.image')}</th>
+              <tr className="text-sm">
+                <th className="p-3">{t('common.image')}</th>
                 <SortableHeader sortKey="name" labelKey="common.product" />
                 <SortableHeader sortKey="sku" labelKey="common.sku" />
                 <SortableHeader sortKey="quantity" labelKey="common.quantity" />
                 <SortableHeader sortKey="price" labelKey="common.price" />
+                <SortableHeader sortKey="color" labelKey="common.color" />
+                {/*  hidden below lg */}
+                <SortableHeader sortKey="dimensions" labelKey="common.dimensions" />
+                <SortableHeader sortKey="capacity" labelKey="common.capacity" />
+                <SortableHeader sortKey="material" labelKey="common.material" />
                 <SortableHeader sortKey="cost" labelKey="common.cost" />
-                <th className="p-4">{t('common.actions')}</th>
+                <th className="p-3">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -160,54 +189,61 @@ const Inventory: React.FC = () => {
                   <tr
                     key={product.id}
                     data-testid={`product-row-${product.id}`}
-                    className="border-t border-[#F5F5DC]/20 hover:bg-foreground/5 transition-colors duration-200"
+                    className="border-t border-[#F5F5DC]/20 hover:bg-foreground/5 transition-colors duration-200 text-sm"
                   >
                     <td className="p-2">
                       {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="h-12 w-12 rounded-md object-cover" />
+                        <img src={product.imageUrl} alt={product.name} className="h-10 w-10 rounded-md object-cover" />
                       ) : (
-                        <div className="h-12 w-12 rounded-md bg-[#F5F5DC]/10 flex items-center justify-center text-xl">
+                        <div className="h-10 w-10 rounded-md bg-[#F5F5DC]/10 flex items-center justify-center text-lg">
                           📦
                         </div>
                       )}
                     </td>
-                    <td className="p-4 max-w-[120px] md:max-w-none truncate" title={product.name}>
+                    <td className="p-3 max-w-[100px] lg:max-w-[150px] xl:max-w-none truncate" title={product.name}>
                       {product.name}
                     </td>
-                    <td className="p-4">{product.sku || t('common.notAvailable')}</td>
-                    <td className="p-4">
+                    <td className="p-3 max-w-[70px] truncate" title={product.sku || ''}>{product.sku || <span className="text-[#F5F5DC]/40">—</span>}</td>
+                    <td className="p-3 whitespace-nowrap">
                       {product.quantity}
                       {product.quantity > 0 && product.quantity <= lowStockThreshold && (
-                        <span className="text-yellow-400 ml-2" title={t('inventory.lowStock')}>
-                          ⚠️
-                        </span>
+                        <span className="text-yellow-400 ml-1" title={t('inventory.lowStock')}>⚠️</span>
                       )}
                     </td>
-                    <td className="p-4">{formatCurrency(product.price)}</td>
-                    <td className="p-4">{formatCurrency(product.cost)}</td>
-                    <td className="p-4">
+                    <td className="p-3 whitespace-nowrap">{formatCurrency(product.price)}</td>
+                    <td className="p-3">
+                      {product.color ? (
+                        <span title={product.color} className="inline-flex items-center gap-1">
+                          <span className="inline-block w-3 h-3 rounded-full border border-white/20 flex-shrink-0" style={{ backgroundColor: isValidHexColor(product.color) ? product.color : '#808080' }}></span>
+                          <span className="truncate max-w-[60px] hidden lg:inline">{product.color}</span>
+                        </span>
+                      ) : (
+                        <span className="text-[#F5F5DC]/40">—</span>
+                      )}
+                    </td>
+                    <td className="p-3 max-w-[65px] truncate hidden lg:table-cell" title={product.dimensions || ''}>{product.dimensions || <span className="text-[#F5F5DC]/40">—</span>}</td>
+                    <td className="p-3 max-w-[65px] truncate hidden lg:table-cell" title={product.capacity || ''}>{product.capacity || <span className="text-[#F5F5DC]/40">—</span>}</td>
+                    <td className="p-3 max-w-[65px] truncate hidden lg:table-cell" title={product.material || ''}>{product.material || <span className="text-[#F5F5DC]/40">—</span>}</td>
+                    <td className="p-3 whitespace-nowrap hidden lg:table-cell">{formatCurrency(product.cost)}</td>
+                    <td className="p-3 whitespace-nowrap">
                       <button
                         onClick={() => handleOpenModal(product)}
-                        className="mr-2 text-yellow-400 transition-transform active:scale-95"
+                        className="p-1.5 text-yellow-400 hover:bg-yellow-400/10 rounded transition-all active:scale-90"
                         aria-label={t('common.editItem', { item: product.name })}
                         data-testid={`edit-product-${product.id}`}
-                      >
-                        ✏️
-                      </button>
+                      >✏️</button>
                       <button
                         onClick={() => handleDelete(product.id)}
-                        className="text-red-400 transition-transform active:scale-95"
+                        className="p-1.5 text-red-400 hover:bg-red-400/10 rounded transition-all active:scale-90 ml-1"
                         aria-label={t('common.deleteItem', { item: product.name })}
                         data-testid={`delete-product-${product.id}`}
-                      >
-                        🗑️
-                      </button>
+                      >🗑️</button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="text-center p-8 text-[#F5F5DC]/70" data-testid="empty-inventory-message">
+                  <td colSpan={11} className="text-center p-8 text-[#F5F5DC]/70" data-testid="empty-inventory-message">
                     {t('inventory.empty')}
                   </td>
                 </tr>
@@ -218,69 +254,95 @@ const Inventory: React.FC = () => {
       </div>
 
       {/* Mobile cards */}
-      <div className="md:hidden grid grid-cols-1 gap-3">
+      <div className="md:hidden flex flex-col gap-2.5">
         {filteredProducts.length > 0 ? (
           filteredProducts.map((product) => (
             <div
               key={product.id}
               data-testid={`product-card-${product.id}`}
-              className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
+              className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-xl active:scale-[0.98] transition-transform overflow-hidden"
             >
-              <div className="flex items-start gap-3">
+              {/* Header: image + name + edit/delete */}
+              <div className="flex items-start gap-2.5 p-2.5 pb-1">
                 <div className="flex-shrink-0">
                   {product.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.name} className="h-14 w-14 rounded-md object-cover" />
+                    <img src={product.imageUrl} alt={product.name} className="h-11 w-11 rounded-lg object-cover" />
                   ) : (
-                    <div className="h-14 w-14 rounded-md bg-[#F5F5DC]/10 flex items-center justify-center text-2xl">
-                      📦
-                    </div>
+                    <div className="h-11 w-11 rounded-lg bg-[#F5F5DC]/10 flex items-center justify-center text-lg">📦</div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-sm text-[#F5F5DC] truncate" title={product.name}>
+                  <h3 className="font-semibold text-sm text-[#F5F5DC] leading-tight line-clamp-2" title={product.name}>
                     {product.name}
                   </h3>
-                  {product.sku && (
-                    <p className="text-xs text-[#F5F5DC]/50 mt-0.5">
-                      {t('common.sku')}: {product.sku}
-                    </p>
+                  {product.sku ? (
+                    <p className="text-[10px] text-[#F5F5DC]/40 mt-0.5 font-mono">{product.sku}</p>
+                  ) : (
+                    <p className="text-[10px] text-[#F5F5DC]/20 mt-0.5 italic">{t('common.notAvailable')}</p>
                   )}
-                  <div className="flex items-center gap-3 mt-2 text-sm">
-                    <span className="text-[#F5F5DC]/80">
-                      {t('common.quantity')}: <strong>{product.quantity}</strong>
-                      {product.quantity > 0 && product.quantity <= lowStockThreshold && (
-                        <span className="text-yellow-400 ml-1" title={t('inventory.lowStock')}>
-                          ⚠️
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-[#F5F5DC]/80">
-                      {t('common.price')}: <strong>{formatCurrency(product.price)}</strong>
-                    </span>
-                  </div>
+                </div>
+                <div className="flex gap-0.5 flex-shrink-0">
+                  <button
+                    onClick={() => handleOpenModal(product)}
+                    className="p-1.5 text-yellow-400 hover:bg-yellow-400/10 rounded-lg transition-all active:scale-90 text-sm"
+                    aria-label={t('common.editItem', { item: product.name })}
+                    data-testid={`edit-product-${product.id}`}
+                  >✏️</button>
+                  <button
+                    onClick={() => handleDelete(product.id)}
+                    className="p-1.5 text-red-400 hover:bg-red-400/10 rounded-lg transition-all active:scale-90 text-sm"
+                    aria-label={t('common.deleteItem', { item: product.name })}
+                    data-testid={`delete-product-${product.id}`}
+                  >🗑️</button>
                 </div>
               </div>
-              <div className="flex justify-end gap-3 mt-3 pt-2 border-t border-[#F5F5DC]/10">
-                <button
-                  onClick={() => handleOpenModal(product)}
-                  className="flex-1 bg-transparent border border-yellow-500/50 text-yellow-400 font-bold py-2.5 px-3 rounded-lg hover:bg-yellow-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
-                  data-testid={`edit-product-${product.id}`}
-                >
-                  ✏️ {t('common.edit')}
-                </button>
-                <button
-                  onClick={() => handleDelete(product.id)}
-                  className="flex-1 bg-transparent border border-red-500/50 text-red-400 font-bold py-2.5 px-3 rounded-lg hover:bg-red-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
-                  data-testid={`delete-product-${product.id}`}
-                >
-                  🗑️ {t('common.delete')}
-                </button>
+
+              {/* Detail badges */}
+              <div className="px-2.5 pb-1">
+                <div className="flex flex-wrap gap-1">
+                  {product.color && (
+                    <span className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/80">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full border border-white/20 flex-shrink-0" style={{ backgroundColor: isValidHexColor(product.color) ? product.color : '#808080' }}></span>
+                      {product.color}
+                    </span>
+                  )}
+                  {product.dimensions && (
+                    <span className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/80">📏 {product.dimensions}</span>
+                  )}
+                  {product.capacity && (
+                    <span className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/80">📐 {product.capacity}</span>
+                  )}
+                  {product.material && (
+                    <span className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/80">🧱 {product.material}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom stats bar */}
+              <div className="flex border-t border-[#F5F5DC]/8">
+                <div className="flex-1 flex items-center justify-center gap-1 py-2 px-1.5 border-r border-[#F5F5DC]/8">
+                  <span className="text-[9px] uppercase tracking-wider text-[#F5F5DC]/50">{t('common.stock')}</span>
+                  <span className={`text-xs font-bold ${product.quantity > 0 && product.quantity <= lowStockThreshold ? 'text-yellow-400' : 'text-[#F5F5DC]'}`}>
+                    {product.quantity}
+                  </span>
+                  {product.quantity > 0 && product.quantity <= lowStockThreshold && (
+                    <span className="text-yellow-400 text-[8px]">⚠️</span>
+                  )}
+                </div>
+                <div className="flex-1 flex items-center justify-center gap-1 py-2 px-1.5 border-r border-[#F5F5DC]/8">
+                  <span className="text-[9px] uppercase tracking-wider text-[#F5F5DC]/50">{t('common.price')}</span>
+                  <span className="text-xs font-bold text-[#F5F5DC]">{formatCurrency(product.price)}</span>
+                </div>
+                <div className="flex-1 flex items-center justify-center gap-1 py-2 px-1.5">
+                  <span className="text-[9px] uppercase tracking-wider text-[#F5F5DC]/50">{t('common.cost')}</span>
+                  <span className="text-xs font-bold text-[#F5F5DC]/70">{formatCurrency(product.cost)}</span>
+                </div>
               </div>
             </div>
           ))
         ) : (
           <div
-            className="text-center p-8 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg"
+            className="text-center py-10 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-xl"
             data-testid="empty-inventory-message"
           >
             {t('inventory.empty')}
@@ -311,6 +373,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   const { t } = useI18n();
   const [name, setName] = useState(product?.name || '');
   const [sku, setSku] = useState(product?.sku || '');
+  const [color, setColor] = useState(product?.color || '');
+  const [dimensions, setDimensions] = useState(product?.dimensions || '');
+  const [capacity, setCapacity] = useState(product?.capacity || '');
+  const [material, setMaterial] = useState(product?.material || '');
   const [quantity, setQuantity] = useState<string | number>(product?.quantity ?? '');
   const [price, setPrice] = useState<string | number>(product?.price ?? '');
   const [cost, setCost] = useState<string | number>(product?.cost ?? '');
@@ -368,6 +434,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
       onSave({
         name,
         sku,
+        color: color || undefined,
+        dimensions: dimensions || undefined,
+        capacity: capacity || undefined,
+        material: material || undefined,
         quantity: Number(quantity),
         price: Number(price),
         cost: Number(cost),
@@ -459,6 +529,66 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   />
                 </svg>
               </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs text-[#F5F5DC]/60 mb-1.5">{t('common.color')}</label>
+            <div className="flex items-center justify-center">
+              <div className="flex flex-wrap items-center justify-center">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    key={c.name}
+                    type="button"
+                    onClick={() => setColor(color === c.name ? '' : c.name)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 ${
+                      color === c.name ? 'border-white scale-110 ring-2 ring-white/30' : 'border-[#F5F5DC]/20 hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: c.hex }}
+                    title={c.name}
+                    aria-label={c.name}
+                  />
+                ))}
+              </div>
+            </div>
+            <input
+              data-testid="product-color-input"
+              type="text"
+              placeholder={t('inventory.form.colorPlaceholder')}
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="w-full mt-2 p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-sm"
+            />
+          </div>
+          <div>
+            <input
+              data-testid="product-dimensions-input"
+              type="text"
+              placeholder={t('inventory.form.dimensionsPlaceholder')}
+              value={dimensions}
+              onChange={(e) => setDimensions(e.target.value)}
+              className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div>
+              <input
+                data-testid="product-capacity-input"
+                type="text"
+                placeholder={t('inventory.form.capacityPlaceholder')}
+                value={capacity}
+                onChange={(e) => setCapacity(e.target.value)}
+                className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md"
+              />
+            </div>
+            <div>
+              <input
+                data-testid="product-material-input"
+                type="text"
+                placeholder={t('inventory.form.materialPlaceholder')}
+                value={material}
+                onChange={(e) => setMaterial(e.target.value)}
+                className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md"
+              />
             </div>
           </div>
           <div>

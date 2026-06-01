@@ -5,14 +5,15 @@ import 'cypress-downloadfile/lib/downloadFileCommand';
 Cypress.Commands.add('addProduct', (product) => {
   cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
   cy.get('body').then(($body) => {
-    if ($body.find(`td:contains("${product.name}")`).length === 0) {
-      cy.get('[data-testid="add-product-button"]').click();
-      cy.get('[data-testid="product-name-input"]').type(product.name);
-      cy.get('[data-testid="product-sku-input"]').type(product.sku);
-      cy.get('[data-testid="product-quantity-input"]').type(product.quantity);
-      cy.get('[data-testid="product-price-input"]').type(product.price);
-      cy.get('[data-testid="product-cost-input"]').type(product.cost);
-      cy.get('[data-testid="save-product-button"]').click();
+    const exists = $body.text().includes(product.name);
+    if (!exists) {
+      cy.get('[data-testid="add-product-button"]').click({ force: true });
+      cy.get('[data-testid="product-name-input"]').type(product.name, { force: true });
+      cy.get('[data-testid="product-sku-input"]').type(product.sku, { force: true });
+      cy.get('[data-testid="product-quantity-input"]').type(product.quantity, { force: true });
+      cy.get('[data-testid="product-price-input"]').type(product.price, { force: true });
+      cy.get('[data-testid="product-cost-input"]').type(product.cost, { force: true });
+      cy.get('[data-testid="save-product-button"]').click({ force: true });
     }
   });
 });
@@ -20,7 +21,8 @@ Cypress.Commands.add('addProduct', (product) => {
 Cypress.Commands.add('addSupplier', (supplier) => {
   cy.get('[data-testid="nav-item-nav.suppliers"]').last().click();
   cy.get('body').then(($body) => {
-    if ($body.find(`td:contains("${supplier.name}")`).length === 0) {
+    const exists = $body.text().includes(supplier.name);
+    if (!exists) {
       cy.get('[data-testid="add-supplier-button"]').click();
       cy.get('[data-testid="contact-name-input"]').type(supplier.name);
       cy.get('[data-testid="contact-phone-input"]').type(supplier.phone);

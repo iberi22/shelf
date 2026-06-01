@@ -19,6 +19,10 @@ export interface Product extends BaseEntity {
   price: number;
   cost: number;
   imageUrl?: string;
+  color?: string;
+  dimensions?: string;
+  capacity?: string;
+  material?: string;
 }
 
 export interface SaleItem {

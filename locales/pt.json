@@ -36,6 +36,10 @@
     "items": "Itens",
     "notAvailable": "N/A",
     "exportCsv": "Exportar CSV",
+    "color": "Cor",
+    "dimensions": "Dimensões",
+    "capacity": "Capacidade",
+    "material": "Material",
     "sortBy": "Ordenar por",
     "editItem": "Editar {{item}}",
     "deleteItem": "Excluir {{item}}",
@@ -71,6 +75,10 @@
     "form": {
       "namePlaceholder": "Nome do Produto (ex. Camiseta)",
       "skuPlaceholder": "SKU ou Código de Barras (opcional)",
+      "colorPlaceholder": "Digite a cor ou escolha acima (ex. Marfim)",
+      "dimensionsPlaceholder": "Dimensões (ex. 25x25x30 cm)",
+      "capacityPlaceholder": "Capacidade (ex. 2 L, 500 ml)",
+      "materialPlaceholder": "Material (ex. Cerâmica, Resina)",
       "uploadImage": "Carregar Imagem",
       "changeImage": "Alterar Imagem",
       "removeImage": "Remover"

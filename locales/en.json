@@ -36,6 +36,10 @@
     "items": "Items",
     "notAvailable": "N/A",
     "exportCsv": "Export CSV",
+    "color": "Color",
+    "dimensions": "Dimensions",
+    "capacity": "Capacity",
+    "material": "Material",
     "sortBy": "Sort by",
     "editItem": "Edit {{item}}",
     "deleteItem": "Delete {{item}}",
@@ -71,6 +75,10 @@
     "form": {
       "namePlaceholder": "Product Name (e.g., T-Shirt)",
       "skuPlaceholder": "SKU or Barcode (optional)",
+      "colorPlaceholder": "Type color or pick one above (e.g. Ivory)",
+      "dimensionsPlaceholder": "Dimensions (e.g., 25x25x30 cm)",
+      "capacityPlaceholder": "Capacity (e.g., 2 L, 500 ml)",
+      "materialPlaceholder": "Material (e.g., Ceramic, Resin)",
       "uploadImage": "Upload Image",
       "changeImage": "Change Image",
       "removeImage": "Remove"

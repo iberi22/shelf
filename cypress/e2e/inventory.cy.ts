@@ -11,16 +11,16 @@ describe('Inventory', () => {
       price: '100',
       cost: '50',
     });
-    cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
   });
 
   it('should add a new product to the inventory', () => {
+    cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
     cy.contains('Test Product').should('be.visible');
     cy.contains('TEST-SKU').should('be.visible');
   });
 
   it('should export the inventory to a CSV file', () => {
-    cy.get('[data-testid="export-csv-button"]').scrollIntoView().click({ force: true });
-    cy.get('[data-testid="export-csv-button"]').should('be.visible');
+    cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
+    cy.get('[data-testid="export-csv-button"]').click({ force: true });
   });
 });

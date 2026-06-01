@@ -86,6 +86,10 @@ const Catalog: React.FC = () => {
         <div class="product-info">
           <h3>${escapeHtml(p.name)}</h3>
           ${showDescriptions && p.sku ? `<p class="sku">SKU: ${escapeHtml(p.sku)}</p>` : ''}
+          ${showDescriptions && p.color ? `<p class="prop">🎨 ${escapeHtml(p.color)}</p>` : ''}
+          ${showDescriptions && p.dimensions ? `<p class="prop">📏 ${escapeHtml(p.dimensions)}</p>` : ''}
+          ${showDescriptions && p.capacity ? `<p class="prop">🧴 ${escapeHtml(p.capacity)}</p>` : ''}
+          ${showDescriptions && p.material ? `<p class="prop">🧱 ${escapeHtml(p.material)}</p>` : ''}
           ${showPrices ? `<p class="price">${formatCurrency(p.price)}</p>` : ''}
         </div>
       </div>`,
@@ -163,6 +167,11 @@ const Catalog: React.FC = () => {
       font-size: 11px;
       color: #888;
       margin-bottom: 4px;
+    }
+    .product-info .prop {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 2px;
     }
     .product-info .price {
       font-size: 18px;
@@ -451,6 +460,18 @@ const Catalog: React.FC = () => {
                       <p data-testid="catalog-product-sku" className="text-xs text-[#F5F5DC]/50 mt-0.5">
                         SKU: {product.sku}
                       </p>
+                    )}
+                    {showDescriptions && product.color && (
+                      <p className="text-xs text-[#F5F5DC]/50 mt-0.5">🎨 {product.color}</p>
+                    )}
+                    {showDescriptions && product.dimensions && (
+                      <p className="text-xs text-[#F5F5DC]/50 mt-0.5">📏 {product.dimensions}</p>
+                    )}
+                    {showDescriptions && product.capacity && (
+                      <p className="text-xs text-[#F5F5DC]/50 mt-0.5">🧴 {product.capacity}</p>
+                    )}
+                    {showDescriptions && product.material && (
+                      <p className="text-xs text-[#F5F5DC]/50 mt-0.5">🧱 {product.material}</p>
                     )}
                     {showPrices && (
                       <p data-testid="catalog-product-price" className="text-lg font-bold text-green-400 mt-1">
