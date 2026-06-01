@@ -245,19 +245,19 @@ export default function Arqueo() {
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <button
               onClick={() => setShowScanner(true)}
-              className="w-full sm:flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-sm"
+              className="w-full sm:flex-1 px-4 py-2.5 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-sm"
             >
               + Add Another Invoice
             </button>
             <button
               onClick={handleApplyInvoiceToInventory}
-              className="w-full sm:flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium text-sm"
+              className="w-full sm:flex-1 px-4 py-2.5 min-h-[44px] bg-green-600 hover:bg-green-700 text-white rounded font-medium text-sm"
             >
               ✓ Apply to Inventory
             </button>
             <button
               onClick={handleStartNewSession}
-              className="w-full sm:flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium text-sm"
+              className="w-full sm:flex-1 px-4 py-2.5 min-h-[44px] bg-gray-600 hover:bg-gray-700 text-white rounded font-medium text-sm"
             >
               Close Session
             </button>
