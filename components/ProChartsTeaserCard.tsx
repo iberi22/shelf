@@ -168,11 +168,11 @@ const ProChartsTeaserCard: React.FC<ProChartsTeaserCardProps> = ({
   );
 
   return (
-    <div className="mt-12 bg-[#0d0d0d] p-8 rounded-xl border border-[#F5F5DC]/20">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-2xl font-bold mb-2 text-[#F5F5DC]">{t('dashboard.proCharts.title')}</h3>
-          <p className="text-[#F5F5DC]/80 max-w-3xl text-base leading-relaxed">
+    <div className="mt-8 md:mt-12 bg-[#0d0d0d] p-4 sm:p-6 md:p-8 rounded-xl border border-[#F5F5DC]/20">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+        <div className="w-full sm:w-auto">
+          <h3 className="text-xl md:text-2xl font-bold mb-2 text-[#F5F5DC]">{t('dashboard.proCharts.title')}</h3>
+          <p className="text-[#F5F5DC]/80 max-w-3xl text-sm md:text-base leading-relaxed">
             {t('dashboard.proCharts.description')}
           </p>
         </div>
@@ -180,7 +180,7 @@ const ProChartsTeaserCard: React.FC<ProChartsTeaserCardProps> = ({
         {!isPro && (
           <button
             onClick={onShowProFeatures}
-            className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
+            className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
           >
             {t('dashboard.proCharts.showProCta')}
           </button>

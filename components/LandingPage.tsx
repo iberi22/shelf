@@ -38,11 +38,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onLoginClick }) =
 
   return (
     <div className="bg-background text-foreground min-h-screen flex flex-col">
-      <header className="py-4 px-6 md:px-12 flex justify-between items-center relative z-10">
-        <h1 className="text-2xl font-bold tracking-widest">[ {t('appName')} ]</h1>
-        <div className="flex items-center gap-4">
+      <header className="py-4 px-4 md:px-12 flex justify-between items-center relative z-10">
+        <h1 className="text-xl md:text-2xl font-bold tracking-widest">[ {t('appName')} ]</h1>
+        <div className="flex items-center gap-3 md:gap-4">
           <LanguageSelector />
-          <button onClick={onLoginClick} className="font-semibold hover:text-yellow-300 transition-all active:scale-95">
+          <button
+            onClick={onLoginClick}
+            className="font-semibold hover:text-yellow-300 transition-all active:scale-95 text-sm md:text-base"
+          >
             {t('auth.login')}
           </button>
         </div>
@@ -65,18 +68,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onLoginClick }) =
         </div>
       </main>
 
-      <section id="features" className="py-16 md:py-24 bg-primary border-t border-foreground/20">
-        <div className="container mx-auto px-6">
-          <h3 className="text-3xl font-bold text-center mb-12 text-[#F5F5DC]">{t('landing.featuresTitle')}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <section id="features" className="py-12 md:py-24 bg-primary border-t border-foreground/20">
+        <div className="container mx-auto px-4 md:px-6">
+          <h3 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12 text-[#F5F5DC]">
+            {t('landing.featuresTitle')}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
             {features.map((feature) => (
               <div
                 key={feature.titleKey}
-                className="text-center p-6 bg-background rounded-lg border border-foreground/10"
+                className="text-center p-4 md:p-6 bg-background rounded-lg border border-foreground/10"
               >
-                <div className="text-5xl mb-4">{feature.icon}</div>
-                <h4 className="text-xl font-bold mb-2 text-[#F5F5DC]">{t(feature.titleKey)}</h4>
-                <p className="text-[#F5F5DC]/80">{t(feature.descriptionKey)}</p>
+                <div className="text-4xl md:text-5xl mb-3 md:mb-4">{feature.icon}</div>
+                <h4 className="text-lg md:text-xl font-bold mb-2 text-[#F5F5DC]">{t(feature.titleKey)}</h4>
+                <p className="text-sm md:text-base text-[#F5F5DC]/80">{t(feature.descriptionKey)}</p>
               </div>
             ))}
           </div>

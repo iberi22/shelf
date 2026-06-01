@@ -130,7 +130,7 @@ const Settings: React.FC = () => {
   return (
     <>
       <div className="pb-10">
-        <h2 className="text-3xl font-bold mb-6">{t('settings.title')}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold mb-6">{t('settings.title')}</h2>
 
         <div className="grid gap-6 md:gap-8 lg:grid-cols-1">
           {/* General Settings */}
@@ -206,7 +206,7 @@ const Settings: React.FC = () => {
 
           {/* Team Management */}
           <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <div>
                 <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.team.title')}</h3>
                 <p className="text-xs text-[#F5F5DC]/70 mt-1">{t('settings.team.description')}</p>
@@ -214,14 +214,14 @@ const Settings: React.FC = () => {
               {isPyme ? (
                 <button
                   onClick={() => setInviteModalOpen(true)}
-                  className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 text-sm active:scale-95"
+                  className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 text-sm active:scale-95"
                 >
                   {t('settings.team.invite')}
                 </button>
               ) : (
                 <button
                   onClick={openSubscriptionModal}
-                  className="bg-sky-500 text-background font-bold py-2 px-4 rounded-lg hover:bg-sky-400 text-sm active:scale-95"
+                  className="w-full sm:w-auto bg-sky-500 text-background font-bold py-2 px-4 rounded-lg hover:bg-sky-400 text-sm active:scale-95"
                 >
                   {t('subscription.upgradeToPyme')}
                 </button>

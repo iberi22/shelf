@@ -71,11 +71,11 @@ const P2PSyncManager: React.FC = () => {
       <h3 className="text-xl font-bold text-[#F5F5DC] mb-4">P2P Synchronization</h3>
 
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between p-3 bg-[#121212] rounded-md">
-          <span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-[#121212] rounded-md">
+          <span className="text-xs sm:text-sm break-all">
             Local Peer ID: <span className="font-mono text-yellow-400">{state.localPeerId || 'Initializing...'}</span>
           </span>
-          <span className="text-sm font-semibold capitalize px-2 py-0.5 rounded-full bg-foreground/10">
+          <span className="text-xs sm:text-sm font-semibold capitalize px-2 py-0.5 rounded-full bg-foreground/10 w-fit">
             Role: {state.role}
           </span>
         </div>
@@ -86,7 +86,7 @@ const P2PSyncManager: React.FC = () => {
             placeholder="Enter Remote Peer ID"
             value={targetId}
             onChange={(e) => setTargetId(e.target.value)}
-            className="flex-grow p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md"
+            className="flex-1 min-w-0 p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-sm"
           />
           <button
             onClick={handleConnect}

@@ -139,7 +139,10 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
                     className="border-t border-[#F5F5DC]/20 hover:bg-foreground/5 transition-colors duration-200"
                   >
                     <td className="p-4">{new Date(sale.date).toLocaleDateString()}</td>
-                    <td className="p-4 max-w-[120px] md:max-w-none truncate" title={sale.items.map((item) => `${item.productName} (x${item.quantity})`).join(', ')}>
+                    <td
+                      className="p-4 max-w-[120px] md:max-w-none truncate"
+                      title={sale.items.map((item) => `${item.productName} (x${item.quantity})`).join(', ')}
+                    >
                       {sale.items.map((item) => `${item.productName} (x${item.quantity})`).join(', ')}
                     </td>
                     <td className="p-4">{formatCurrency(sale.totalPrice)}</td>
@@ -190,7 +193,9 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-green-400">{formatCurrency(sale.totalPrice)}</p>
-                  <p className="text-xs">{t('sales.profit')}: <span className="text-green-400">{formatCurrency(sale.profit)}</span></p>
+                  <p className="text-xs">
+                    {t('sales.profit')}: <span className="text-green-400">{formatCurrency(sale.profit)}</span>
+                  </p>
                 </div>
               </div>
               <div className="text-xs text-[#F5F5DC]/70 mb-2 line-clamp-2">
@@ -218,7 +223,10 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
             </div>
           ))
         ) : (
-          <div className="text-center p-8 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg" data-testid="empty-sales-message">
+          <div
+            className="text-center p-8 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg"
+            data-testid="empty-sales-message"
+          >
             {t('sales.empty')}
           </div>
         )}

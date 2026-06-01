@@ -182,8 +182,8 @@ export default function Arqueo() {
   };
 
   return (
-    <div className="p-4 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-white mb-6">Arqueo - Invoice Accounting</h1>
+    <div className="px-0 max-w-6xl mx-auto">
+      <h1 className="text-xl md:text-2xl font-bold text-white mb-6">Arqueo - Invoice Accounting</h1>
 
       {/* Active Session */}
       {currentSession ? (
@@ -242,22 +242,22 @@ export default function Arqueo() {
           </div>
 
           {/* Session Actions */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <button
               onClick={() => setShowScanner(true)}
-              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium"
+              className="w-full sm:flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-sm"
             >
               + Add Another Invoice
             </button>
             <button
               onClick={handleApplyInvoiceToInventory}
-              className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium"
+              className="w-full sm:flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium text-sm"
             >
               ✓ Apply to Inventory
             </button>
             <button
               onClick={handleStartNewSession}
-              className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium"
+              className="w-full sm:flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-medium text-sm"
             >
               Close Session
             </button>
@@ -265,10 +265,10 @@ export default function Arqueo() {
         </div>
       ) : (
         <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 mb-6 text-center">
-          <h2 className="text-xl font-semibold text-white mb-4">No Active Session</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-white mb-4">No Active Session</h2>
           <button
             onClick={() => setShowScanner(true)}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+            className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm"
           >
             📷 Start New Session & Scan Invoice
           </button>

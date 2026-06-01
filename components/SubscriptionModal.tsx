@@ -61,13 +61,13 @@ const SubscriptionModal: React.FC = () => {
   return (
     <Modal isOpen={isSubscriptionModalOpen} onClose={closeSubscriptionModal} title={t('subscription.title')}>
       <div className="space-y-6">
-        <p className="text-center text-foreground/80">{t('subscription.description')}</p>
+        <p className="text-center text-sm md:text-base text-foreground/80">{t('subscription.description')}</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {/* Pro Plan */}
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg flex flex-col">
-            <h3 className="text-2xl font-bold text-yellow-400">{t('subscription.pro.title')}</h3>
-            <p className="text-sm text-[#F5F5DC]/80 mb-4">{t('subscription.pro.description')}</p>
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg flex flex-col">
+            <h3 className="text-xl md:text-2xl font-bold text-yellow-400">{t('subscription.pro.title')}</h3>
+            <p className="text-xs md:text-sm text-[#F5F5DC]/80 mb-4">{t('subscription.pro.description')}</p>
             <p className="text-4xl font-bold my-4">
               {t('subscription.pro.price')}
               <span className="text-base font-normal text-[#F5F5DC]/70">/{t('subscription.month')}</span>
@@ -90,12 +90,12 @@ const SubscriptionModal: React.FC = () => {
           </div>
 
           {/* Pyme Plan */}
-          <div className="bg-[#1a1a1a] border-2 border-sky-400 p-6 rounded-lg flex flex-col relative">
-            <div className="absolute top-0 right-4 -mt-3 bg-sky-400 text-background text-xs font-bold px-2 py-1 rounded-full">
+          <div className="bg-[#1a1a1a] border-2 border-sky-400 p-4 md:p-6 rounded-lg flex flex-col relative">
+            <div className="absolute top-0 right-2 md:right-4 -mt-3 bg-sky-400 text-background text-xs font-bold px-2 py-1 rounded-full">
               {t('subscription.pyme.popular')}
             </div>
-            <h3 className="text-2xl font-bold text-sky-400">{t('subscription.pyme.title')}</h3>
-            <p className="text-sm text-[#F5F5DC]/80 mb-4">{t('subscription.pyme.description')}</p>
+            <h3 className="text-xl md:text-2xl font-bold text-sky-400">{t('subscription.pyme.title')}</h3>
+            <p className="text-xs md:text-sm text-[#F5F5DC]/80 mb-4">{t('subscription.pyme.description')}</p>
             <p className="text-4xl font-bold my-4">
               {t('subscription.pyme.price')}
               <span className="text-base font-normal text-[#F5F5DC]/70">/{t('subscription.month')}</span>

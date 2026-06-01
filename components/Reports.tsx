@@ -150,29 +150,29 @@ const Reports: React.FC = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold mb-2 text-[#F5F5DC]">{t('reports.title')}</h2>
-        <p className="text-foreground/80">{t('reports.description')}</p>
+        <h2 className="text-2xl md:text-3xl font-bold mb-2 text-[#F5F5DC]">{t('reports.title')}</h2>
+        <p className="text-sm md:text-base text-foreground/80">{t('reports.description')}</p>
       </div>
 
       {/* Filters Section */}
       <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
         <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">{t('reports.filters.title')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
+          <div className="sm:col-span-2 lg:col-span-1">
             <label className="text-xs text-[#F5F5DC]/80">{t('reports.filters.dateRange')}</label>
             <div className="flex gap-2">
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+                className="w-full min-w-0 p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 text-xs"
                 data-testid="reports-start-date"
               />
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+                className="w-full min-w-0 p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 text-xs"
                 data-testid="reports-end-date"
               />
             </div>

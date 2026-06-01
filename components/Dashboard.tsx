@@ -60,12 +60,12 @@ const Dashboard: React.FC = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-[#F5F5DC]">{t('dashboard.title')}</h2>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC]">{t('dashboard.title')}</h2>
         <button
           data-testid="dashboard-customize-button"
           onClick={() => setIsEditing(!isEditing)}
-          className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
+          className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
         >
           {isEditing ? t('common.done') : t('dashboard.customize')}
         </button>
@@ -120,17 +120,19 @@ const Dashboard: React.FC = () => {
         (isProSectionHidden ? (
           <ProChartsTeaserCard onShowProFeatures={() => setIsProSectionHidden(false)} />
         ) : (
-          <div className="mt-12 bg-[#0d0d0d] p-8 rounded-xl border border-[#F5F5DC]/20">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-3xl font-bold mb-3 text-[#F5F5DC]">{t('dashboard.proFeaturesTitle')}</h3>
-                <p className="text-[#F5F5DC]/80 mb-8 max-w-3xl text-base leading-relaxed">
+          <div className="mt-8 md:mt-12 bg-[#0d0d0d] p-4 sm:p-6 md:p-8 rounded-xl border border-[#F5F5DC]/20">
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+              <div className="w-full sm:w-auto">
+                <h3 className="text-2xl md:text-3xl font-bold mb-3 text-[#F5F5DC]">
+                  {t('dashboard.proFeaturesTitle')}
+                </h3>
+                <p className="text-[#F5F5DC]/80 mb-6 md:mb-8 max-w-3xl text-sm md:text-base leading-relaxed">
                   {t('dashboard.proFeaturesDescription')}
                 </p>
               </div>
               <button
                 onClick={() => setIsProSectionHidden(true)}
-                className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
+                className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
               >
                 {t('dashboard.hideProSection')}
               </button>

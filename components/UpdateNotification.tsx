@@ -51,7 +51,7 @@ const UpdateNotification: React.FC = () => {
   if (!showReload) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[9999] max-w-md animate-slide-up">
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 z-[9999] max-w-md animate-slide-up">
       <div className="bg-[#1a1a1a] border-2 border-yellow-400 rounded-lg shadow-2xl p-4 flex flex-col gap-3">
         <div className="flex items-start gap-3">
           <div className="text-3xl">🔄</div>
@@ -68,14 +68,17 @@ const UpdateNotification: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={handleUpdate}
-            className="flex-1 bg-yellow-400 text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-all active:scale-95"
+            className="w-full sm:flex-1 bg-yellow-400 text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-all active:scale-95 text-sm"
           >
             {t('update.reload')}
           </button>
-          <button onClick={close} className="px-4 py-2 text-[#F5F5DC]/80 hover:text-[#F5F5DC] transition-colors">
+          <button
+            onClick={close}
+            className="w-full sm:w-auto px-4 py-2 text-[#F5F5DC]/80 hover:text-[#F5F5DC] transition-colors text-sm"
+          >
             {t('update.later')}
           </button>
         </div>

@@ -194,7 +194,7 @@ const AIChat: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[60vh] p-4">
+    <div className="flex flex-col h-[50vh] md:h-[60vh] p-3 md:p-4">
       <p className="text-[10px] text-[#F5F5DC]/40 text-center mb-2 px-4 italic">
         {t('reports.aiPrivacyNote') ||
           'Note: A limited subset of your inventory and sales data is used to provide context.'}
@@ -242,13 +242,13 @@ const AIChat: React.FC = () => {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
           placeholder={isAIDisabled ? t('reports.aiDisabledPlaceholder') : t('reports.aiPlaceholder')}
-          className="flex-1 w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+          className="flex-1 min-w-0 p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5F5DC] text-sm"
           disabled={isLoading || isAIDisabled || isInitializing}
         />
         <button
           onClick={handleSendMessage}
           disabled={isLoading || !input.trim() || isAIDisabled || isInitializing}
-          className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
+          className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-opacity-80 transition-all active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? '🤔' : '➤'}
         </button>
