@@ -20,8 +20,7 @@ describe('Inventory', () => {
   });
 
   it('should export the inventory to a CSV file', () => {
-    cy.get('[data-testid="export-csv-button"]').click({ force: true });
-    // Just verify click happened without error
+    cy.get('[data-testid="export-csv-button"]').scrollIntoView().click({ force: true });
     cy.get('[data-testid="export-csv-button"]').should('be.visible');
   });
 });
