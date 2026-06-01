@@ -1,7 +1,7 @@
 describe('Suppliers', () => {
   beforeEach(() => {
     cy.visit('/');
-    cy.contains('Start for Free').click();
+    cy.contains('Empieza Gratis').click();
     cy.get('[data-testid="welcome-modal-get-started-button"]').click();
     cy.get('[data-testid="nav-item-nav.suppliers"]').click();
   });

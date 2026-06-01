@@ -37,3 +37,6 @@ functions/.env.local
 cypress/downloads/
 playwright-report/
 test-results/
+
+.vercel
+.env*.local
