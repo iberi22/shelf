@@ -175,9 +175,7 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-sm text-[#F5F5DC] truncate">{contact.name}</h3>
                   <p className="text-xs text-[#F5F5DC]/60 mt-0.5">{contact.phone}</p>
-                  {contact.email && (
-                    <p className="text-xs text-[#F5F5DC]/50 truncate">{contact.email}</p>
-                  )}
+                  {contact.email && <p className="text-xs text-[#F5F5DC]/50 truncate">{contact.email}</p>}
                 </div>
               </div>
               <div className="flex gap-2 mt-2 pt-2 border-t border-[#F5F5DC]/10">

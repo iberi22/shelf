@@ -171,7 +171,9 @@ const Inventory: React.FC = () => {
                         </div>
                       )}
                     </td>
-                    <td className="p-4 max-w-[120px] md:max-w-none truncate" title={product.name}>{product.name}</td>
+                    <td className="p-4 max-w-[120px] md:max-w-none truncate" title={product.name}>
+                      {product.name}
+                    </td>
                     <td className="p-4">{product.sku || t('common.notAvailable')}</td>
                     <td className="p-4">
                       {product.quantity}
@@ -235,15 +237,21 @@ const Inventory: React.FC = () => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-sm text-[#F5F5DC] truncate" title={product.name}>{product.name}</h3>
+                  <h3 className="font-bold text-sm text-[#F5F5DC] truncate" title={product.name}>
+                    {product.name}
+                  </h3>
                   {product.sku && (
-                    <p className="text-xs text-[#F5F5DC]/50 mt-0.5">{t('common.sku')}: {product.sku}</p>
+                    <p className="text-xs text-[#F5F5DC]/50 mt-0.5">
+                      {t('common.sku')}: {product.sku}
+                    </p>
                   )}
                   <div className="flex items-center gap-3 mt-2 text-sm">
                     <span className="text-[#F5F5DC]/80">
                       {t('common.quantity')}: <strong>{product.quantity}</strong>
                       {product.quantity > 0 && product.quantity <= lowStockThreshold && (
-                        <span className="text-yellow-400 ml-1" title={t('inventory.lowStock')}>⚠️</span>
+                        <span className="text-yellow-400 ml-1" title={t('inventory.lowStock')}>
+                          ⚠️
+                        </span>
                       )}
                     </span>
                     <span className="text-[#F5F5DC]/80">
@@ -271,7 +279,10 @@ const Inventory: React.FC = () => {
             </div>
           ))
         ) : (
-          <div className="text-center p-8 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg" data-testid="empty-inventory-message">
+          <div
+            className="text-center p-8 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg"
+            data-testid="empty-inventory-message"
+          >
             {t('inventory.empty')}
           </div>
         )}
