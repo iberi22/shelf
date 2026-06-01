@@ -65,7 +65,7 @@ const Dashboard: React.FC = () => {
         <button
           data-testid="dashboard-customize-button"
           onClick={() => setIsEditing(!isEditing)}
-          className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
+          className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
         >
           {isEditing ? t('common.done') : t('dashboard.customize')}
         </button>
@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
             <p className="text-[#F5F5DC]/80">{t('dashboard.noCardsVisible')}</p>
             <button
               onClick={() => setIsEditing(true)}
-              className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
+              className="bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
             >
               {t('dashboard.customize')}
             </button>
@@ -132,7 +132,7 @@ const Dashboard: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsProSectionHidden(true)}
-                className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
+                className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
               >
                 {t('dashboard.hideProSection')}
               </button>
