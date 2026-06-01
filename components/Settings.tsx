@@ -148,7 +148,7 @@ const Settings: React.FC = () => {
                 value={lowStockThreshold}
                 onChange={(e) => setLowStockThreshold(Number(e.target.value))}
                 min="0"
-                className="w-full max-w-xs p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+                className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
               />
             </div>
           </div>
@@ -176,7 +176,7 @@ const Settings: React.FC = () => {
                   data-testid="currency-select"
                   value={currencyCode}
                   onChange={(e) => setCurrencyCode(e.target.value)}
-                  className="w-full max-w-xs p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+                  className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
                 >
                   {CURRENCIES.map(({ code, nameKey }) => (
                     <option key={code} value={code}>
@@ -195,7 +195,7 @@ const Settings: React.FC = () => {
                   data-testid="number-format-select"
                   value={numberFormat}
                   onChange={(e) => setNumberFormat(e.target.value as any)}
-                  className="w-full max-w-xs p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+                  className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
                 >
                   <option value="en-US">1,234.56 ({t('settings.currency.formats.en-US')})</option>
                   <option value="de-DE">1.234,56 ({t('settings.currency.formats.de-DE')})</option>
@@ -214,14 +214,14 @@ const Settings: React.FC = () => {
               {isPyme ? (
                 <button
                   onClick={() => setInviteModalOpen(true)}
-                  className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 text-sm active:scale-95"
+                  className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 text-sm active:scale-95"
                 >
                   {t('settings.team.invite')}
                 </button>
               ) : (
                 <button
                   onClick={openSubscriptionModal}
-                  className="w-full sm:w-auto bg-sky-500 text-background font-bold py-2 px-4 rounded-lg hover:bg-sky-400 text-sm active:scale-95"
+                  className="w-full sm:w-auto bg-sky-500 text-background font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-sky-400 text-sm active:scale-95"
                 >
                   {t('subscription.upgradeToPyme')}
                 </button>
@@ -266,7 +266,7 @@ const Settings: React.FC = () => {
                   value={geminiApiKey}
                   onChange={(e) => setGeminiApiKey(e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                  className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
                 />
               </div>
 
@@ -289,7 +289,7 @@ const Settings: React.FC = () => {
                   value={openCodeGoKey}
                   onChange={(e) => setOpenCodeGoKey(e.target.value)}
                   placeholder="sk-..."
-                  className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC] mb-3"
+                  className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC] mb-3"
                 />
 
                 <label htmlFor="openCodeGoModel" className="block text-sm font-medium text-[#F5F5DC]/90">
@@ -301,7 +301,7 @@ const Settings: React.FC = () => {
                   value={openCodeGoModel}
                   onChange={(e) => setOpenCodeGoModel(e.target.value)}
                   placeholder="ej. deepseek-v4-flash, gpt-4o"
-                  className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                  className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
                 />
               </div>
 
@@ -315,7 +315,7 @@ const Settings: React.FC = () => {
                   value={aiProxyUrl}
                   onChange={(e) => setAiProxyUrl(e.target.value)}
                   placeholder="http://localhost:3000"
-                  className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                  className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
                 />
               </div>
             </div>
@@ -330,13 +330,13 @@ const Settings: React.FC = () => {
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               placeholder={t('settings.feedback.placeholder')}
-              className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 min-h-[100px] focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 min-h-[100px] focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
             />
             <button
               data-testid="feedback-submit-button"
               onClick={handleSendFeedback}
               disabled={!feedback.trim()}
-              className="w-full mt-2 text-sm bg-foreground/90 text-background font-bold py-2 px-4 rounded-lg hover:bg-foreground transition-colors active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-2 text-sm bg-foreground/90 text-background font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-foreground transition-colors active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
             >
               {t('settings.feedback.button')}
             </button>
@@ -376,7 +376,7 @@ const Settings: React.FC = () => {
                     value={newPin}
                     onChange={(e) => setNewPin(e.target.value)}
                     placeholder="Nuevo PIN (ej. 1234)"
-                    className="flex-1 p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                    className="flex-1 p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
                   />
                   <button
                     onClick={async () => {
@@ -388,7 +388,7 @@ const Settings: React.FC = () => {
                         showNotification('El PIN debe tener al menos 4 dígitos', 'error');
                       }
                     }}
-                    className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all text-sm"
+                    className="bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 transition-all text-sm"
                   >
                     {t('settings.security.enable') || 'Activar'}
                   </button>
@@ -413,7 +413,7 @@ const Settings: React.FC = () => {
                 <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.import.cardDescription')}</p>
                 <button
                   onClick={() => setIsImportModalOpen(true)}
-                  className="w-full mt-2 text-sm bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95"
+                  className="w-full mt-2 text-sm bg-transparent border border-foreground/50 font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-foreground/10 transition-colors active:scale-95"
                 >
                   {t('settings.import.button')}
                 </button>
@@ -425,7 +425,7 @@ const Settings: React.FC = () => {
                 <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.backup.description')}</p>
                 <button
                   onClick={handleCreateBackup}
-                  className="w-full mt-2 text-sm bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95"
+                  className="w-full mt-2 text-sm bg-transparent border border-foreground/50 font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-foreground/10 transition-colors active:scale-95"
                 >
                   {t('settings.backup.button')}
                 </button>
@@ -445,7 +445,7 @@ const Settings: React.FC = () => {
                 />
                 <label
                   htmlFor="restore-file-input"
-                  className="w-full mt-2 cursor-pointer text-center text-sm bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95"
+                  className="w-full mt-2 cursor-pointer text-center text-sm bg-transparent border border-foreground/50 font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-foreground/10 transition-colors active:scale-95"
                 >
                   {t('settings.restore.button')}
                 </label>
@@ -457,7 +457,7 @@ const Settings: React.FC = () => {
                 <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.reset.description')}</p>
                 <button
                   onClick={handleResetData}
-                  className="w-full mt-2 text-sm bg-transparent border border-red-500/50 text-red-400 font-bold py-2 px-4 rounded-lg hover:bg-red-500/10 transition-colors active:scale-95"
+                  className="w-full mt-2 text-sm bg-transparent border border-red-500/50 text-red-400 font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-red-500/10 transition-colors active:scale-95"
                 >
                   {t('settings.reset.button')}
                 </button>
