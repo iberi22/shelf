@@ -165,14 +165,14 @@ const Reports: React.FC = () => {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full min-w-0 p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 text-xs"
+                className="w-full min-w-0 p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 text-xs"
                 data-testid="reports-start-date"
               />
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full min-w-0 p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 text-xs"
+                className="w-full min-w-0 p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 text-xs"
                 data-testid="reports-end-date"
               />
             </div>
@@ -185,7 +185,7 @@ const Reports: React.FC = () => {
               id="productFilter"
               value={selectedProductId}
               onChange={(e) => setSelectedProductId(e.target.value)}
-              className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 min-h-[44px]"
               data-testid="reports-product-filter"
             >
               <option value="all">
@@ -206,7 +206,7 @@ const Reports: React.FC = () => {
               id="clientFilter"
               value={selectedClientId}
               onChange={(e) => setSelectedClientId(e.target.value)}
-              className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 min-h-[44px]"
               data-testid="reports-client-filter"
             >
               <option value="all">
@@ -296,7 +296,7 @@ const Reports: React.FC = () => {
             <p className="mb-4 text-foreground/80">{t('reports.proFeatureDescription')}</p>
             <button
               onClick={openSubscriptionModal}
-              className="text-sm font-semibold text-[#121212] bg-yellow-400 px-4 py-2 rounded-lg hover:bg-yellow-300 transition-all active:scale-95"
+              className="text-sm font-semibold text-[#121212] bg-yellow-400 px-4 py-2.5 rounded-lg min-h-[44px] hover:bg-yellow-300 transition-all active:scale-95"
             >
               {t('subscription.upgradeNow')}
             </button>
