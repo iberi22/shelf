@@ -228,21 +228,21 @@ const Catalog: React.FC = () => {
       {/* Toolbar */}
       <div className="no-print flex flex-col gap-4 mb-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <h2 className="text-3xl font-bold text-[#F5F5DC]">📖 Generar Catálogo</h2>
-          <div className="flex gap-3">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC]">📖 Generar Catálogo</h2>
+          <div className="flex gap-2 sm:gap-3">
             <button
               data-testid="catalog-export-html"
               onClick={handleExportHTML}
-              className="bg-green-700 text-white font-bold py-2 px-5 rounded-lg hover:bg-green-600 transition-all active:scale-95"
+              className="flex-1 sm:flex-none bg-green-700 text-white font-bold py-2 px-3 sm:px-5 rounded-lg hover:bg-green-600 transition-all active:scale-95 text-xs sm:text-sm"
             >
-              🌐 Exportar HTML
+              🌐 HTML
             </button>
             <button
               data-testid="catalog-export-pdf"
               onClick={handleExportPDFViaPrint}
-              className="bg-red-700 text-white font-bold py-2 px-5 rounded-lg hover:bg-red-600 transition-all active:scale-95"
+              className="flex-1 sm:flex-none bg-red-700 text-white font-bold py-2 px-3 sm:px-5 rounded-lg hover:bg-red-600 transition-all active:scale-95 text-xs sm:text-sm"
             >
-              🖨️ Imprimir / PDF
+              🖨️ PDF
             </button>
           </div>
         </div>
@@ -371,22 +371,22 @@ const Catalog: React.FC = () => {
         </div>
 
         {/* Selection Controls */}
-        <div className="flex items-center justify-between">
-          <div className="flex gap-3 items-center">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+          <div className="flex flex-wrap gap-2 items-center">
             <span className="text-sm text-[#F5F5DC]/70">
-              {selectedIds.size} de {activeProducts.length} productos seleccionados
+              {selectedIds.size} de {activeProducts.length} productos
             </span>
             <button
               data-testid="catalog-select-all"
               onClick={selectAll}
-              className="text-xs bg-[#F5F5DC]/10 px-3 py-1 rounded hover:bg-[#F5F5DC]/20 transition"
+              className="text-xs bg-[#F5F5DC]/10 px-3 py-1.5 rounded hover:bg-[#F5F5DC]/20 transition min-h-[36px]"
             >
               Seleccionar todos
             </button>
             <button
               data-testid="catalog-deselect-all"
               onClick={deselectAll}
-              className="text-xs bg-[#F5F5DC]/10 px-3 py-1 rounded hover:bg-[#F5F5DC]/20 transition"
+              className="text-xs bg-[#F5F5DC]/10 px-3 py-1.5 rounded hover:bg-[#F5F5DC]/20 transition min-h-[36px]"
             >
               Deseleccionar todos
             </button>
@@ -417,7 +417,7 @@ const Catalog: React.FC = () => {
           </div>
         ) : (
           <div
-            className="grid gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
             style={{
               gridTemplateColumns: `repeat(${Math.min(columns, 4)}, 1fr)`,
             }}

@@ -92,20 +92,21 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-[#F5F5DC]">{title}</h2>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC]">{title}</h2>
         <button
           onClick={() => handleOpenModal()}
-          className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95"
+          className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
           data-testid={`add-${contactType}-button`}
         >
           {addContactText}
         </button>
       </div>
 
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
+      {/* Desktop table */}
+      <div className="hidden md:block bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[500px] md:min-w-[600px]">
+          <table className="w-full text-left min-w-[600px]">
             <thead className="bg-[#F5F5DC]/10">
               <tr>
                 <SortableHeader sortKey="name" labelKey="common.name" />
@@ -159,6 +160,52 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden grid grid-cols-1 gap-3">
+        {sortedContacts.length > 0 ? (
+          sortedContacts.map((contact) => (
+            <div
+              key={contact.id}
+              data-testid={`${contactType}-card-${contact.id}`}
+              className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-sm text-[#F5F5DC] truncate">{contact.name}</h3>
+                  <p className="text-xs text-[#F5F5DC]/60 mt-0.5">{contact.phone}</p>
+                  {contact.email && (
+                    <p className="text-xs text-[#F5F5DC]/50 truncate">{contact.email}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2 mt-2 pt-2 border-t border-[#F5F5DC]/10">
+                <button
+                  onClick={() => handleOpenModal(contact)}
+                  className="flex-1 bg-transparent border border-yellow-500/50 text-yellow-400 font-bold py-2.5 px-3 rounded-lg hover:bg-yellow-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
+                  data-testid={`edit-${contactType}-${contact.id}`}
+                >
+                  ✏️ {t('common.edit')}
+                </button>
+                <button
+                  onClick={() => handleDelete(contact.id)}
+                  className="flex-1 bg-transparent border border-red-500/50 text-red-400 font-bold py-2.5 px-3 rounded-lg hover:bg-red-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
+                  data-testid={`delete-${contactType}-${contact.id}`}
+                >
+                  🗑️ {t('common.delete')}
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div
+            className="text-center p-8 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg"
+            data-testid={`empty-${contactType}s-message`}
+          >
+            {emptyMessage}
+          </div>
+        )}
       </div>
 
       {isModalOpen && (
