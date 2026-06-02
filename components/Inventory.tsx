@@ -115,7 +115,7 @@ const Inventory: React.FC = () => {
   };
 
   const SortableHeader: React.FC<{ sortKey: keyof Product; labelKey: string }> = ({ sortKey, labelKey }) => (
-    <th className="p-4">
+    <th className="p-2 md:p-3">
       <button
         data-testid={`sort-by-${sortKey}`}
         onClick={() => requestSort(sortKey)}
@@ -168,18 +168,18 @@ const Inventory: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-[#F5F5DC]/10">
-              <tr className="text-sm">
-                <th className="p-3">{t('common.image')}</th>
+              <tr className="text-xs md:text-sm">
+                <th className="p-2 md:p-3">{t('common.image')}</th>
                 <SortableHeader sortKey="name" labelKey="common.product" />
                 <SortableHeader sortKey="sku" labelKey="common.sku" />
                 <SortableHeader sortKey="quantity" labelKey="common.quantity" />
                 <SortableHeader sortKey="price" labelKey="common.price" />
                 <SortableHeader sortKey="color" labelKey="common.color" />
-                {/*  hidden below lg */}
-                <SortableHeader sortKey="dimensions" labelKey="common.dimensions" />
-                <SortableHeader sortKey="capacity" labelKey="common.capacity" />
-                <SortableHeader sortKey="material" labelKey="common.material" />
-                <SortableHeader sortKey="cost" labelKey="common.cost" />
+                {/* Responsive: hidden below xl to prevent table overflow */}
+                <th className="hidden xl:table-cell p-4"><button onClick={() => requestSort('dimensions')} className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors" aria-label={`${t('common.sortBy')} ${t('common.dimensions')}`}>{t('common.dimensions')}<span className="text-yellow-400 text-xs">{getSortIndicator('dimensions')}</span></button></th>
+                <th className="hidden xl:table-cell p-4"><button onClick={() => requestSort('capacity')} className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors" aria-label={`${t('common.sortBy')} ${t('common.capacity')}`}>{t('common.capacity')}<span className="text-yellow-400 text-xs">{getSortIndicator('capacity')}</span></button></th>
+                <th className="hidden xl:table-cell p-4"><button onClick={() => requestSort('material')} className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors" aria-label={`${t('common.sortBy')} ${t('common.material')}`}>{t('common.material')}<span className="text-yellow-400 text-xs">{getSortIndicator('material')}</span></button></th>
+                <th className="hidden xl:table-cell p-4"><button onClick={() => requestSort('cost')} className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors" aria-label={`${t('common.sortBy')} ${t('common.cost')}`}>{t('common.cost')}<span className="text-yellow-400 text-xs">{getSortIndicator('cost')}</span></button></th>
                 <th className="p-3">{t('common.actions')}</th>
               </tr>
             </thead>
@@ -189,43 +189,43 @@ const Inventory: React.FC = () => {
                   <tr
                     key={product.id}
                     data-testid={`product-row-${product.id}`}
-                    className="border-t border-[#F5F5DC]/20 hover:bg-foreground/5 transition-colors duration-200 text-sm"
+                    className="border-t border-[#F5F5DC]/20 hover:bg-foreground/5 transition-colors duration-200 text-xs md:text-sm"
                   >
-                    <td className="p-2">
+                    <td className="p-1.5 md:p-2">
                       {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="h-10 w-10 rounded-md object-cover" />
+                        <img src={product.imageUrl} alt={product.name} className="h-8 w-8 md:h-10 md:w-10 rounded-md object-cover" />
                       ) : (
-                        <div className="h-10 w-10 rounded-md bg-[#F5F5DC]/10 flex items-center justify-center text-lg">
+                        <div className="h-8 w-8 md:h-10 md:w-10 rounded-md bg-[#F5F5DC]/10 flex items-center justify-center text-base md:text-lg">
                           📦
                         </div>
                       )}
                     </td>
-                    <td className="p-3 max-w-[100px] lg:max-w-[150px] xl:max-w-none truncate" title={product.name}>
+                    <td className="p-2 md:p-3 max-w-[90px] md:max-w-[150px] xl:max-w-none truncate" title={product.name}>
                       {product.name}
                     </td>
-                    <td className="p-3 max-w-[70px] truncate" title={product.sku || ''}>{product.sku || <span className="text-[#F5F5DC]/40">—</span>}</td>
-                    <td className="p-3 whitespace-nowrap">
+                    <td className="p-2 md:p-3 max-w-[60px] md:max-w-[70px] truncate" title={product.sku || ''}>{product.sku || <span className="text-[#F5F5DC]/40">—</span>}</td>
+                    <td className="p-2 md:p-3 whitespace-nowrap">
                       {product.quantity}
                       {product.quantity > 0 && product.quantity <= lowStockThreshold && (
                         <span className="text-yellow-400 ml-1" title={t('inventory.lowStock')}>⚠️</span>
                       )}
                     </td>
-                    <td className="p-3 whitespace-nowrap">{formatCurrency(product.price)}</td>
-                    <td className="p-3">
+                    <td className="p-2 md:p-3 whitespace-nowrap">{formatCurrency(product.price)}</td>
+                    <td className="p-2 md:p-3">
                       {product.color ? (
                         <span title={product.color} className="inline-flex items-center gap-1">
-                          <span className="inline-block w-3 h-3 rounded-full border border-white/20 flex-shrink-0" style={{ backgroundColor: isValidHexColor(product.color) ? product.color : '#808080' }}></span>
-                          <span className="truncate max-w-[60px] hidden lg:inline">{product.color}</span>
+                          <span className="inline-block w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white/20 flex-shrink-0" style={{ backgroundColor: isValidHexColor(product.color) ? product.color : '#808080' }}></span>
+                          <span className="truncate max-w-[50px] md:max-w-[60px] hidden lg:inline">{product.color}</span>
                         </span>
                       ) : (
                         <span className="text-[#F5F5DC]/40">—</span>
                       )}
                     </td>
-                    <td className="p-3 max-w-[65px] truncate hidden lg:table-cell" title={product.dimensions || ''}>{product.dimensions || <span className="text-[#F5F5DC]/40">—</span>}</td>
-                    <td className="p-3 max-w-[65px] truncate hidden lg:table-cell" title={product.capacity || ''}>{product.capacity || <span className="text-[#F5F5DC]/40">—</span>}</td>
-                    <td className="p-3 max-w-[65px] truncate hidden lg:table-cell" title={product.material || ''}>{product.material || <span className="text-[#F5F5DC]/40">—</span>}</td>
-                    <td className="p-3 whitespace-nowrap hidden lg:table-cell">{formatCurrency(product.cost)}</td>
-                    <td className="p-3 whitespace-nowrap">
+                    <td className="p-2 md:p-3 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell" title={product.dimensions || ''}>{product.dimensions || <span className="text-[#F5F5DC]/40">—</span>}</td>
+                    <td className="p-2 md:p-3 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell" title={product.capacity || ''}>{product.capacity || <span className="text-[#F5F5DC]/40">—</span>}</td>
+                    <td className="p-2 md:p-3 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell" title={product.material || ''}>{product.material || <span className="text-[#F5F5DC]/40">—</span>}</td>
+                    <td className="p-2 md:p-3 whitespace-nowrap hidden xl:table-cell">{formatCurrency(product.cost)}</td>
+                    <td className="p-2 md:p-3 whitespace-nowrap">
                       <button
                         onClick={() => handleOpenModal(product)}
                         className="p-1.5 text-yellow-400 hover:bg-yellow-400/10 rounded transition-all active:scale-90"

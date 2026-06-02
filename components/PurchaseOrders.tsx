@@ -92,7 +92,7 @@ const PurchaseOrders: React.FC = () => {
       {/* Desktop table */}
       <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[700px]">
+          <table className="w-full text-left">
             <thead className="bg-[#F5F5DC]/10">
               <tr>
                 <SortableHeader sortKey="supplierName" labelKey="common.supplier" />
