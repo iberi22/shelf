@@ -196,7 +196,7 @@ export default function Arqueo() {
           </div>
 
           {/* Invoices in session — Desktop */}
-          <div className="hidden md:block space-y-4 mb-6">
+          <div className="space-y-4 mb-6">
             {currentSession.invoices.map((invoice) => (
               <div key={invoice.id} className="bg-[#121212] border border-[#F5F5DC]/20 rounded-lg p-4">
                 <div className="flex justify-between items-start mb-2">
@@ -242,7 +242,7 @@ export default function Arqueo() {
           </div>
 
           {/* Invoices in session — Mobile cards */}
-          <div className="md:hidden flex flex-col gap-3 mb-6">
+          <div className="sm:hidden flex flex-col gap-3 mb-6">
             {currentSession.invoices.map((invoice) => (
               <div
                 key={invoice.id}

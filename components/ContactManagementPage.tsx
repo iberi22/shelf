@@ -104,7 +104,7 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
       </div>
 
       {/* Desktop table */}
-      <div className="hidden md:block bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
+      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[600px]">
             <thead className="bg-[#F5F5DC]/10">
@@ -163,7 +163,7 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
       </div>
 
       {/* Mobile cards */}
-      <div className="md:hidden grid grid-cols-1 gap-3">
+      <div className="sm:hidden grid grid-cols-1 gap-3">
         {sortedContacts.length > 0 ? (
           sortedContacts.map((contact) => (
             <div

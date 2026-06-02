@@ -164,7 +164,7 @@ const Inventory: React.FC = () => {
       </div>
 
       {/* Tablet+ table: muestra esencial + expandible */}
-      <div className="hidden md:block bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
+      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-[#F5F5DC]/10">
@@ -254,7 +254,7 @@ const Inventory: React.FC = () => {
       </div>
 
       {/* Mobile cards */}
-      <div className="md:hidden flex flex-col gap-2.5">
+      <div className="sm:hidden flex flex-col gap-2.5">
         {filteredProducts.length > 0 ? (
           filteredProducts.map((product) => (
             <div
