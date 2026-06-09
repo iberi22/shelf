@@ -236,9 +236,9 @@ const Catalog: React.FC = () => {
     <div>
       {/* Toolbar */}
       <div className="no-print flex flex-col gap-4 mb-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC]">📖 Generar Catálogo</h2>
-          <div className="flex gap-2 sm:gap-3">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 flex-wrap">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC] shrink-0">📖 Generar Catálogo</h2>
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-wrap sm:flex-nowrap">
             <button
               data-testid="catalog-export-html"
               onClick={handleExportHTML}

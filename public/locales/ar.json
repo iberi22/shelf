@@ -13,6 +13,7 @@
     "settings": "إعدادات"
   },
   "common": {
+    "color": "Color",
     "save": "حفظ",
     "cancel": "إلغاء",
     "actions": "إجراءات",

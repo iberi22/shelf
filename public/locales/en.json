@@ -14,6 +14,7 @@
     "settings": "Settings"
   },
   "common": {
+    "color": "Color",
     "save": "Save",
     "cancel": "Cancel",
     "actions": "Actions",

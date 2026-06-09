@@ -155,9 +155,9 @@ const Inventory: React.FC = () => {
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC]">{t('inventory.title')}</h2>
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 flex-wrap">
+        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC] shrink-0">{t('inventory.title')}</h2>
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-wrap sm:flex-nowrap">
           <div className="relative flex-grow">
             <input
               type="text"

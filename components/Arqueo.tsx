@@ -188,8 +188,8 @@ export default function Arqueo() {
       {/* Active Session */}
       {currentSession ? (
         <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg p-4 md:p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-            <h2 className="text-lg md:text-xl font-semibold text-[#F5F5DC]">Current Session</h2>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 flex-wrap">
+            <h2 className="text-lg md:text-xl font-semibold text-[#F5F5DC] shrink-0">Current Session</h2>
             <span className="self-start sm:self-auto px-3 py-1 bg-[#F5F5DC]/10 text-[#F5F5DC]/80 text-xs font-semibold rounded-full border border-[#F5F5DC]/20">
               {currentSession.invoices.length} invoice{currentSession.invoices.length !== 1 ? 's' : ''}
             </span>
@@ -210,7 +210,8 @@ export default function Arqueo() {
                       <span className="text-[#F5F5DC] font-medium">{invoice.confirmedData.invoiceNumber || 'N/A'}</span>
                     </p>
                     <p className="text-sm text-[#F5F5DC]/60">
-                      Date: <span className="text-[#F5F5DC] font-medium">{invoice.confirmedData.invoiceDate || 'N/A'}</span>
+                      Date:{' '}
+                      <span className="text-[#F5F5DC] font-medium">{invoice.confirmedData.invoiceDate || 'N/A'}</span>
                     </p>
                   </div>
                   <div className="text-right">
@@ -259,9 +260,7 @@ export default function Arqueo() {
                     </p>
                   </div>
                   <div className="flex-shrink-0 text-right ml-2">
-                    <p className="text-lg font-bold text-green-400">
-                      ${(invoice.confirmedData.total || 0).toFixed(2)}
-                    </p>
+                    <p className="text-lg font-bold text-green-400">${(invoice.confirmedData.total || 0).toFixed(2)}</p>
                     <p className="text-[10px] text-[#F5F5DC]/50">{invoice.confirmedData.items.length} items</p>
                   </div>
                 </div>
@@ -269,7 +268,10 @@ export default function Arqueo() {
                 {/* Items badges */}
                 <div className="flex flex-wrap gap-1">
                   {invoice.confirmedData.items.slice(0, 2).map((item, idx) => (
-                    <span key={idx} className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/70">
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/70"
+                    >
                       {item.description} (x{item.quantity})
                     </span>
                   ))}
@@ -331,11 +333,15 @@ export default function Arqueo() {
           <h2 className="text-lg font-semibold text-[#F5F5DC] mb-4">Previous Sessions</h2>
           <div className="flex flex-col gap-3">
             {sessions.map((session) => (
-              <div key={session.id} className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 md:p-4 active:scale-[0.98] transition-transform">
+              <div
+                key={session.id}
+                className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 md:p-4 active:scale-[0.98] transition-transform"
+              >
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-[#F5F5DC]/60">
-                      Closed on: <span className="text-[#F5F5DC]">{new Date(session.createdAt).toLocaleDateString()}</span>
+                      Closed on:{' '}
+                      <span className="text-[#F5F5DC]">{new Date(session.createdAt).toLocaleDateString()}</span>
                     </p>
                     <div className="flex flex-wrap gap-3 mt-2">
                       <span className="inline-flex items-center text-xs text-[#F5F5DC]/70 bg-[#F5F5DC]/8 px-2 py-1 rounded">

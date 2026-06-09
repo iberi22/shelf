@@ -92,8 +92,8 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC]">{title}</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 flex-wrap">
+        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC] shrink-0">{title}</h2>
         <button
           onClick={() => handleOpenModal()}
           className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"

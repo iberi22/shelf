@@ -13,6 +13,7 @@
     "settings": "ترتیبات"
   },
   "common": {
+    "color": "Color",
     "save": "محفوظ کریں",
     "cancel": "منسوخ کریں",
     "actions": "اقدامات",

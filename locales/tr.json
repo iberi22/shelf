@@ -13,6 +13,7 @@
     "settings": "Ayarlar"
   },
   "common": {
+    "color": "Color",
     "save": "Kaydet",
     "cancel": "İptal",
     "actions": "Eylemler",

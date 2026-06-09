@@ -13,6 +13,7 @@
     "settings": "Settings"
   },
   "common": {
+    "color": "Color",
     "save": "I-save",
     "cancel": "Kanselahin",
     "actions": "Aksyon",

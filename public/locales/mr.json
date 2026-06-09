@@ -13,6 +13,7 @@
     "settings": "सेटिंग्ज"
   },
   "common": {
+    "color": "Color",
     "save": "जतन करा",
     "cancel": "रद्द करा",
     "actions": "क्रिया",

@@ -13,6 +13,7 @@
     "settings": "設定"
   },
   "common": {
+    "color": "Color",
     "save": "保存",
     "cancel": "キャンセル",
     "actions": "アクション",

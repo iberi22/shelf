@@ -13,6 +13,7 @@
     "settings": "Pengaturan"
   },
   "common": {
+    "color": "Color",
     "save": "Simpan",
     "cancel": "Batal",
     "actions": "Tindakan",
