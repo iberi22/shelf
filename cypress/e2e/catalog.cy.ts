@@ -106,13 +106,17 @@ describe('Catalog', () => {
     cy.get('[data-testid="nav-item-nav.catalog"]').last().click();
 
     // Change subtitle
-    cy.get('[data-testid="catalog-subtitle-input"]').clear({ force: true }).type('Catálogo de Materas 2026', { force: true });
+    cy.get('[data-testid="catalog-subtitle-input"]')
+      .clear({ force: true })
+      .type('Catálogo de Materas 2026', { force: true });
 
     // Change columns
     cy.get('[data-testid="catalog-columns-select"]').select('2', { force: true });
 
     // Change contact info
-    cy.get('[data-testid="catalog-contact-input"]').clear({ force: true }).type('WhatsApp: +57 300 123 4567', { force: true });
+    cy.get('[data-testid="catalog-contact-input"]')
+      .clear({ force: true })
+      .type('WhatsApp: +57 300 123 4567', { force: true });
 
     // Verify the inputs updated
     cy.get('[data-testid="catalog-subtitle-input"]').should('have.value', 'Catálogo de Materas 2026');
