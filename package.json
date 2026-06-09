@@ -24,6 +24,7 @@
   "dependencies": {
     "@google/genai": "^2.0.0",
     "@mlc-ai/web-llm": "^0.2.83",
+    "@noble/post-quantum": "^0.6.1",
     "chart.js": "^4.5.1",
     "cypress-downloadfile": "^1.2.4",
     "html5-qrcode": "^2.3.8",
