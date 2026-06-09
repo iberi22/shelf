@@ -29,7 +29,6 @@
     "price": "ధర",
     "cost": "ధర",
     "stock": "స్టాక్",
-    "color": "Color",
     "unitOfMeasure": "Unit of Measure",
     "variant": "రకం",
     "client": "క్లయింట్",
@@ -77,7 +76,6 @@
       "changeImage": "Change Image",
       "removeImage": "Remove",
       "attributes": "Product Attributes",
-      "colorPlaceholder": "E.g. Red, Blue, #FF0000",
       "noUnit": "No unit of measure",
       "unitGroups": {
         "length": "Length",

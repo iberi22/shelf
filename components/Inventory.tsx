@@ -17,6 +17,7 @@ const PRESET_COLORS = [
   { name: 'Oro', hex: '#D4A017' },
   { name: 'Plateado', hex: '#C0C0C0' },
 ];
+
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
@@ -100,9 +101,33 @@ const Inventory: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    const headers = ['id', 'name', 'sku', 'color', 'dimensions', 'capacity', 'material', 'quantity', 'price', 'cost', 'imageUrl'];
+    const headers = [
+      'id',
+      'name',
+      'sku',
+      'color',
+      'dimensions',
+      'capacity',
+      'material',
+      'quantity',
+      'price',
+      'cost',
+      'imageUrl',
+    ];
     const rows = activeProducts.map((p) =>
-      [p.id, p.name, p.sku || '', p.color || '', p.dimensions || '', p.capacity || '', p.material || '', p.quantity, p.price, p.cost, p.imageUrl || ''].join(','),
+      [
+        p.id,
+        p.name,
+        p.sku || '',
+        p.color || '',
+        p.dimensions || '',
+        p.capacity || '',
+        p.material || '',
+        p.quantity,
+        p.price,
+        p.cost,
+        p.imageUrl || '',
+      ].join(','),
     );
     const csvContent = `data:text/csv;charset=utf-8,${[headers.join(','), ...rows].join('\n')}`;
     const encodedUri = encodeURI(csvContent);
@@ -164,7 +189,7 @@ const Inventory: React.FC = () => {
       </div>
 
       {/* Tablet+ table: muestra esencial + expandible */}
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
+      <div className="hidden sm:block bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-[#F5F5DC]/10">
@@ -176,10 +201,46 @@ const Inventory: React.FC = () => {
                 <SortableHeader sortKey="price" labelKey="common.price" />
                 <SortableHeader sortKey="color" labelKey="common.color" />
                 {/* Responsive: hidden below xl to prevent table overflow */}
-                <th className="hidden xl:table-cell p-4"><button onClick={() => requestSort('dimensions')} className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors" aria-label={`${t('common.sortBy')} ${t('common.dimensions')}`}>{t('common.dimensions')}<span className="text-yellow-400 text-xs">{getSortIndicator('dimensions')}</span></button></th>
-                <th className="hidden xl:table-cell p-4"><button onClick={() => requestSort('capacity')} className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors" aria-label={`${t('common.sortBy')} ${t('common.capacity')}`}>{t('common.capacity')}<span className="text-yellow-400 text-xs">{getSortIndicator('capacity')}</span></button></th>
-                <th className="hidden xl:table-cell p-4"><button onClick={() => requestSort('material')} className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors" aria-label={`${t('common.sortBy')} ${t('common.material')}`}>{t('common.material')}<span className="text-yellow-400 text-xs">{getSortIndicator('material')}</span></button></th>
-                <th className="hidden xl:table-cell p-4"><button onClick={() => requestSort('cost')} className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors" aria-label={`${t('common.sortBy')} ${t('common.cost')}`}>{t('common.cost')}<span className="text-yellow-400 text-xs">{getSortIndicator('cost')}</span></button></th>
+                <th className="hidden xl:table-cell p-4">
+                  <button
+                    onClick={() => requestSort('dimensions')}
+                    className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors"
+                    aria-label={`${t('common.sortBy')} ${t('common.dimensions')}`}
+                  >
+                    {t('common.dimensions')}
+                    <span className="text-yellow-400 text-xs">{getSortIndicator('dimensions')}</span>
+                  </button>
+                </th>
+                <th className="hidden xl:table-cell p-4">
+                  <button
+                    onClick={() => requestSort('capacity')}
+                    className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors"
+                    aria-label={`${t('common.sortBy')} ${t('common.capacity')}`}
+                  >
+                    {t('common.capacity')}
+                    <span className="text-yellow-400 text-xs">{getSortIndicator('capacity')}</span>
+                  </button>
+                </th>
+                <th className="hidden xl:table-cell p-4">
+                  <button
+                    onClick={() => requestSort('material')}
+                    className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors"
+                    aria-label={`${t('common.sortBy')} ${t('common.material')}`}
+                  >
+                    {t('common.material')}
+                    <span className="text-yellow-400 text-xs">{getSortIndicator('material')}</span>
+                  </button>
+                </th>
+                <th className="hidden xl:table-cell p-4">
+                  <button
+                    onClick={() => requestSort('cost')}
+                    className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors"
+                    aria-label={`${t('common.sortBy')} ${t('common.cost')}`}
+                  >
+                    {t('common.cost')}
+                    <span className="text-yellow-400 text-xs">{getSortIndicator('cost')}</span>
+                  </button>
+                </th>
                 <th className="p-3">{t('common.actions')}</th>
               </tr>
             </thead>
@@ -193,51 +254,88 @@ const Inventory: React.FC = () => {
                   >
                     <td className="p-1.5 md:p-2">
                       {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="h-8 w-8 md:h-10 md:w-10 rounded-md object-cover" />
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="h-8 w-8 md:h-10 md:w-10 rounded-md object-cover"
+                        />
                       ) : (
                         <div className="h-8 w-8 md:h-10 md:w-10 rounded-md bg-[#F5F5DC]/10 flex items-center justify-center text-base md:text-lg">
                           📦
                         </div>
                       )}
                     </td>
-                    <td className="p-2 md:p-3 max-w-[90px] md:max-w-[150px] xl:max-w-none truncate" title={product.name}>
+                    <td
+                      className="p-2 md:p-3 max-w-[90px] md:max-w-[150px] xl:max-w-none truncate"
+                      title={product.name}
+                    >
                       {product.name}
                     </td>
-                    <td className="p-2 md:p-3 max-w-[60px] md:max-w-[70px] truncate" title={product.sku || ''}>{product.sku || <span className="text-[#F5F5DC]/40">—</span>}</td>
+                    <td className="p-2 md:p-3 max-w-[60px] md:max-w-[70px] truncate" title={product.sku || ''}>
+                      {product.sku || <span className="text-[#F5F5DC]/40">—</span>}
+                    </td>
                     <td className="p-2 md:p-3 whitespace-nowrap">
                       {product.quantity}
                       {product.quantity > 0 && product.quantity <= lowStockThreshold && (
-                        <span className="text-yellow-400 ml-1" title={t('inventory.lowStock')}>⚠️</span>
+                        <span className="text-yellow-400 ml-1" title={t('inventory.lowStock')}>
+                          ⚠️
+                        </span>
                       )}
                     </td>
                     <td className="p-2 md:p-3 whitespace-nowrap">{formatCurrency(product.price)}</td>
                     <td className="p-2 md:p-3">
                       {product.color ? (
                         <span title={product.color} className="inline-flex items-center gap-1">
-                          <span className="inline-block w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white/20 flex-shrink-0" style={{ backgroundColor: isValidHexColor(product.color) ? product.color : '#808080' }}></span>
-                          <span className="truncate max-w-[50px] md:max-w-[60px] hidden lg:inline">{product.color}</span>
+                          <span
+                            className="inline-block w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white/20 flex-shrink-0"
+                            style={{ backgroundColor: isValidHexColor(product.color) ? product.color : '#808080' }}
+                          ></span>
+                          <span className="truncate max-w-[50px] md:max-w-[60px] hidden lg:inline">
+                            {product.color}
+                          </span>
                         </span>
                       ) : (
                         <span className="text-[#F5F5DC]/40">—</span>
                       )}
                     </td>
-                    <td className="p-2 md:p-3 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell" title={product.dimensions || ''}>{product.dimensions || <span className="text-[#F5F5DC]/40">—</span>}</td>
-                    <td className="p-2 md:p-3 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell" title={product.capacity || ''}>{product.capacity || <span className="text-[#F5F5DC]/40">—</span>}</td>
-                    <td className="p-2 md:p-3 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell" title={product.material || ''}>{product.material || <span className="text-[#F5F5DC]/40">—</span>}</td>
-                    <td className="p-2 md:p-3 whitespace-nowrap hidden xl:table-cell">{formatCurrency(product.cost)}</td>
+                    <td
+                      className="p-2 md:p-3 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell"
+                      title={product.dimensions || ''}
+                    >
+                      {product.dimensions || <span className="text-[#F5F5DC]/40">—</span>}
+                    </td>
+                    <td
+                      className="p-2 md:p-3 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell"
+                      title={product.capacity || ''}
+                    >
+                      {product.capacity || <span className="text-[#F5F5DC]/40">—</span>}
+                    </td>
+                    <td
+                      className="p-2 md:p-3 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell"
+                      title={product.material || ''}
+                    >
+                      {product.material || <span className="text-[#F5F5DC]/40">—</span>}
+                    </td>
+                    <td className="p-2 md:p-3 whitespace-nowrap hidden xl:table-cell">
+                      {formatCurrency(product.cost)}
+                    </td>
                     <td className="p-2 md:p-3 whitespace-nowrap">
                       <button
                         onClick={() => handleOpenModal(product)}
                         className="p-1.5 text-yellow-400 hover:bg-yellow-400/10 rounded transition-all active:scale-90"
                         aria-label={t('common.editItem', { item: product.name })}
                         data-testid={`edit-product-${product.id}`}
-                      >✏️</button>
+                      >
+                        ✏️
+                      </button>
                       <button
                         onClick={() => handleDelete(product.id)}
                         className="p-1.5 text-red-400 hover:bg-red-400/10 rounded transition-all active:scale-90 ml-1"
                         aria-label={t('common.deleteItem', { item: product.name })}
                         data-testid={`delete-product-${product.id}`}
-                      >🗑️</button>
+                      >
+                        🗑️
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -268,7 +366,9 @@ const Inventory: React.FC = () => {
                   {product.imageUrl ? (
                     <img src={product.imageUrl} alt={product.name} className="h-11 w-11 rounded-lg object-cover" />
                   ) : (
-                    <div className="h-11 w-11 rounded-lg bg-[#F5F5DC]/10 flex items-center justify-center text-lg">📦</div>
+                    <div className="h-11 w-11 rounded-lg bg-[#F5F5DC]/10 flex items-center justify-center text-lg">
+                      📦
+                    </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -287,13 +387,17 @@ const Inventory: React.FC = () => {
                     className="p-1.5 text-yellow-400 hover:bg-yellow-400/10 rounded-lg transition-all active:scale-90 text-sm"
                     aria-label={t('common.editItem', { item: product.name })}
                     data-testid={`edit-product-${product.id}`}
-                  >✏️</button>
+                  >
+                    ✏️
+                  </button>
                   <button
                     onClick={() => handleDelete(product.id)}
                     className="p-1.5 text-red-400 hover:bg-red-400/10 rounded-lg transition-all active:scale-90 text-sm"
                     aria-label={t('common.deleteItem', { item: product.name })}
                     data-testid={`delete-product-${product.id}`}
-                  >🗑️</button>
+                  >
+                    🗑️
+                  </button>
                 </div>
               </div>
 
@@ -302,18 +406,27 @@ const Inventory: React.FC = () => {
                 <div className="flex flex-wrap gap-1">
                   {product.color && (
                     <span className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/80">
-                      <span className="inline-block w-2.5 h-2.5 rounded-full border border-white/20 flex-shrink-0" style={{ backgroundColor: isValidHexColor(product.color) ? product.color : '#808080' }}></span>
+                      <span
+                        className="inline-block w-2.5 h-2.5 rounded-full border border-white/20 flex-shrink-0"
+                        style={{ backgroundColor: isValidHexColor(product.color) ? product.color : '#808080' }}
+                      ></span>
                       {product.color}
                     </span>
                   )}
                   {product.dimensions && (
-                    <span className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/80">📏 {product.dimensions}</span>
+                    <span className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/80">
+                      📏 {product.dimensions}
+                    </span>
                   )}
                   {product.capacity && (
-                    <span className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/80">📐 {product.capacity}</span>
+                    <span className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/80">
+                      📐 {product.capacity}
+                    </span>
                   )}
                   {product.material && (
-                    <span className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/80">🧱 {product.material}</span>
+                    <span className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/80">
+                      🧱 {product.material}
+                    </span>
                   )}
                 </div>
               </div>
@@ -322,7 +435,9 @@ const Inventory: React.FC = () => {
               <div className="flex border-t border-[#F5F5DC]/8">
                 <div className="flex-1 flex items-center justify-center gap-1 py-2 px-1.5 border-r border-[#F5F5DC]/8">
                   <span className="text-[9px] uppercase tracking-wider text-[#F5F5DC]/50">{t('common.stock')}</span>
-                  <span className={`text-xs font-bold ${product.quantity > 0 && product.quantity <= lowStockThreshold ? 'text-yellow-400' : 'text-[#F5F5DC]'}`}>
+                  <span
+                    className={`text-xs font-bold ${product.quantity > 0 && product.quantity <= lowStockThreshold ? 'text-yellow-400' : 'text-[#F5F5DC]'}`}
+                  >
                     {product.quantity}
                   </span>
                   {product.quantity > 0 && product.quantity <= lowStockThreshold && (
@@ -541,7 +656,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     type="button"
                     onClick={() => setColor(color === c.name ? '' : c.name)}
                     className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 ${
-                      color === c.name ? 'border-white scale-110 ring-2 ring-white/30' : 'border-[#F5F5DC]/20 hover:scale-105'
+                      color === c.name
+                        ? 'border-white scale-110 ring-2 ring-white/30'
+                        : 'border-[#F5F5DC]/20 hover:scale-105'
                     }`}
                     style={{ backgroundColor: c.hex }}
                     title={c.name}

@@ -1,6 +1,6 @@
 import type React from 'react';
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import { auth, db, firebaseReady } from '../firebase';
+import { type DeviceInfo, localAuthManager } from '../lib/localAuth';
 import type { User } from '../types';
 import { useI18n } from './I18nContext';
 import { useUI } from './UIContext';
@@ -17,6 +17,11 @@ interface AuthContextType {
   hasAppLock: boolean;
   unlockApp: (pin: string) => Promise<boolean>;
   setAppLock: (pin: string | null) => Promise<void>;
+  isLocalAccount: boolean;
+  getAuthorizedDevices: () => DeviceInfo[];
+  revokeDevice: (deviceId: string) => void;
+  loginLocal: (email: string, password: string) => Promise<void>;
+  createLocalAccount: (email: string, password: string) => Promise<{ seed: string[] }>;
 }
 
 const hashPin = async (pin: string): Promise<string> => {
@@ -50,70 +55,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
-      const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: any) => {
-        setIsLoading(true);
-        if (firebaseUser) {
-          try {
-            // Check for user document in Firestore to get subscription tier
-            const userDocRef = db.collection('users').doc(firebaseUser.uid);
-            const docSnap = await userDocRef.get();
+      const currentUser = localAuthManager.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+      }
 
-            if (docSnap.exists) {
-              const userData = docSnap.data();
-              setUser({
-                uid: firebaseUser.uid,
-                email: firebaseUser.email,
-                subscriptionTier: userData?.subscriptionTier || 'free',
-              });
-            } else {
-              // Create a user document for new sign-ups
-              const newUser: Omit<User, 'uid' | 'email'> = { subscriptionTier: 'free' };
-              await userDocRef.set(newUser);
-              setUser({
-                uid: firebaseUser.uid,
-                email: firebaseUser.email,
-                subscriptionTier: 'free',
-              });
-            }
-          } catch (error) {
-            console.error('Error fetching user data from Firestore:', error);
-            // Fallback for offline or error
-            setUser({
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              subscriptionTier: 'free',
-            });
-          }
-        } else {
-          setUser(null);
-        }
-        setIsLoading(false);
-      });
-
-      // Wait for firebase to be ready before unsubscribing the loading state
-      await firebaseReady;
       if (appLockPin) setIsLocked(true);
       setIsLoading(false);
-
-      return unsubscribe;
     };
 
-    let unsubscribe: (() => void) | undefined;
-    initAuth().then((unsub) => {
-      unsubscribe = unsub;
-    });
-
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    initAuth();
   }, [appLockPin]);
 
   const login = async (email: string, password: string) => {
-    await auth.signInWithEmailAndPassword(email, password);
+    const loggedUser = await localAuthManager.login(email, password);
+    setUser(loggedUser);
   };
 
   const signup = async (email: string, password: string) => {
-    await auth.createUserWithEmailAndPassword(email, password);
+    const { user: newUser } = await localAuthManager.createAccount(email, password);
+    setUser(newUser);
   };
 
   const loginAsGuest = async () => {
@@ -131,22 +94,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     showLoading(t('auth.loggingOut'));
     if (user?.isGuest) {
       localStorage.removeItem('guest_user');
-      setUser(null);
     } else {
-      await auth.signOut();
+      localAuthManager.logout();
     }
+    setUser(null);
     hideLoading();
   };
 
   const getIdToken = async (): Promise<string | null> => {
-    if (user?.isGuest) {
-      return 'guest-token';
-    }
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      return null;
-    }
-    return currentUser.getIdToken();
+    if (user?.isGuest) return 'guest-token';
+    const currentUser = localAuthManager.getCurrentUser();
+    if (!currentUser) return null;
+    return 'local-token-not-needed';
   };
 
   const unlockApp = async (pin: string): Promise<boolean> => {
@@ -177,6 +136,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const isLocalAccount = user !== null && !user.isGuest;
+
+  const getAuthorizedDevices = () => {
+    return localAuthManager.getAuthorizedDevices();
+  };
+
+  const revokeDevice = (deviceId: string) => {
+    localAuthManager.revokeDevice(deviceId);
+  };
+
+  const loginLocal = login;
+
+  const createLocalAccount = async (email: string, password: string) => {
+    const { user: newUser, seed } = await localAuthManager.createAccount(email, password);
+    setUser(newUser);
+    return { seed };
+  };
+
   const value = {
     user,
     isLoading,
@@ -189,6 +166,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     hasAppLock: !!appLockPin,
     unlockApp,
     setAppLock,
+    isLocalAccount,
+    getAuthorizedDevices,
+    revokeDevice,
+    loginLocal,
+    createLocalAccount,
   };
 
   return (

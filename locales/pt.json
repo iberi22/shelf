@@ -30,7 +30,6 @@
     "price": "Preço",
     "cost": "Custo",
     "stock": "Estoque",
-    "color": "Cor",
     "unitOfMeasure": "Unidade de Medida",
     "variant": "Variante",
     "client": "Cliente",
@@ -39,7 +38,6 @@
     "items": "Itens",
     "notAvailable": "N/A",
     "exportCsv": "Exportar CSV",
-    "color": "Cor",
     "dimensions": "Dimensões",
     "capacity": "Capacidade",
     "material": "Material",
@@ -86,7 +84,6 @@
       "changeImage": "Alterar Imagem",
       "removeImage": "Remover",
       "attributes": "Atributos do Produto",
-      "colorPlaceholder": "Ex: Vermelho, Azul, #FF0000",
       "noUnit": "Sem unidade de medida",
       "unitGroups": {
         "length": "Comprimento",
