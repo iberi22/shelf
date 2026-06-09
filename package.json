@@ -19,7 +19,7 @@
     "audit:fix": "pnpm audit --fix",
     "outdated": "pnpm outdated",
     "install:ci": "pnpm install --frozen-lockfile",
-    "verify:deps": "pnpm audit && pnpm outdated"
+    "prepare": "husky"
   },
   "dependencies": {
     "@google/genai": "^2.0.0",
