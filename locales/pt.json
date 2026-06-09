@@ -30,6 +30,9 @@
     "price": "Preço",
     "cost": "Custo",
     "stock": "Estoque",
+    "color": "Cor",
+    "unitOfMeasure": "Unidade de Medida",
+    "variant": "Variante",
     "client": "Cliente",
     "supplier": "Fornecedor",
     "status": "Status",
@@ -81,7 +84,23 @@
       "materialPlaceholder": "Material (ex. Cerâmica, Resina)",
       "uploadImage": "Carregar Imagem",
       "changeImage": "Alterar Imagem",
-      "removeImage": "Remover"
+      "removeImage": "Remover",
+      "attributes": "Atributos do Produto",
+      "colorPlaceholder": "Ex: Vermelho, Azul, #FF0000",
+      "noUnit": "Sem unidade de medida",
+      "unitGroups": {
+        "length": "Comprimento",
+        "weight": "Peso",
+        "volume": "Volume",
+        "area": "Área",
+        "other": "Outros"
+      },
+      "variantGroup": "Grupo de Variantes",
+      "variantGroupHelp": "Agrupe produtos similares com diferentes cores, tamanhos ou medidas. Isso facilita o rastreamento de inventário relacionado.",
+      "noVariantGroup": "Sem grupo de variantes",
+      "newVariantGroup": "Criar novo grupo de variantes",
+      "variantSiblings": "Produtos no mesmo grupo:",
+      "noSiblings": "Nenhum outro produto neste grupo"
     }
   },
   "sales": {
@@ -370,6 +389,18 @@
       "title": "Sincronização (Pro)",
       "description": "Atualize para o Pro para sincronizar seus dados em todos os seus dispositivos, mantendo-os seguros e atualizados."
     }
+  },
+  "welcome": {
+    "title": "Bem-vindo ao Shelf!",
+    "subtitle": "Antes de começar, aqui estão algumas coisas importantes a saber:",
+    "localMode": "Dados Locales Primeiro",
+    "localModeDesc": "Seus dados são armazenados de forma segura neste dispositivo. Nenhuma conexão com a internet é necessária para gerenciar seu estoque.",
+    "backupResponsibility": "Seus Dados, Sua Responsabilidade",
+    "backupResponsibilityDesc": "Como os dados são armazenados localmente, é crucial fazer backups regulares. Você pode exportar seus dados no menu de Configurações.",
+    "upgradeOption": "Sincronização na Nuvem e Mais",
+    "upgradeOptionDesc": "Para backups automáticos, sincronização em vários dispositivos e relatórios com IA, considere atualizar para um plano Pro a qualquer momento.",
+    "dontShowAgain": "Não mostrar isso novamente",
+    "getStarted": "Começar"
   },
   "sync": {
     "status": "Status de Sincronização",

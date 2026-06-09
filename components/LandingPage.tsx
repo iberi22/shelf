@@ -92,6 +92,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onLoginClick }) =
         <p>
           &copy; {new Date().getFullYear()} {t('appName')} {t('landing.footer')}
         </p>
+        <a
+          href="https://github.com/iberi22/shelf"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-block text-[#F5F5DC]/40 hover:text-[#F5F5DC] transition-colors"
+        >
+          github.com/iberi22/shelf
+        </a>
       </footer>
 
       {/* Welcome Modal */}

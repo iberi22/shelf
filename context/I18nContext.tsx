@@ -3,7 +3,27 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useS
 
 type Translations = { [key: string]: any };
 
-type Locale = 'en' | 'es' | 'pt';
+type Locale =
+  | 'en'
+  | 'es'
+  | 'pt'
+  | 'zh'
+  | 'hi'
+  | 'fr'
+  | 'ar'
+  | 'bn'
+  | 'ru'
+  | 'ur'
+  | 'id'
+  | 'de'
+  | 'ja'
+  | 'mr'
+  | 'te'
+  | 'tr'
+  | 'ta'
+  | 'vi'
+  | 'tl'
+  | 'it';
 
 export interface I18nContextType {
   locale: Locale;
@@ -32,7 +52,28 @@ const getInitialLocale = (): Locale => {
   const browserLang = fullLang.split(/[-_]/)[0].toLowerCase();
 
   // Map of supported languages
-  const supportedLocales: Locale[] = ['en', 'es', 'pt'];
+  const supportedLocales: Locale[] = [
+    'en',
+    'es',
+    'pt',
+    'zh',
+    'hi',
+    'fr',
+    'ar',
+    'bn',
+    'ru',
+    'ur',
+    'id',
+    'de',
+    'ja',
+    'mr',
+    'te',
+    'tr',
+    'ta',
+    'vi',
+    'tl',
+    'it',
+  ];
 
   // Return the browser language if supported, otherwise default to English
   const detectedLocale = supportedLocales.includes(browserLang as Locale) ? (browserLang as Locale) : 'en';
@@ -45,9 +86,7 @@ const getInitialLocale = (): Locale => {
 
 export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [locale, setLocale] = useState<Locale>(getInitialLocale());
-  const [translations, setTranslations] = useState<{ en: Translations; es: Translations; pt: Translations } | null>(
-    null,
-  );
+  const [translations, setTranslations] = useState<{ [key in Locale]?: Translations } | null>(null);
 
   // Custom setLocale that marks it as user-set
   const handleSetLocale = useCallback((newLocale: Locale) => {
@@ -60,12 +99,36 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const fetchTranslations = async () => {
       try {
-        const [en, es, pt] = await Promise.all([
-          fetch('/locales/en.json').then((res) => res.json()),
-          fetch('/locales/es.json').then((res) => res.json()),
-          fetch('/locales/pt.json').then((res) => res.json()),
-        ]);
-        setTranslations({ en, es, pt });
+        const localesList: Locale[] = [
+          'en',
+          'es',
+          'pt',
+          'zh',
+          'hi',
+          'fr',
+          'ar',
+          'bn',
+          'ru',
+          'ur',
+          'id',
+          'de',
+          'ja',
+          'mr',
+          'te',
+          'tr',
+          'ta',
+          'vi',
+          'tl',
+          'it',
+        ];
+        const results = await Promise.all(
+          localesList.map((code) => fetch(`/locales/${code}.json`).then((res) => res.json())),
+        );
+        const transObj: { [key in Locale]?: Translations } = {};
+        localesList.forEach((code, index) => {
+          transObj[code] = results[index];
+        });
+        setTranslations(transObj);
       } catch (error) {
         console.error('Failed to load translations:', error);
       }

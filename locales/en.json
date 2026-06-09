@@ -30,6 +30,9 @@
     "price": "Price",
     "cost": "Cost",
     "stock": "Stock",
+    "color": "Color",
+    "unitOfMeasure": "Unit of Measure",
+    "variant": "Variant",
     "client": "Client",
     "supplier": "Supplier",
     "status": "Status",
@@ -81,7 +84,23 @@
       "materialPlaceholder": "Material (e.g., Ceramic, Resin)",
       "uploadImage": "Upload Image",
       "changeImage": "Change Image",
-      "removeImage": "Remove"
+      "removeImage": "Remove",
+      "attributes": "Product Attributes",
+      "colorPlaceholder": "E.g. Red, Blue, #FF0000",
+      "noUnit": "No unit of measure",
+      "unitGroups": {
+        "length": "Length",
+        "weight": "Weight",
+        "volume": "Volume",
+        "area": "Area",
+        "other": "Other"
+      },
+      "variantGroup": "Variant Group",
+      "variantGroupHelp": "Group similar products with different colors, sizes, or measurements. This makes it easier to track related inventory.",
+      "noVariantGroup": "No variant group",
+      "newVariantGroup": "Create new variant group",
+      "variantSiblings": "Products in the same group:",
+      "noSiblings": "No other products in this group"
     }
   },
   "sales": {

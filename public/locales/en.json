@@ -8,6 +8,7 @@
     "clients": "Clients",
     "suppliers": "Suppliers",
     "purchases": "Purchases",
+    "arqueo": "Arqueo",
     "reports": "Reports",
     "settings": "Settings"
   },
@@ -28,6 +29,9 @@
     "price": "Price",
     "cost": "Cost",
     "stock": "Stock",
+    "color": "Color",
+    "unitOfMeasure": "Unit of Measure",
+    "variant": "Variant",
     "client": "Client",
     "supplier": "Supplier",
     "status": "Status",
@@ -47,7 +51,6 @@
     "totalProducts": "Total Products in Stock",
     "proFeaturesTitle": "Unlock Pro Features",
     "proFeaturesDescription": "Upgrade your experience with cloud sync, advanced AI reports, and an ad-free interface to take your business to the next level.",
-    "hideProSection": "Hide",
     "customize": "Customize",
     "toggleVisibility": "Toggle visibility",
     "noCardsVisible": "No cards are visible. Customize your dashboard to see your stats.",
@@ -57,16 +60,6 @@
       "cloudSyncDescription": "Keep your data safe and accessible across all your devices, automatically.",
       "noAdsTitle": "Ad-Free Experience",
       "noAdsDescription": "Focus on what matters most with a clean, uninterrupted interface."
-    },
-    "proCharts": {
-      "title": "Pro Indicators",
-      "description": "Preview of advanced charts. One rotates at a time; all remain under a translucent veil.",
-      "showProCta": "Show",
-      "proOnlyNote": "Pro users only",
-      "previewTag": "Preview",
-      "revenueTrendTitle": "Revenue trend",
-      "productMixTitle": "Product mix",
-      "stockHealthTitle": "Inventory health"
     }
   },
   "inventory": {
@@ -82,7 +75,23 @@
       "skuPlaceholder": "SKU or Barcode (optional)",
       "uploadImage": "Upload Image",
       "changeImage": "Change Image",
-      "removeImage": "Remove"
+      "removeImage": "Remove",
+      "attributes": "Product Attributes",
+      "colorPlaceholder": "E.g. Red, Blue, #FF0000",
+      "noUnit": "No unit of measure",
+      "unitGroups": {
+        "length": "Length",
+        "weight": "Weight",
+        "volume": "Volume",
+        "area": "Area",
+        "other": "Other"
+      },
+      "variantGroup": "Variant Group",
+      "variantGroupHelp": "Group similar products with different colors, sizes, or measurements. This makes it easier to track related inventory.",
+      "noVariantGroup": "No variant group",
+      "newVariantGroup": "Create new variant group",
+      "variantSiblings": "Products in the same group:",
+      "noSiblings": "No other products in this group"
     }
   },
   "sales": {
@@ -96,7 +105,15 @@
       "selectProduct": "Select a product...",
       "addItem": "+ Add Item",
       "selectClientOptional": "Select a client (optional)"
-    }
+    },
+    "receipt": {
+      "title": "Sales Receipt",
+      "generate": "Generate Receipt"
+    },
+    "share": {
+      "whatsapp": "Share on WhatsApp"
+    },
+    "proFeatureRequired": "This feature is only available for Pro users."
   },
   "clients": {
     "title": "Clients",
@@ -270,6 +287,8 @@
     "passwordPlaceholder": "Password",
     "confirmPasswordPlaceholder": "Confirm Password",
     "passwordMismatch": "Passwords do not match.",
+    "or": "or",
+    "loginGuest": "Enter as Guest (Offline Mode)",
     "error": {
       "generic": "An unexpected error occurred. Please try again.",
       "invalid-credential": "Invalid email or password. Please try again.",
@@ -351,7 +370,7 @@
     "title": "Every item in its place.",
     "subtitle": "The simple, modern, and powerful way to manage your business inventory. Free to use, forever.",
     "cta": "Start for Free",
-    "featuresTitle": "Why Choose Shelf?",
+    "featuresTitle": "Why Choose Shelf.?",
     "footer": "All rights reserved.",
     "feature1": {
       "title": "Simple & Intuitive",
@@ -367,19 +386,31 @@
     },
     "feature4": {
       "title": "Cloud Sync (Pro)",
-      "description": "Upgrade to sync your data across all your devices, ensuring it's safe and always up-to-date."
+      "description": "Upgrade to Pro to sync your data across all your devices, keeping them safe and up-to-date."
     }
   },
   "welcome": {
     "title": "Welcome to Shelf!",
-    "subtitle": "Before you start, here's what you need to know:",
-    "localMode": "Local Mode",
-    "localModeDesc": "Your data is stored only on this device. No cloud, no accounts required.",
-    "backupResponsibility": "Backup is Your Responsibility",
-    "backupResponsibilityDesc": "Remember to export your data regularly. Use the 'Export CSV' option in each section.",
-    "upgradeOption": "Want Cloud Sync?",
-    "upgradeOptionDesc": "Upgrade to Pro to automatically backup and sync your data across all your devices.",
-    "getStarted": "Get Started",
-    "dontShowAgain": "Don't show this again"
+    "subtitle": "Before you begin, here are a few important things to know:",
+    "localMode": "Local-First Data",
+    "localModeDesc": "Your data is stored securely on this device. No internet connection is needed to manage your inventory.",
+    "backupResponsibility": "Your Data, Your Responsibility",
+    "backupResponsibilityDesc": "Since data is stored locally, it's crucial to make regular backups. You can export your data in the Settings menu.",
+    "upgradeOption": "Cloud Sync & More",
+    "upgradeOptionDesc": "For automated backups, multi-device sync, and AI-powered reports, consider upgrading to a Pro plan at any time.",
+    "dontShowAgain": "Don't show this again",
+    "getStarted": "Get Started"
+  },
+  "sync": {
+    "status": "Sync Status",
+    "localOnly": "Local Only",
+    "cloudSynced": "Cloud Synced",
+    "syncing": "Syncing..."
+  },
+  "update": {
+    "title": "New version available",
+    "message": "A new version of Shelf. is available. Reload the app to get the latest features and improvements.",
+    "reload": "Update now",
+    "later": "Later"
   }
 }

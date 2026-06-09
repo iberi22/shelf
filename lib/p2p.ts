@@ -5,13 +5,27 @@ export type SyncMessage =
   | { type: 'STATE_UPDATE'; payload: Partial<AppState> }
   | { type: 'REQUEST_FULL_STATE' }
   | { type: 'PROMOTE_ADMIN'; payload: { targetPeerId: string } }
-  | { type: 'PEER_LIST_UPDATE'; payload: PeerInfo[] };
+  | { type: 'PEER_LIST_UPDATE'; payload: PeerInfo[] }
+  // Auth recovery messages
+  | {
+      type: 'REQUEST_ACCOUNT_RECOVERY';
+      payload: { requestId: string; email: string; deviceName: string; deviceId: string };
+    }
+  | { type: 'RECOVERY_APPROVED'; payload: { requestId: string; encryptedSeed: string; tempKey: string } }
+  | { type: 'RECOVERY_DENIED'; payload: { requestId: string; reason: string } }
+  | { type: 'DEVICE_AUTHORIZED'; payload: { deviceId: string; deviceName: string; authorizedAt: string } };
 
 class P2PManager {
   private peer: Peer | null = null;
   private connections: Map<string, DataConnection> = new Map();
   private onMessageCallbacks: ((message: SyncMessage, fromPeerId: string) => void)[] = [];
   private onConnectionChangeCallbacks: ((peers: PeerInfo[]) => void)[] = [];
+  private onRecoveryRequestCallbacks: ((
+    requestId: string,
+    email: string,
+    deviceName: string,
+    fromPeerId: string,
+  ) => void)[] = [];
 
   public localPeerId: string | null = null;
   public role: P2PRole = 'collaborator';
@@ -46,8 +60,16 @@ class P2PManager {
       this.updatePeerList(conn.peer, 'collaborator');
 
       conn.on('data', (data) => {
+        const message = data as SyncMessage;
+        // Route recovery requests to dedicated callbacks
+        if (message.type === 'REQUEST_ACCOUNT_RECOVERY') {
+          for (const cb of this.onRecoveryRequestCallbacks) {
+            cb(message.payload.requestId, message.payload.email, message.payload.deviceName, conn.peer);
+          }
+          return;
+        }
         for (const cb of this.onMessageCallbacks) {
-          cb(data as SyncMessage, conn.peer);
+          cb(message, conn.peer);
         }
       });
 
@@ -99,6 +121,44 @@ class P2PManager {
 
   public onConnectionChange(cb: (peers: PeerInfo[]) => void) {
     this.onConnectionChangeCallbacks.push(cb);
+  }
+
+  /**
+   * Register a callback for incoming account recovery requests.
+   * Called on the master device when another device wants to recover.
+   */
+  public onRecoveryRequest(cb: (requestId: string, email: string, deviceName: string, fromPeerId: string) => void) {
+    this.onRecoveryRequestCallbacks.push(cb);
+  }
+
+  /**
+   * Send an account recovery request to a peer (master device).
+   */
+  public sendRecoveryRequest(toPeerId: string, requestId: string, email: string, deviceName: string, deviceId: string) {
+    this.sendTo(toPeerId, {
+      type: 'REQUEST_ACCOUNT_RECOVERY',
+      payload: { requestId, email, deviceName, deviceId },
+    });
+  }
+
+  /**
+   * Approve a recovery request — sends the encrypted seed to the requesting device.
+   */
+  public approveRecovery(toPeerId: string, requestId: string, encryptedSeed: string, tempKey: string) {
+    this.sendTo(toPeerId, {
+      type: 'RECOVERY_APPROVED',
+      payload: { requestId, encryptedSeed, tempKey },
+    });
+  }
+
+  /**
+   * Deny a recovery request.
+   */
+  public denyRecovery(toPeerId: string, requestId: string, reason = 'Request denied by user') {
+    this.sendTo(toPeerId, {
+      type: 'RECOVERY_DENIED',
+      payload: { requestId, reason },
+    });
   }
 
   public disconnect() {

@@ -23,4 +23,30 @@ describe('Inventory', () => {
     cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
     cy.get('[data-testid="export-csv-button"]').click({ force: true });
   });
+
+  it('should support pasting an image from the clipboard', () => {
+    cy.get('[data-testid="add-product-button"]').click();
+
+    // Create a mock image file
+    const blob = new Blob(['mock-image-content'], { type: 'image/png' });
+    const file = new File([blob], 'test-image.png', { type: 'image/png' });
+
+    // Trigger the paste event on the window
+    cy.window().then((win) => {
+      const dataTransfer = new win.DataTransfer();
+      dataTransfer.items.add(file);
+
+      const event = new win.ClipboardEvent('paste', {
+        clipboardData: dataTransfer,
+        bubbles: true,
+        cancelable: true,
+      });
+
+      win.dispatchEvent(event);
+    });
+
+    // Verify the image was updated in the DOM
+    cy.get('[data-testid="product-form"] img').should('exist');
+    cy.get('[data-testid="product-form"] img').should('have.attr', 'src').and('include', 'data:image/png;base64');
+  });
 });

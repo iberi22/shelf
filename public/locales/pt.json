@@ -1,5 +1,5 @@
 {
-  "appName": "Prateleira.",
+  "appName": "Shelf.",
   "learnMore": "Saber Mais",
   "nav": {
     "summary": "Resumo",
@@ -8,6 +8,7 @@
     "clients": "Clientes",
     "suppliers": "Fornecedores",
     "purchases": "Compras",
+    "arqueo": "Arqueo",
     "reports": "Relatórios",
     "settings": "Configurações"
   },
@@ -28,6 +29,9 @@
     "price": "Preço",
     "cost": "Custo",
     "stock": "Estoque",
+    "color": "Cor",
+    "unitOfMeasure": "Unidade de Medida",
+    "variant": "Variante",
     "client": "Cliente",
     "supplier": "Fornecedor",
     "status": "Status",
@@ -47,7 +51,6 @@
     "totalProducts": "Produtos em Estoque",
     "proFeaturesTitle": "Desbloqueie Recursos Pro",
     "proFeaturesDescription": "Melhore sua experiência com sincronização na nuvem, relatórios avançados de IA e uma interface sem anúncios para levar seu negócio ao próximo nível.",
-    "hideProSection": "Ocultar",
     "customize": "Personalizar",
     "toggleVisibility": "Alternar visibilidade",
     "noCardsVisible": "Nenhum card visível. Personalize seu dashboard para ver suas estatísticas.",
@@ -57,16 +60,6 @@
       "cloudSyncDescription": "Mantenha seus dados seguros e acessíveis em todos os seus dispositivos, automaticamente.",
       "noAdsTitle": "Experiência Sem Anúncios",
       "noAdsDescription": "Concentre-se no que mais importa com uma interface limpa e sem interruções."
-    },
-    "proCharts": {
-      "title": "Indicadores Pro",
-      "description": "Prévia de gráficos avançados. Um gira por vez; todos ficam sob um véu translúcido.",
-      "showProCta": "Mostrar",
-      "proOnlyNote": "Somente para usuários Pro",
-      "previewTag": "Prévia",
-      "revenueTrendTitle": "Tendência de receita",
-      "productMixTitle": "Mix de produtos",
-      "stockHealthTitle": "Saúde do estoque"
     }
   },
   "inventory": {
@@ -82,7 +75,23 @@
       "skuPlaceholder": "SKU ou Código de Barras (opcional)",
       "uploadImage": "Carregar Imagem",
       "changeImage": "Alterar Imagem",
-      "removeImage": "Remover"
+      "removeImage": "Remover",
+      "attributes": "Atributos do Produto",
+      "colorPlaceholder": "Ex: Vermelho, Azul, #FF0000",
+      "noUnit": "Sem unidade de medida",
+      "unitGroups": {
+        "length": "Comprimento",
+        "weight": "Peso",
+        "volume": "Volume",
+        "area": "Área",
+        "other": "Outros"
+      },
+      "variantGroup": "Grupo de Variantes",
+      "variantGroupHelp": "Agrupe produtos similares com diferentes cores, tamanhos ou medidas. Isso facilita o rastreamento de inventário relacionado.",
+      "noVariantGroup": "Sem grupo de variantes",
+      "newVariantGroup": "Criar novo grupo de variantes",
+      "variantSiblings": "Produtos no mesmo grupo:",
+      "noSiblings": "Nenhum outro produto neste grupo"
     }
   },
   "sales": {
@@ -351,9 +360,9 @@
   },
   "landing": {
     "title": "Cada item em seu lugar.",
-    "subtitle": "A maneira simples, moderna e poderosa de gerenciar o estoque do seu negócio. Grátis para sempre.",
-    "cta": "Comece Grátis",
-    "featuresTitle": "Por que escolher Prateleira?",
+    "subtitle": "A maneira simples, moderna e poderosa de gerenciar o estoque do seu negócio. Grátis para usar, para sempre.",
+    "cta": "Comece de Graça",
+    "featuresTitle": "Por que escolher o Shelf.?",
     "footer": "Todos os direitos reservados.",
     "feature1": {
       "title": "Simples e Intuitivo",
@@ -369,19 +378,31 @@
     },
     "feature4": {
       "title": "Sincronização (Pro)",
-      "description": "Atualize para Pro para sincronizar seus dados em todos os seus dispositivos, mantendo-os seguros e atualizados."
+      "description": "Atualize para o Pro para sincronizar seus dados em todos os seus dispositivos, mantendo-os seguros e atualizados."
     }
   },
   "welcome": {
-    "title": "Bem-vindo à Prateleira!",
-    "subtitle": "Antes de começar, aqui está o que você precisa saber:",
-    "localMode": "Modo Local",
-    "localModeDesc": "Seus dados são armazenados apenas neste dispositivo. Sem nuvem, sem contas necessárias.",
-    "backupResponsibility": "Backup é Sua Responsabilidade",
-    "backupResponsibilityDesc": "Lembre-se de exportar seus dados regularmente. Use a opção 'Exportar CSV' em cada seção.",
-    "upgradeOption": "Quer Sincronização na Nuvem?",
-    "upgradeOptionDesc": "Atualize para Pro para fazer backup e sincronizar automaticamente seus dados em todos os seus dispositivos.",
-    "getStarted": "Começar",
-    "dontShowAgain": "Não mostrar isso novamente"
+    "title": "Bem-vindo ao Shelf!",
+    "subtitle": "Antes de começar, aqui estão algumas coisas importantes a saber:",
+    "localMode": "Dados Locales Primeiro",
+    "localModeDesc": "Seus dados são armazenados de forma segura neste dispositivo. Nenhuma conexão com a internet é necessária para gerenciar seu estoque.",
+    "backupResponsibility": "Seus Dados, Sua Responsabilidade",
+    "backupResponsibilityDesc": "Como os dados são armazenados localmente, é crucial fazer backups regulares. Você pode exportar seus dados no menu de Configurações.",
+    "upgradeOption": "Sincronização na Nuvem e Mais",
+    "upgradeOptionDesc": "Para backups automáticos, sincronização em vários dispositivos e relatórios com IA, considere atualizar para um plano Pro a qualquer momento.",
+    "dontShowAgain": "Não mostrar isso novamente",
+    "getStarted": "Começar"
+  },
+  "sync": {
+    "status": "Status de Sincronização",
+    "localOnly": "Apenas Local",
+    "cloudSynced": "Sincronizado",
+    "syncing": "Sincronizando..."
+  },
+  "update": {
+    "title": "Nova versão disponível",
+    "message": "Uma nova versão do Shelf. está disponível. Recarregue o aplicativo para obter os recursos e melhorias mais recentes.",
+    "reload": "Atualizar agora",
+    "later": "Mais tarde"
   }
 }

@@ -1,0 +1,416 @@
+{
+  "appName": "Shelf.",
+  "learnMore": "Learn More",
+  "nav": {
+    "summary": "Buod",
+    "inventory": "Imbentaryo",
+    "sales": "Benta",
+    "clients": "Kliyente",
+    "suppliers": "Supplier",
+    "purchases": "Pamimili",
+    "arqueo": "Cash Audit",
+    "reports": "Ulat",
+    "settings": "Settings"
+  },
+  "common": {
+    "save": "I-save",
+    "cancel": "Kanselahin",
+    "actions": "Aksyon",
+    "edit": "Edit",
+    "delete": "Delete",
+    "name": "Pangalan",
+    "phone": "Telepono",
+    "email": "Email",
+    "image": "Larawan",
+    "product": "Produkto",
+    "products": "Mga Produkto",
+    "sku": "SKU",
+    "quantity": "Dami",
+    "price": "Presyo",
+    "cost": "Gastos",
+    "stock": "Stock",
+    "color": "Color",
+    "unitOfMeasure": "Unit of Measure",
+    "variant": "Variant",
+    "client": "Kliyente",
+    "supplier": "Supplier",
+    "status": "Katayuan",
+    "items": "Items",
+    "notAvailable": "N/A",
+    "exportCsv": "Export CSV",
+    "sortBy": "Sort by",
+    "editItem": "Edit {{item}}",
+    "deleteItem": "Delete {{item}}",
+    "done": "Done"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalRevenue": "Total Revenue",
+    "totalProfit": "Total Profit",
+    "totalSales": "Total Sales",
+    "totalProducts": "Total Products in Stock",
+    "proFeaturesTitle": "Unlock Pro Features",
+    "proFeaturesDescription": "Upgrade your experience with cloud sync, advanced AI reports, and an ad-free interface to take your business to the next level.",
+    "customize": "Customize",
+    "toggleVisibility": "Toggle visibility",
+    "noCardsVisible": "No cards are visible. Customize your dashboard to see your stats.",
+    "pro": {
+      "aiDescription": "Get intelligent insights and forecasts by asking questions in natural language.",
+      "cloudSyncTitle": "Cloud Sync & Backup",
+      "cloudSyncDescription": "Keep your data safe and accessible across all your devices, automatically.",
+      "noAdsTitle": "Ad-Free Experience",
+      "noAdsDescription": "Focus on what matters most with a clean, uninterrupted interface."
+    }
+  },
+  "inventory": {
+    "title": "Inventory Management",
+    "addProduct": "Add Product",
+    "editProduct": "Edit Product",
+    "deleteConfirm": "Are you sure you want to delete this product? This action cannot be undone.",
+    "lowStock": "Low stock!",
+    "empty": "Your inventory is empty. Click 'Add Product' to get started.",
+    "searchPlaceholder": "Search by name or SKU...",
+    "form": {
+      "namePlaceholder": "Product Name (e.g., T-Shirt)",
+      "skuPlaceholder": "SKU or Barcode (optional)",
+      "uploadImage": "Upload Image",
+      "changeImage": "Change Image",
+      "removeImage": "Remove",
+      "attributes": "Product Attributes",
+      "colorPlaceholder": "E.g. Red, Blue, #FF0000",
+      "noUnit": "No unit of measure",
+      "unitGroups": {
+        "length": "Length",
+        "weight": "Weight",
+        "volume": "Volume",
+        "area": "Area",
+        "other": "Other"
+      },
+      "variantGroup": "Variant Group",
+      "variantGroupHelp": "Group similar products with different colors, sizes, or measurements. This makes it easier to track related inventory.",
+      "noVariantGroup": "No variant group",
+      "newVariantGroup": "Create new variant group",
+      "variantSiblings": "Products in the same group:",
+      "noSiblings": "No other products in this group"
+    }
+  },
+  "sales": {
+    "title": "Sales Records",
+    "addSale": "New Sale",
+    "date": "Date",
+    "total": "Total",
+    "profit": "Profit",
+    "empty": "No sales recorded yet. Click 'New Sale' to add one.",
+    "form": {
+      "selectProduct": "Select a product...",
+      "addItem": "+ Add Item",
+      "selectClientOptional": "Select a client (optional)"
+    },
+    "receipt": {
+      "title": "Sales Receipt",
+      "generate": "Generate Receipt"
+    },
+    "share": {
+      "whatsapp": "Share on WhatsApp"
+    },
+    "proFeatureRequired": "This feature is only available for Pro users."
+  },
+  "clients": {
+    "title": "Clients",
+    "addClient": "Add Client",
+    "editClient": "Edit Client",
+    "deleteConfirm": "Are you sure you want to delete this client?",
+    "empty": "No clients found. Click 'Add Client' to create one.",
+    "form": {
+      "namePlaceholder": "Client Name",
+      "emailPlaceholder": "Email (optional)"
+    }
+  },
+  "suppliers": {
+    "title": "Suppliers",
+    "addSupplier": "Add Supplier",
+    "editSupplier": "Edit Supplier",
+    "deleteConfirm": "Are you sure you want to delete this supplier?",
+    "empty": "No suppliers found. Click 'Add Supplier' to create one.",
+    "form": {
+      "namePlaceholder": "Supplier Name",
+      "emailPlaceholder": "Email (optional)"
+    }
+  },
+  "purchases": {
+    "title": "Purchase Orders",
+    "addPurchaseOrder": "New Purchase Order",
+    "editPurchaseOrder": "Edit Purchase Order",
+    "deleteConfirm": "Are you sure you want to delete this purchase order?",
+    "markAsReceivedConfirm": "Are you sure you want to mark this order as received? The stock levels will be updated automatically. This cannot be undone.",
+    "empty": "No purchase orders found. Click 'New Purchase Order' to create one.",
+    "orderDate": "Order Date",
+    "statusPending": "Pending",
+    "statusReceived": "Received",
+    "markAsReceived": "Mark as Received",
+    "form": {
+      "selectSupplier": "Select a supplier...",
+      "selectSupplierAlert": "Please select a supplier.",
+      "addItem": "+ Add Product"
+    }
+  },
+  "reports": {
+    "title": "Reports & Insights",
+    "description": "Analyze your business performance with dynamic reports and get answers from your AI assistant.",
+    "aiAssistantTitle": "AI Business Assistant",
+    "proFeatureDescription": "This is a Pro feature. Upgrade your plan to get intelligent insights about your data.",
+    "aiWelcome": "Hello! I'm StockBot. Ask me anything about your inventory or sales data, like 'What was my most profitable product last month?' or 'Show me my total revenue'.",
+    "aiDisabledWelcome": "This is your AI Assistant. Upgrade to a Pro plan to activate it and get intelligent insights.",
+    "aiThinking": "Thinking...",
+    "aiPlaceholder": "Ask a question about your data...",
+    "aiDisabledPlaceholder": "Upgrade to Pro to use the AI Assistant",
+    "aiError": "An unexpected error occurred. Please try again.",
+    "aiErrorNetwork": "There was a problem reaching the AI assistant. Please check your connection or try again later.",
+    "filters": {
+      "title": "Filters",
+      "dateRange": "Date Range",
+      "product": "Product",
+      "client": "Client",
+      "all": "All"
+    },
+    "summary": {
+      "revenue": "Revenue",
+      "profit": "Profit",
+      "sales": "Sales",
+      "itemsSold": "Items Sold"
+    },
+    "salesOverTime": "Sales Over Time",
+    "topProducts": "Top Products",
+    "byRevenue": "By Revenue",
+    "byProfit": "By Profit",
+    "noDataForPeriod": "No sales data available for the selected period."
+  },
+  "settings": {
+    "title": "Settings",
+    "general": {
+      "title": "General"
+    },
+    "lowStockThreshold": "Low Stock Alert Threshold",
+    "lowStockThresholdDescription": "Get a visual warning on products when stock falls to this level.",
+    "currency": {
+      "title": "Currency & Formatting",
+      "symbol": "Currency",
+      "symbolDescription": "Select your primary currency.",
+      "format": "Number Format",
+      "formatDescription": "Choose your preferred decimal/thousand separator.",
+      "formatUS": "1,234.56 (Dot decimal)",
+      "formatEU": "1.234,56 (Comma decimal)",
+      "currencies": {
+        "USD": "USD - US Dollar",
+        "EUR": "EUR - Euro",
+        "GBP": "GBP - British Pound",
+        "JPY": "JPY - Japanese Yen",
+        "BRL": "BRL - Brazilian Real",
+        "CLP": "CLP - Chilean Peso",
+        "COP": "COP - Colombian Peso",
+        "MXN": "MXN - Mexican Peso"
+      }
+    },
+    "data": {
+      "title": "Data Management"
+    },
+    "backup": {
+      "button": "Create Backup",
+      "description": "Export all local data to a JSON file for safekeeping.",
+      "success": "Backup created successfully!"
+    },
+    "restore": {
+      "button": "Restore",
+      "description": "Import data from a backup file, overwriting current data.",
+      "confirmation": "Are you sure you want to restore from this file? This will overwrite all current local data.",
+      "invalidFileError": "The selected file is not a valid backup file.",
+      "success": "Data restored successfully!",
+      "genericError": "An error occurred during restoration."
+    },
+    "import": {
+      "button": "Import CSV",
+      "cardDescription": "Bulk add or update products from a CSV file.",
+      "title": "Import Products from CSV",
+      "description": "Upload a CSV file to add or update multiple products at once. For best results, download and use our template.",
+      "downloadTemplate": "Download Template",
+      "selectFile": "Select a .csv file",
+      "noFileSelected": "No file selected",
+      "conflictStrategy": "If a product with the same SKU already exists:",
+      "strategySkip": "Skip it (keep existing)",
+      "strategyUpdate": "Update it (overwrite with new data)",
+      "importing": "Importing...",
+      "success": "Successfully imported {{count}} products.",
+      "error": "Import failed: {{error}}",
+      "invalidHeaderError": "Invalid CSV file. Please make sure the headers match the template."
+    },
+    "reset": {
+      "button": "Reset Data",
+      "description": "Permanently delete all data from this device.",
+      "confirmation": "Are you absolutely sure? This will delete all your local data permanently.",
+      "success": "All data has been reset."
+    },
+    "team": {
+      "title": "Team Management",
+      "description": "Invite and manage team members to collaborate on your inventory.",
+      "invite": "Invite Member",
+      "proFeatureDescription": "Upgrade to the PYME plan to invite team members and set permissions.",
+      "inviteTitle": "Invite a New Team Member",
+      "inviteDescription": "Enter the email of the person you want to invite and assign them a role.",
+      "role": "Role",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member"
+      },
+      "sendInvitation": "Send Invitation",
+      "emailPlaceholder": "member@example.com"
+    },
+    "feedback": {
+      "title": "Feedback & Support",
+      "description": "Have an idea or found a bug? Let us know!",
+      "placeholder": "Your message...",
+      "button": "Send Feedback",
+      "success": "Thank you! Your feedback has been sent."
+    }
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "signup": "Sign Up",
+    "loading": "Loading...",
+    "loggingOut": "Logging out...",
+    "loginTitle": "Login to your Account",
+    "signupTitle": "Create an Account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Password",
+    "confirmPasswordPlaceholder": "Confirm Password",
+    "passwordMismatch": "Passwords do not match.",
+    "or": "or",
+    "loginGuest": "Enter as Guest (Offline Mode)",
+    "error": {
+      "generic": "An unexpected error occurred. Please try again.",
+      "invalid-credential": "Invalid email or password. Please try again.",
+      "email-in-use": "This email is already registered. Please login.",
+      "weak-password": "Password should be at least 6 characters."
+    }
+  },
+  "validation": {
+    "nameRequired": "Name is required.",
+    "phoneRequired": "Phone number is required.",
+    "invalidEmail": "Please enter a valid email address.",
+    "quantityNonNegative": "Quantity must be a non-negative integer.",
+    "priceNonNegative": "Price must be a non-negative number.",
+    "costNonNegative": "Cost must be a non-negative number.",
+    "imageSizeError": "Image must be smaller than 2MB.",
+    "saleItemsRequired": "A sale must have at least one item.",
+    "selectProduct": "Please select a product.",
+    "insufficientStock": "Insufficient stock. Available: {{stock}}.",
+    "quantityPositive": "Quantity must be a positive number.",
+    "poItemsRequired": "A purchase order must have at least one item.",
+    "poItemQuantityPositive": "Item quantity must be a positive number.",
+    "poItemCostNonNegative": "Item cost must be a non-negative number."
+  },
+  "modal": {
+    "close": "Close modal"
+  },
+  "scanner": {
+    "title": "Scan Barcode/QR Code",
+    "checking": "Checking for cameras...",
+    "noCameras": "No cameras found on this device.",
+    "permissionDenied": "Camera permission was denied.",
+    "permissionDeniedHelp": "Please enable camera access in your browser settings to use the scanner.",
+    "genericError": "An unexpected error occurred while starting the scanner."
+  },
+  "subscription": {
+    "title": "Upgrade to Pro",
+    "description": "Choose a plan to unlock powerful features and support the development of Shelf.",
+    "month": "mo",
+    "upgradeNow": "Upgrade Now",
+    "currentPlan": "Current Plan",
+    "selectPlan": "Select Plan",
+    "cancelAnytime": "Cancel anytime. Your subscription will renew automatically.",
+    "loginRequired": "You must be logged in to subscribe.",
+    "redirecting": "Redirecting to payment...",
+    "paymentError": "Failed to initiate payment process. Please try again.",
+    "upgradeToPyme": "Upgrade to PYME",
+    "pro": {
+      "title": "Pro",
+      "description": "For professionals and growing businesses.",
+      "price": "$5",
+      "features": [
+        "subscription.features.cloudSync",
+        "subscription.features.aiAssistant",
+        "subscription.features.noAds"
+      ]
+    },
+    "pyme": {
+      "title": "PYME",
+      "description": "Advanced tools for power users.",
+      "price": "$15",
+      "popular": "Most Popular",
+      "features": [
+        "subscription.features.cloudSync",
+        "subscription.features.aiAssistant",
+        "subscription.features.noAds",
+        "subscription.features.advancedReports",
+        "subscription.features.prioritySupport"
+      ]
+    },
+    "features": {
+      "cloudSync": "Cloud Sync & Backup",
+      "aiAssistant": "AI Assistant",
+      "noAds": "Ad-Free Experience",
+      "advancedReports": "Advanced Reports",
+      "prioritySupport": "Priority Support"
+    }
+  },
+  "landing": {
+    "title": "Every item in its place.",
+    "subtitle": "The simple, modern, and powerful way to manage your business inventory. Free to use, forever.",
+    "cta": "Start for Free",
+    "featuresTitle": "Why Choose Shelf.?",
+    "footer": "All rights reserved.",
+    "feature1": {
+      "title": "Simple & Intuitive",
+      "description": "No complicated setups. Start tracking your inventory in minutes with a clean, user-friendly interface."
+    },
+    "feature2": {
+      "title": "Sales Tracking",
+      "description": "Record sales on the fly and watch your stock levels update automatically. Never oversell again."
+    },
+    "feature3": {
+      "title": "Offline First",
+      "description": "Works perfectly without an internet connection. Your data is always available, right on your device."
+    },
+    "feature4": {
+      "title": "Cloud Sync (Pro)",
+      "description": "Upgrade to Pro to sync your data across all your devices, keeping them safe and up-to-date."
+    }
+  },
+  "welcome": {
+    "title": "Welcome to Shelf!",
+    "subtitle": "Before you begin, here are a few important things to know:",
+    "localMode": "Local-First Data",
+    "localModeDesc": "Your data is stored securely on this device. No internet connection is needed to manage your inventory.",
+    "backupResponsibility": "Your Data, Your Responsibility",
+    "backupResponsibilityDesc": "Since data is stored locally, it's crucial to make regular backups. You can export your data in the Settings menu.",
+    "upgradeOption": "Cloud Sync & More",
+    "upgradeOptionDesc": "For automated backups, multi-device sync, and AI-powered reports, consider upgrading to a Pro plan at any time.",
+    "dontShowAgain": "Don't show this again",
+    "getStarted": "Get Started"
+  },
+  "sync": {
+    "status": "Sync Status",
+    "localOnly": "Local Only",
+    "cloudSynced": "Cloud Synced",
+    "syncing": "Syncing..."
+  },
+  "update": {
+    "title": "New version available",
+    "message": "A new version of Shelf. is available. Reload the app to get the latest features and improvements.",
+    "reload": "Update now",
+    "later": "Later"
+  }
+}

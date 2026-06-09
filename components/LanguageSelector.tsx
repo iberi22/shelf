@@ -11,6 +11,23 @@ const LanguageSelector: React.FC = () => {
     { code: 'en' as const, name: 'English', flag: '🇺🇸' },
     { code: 'es' as const, name: 'Español', flag: '🇪🇸' },
     { code: 'pt' as const, name: 'Português', flag: '🇧🇷' },
+    { code: 'zh' as const, name: '中文 (Mandarin)', flag: '🇨🇳' },
+    { code: 'hi' as const, name: 'हिन्दी (Hindi)', flag: '🇮🇳' },
+    { code: 'fr' as const, name: 'Français (French)', flag: '🇫🇷' },
+    { code: 'ar' as const, name: 'العربية (Arabic)', flag: '🇸🇦' },
+    { code: 'bn' as const, name: 'বাংলা (Bengali)', flag: '🇧🇩' },
+    { code: 'ru' as const, name: 'Русский (Russian)', flag: '🇷🇺' },
+    { code: 'ur' as const, name: 'اردو (Urdu)', flag: '🇵🇰' },
+    { code: 'id' as const, name: 'Bahasa Indonesia', flag: '🇮🇩' },
+    { code: 'de' as const, name: 'Deutsch (German)', flag: '🇩🇪' },
+    { code: 'ja' as const, name: '日本語 (Japanese)', flag: '🇯🇵' },
+    { code: 'mr' as const, name: 'मराठी (Marathi)', flag: '🇮🇳' },
+    { code: 'te' as const, name: 'తెలుగు (Telugu)', flag: '🇮🇳' },
+    { code: 'tr' as const, name: 'Türkçe (Turkish)', flag: '🇹🇷' },
+    { code: 'ta' as const, name: 'தமிழ் (Tamil)', flag: '🇮🇳' },
+    { code: 'vi' as const, name: 'Tiếng Việt', flag: '🇻🇳' },
+    { code: 'tl' as const, name: 'Filipino (Tagalog)', flag: '🇵🇭' },
+    { code: 'it' as const, name: 'Italiano (Italian)', flag: '🇮🇹' },
   ];
 
   const currentLanguage = languages.find((lang) => lang.code === locale) || languages[0];
@@ -31,7 +48,7 @@ const LanguageSelector: React.FC = () => {
     };
   }, [isOpen]);
 
-  const handleLanguageChange = (code: 'en' | 'es' | 'pt') => {
+  const handleLanguageChange = (code: any) => {
     setLocale(code);
     setIsOpen(false);
   };
@@ -57,7 +74,7 @@ const LanguageSelector: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-primary border border-foreground/20 rounded-lg shadow-lg overflow-hidden z-50">
+        <div className="absolute right-0 mt-2 w-48 bg-primary border border-foreground/20 rounded-lg shadow-lg overflow-hidden max-h-80 overflow-y-auto z-50">
           {languages.map((lang) => (
             <button
               key={lang.code}
