@@ -485,6 +485,7 @@ interface ProductFormProps {
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) => {
+  const { state } = useAppContext();
   const { t } = useI18n();
   const [name, setName] = useState(product?.name || '');
   const [sku, setSku] = useState(product?.sku || '');
@@ -492,6 +493,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   const [dimensions, setDimensions] = useState(product?.dimensions || '');
   const [capacity, setCapacity] = useState(product?.capacity || '');
   const [material, setMaterial] = useState(product?.material || '');
+  const [supplierId, setSupplierId] = useState(product?.supplierId || '');
   const [quantity, setQuantity] = useState<string | number>(product?.quantity ?? '');
   const [price, setPrice] = useState<string | number>(product?.price ?? '');
   const [cost, setCost] = useState<string | number>(product?.cost ?? '');
@@ -553,6 +555,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
         dimensions: dimensions || undefined,
         capacity: capacity || undefined,
         material: material || undefined,
+        supplierId: supplierId || undefined,
         quantity: Number(quantity),
         price: Number(price),
         cost: Number(cost),
@@ -645,6 +648,24 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                 </svg>
               </button>
             </div>
+          </div>
+          <div>
+            <label className="block text-xs text-[#F5F5DC]/60 mb-1.5">{t('common.supplier')}</label>
+            <select
+              value={supplierId}
+              onChange={(e) => setSupplierId(e.target.value)}
+              className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5F5DC] text-sm text-[#F5F5DC]"
+              data-testid="product-supplier-input"
+            >
+              <option value="">{t('common.notAvailable')}</option>
+              {state.suppliers
+                .filter((s) => s.isActive !== false)
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs text-[#F5F5DC]/60 mb-1.5">{t('common.color')}</label>

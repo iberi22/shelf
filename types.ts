@@ -23,6 +23,7 @@ export interface Product extends BaseEntity {
   dimensions?: string;
   capacity?: string;
   material?: string;
+  supplierId?: string;
 }
 
 export interface SaleItem {
@@ -31,6 +32,7 @@ export interface SaleItem {
   quantity: number;
   price: number; // price per unit at the time of sale
   cost: number; // cost per unit at the time of sale
+  supplierId?: string;
 }
 
 export interface Sale extends BaseEntity {

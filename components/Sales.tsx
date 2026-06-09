@@ -340,6 +340,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
           ...item,
           productName: product.name,
           cost: product.cost,
+          supplierId: product.supplierId,
         };
       });
       onSave({
