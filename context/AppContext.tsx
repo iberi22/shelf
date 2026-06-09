@@ -1,6 +1,8 @@
 import type React from 'react';
-import { createContext, type Dispatch, type ReactNode, useContext } from 'react';
+import { createContext, type Dispatch, type ReactNode, useContext, useEffect } from 'react';
 import usePersistedReducer from '../hooks/usePersistedReducer';
+import { dbSync } from '../lib/database-sync';
+import { p2pManager } from '../lib/p2p';
 import type {
   AppState,
   AuditEntry,
@@ -78,25 +80,32 @@ const appReducer = (state: AppState, action: Action): AppState => {
   let newState: AppState;
 
   switch (action.type) {
-    case 'ADD_PRODUCT':
-      newState = { ...state, products: [...state.products, enrich(state, action.payload)] };
+    case 'ADD_PRODUCT': {
+      const enriched = enrich(state, action.payload);
+      newState = { ...state, products: [...state.products, enriched] };
       break;
-    case 'UPDATE_PRODUCT':
+    }
+    case 'UPDATE_PRODUCT': {
+      const enriched = enrich(state, action.payload);
       newState = {
         ...state,
-        products: state.products.map((p) => (p.id === action.payload.id ? enrich(state, action.payload) : p)),
+        products: state.products.map((p) => (p.id === action.payload.id ? enriched : p)),
       };
       break;
-    case 'DELETE_PRODUCT':
+    }
+    case 'DELETE_PRODUCT': {
+      const deletedItem = {
+        ...state.products.find((p) => p.id === action.payload),
+        isActive: false,
+        updatedAt: new Date().toISOString(),
+        updatedBy: state.localPeerId || 'local',
+      };
       newState = {
         ...state,
-        products: state.products.map((p) =>
-          p.id === action.payload
-            ? { ...p, isActive: false, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' }
-            : p,
-        ),
+        products: state.products.map((p) => (p.id === action.payload ? (deletedItem as Product) : p)),
       };
       break;
+    }
 
     case 'BATCH_UPDATE_PRODUCTS': {
       const { toAdd, toUpdate } = action.payload;
@@ -342,6 +351,38 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = usePersistedReducer(appReducer, initialState, 'shelfState');
+
+  // Initialize Distributed Backend
+  useEffect(() => {
+    // Initial sync of local state to CRDT
+    dbSync.initWithState(state);
+
+    // Listen for CRDT updates from other peers
+    dbSync.onChange(() => {
+      const remoteState = dbSync.getState();
+      dispatch({ type: 'SYNC_STATE', payload: remoteState });
+    });
+
+    // Setup P2P Handlers
+    p2pManager.onConnectionChange((peers) => {
+      dispatch({ type: 'UPDATE_PEERS', payload: peers });
+    });
+
+    return () => {
+      p2pManager.disconnect();
+    };
+  }, [dispatch, state]);
+
+  // Update CRDT when local state changes (mutations)
+  // We use a simplified debounce/comparison to avoid infinite loops
+  useEffect(() => {
+    const currentState = dbSync.getState();
+    const needsSync = JSON.stringify(state.products) !== JSON.stringify(currentState.products);
+
+    if (needsSync) {
+      dbSync.syncProducts(state.products);
+    }
+  }, [state.products]);
 
   return <AppContext.Provider value={{ state, dispatch }}>{children}</AppContext.Provider>;
 };

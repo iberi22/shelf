@@ -24,6 +24,8 @@
   "dependencies": {
     "@google/genai": "^2.0.0",
     "@mlc-ai/web-llm": "^0.2.83",
+    "@noble/post-quantum": "^0.6.1",
+    "@types/node": "^25.9.2",
     "chart.js": "^4.5.1",
     "cypress-downloadfile": "^1.2.4",
     "html5-qrcode": "^2.3.8",
@@ -34,7 +36,9 @@
     "react": "^19.2.6",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.6",
-    "tesseract.js": "^7.0.0"
+    "tesseract.js": "^7.0.0",
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.31"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
