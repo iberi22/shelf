@@ -1,11 +1,18 @@
 import { type DataConnection, Peer } from 'peerjs';
 import type { AppState, P2PRole, PeerInfo } from '../types';
+import { decryptData, deriveKey, encryptData } from './crypto';
+import { decapsulate, encapsulate, fromHex, generateDSAKeyPair, generateKEMKeyPair, toHex } from './crypto-pqc';
+import { dbSync } from './database-sync';
 
 export type SyncMessage =
+  | { type: 'ENCRYPTED_PAYLOAD'; payload: { ciphertext: string } }
   | { type: 'STATE_UPDATE'; payload: Partial<AppState> }
   | { type: 'REQUEST_FULL_STATE' }
   | { type: 'PROMOTE_ADMIN'; payload: { targetPeerId: string } }
   | { type: 'PEER_LIST_UPDATE'; payload: PeerInfo[] }
+  | { type: 'PQC_HANDSHAKE'; payload: { kemPublicKey: string; dsaPublicKey: string } }
+  | { type: 'PQC_KEM_REPLY'; payload: { ciphertext: string } }
+  | { type: 'YJS_UPDATE'; payload: { update: string } }
   // Auth recovery messages
   | {
       type: 'REQUEST_ACCOUNT_RECOVERY';
@@ -18,6 +25,9 @@ export type SyncMessage =
 class P2PManager {
   private peer: Peer | null = null;
   private connections: Map<string, DataConnection> = new Map();
+  private sharedSecrets: Map<string, Uint8Array> = new Map();
+  private encryptionKeys: Map<string, CryptoKey> = new Map();
+
   private onMessageCallbacks: ((message: SyncMessage, fromPeerId: string) => void)[] = [];
   private onConnectionChangeCallbacks: ((peers: PeerInfo[]) => void)[] = [];
   private onRecoveryRequestCallbacks: ((
@@ -31,6 +41,10 @@ class P2PManager {
   public role: P2PRole = 'collaborator';
   private peers: PeerInfo[] = [];
 
+  // PQC Keypairs
+  private kemKeyPair = generateKEMKeyPair();
+  private dsaKeyPair = generateDSAKeyPair();
+
   public init(peerId?: string) {
     if (this.peer) return;
 
@@ -43,6 +57,14 @@ class P2PManager {
       if (peerId === 'shelf-master') {
         this.role = 'admin';
       }
+
+      // Initialize Yjs Sync
+      dbSync.onChange((update) => {
+        this.broadcast({
+          type: 'YJS_UPDATE',
+          payload: { update: toHex(update) },
+        });
+      });
     });
 
     this.peer.on('connection', (conn) => {
@@ -59,8 +81,64 @@ class P2PManager {
       this.connections.set(conn.peer, conn);
       this.updatePeerList(conn.peer, 'collaborator');
 
+      // Broadcast updated peer list to the mesh
+      this.broadcastPeerList();
+
+      // Start PQC Handshake
+      conn.send({
+        type: 'PQC_HANDSHAKE',
+        payload: {
+          kemPublicKey: toHex(this.kemKeyPair.publicKey),
+          dsaPublicKey: toHex(this.dsaKeyPair.publicKey),
+        },
+      });
+
       conn.on('data', (data) => {
         const message = data as SyncMessage;
+
+        // Handle Peer List Updates (Mesh Discovery)
+        if (message.type === 'PEER_LIST_UPDATE') {
+          message.payload.forEach((peerInfo) => {
+            if (peerInfo.id !== this.localPeerId && !this.connections.has(peerInfo.id)) {
+              console.log(`Discovered new peer via mesh: ${peerInfo.id}`);
+              this.connect(peerInfo.id);
+            }
+          });
+          return;
+        }
+
+        // Handle PQC Handshake
+        if (message.type === 'PQC_HANDSHAKE') {
+          const { ciphertext, sharedSecret } = encapsulate(fromHex(message.payload.kemPublicKey));
+          this.sharedSecrets.set(conn.peer, sharedSecret);
+          conn.send({
+            type: 'PQC_KEM_REPLY',
+            payload: { ciphertext: toHex(ciphertext) },
+          });
+          console.log(`PQC Handshake established with ${conn.peer}`);
+          return;
+        }
+
+        if (message.type === 'PQC_KEM_REPLY') {
+          const sharedSecret = decapsulate(fromHex(message.payload.ciphertext), this.kemKeyPair.secretKey);
+          this.sharedSecrets.set(conn.peer, sharedSecret);
+          this.setupEncryption(conn.peer, sharedSecret);
+          console.log(`PQC Shared secret recovered from ${conn.peer}`);
+          return;
+        }
+
+        // Handle Encrypted Payload
+        if (message.type === 'ENCRYPTED_PAYLOAD') {
+          this.handleEncryptedMessage(conn.peer, message.payload.ciphertext);
+          return;
+        }
+
+        // Handle Yjs Updates
+        if (message.type === 'YJS_UPDATE') {
+          dbSync.applyUpdate(fromHex(message.payload.update));
+          return;
+        }
+
         // Route recovery requests to dedicated callbacks
         if (message.type === 'REQUEST_ACCOUNT_RECOVERY') {
           for (const cb of this.onRecoveryRequestCallbacks) {
@@ -75,6 +153,7 @@ class P2PManager {
 
       conn.on('close', () => {
         this.connections.delete(conn.peer);
+        this.sharedSecrets.delete(conn.peer);
         this.peers = this.peers.filter((p) => p.id !== conn.peer);
         this.notifyConnectionChange();
       });
@@ -95,10 +174,50 @@ class P2PManager {
     });
   }
 
-  public sendTo(peerId: string, message: SyncMessage) {
+  public async sendTo(peerId: string, message: SyncMessage) {
     const conn = this.connections.get(peerId);
-    if (conn?.open) {
+    if (!conn?.open) return;
+
+    // Encrypt sensitive messages if we have a shared key
+    const key = this.encryptionKeys.get(peerId);
+    if (key && this.isSensitive(message)) {
+      const ciphertext = await encryptData(JSON.stringify(message), key);
+      conn.send({
+        type: 'ENCRYPTED_PAYLOAD',
+        payload: { ciphertext },
+      });
+    } else {
       conn.send(message);
+    }
+  }
+
+  private isSensitive(message: SyncMessage): boolean {
+    return ['STATE_UPDATE', 'YJS_UPDATE', 'RECOVERY_APPROVED'].includes(message.type);
+  }
+
+  private async setupEncryption(peerId: string, secret: Uint8Array) {
+    const key = await deriveKey(toHex(secret));
+    this.encryptionKeys.set(peerId, key);
+  }
+
+  private async handleEncryptedMessage(fromPeerId: string, ciphertext: string) {
+    const key = this.encryptionKeys.get(fromPeerId);
+    if (!key) return;
+
+    try {
+      const decrypted = await decryptData(ciphertext, key);
+      const message = JSON.parse(decrypted) as SyncMessage;
+
+      // Dispatch the decrypted message
+      if (message.type === 'YJS_UPDATE') {
+        dbSync.applyUpdate(fromHex(message.payload.update));
+      } else {
+        for (const cb of this.onMessageCallbacks) {
+          cb(message, fromPeerId);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to decrypt PQC message:', err);
     }
   }
 
@@ -107,6 +226,13 @@ class P2PManager {
       this.peers.push({ id, role, lastSeen: new Date().toISOString() });
       this.notifyConnectionChange();
     }
+  }
+
+  private broadcastPeerList() {
+    this.broadcast({
+      type: 'PEER_LIST_UPDATE',
+      payload: this.peers,
+    });
   }
 
   private notifyConnectionChange() {
@@ -166,6 +292,7 @@ class P2PManager {
       conn.close();
     }
     this.connections.clear();
+    this.sharedSecrets.clear();
     this.peer?.destroy();
     this.peer = null;
   }
