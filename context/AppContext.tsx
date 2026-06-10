@@ -15,6 +15,7 @@ import type {
   RestoreStatePayload,
   Sale,
   Supplier,
+  TeamMember,
 } from '../types';
 
 const initialState: AppState = {
@@ -25,6 +26,7 @@ const initialState: AppState = {
   purchaseOrders: [],
   auditLogs: [],
   peers: [],
+  teamMembers: [],
   localPeerId: null,
   role: 'admin',
 };
@@ -44,6 +46,9 @@ type Action =
   | { type: 'ADD_PURCHASE_ORDER'; payload: PurchaseOrder }
   | { type: 'UPDATE_PURCHASE_ORDER'; payload: PurchaseOrder }
   | { type: 'DELETE_PURCHASE_ORDER'; payload: string }
+  | { type: 'ADD_TEAM_MEMBER'; payload: TeamMember }
+  | { type: 'UPDATE_TEAM_MEMBER'; payload: TeamMember }
+  | { type: 'DELETE_TEAM_MEMBER'; payload: string }
   | { type: 'RESTORE_STATE'; payload: RestoreStatePayload }
   | { type: 'BATCH_UPDATE_PRODUCTS'; payload: { toAdd: Product[]; toUpdate: Product[] } }
   | { type: 'SET_LOCAL_PEER_ID'; payload: string }
@@ -268,6 +273,22 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
       break;
 
+    case 'ADD_TEAM_MEMBER':
+      newState = { ...state, teamMembers: [...state.teamMembers, action.payload] };
+      break;
+    case 'UPDATE_TEAM_MEMBER':
+      newState = {
+        ...state,
+        teamMembers: state.teamMembers.map((m) => (m.id === action.payload.id ? action.payload : m)),
+      };
+      break;
+    case 'DELETE_TEAM_MEMBER':
+      newState = {
+        ...state,
+        teamMembers: state.teamMembers.filter((m) => m.id !== action.payload),
+      };
+      break;
+
     case 'SET_LOCAL_PEER_ID':
       return { ...state, localPeerId: action.payload };
 
@@ -377,12 +398,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // We use a simplified debounce/comparison to avoid infinite loops
   useEffect(() => {
     const currentState = dbSync.getState();
-    const needsSync = JSON.stringify(state.products) !== JSON.stringify(currentState.products);
+    const productsChanged = JSON.stringify(state.products) !== JSON.stringify(currentState.products);
+    const teamChanged = JSON.stringify(state.teamMembers) !== JSON.stringify(currentState.teamMembers);
 
-    if (needsSync) {
+    if (productsChanged) {
       dbSync.syncProducts(state.products);
     }
-  }, [state.products]);
+    if (teamChanged) {
+      dbSync.syncTeamMembers(state.teamMembers);
+    }
+  }, [state.products, state.teamMembers]);
 
   return <AppContext.Provider value={{ state, dispatch }}>{children}</AppContext.Provider>;
 };
