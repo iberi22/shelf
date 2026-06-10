@@ -1,23 +1,51 @@
-import React from 'react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
+import { useEffect } from 'react';
 
-interface Props {
-  isOpen: boolean;
+interface QRScannerModalProps {
+  onScan: (decodedText: string) => void;
   onClose: () => void;
-  onScan: (text: string) => void;
-  title: string;
-  instruction: string;
 }
 
-const QRScannerModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  if (!isOpen) return null;
+export default function QRScannerModal({ onScan, onClose }: QRScannerModalProps) {
+  useEffect(() => {
+    const scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: { width: 250, height: 250 } }, false);
+
+    scanner.render(
+      (text) => {
+        scanner.clear();
+        onScan(text);
+      },
+      () => {
+        // Ignore background scan errors
+      },
+    );
+
+    return () => {
+      scanner.clear().catch(console.error);
+    };
+  }, [onScan]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg max-w-md w-full">
-        <h2 className="text-xl font-bold text-[#F5F5DC] mb-4">Scanner Mock</h2>
-        <button onClick={onClose} className="mt-4 w-full bg-[#F5F5DC] text-black py-2 rounded-lg">Close</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Escanear Código QR</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl font-bold">
+            &times;
+          </button>
+        </div>
+
+        <div id="qr-reader" className="w-full bg-black overflow-hidden rounded-lg"></div>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+          >
+            Cancelar
+          </button>
+        </div>
       </div>
     </div>
   );
-};
-
-export default QRScannerModal;
+}
