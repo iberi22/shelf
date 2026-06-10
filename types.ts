@@ -122,6 +122,7 @@ export interface AppState {
   purchaseOrders: PurchaseOrder[];
   auditLogs: AuditEntry[];
   peers: PeerInfo[];
+  teamMembers: TeamMember[];
   localPeerId: string | null;
   role: P2PRole;
   arqueoSessions: ArqueoSession[];

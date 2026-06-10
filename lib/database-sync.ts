@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import type { AppState, ArqueoSession, InvoiceOCRResult, Product } from '../types';
+import type { AppState, ArqueoSession, InvoiceOCRResult, Product, TeamMember } from '../types';
 
 /**
  * Distributed Database Manager using Yjs (CRDT)
@@ -13,6 +13,7 @@ class DatabaseSyncManager {
   private suppliers: Y.Array<any>;
   private purchaseOrders: Y.Array<any>;
   private auditLogs: Y.Array<any>;
+  private teamMembers: Y.Array<TeamMember>;
   private arqueoSessions: Y.Map<ArqueoSession>;
   private ocrResults: Y.Map<InvoiceOCRResult>;
   private metadata: Y.Map<any>;
@@ -25,6 +26,7 @@ class DatabaseSyncManager {
     this.suppliers = this.doc.getArray('suppliers');
     this.purchaseOrders = this.doc.getArray('purchaseOrders');
     this.auditLogs = this.doc.getArray('auditLogs');
+    this.teamMembers = this.doc.getArray('teamMembers');
     this.arqueoSessions = this.doc.getMap('arqueoSessions');
     this.ocrResults = this.doc.getMap('ocrResults');
     this.metadata = this.doc.getMap('metadata');
@@ -68,6 +70,9 @@ class DatabaseSyncManager {
       this.auditLogs.delete(0, this.auditLogs.length);
       this.auditLogs.push(state.auditLogs);
 
+      this.teamMembers.delete(0, this.teamMembers.length);
+      this.teamMembers.push(state.teamMembers);
+
       this.metadata.set('role', state.role);
     });
   }
@@ -83,6 +88,7 @@ class DatabaseSyncManager {
       suppliers: this.suppliers.toArray(),
       purchaseOrders: this.purchaseOrders.toArray(),
       auditLogs: this.auditLogs.toArray(),
+      teamMembers: this.teamMembers.toArray(),
       arqueoSessions: Array.from(this.arqueoSessions.values()),
       ocrResults: Array.from(this.ocrResults.values()),
       role: this.metadata.get('role'),
@@ -150,6 +156,16 @@ class DatabaseSyncManager {
    */
   public applyUpdate(update: Uint8Array) {
     Y.applyUpdate(this.doc, update);
+  }
+
+  /**
+   * Syncs team members array from a local array.
+   */
+  public syncTeamMembers(team: TeamMember[]) {
+    this.doc.transact(() => {
+      this.teamMembers.delete(0, this.teamMembers.length);
+      this.teamMembers.push(team);
+    });
   }
 
   /**

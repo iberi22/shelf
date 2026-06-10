@@ -51,12 +51,10 @@ const Settings: React.FC = () => {
 
   const { uploadBackup, downloadBackup, isLoading: isDriveLoading } = useGoogleDrive(googleClientId);
 
-  // Mocked team data for UI demonstration
-  const [team] = useState<TeamMember[]>([
-    { id: '1', email: user?.email ?? 'owner@example.com', role: 'owner' },
-    { id: '2', email: 'jane.doe@example.com', role: 'admin' },
-    { id: '3', email: 'john.smith@example.com', role: 'member' },
-  ]);
+  const team = [
+    { id: 'owner', email: user?.email ?? 'owner@example.com', role: 'owner' as const },
+    ...state.teamMembers,
+  ];
 
   const handleCreateBackup = () => {
     const backupData = JSON.stringify(state, null, 2);
@@ -156,7 +154,7 @@ const Settings: React.FC = () => {
     setFeedback('');
   };
 
-  const isAdmin = state.role === 'admin';
+  const isAdmin = state.role === 'admin' || team.find((m) => m.email === user?.email)?.role === 'owner';
 
   return (
     <>
@@ -258,14 +256,30 @@ const Settings: React.FC = () => {
               )}
             </div>
             <div className="mt-4 space-y-2">
-              {team.map((member) => (
-                <div key={member.id} className="flex justify-between items-center p-2 rounded-md bg-background/50">
-                  <span>{member.email}</span>
-                  <span className="text-sm font-semibold capitalize px-2 py-0.5 rounded-full bg-foreground/10">
-                    {member.role}
-                  </span>
-                </div>
-              ))}
+              {team.length > 0 ? (
+                team.map((member) => (
+                  <div key={member.id} className="flex justify-between items-center p-2 rounded-md bg-background/50">
+                    <span className="truncate mr-2">{member.email}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] sm:text-sm font-semibold capitalize px-2 py-0.5 rounded-full bg-foreground/10">
+                        {member.role}
+                      </span>
+                      {isAdmin && member.role !== 'owner' && (
+                        <button
+                          onClick={() => dispatch({ type: 'DELETE_TEAM_MEMBER', payload: member.id })}
+                          className="text-red-400 hover:text-red-300 text-xs p-1"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-[#F5F5DC]/50 text-center py-2 italic">
+                  {t('settings.team.noMembers') || 'No team members added yet.'}
+                </p>
+              )}
             </div>
           </div>
 

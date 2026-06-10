@@ -34,8 +34,26 @@ const AppContainer = () => {
   const [hasVisited, setHasVisited] = useLocalStorage('hasVisited', false);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [pendingRecoveryRequest, setPendingRecoveryRequest] = useState<PendingRecoveryRequest | null>(null);
-  const { isLoading, loadingMessage, notification, hideNotification } = useUI();
+  const { isLoading, loadingMessage, notification, hideNotification, showNotification } = useUI();
   const { isLocked, isLocalAccount, user } = useAuth();
+
+  // Handle invitation links
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const isInvite = params.get('invite') === 'true';
+    const inviterPeerId = params.get('peerId');
+    const invitedEmail = params.get('email');
+
+    if (isInvite && inviterPeerId) {
+      console.log('Detected invitation from peer:', inviterPeerId);
+      p2pManager.connect(inviterPeerId);
+      showNotification(`Conectando con el equipo de ${invitedEmail || 'invitación'}...`, 'info');
+
+      // Clear params from URL without reload
+      const newUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [showNotification]);
 
   // Listen for incoming P2P recovery requests (master device)
   useEffect(() => {
