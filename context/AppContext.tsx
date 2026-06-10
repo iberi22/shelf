@@ -5,9 +5,11 @@ import { dbSync } from '../lib/database-sync';
 import { p2pManager } from '../lib/p2p';
 import type {
   AppState,
+  ArqueoSession,
   AuditEntry,
   Client,
   ImportProductsPayload,
+  InvoiceOCRResult,
   P2PRole,
   PeerInfo,
   Product,
@@ -29,6 +31,8 @@ const initialState: AppState = {
   teamMembers: [],
   localPeerId: null,
   role: 'admin',
+  arqueoSessions: [],
+  ocrResults: [],
 };
 
 type Action =
@@ -56,6 +60,10 @@ type Action =
   | { type: 'SET_ROLE'; payload: P2PRole }
   | { type: 'SYNC_STATE'; payload: Partial<AppState> }
   | { type: 'RECOVER_ITEM'; payload: { type: AuditEntry['entityType']; id: string } }
+  | { type: 'ADD_ARQUEO_SESSION'; payload: ArqueoSession }
+  | { type: 'UPDATE_ARQUEO_SESSION'; payload: ArqueoSession }
+  | { type: 'ADD_OCR_RESULT'; payload: InvoiceOCRResult }
+  | { type: 'UPDATE_OCR_RESULT'; payload: InvoiceOCRResult }
   | { type: 'RESET_DATA' };
 
 const createAuditEntry = (
@@ -288,6 +296,26 @@ const appReducer = (state: AppState, action: Action): AppState => {
         teamMembers: state.teamMembers.filter((m) => m.id !== action.payload),
       };
       break;
+    case 'ADD_ARQUEO_SESSION':
+      newState = { ...state, arqueoSessions: [...state.arqueoSessions, enrich(state, action.payload)] };
+      break;
+    case 'UPDATE_ARQUEO_SESSION':
+      newState = {
+        ...state,
+        arqueoSessions: state.arqueoSessions.map((s) =>
+          s.id === action.payload.id ? enrich(state, action.payload) : s,
+        ),
+      };
+      break;
+    case 'ADD_OCR_RESULT':
+      newState = { ...state, ocrResults: [...state.ocrResults, enrich(state, action.payload)] };
+      break;
+    case 'UPDATE_OCR_RESULT':
+      newState = {
+        ...state,
+        ocrResults: state.ocrResults.map((r) => (r.id === action.payload.id ? enrich(state, action.payload) : r)),
+      };
+      break;
 
     case 'SET_LOCAL_PEER_ID':
       return { ...state, localPeerId: action.payload };
@@ -408,6 +436,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       dbSync.syncTeamMembers(state.teamMembers);
     }
   }, [state.products, state.teamMembers]);
+
+  useEffect(() => {
+    const currentState = dbSync.getState();
+    const needsSync = JSON.stringify(state.arqueoSessions) !== JSON.stringify(currentState.arqueoSessions);
+
+    if (needsSync) {
+      dbSync.syncArqueoSessions(state.arqueoSessions);
+    }
+  }, [state.arqueoSessions]);
+
+  useEffect(() => {
+    const currentState = dbSync.getState();
+    const needsSync = JSON.stringify(state.ocrResults) !== JSON.stringify(currentState.ocrResults);
+
+    if (needsSync) {
+      dbSync.syncOCRResults(state.ocrResults);
+    }
+  }, [state.ocrResults]);
 
   return <AppContext.Provider value={{ state, dispatch }}>{children}</AppContext.Provider>;
 };

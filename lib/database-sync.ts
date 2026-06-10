@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import type { AppState, Product, TeamMember } from '../types';
+import type { AppState, ArqueoSession, InvoiceOCRResult, Product, TeamMember } from '../types';
 
 /**
  * Distributed Database Manager using Yjs (CRDT)
@@ -14,6 +14,8 @@ class DatabaseSyncManager {
   private purchaseOrders: Y.Array<any>;
   private auditLogs: Y.Array<any>;
   private teamMembers: Y.Array<TeamMember>;
+  private arqueoSessions: Y.Map<ArqueoSession>;
+  private ocrResults: Y.Map<InvoiceOCRResult>;
   private metadata: Y.Map<any>;
 
   constructor() {
@@ -25,6 +27,8 @@ class DatabaseSyncManager {
     this.purchaseOrders = this.doc.getArray('purchaseOrders');
     this.auditLogs = this.doc.getArray('auditLogs');
     this.teamMembers = this.doc.getArray('teamMembers');
+    this.arqueoSessions = this.doc.getMap('arqueoSessions');
+    this.ocrResults = this.doc.getMap('ocrResults');
     this.metadata = this.doc.getMap('metadata');
   }
 
@@ -33,9 +37,21 @@ class DatabaseSyncManager {
    */
   public initWithState(state: AppState) {
     this.doc.transact(() => {
-      // Products (Map)
+      // Entities (Map)
       for (const product of state.products) {
         this.products.set(product.id, product);
+      }
+
+      if (state.arqueoSessions) {
+        for (const session of state.arqueoSessions) {
+          this.arqueoSessions.set(session.id, session);
+        }
+      }
+
+      if (state.ocrResults) {
+        for (const result of state.ocrResults) {
+          this.ocrResults.set(result.id, result);
+        }
       }
 
       // Arrays (Simplified for this version)
@@ -73,6 +89,8 @@ class DatabaseSyncManager {
       purchaseOrders: this.purchaseOrders.toArray(),
       auditLogs: this.auditLogs.toArray(),
       teamMembers: this.teamMembers.toArray(),
+      arqueoSessions: Array.from(this.arqueoSessions.values()),
+      ocrResults: Array.from(this.ocrResults.values()),
       role: this.metadata.get('role'),
     };
   }
@@ -94,6 +112,40 @@ class DatabaseSyncManager {
       for (const id of this.products.keys()) {
         if (!currentIds.has(id)) {
           this.products.delete(id);
+        }
+      }
+    });
+  }
+
+  public syncArqueoSessions(sessions: ArqueoSession[]) {
+    this.doc.transact(() => {
+      for (const s of sessions) {
+        const existing = this.arqueoSessions.get(s.id);
+        if (!existing || JSON.stringify(existing) !== JSON.stringify(s)) {
+          this.arqueoSessions.set(s.id, s);
+        }
+      }
+      const currentIds = new Set(sessions.map((s) => s.id));
+      for (const id of this.arqueoSessions.keys()) {
+        if (!currentIds.has(id)) {
+          this.arqueoSessions.delete(id);
+        }
+      }
+    });
+  }
+
+  public syncOCRResults(results: InvoiceOCRResult[]) {
+    this.doc.transact(() => {
+      for (const r of results) {
+        const existing = this.ocrResults.get(r.id);
+        if (!existing || JSON.stringify(existing) !== JSON.stringify(r)) {
+          this.ocrResults.set(r.id, r);
+        }
+      }
+      const currentIds = new Set(results.map((r) => r.id));
+      for (const id of this.ocrResults.keys()) {
+        if (!currentIds.has(id)) {
+          this.ocrResults.delete(id);
         }
       }
     });

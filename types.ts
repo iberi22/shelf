@@ -125,6 +125,8 @@ export interface AppState {
   teamMembers: TeamMember[];
   localPeerId: string | null;
   role: P2PRole;
+  arqueoSessions: ArqueoSession[];
+  ocrResults: InvoiceOCRResult[];
 }
 
 export type ImportStrategy = 'skip' | 'update';
@@ -159,8 +161,7 @@ export interface ExtractedInvoiceData {
   total?: number;
 }
 
-export interface InvoiceOCRResult {
-  id: string;
+export interface InvoiceOCRResult extends BaseEntity {
   imageUrl: string; // Base64 or Firebase Storage URL
   extractedData: ExtractedInvoiceData;
   rawOCRText?: string; // Full OCR text for debugging
@@ -178,8 +179,7 @@ export interface ScannedInvoice {
   appliedAt?: string;
 }
 
-export interface ArqueoSession {
-  id: string;
+export interface ArqueoSession extends BaseEntity {
   createdAt: string;
   invoices: ScannedInvoice[];
   createdProducts: string[]; // Product IDs created from invoices
