@@ -74,3 +74,32 @@ export const fromHex = (hex: string): Uint8Array => {
   }
   return arr;
 };
+
+// Aliases and additional functions for P2PSyncManager
+export const encapsulateSecret = encapsulate;
+export const decapsulateSecret = decapsulate;
+export const signPayload = sign;
+export const verifyPayload = verify;
+
+export const deriveAESKeyFromSharedSecret = async (sharedSecret: Uint8Array): Promise<CryptoKey> => {
+  const hash = await crypto.subtle.digest('SHA-256', sharedSecret);
+  return await crypto.subtle.importKey('raw', hash, { name: 'AES-GCM' }, true, ['encrypt', 'decrypt']);
+};
+
+export const encryptWithPQC = async (data: string, key: CryptoKey): Promise<string> => {
+  const encoder = new TextEncoder();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(data));
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(encrypted), iv.length);
+  return btoa(String.fromCharCode(...combined));
+};
+
+export const decryptWithPQC = async (base64: string, key: CryptoKey): Promise<string> => {
+  const combined = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const iv = combined.slice(0, 12);
+  const data = combined.slice(12);
+  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+  return new TextDecoder().decode(decrypted);
+};

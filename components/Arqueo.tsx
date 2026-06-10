@@ -17,17 +17,6 @@ export default function Arqueo() {
   const [currentImageBase64, setCurrentImageBase64] = useState<string>('');
   const [currentSession, setCurrentSession] = useState<ArqueoSession | null>(null);
 
-  // Mock storage for OCR results and sessions (in real app, would be in localStorage/Firestore)
-  const [sessions, setSessions] = React.useState<ArqueoSession[]>(() => {
-    const stored = localStorage.getItem('arqueo_sessions');
-    return stored ? JSON.parse(stored) : [];
-  });
-
-  const [ocrResults, setOcrResults] = React.useState<InvoiceOCRResult[]>(() => {
-    const stored = localStorage.getItem('invoice_ocr_results');
-    return stored ? JSON.parse(stored) : [];
-  });
-
   // Pro feature check
   if (!isPro && !isPyme) {
     return (
@@ -56,12 +45,13 @@ export default function Arqueo() {
       extractedData: confirmedData,
       status: 'reviewed',
       createdAt: new Date().toISOString(),
+      isActive: true,
+      updatedBy: state.localPeerId || 'local',
+      updatedAt: new Date().toISOString(),
     };
 
     // Save OCR result
-    const updatedResults = [...ocrResults, ocrResult];
-    setOcrResults(updatedResults);
-    localStorage.setItem('invoice_ocr_results', JSON.stringify(updatedResults));
+    dispatch({ type: 'ADD_OCR_RESULT', payload: ocrResult });
 
     // Add to current session
     if (!currentSession) {
@@ -78,8 +68,12 @@ export default function Arqueo() {
         ],
         createdProducts: [],
         status: 'open',
+        isActive: true,
+        updatedBy: state.localPeerId || 'local',
+        updatedAt: new Date().toISOString(),
       };
       setCurrentSession(newSession);
+      dispatch({ type: 'ADD_ARQUEO_SESSION', payload: newSession });
     } else {
       const updatedSession: ArqueoSession = {
         ...currentSession,
@@ -94,6 +88,7 @@ export default function Arqueo() {
         ],
       };
       setCurrentSession(updatedSession);
+      dispatch({ type: 'UPDATE_ARQUEO_SESSION', payload: updatedSession });
     }
 
     setShowConfirmation(false);
@@ -170,9 +165,7 @@ export default function Arqueo() {
       status: 'closed',
     };
 
-    const updatedSessions = [...sessions, closedSession];
-    setSessions(updatedSessions);
-    localStorage.setItem('arqueo_sessions', JSON.stringify(updatedSessions));
+    dispatch({ type: 'UPDATE_ARQUEO_SESSION', payload: closedSession });
 
     setCurrentSession(null);
   };
@@ -328,11 +321,11 @@ export default function Arqueo() {
       )}
 
       {/* Previous Sessions */}
-      {sessions.length > 0 && (
+      {state.arqueoSessions.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-[#F5F5DC] mb-4">Previous Sessions</h2>
           <div className="flex flex-col gap-3">
-            {sessions.map((session) => (
+            {state.arqueoSessions.map((session) => (
               <div
                 key={session.id}
                 className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 md:p-4 active:scale-[0.98] transition-transform"
