@@ -1,0 +1,182 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Fira Code", monospace;
+  --font-mono: "Fira Code", monospace;
+  --color-background: #121212;
+  --color-foreground: #F5F5DC;
+  --color-primary: #1e1e1e;
+
+  --animate-fade-in-down: fade-in-down 0.5s ease-out;
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-modal-enter: modal-enter 0.3s ease-out;
+  --animate-slide-up: slide-up 0.3s ease-out;
+
+  @keyframes fade-in-down {
+    0% {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes modal-enter {
+    0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+@layer base {
+  html,
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  #root {
+    background-color: var(--color-background);
+    min-height: 100vh;
+  }
+
+  button {
+    @apply transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F5F5DC] focus-visible:ring-offset-2 focus-visible:ring-offset-[#121212];
+  }
+}
+
+@layer utilities {
+  @media (max-width: 767px) {
+    /* Improve hamburger menu layout by centering titles */
+    main h2.text-2xl, 
+    main h1.text-2xl {
+      width: 100%;
+      text-align: center;
+      padding-top: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    /* Make the header container center its items on mobile */
+    main > div > div.flex.flex-col {
+      align-items: center;
+    }
+  }
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+}
+
+/* Responsive Tables */
+@media (max-width: 768px) {
+  .responsive-table {
+    display: block;
+    width: 100%;
+  }
+  .responsive-table thead {
+    display: none;
+  }
+  .responsive-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .responsive-table tr {
+    display: block;
+    width: 100%;
+    margin-bottom: 1.25rem;
+    border: 1px solid rgba(245, 245, 220, 0.15);
+    border-radius: 0.75rem;
+    background-color: rgba(26, 26, 26, 0.7);
+    padding: 0.5rem 0.25rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  .responsive-table tr:hover {
+    background-color: rgba(245, 245, 220, 0.03) !important;
+  }
+  .responsive-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: right;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid rgba(245, 245, 220, 0.08);
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+  .responsive-table td:first-child {
+    border-top: none;
+  }
+  .responsive-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    text-align: left;
+    color: rgba(245, 245, 220, 0.55);
+    margin-right: 1.5rem;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+  }
+  /* Fix spacing & alignment in actions and content */
+  .responsive-table td > div {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(245, 245, 220, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 245, 220, 0.4);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 245, 220, 0.2) var(--color-background);
+}

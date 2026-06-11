@@ -1,0 +1,447 @@
+{
+  "appName": "Shelf.",
+  "learnMore": "Saber Más",
+  "nav": {
+    "summary": "Resumen",
+    "inventory": "Inventario",
+    "sales": "Ventas",
+    "clients": "Clientes",
+    "suppliers": "Proveedores",
+    "purchases": "Compras",
+    "catalog": "Catálogo",
+    "arqueo": "Arqueo",
+    "reports": "Reportes",
+    "settings": "Configuración"
+  },
+  "common": {
+    "color": "Color",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "actions": "Acciones",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "name": "Nombre",
+    "phone": "Teléfono",
+    "email": "Correo",
+    "image": "Imagen",
+    "product": "Producto",
+    "products": "Productos",
+    "sku": "SKU",
+    "quantity": "Cantidad",
+    "price": "Precio",
+    "cost": "Costo",
+    "stock": "Stock",
+    "unitOfMeasure": "Unidad de Medida",
+    "variant": "Variante",
+    "client": "Cliente",
+    "supplier": "Proveedor",
+    "status": "Estado",
+    "items": "Ítems",
+    "notAvailable": "N/D",
+    "exportCsv": "Exportar CSV",
+    "dimensions": "Medidas",
+    "capacity": "Capacidad",
+    "material": "Material",
+    "sortBy": "Ordenar por",
+    "editItem": "Editar {{item}}",
+    "deleteItem": "Eliminar {{item}}",
+    "done": "Listo"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalRevenue": "Ingresos Totales",
+    "totalProfit": "Ganancia Total",
+    "totalSales": "Ventas Totales",
+    "totalProducts": "Productos en Stock",
+    "proFeaturesTitle": "Desbloquea Funciones Pro",
+    "proFeaturesDescription": "Mejora tu experiencia con sincronización en la nube, reportes avanzados con IA y una interfaz sin anuncios para llevar tu negocio al siguiente nivel.",
+    "customize": "Personalizar",
+    "toggleVisibility": "Cambiar visibilidad",
+    "noCardsVisible": "No hay tarjetas visibles. Personaliza tu dashboard para ver tus estadísticas.",
+    "pro": {
+      "aiDescription": "Obtén análisis y pronósticos inteligentes haciendo preguntas en lenguaje natural.",
+      "cloudSyncTitle": "Sincronización en la Nube",
+      "cloudSyncDescription": "Mantén tus datos seguros y accesibles en todos tus dispositivos, automáticamente.",
+      "noAdsTitle": "Experiencia Sin Anuncios",
+      "noAdsDescription": "Concéntrate en lo más importante con una interfaz limpia y sin interrupciones."
+    },
+    "proCharts": {
+      "title": "Gráficos Avanzados",
+      "description": "Visualiza el rendimiento de tu negocio con gráficos detallados y personalizados.",
+      "revenueTrendTitle": "Tendencia de Ingresos",
+      "productMixTitle": "Mix de Productos",
+      "stockHealthTitle": "Salud del Inventario",
+      "showProCta": "Desbloquear Gráficos Pro",
+      "previewTag": "VISTA PREVIA",
+      "proOnlyNote": "Disponible en el Plan Pro"
+    }
+  },
+  "inventory": {
+    "title": "Gestión de Inventario",
+    "addProduct": "Añadir Producto",
+    "editProduct": "Editar Producto",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer.",
+    "lowStock": "¡Stock bajo!",
+    "empty": "Tu inventario está vacío. Haz clic en 'Añadir Producto' para empezar.",
+    "searchPlaceholder": "Buscar por nombre o SKU...",
+    "form": {
+      "namePlaceholder": "Nombre del Producto (ej. Camiseta)",
+      "skuPlaceholder": "SKU o Código de Barras (opcional)",
+      "colorPlaceholder": "Escribe el color o elige uno arriba (ej. Marfil)",
+      "dimensionsPlaceholder": "Medidas (ej. 25x25x30 cm)",
+      "capacityPlaceholder": "Capacidad (ej. 2 L, 500 ml)",
+      "materialPlaceholder": "Material (ej. Cerámica, Resina)",
+      "uploadImage": "Subir Imagen",
+      "changeImage": "Cambiar Imagen",
+      "removeImage": "Quitar",
+      "attributes": "Atributos del Producto",
+      "noUnit": "Sin unidad de medida",
+      "unitGroups": {
+        "length": "Longitud",
+        "weight": "Peso",
+        "volume": "Volumen",
+        "area": "Área",
+        "other": "Otros"
+      },
+      "variantGroup": "Grupo de Variantes",
+      "variantGroupHelp": "Agrupa productos similares con diferentes colores, tamaños o medidas. Esto facilita el seguimiento de inventario relacionado.",
+      "noVariantGroup": "Sin grupo de variantes",
+      "newVariantGroup": "Crear nuevo grupo de variantes",
+      "variantSiblings": "Productos en el mismo grupo:",
+      "noSiblings": "Sin otros productos en este grupo"
+    }
+  },
+  "sales": {
+    "title": "Registro de Ventas",
+    "addSale": "Nueva Venta",
+    "date": "Fecha",
+    "total": "Total",
+    "profit": "Ganancia",
+    "empty": "Aún no hay ventas registradas. Haz clic en 'Nueva Venta' para añadir una.",
+    "form": {
+      "selectProduct": "Selecciona un producto...",
+      "addItem": "+ Añadir Ítem",
+      "selectClientOptional": "Selecciona un cliente (opcional)"
+    },
+    "receipt": {
+      "title": "Recibo de Venta",
+      "generate": "Generar Recibo"
+    },
+    "share": {
+      "whatsapp": "Compartir en WhatsApp"
+    },
+    "proFeatureRequired": "Esta función solo está disponible para usuarios Pro."
+  },
+  "clients": {
+    "title": "Clientes",
+    "addClient": "Añadir Cliente",
+    "editClient": "Editar Cliente",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar este cliente?",
+    "empty": "No se encontraron clientes. Haz clic en 'Añadir Cliente' para crear uno.",
+    "form": {
+      "namePlaceholder": "Nombre del Cliente",
+      "emailPlaceholder": "Correo (opcional)"
+    }
+  },
+  "suppliers": {
+    "title": "Proveedores",
+    "addSupplier": "Añadir Proveedor",
+    "editSupplier": "Editar Proveedor",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar este proveedor?",
+    "empty": "No se encontraron proveedores. Haz clic en 'Añadir Proveedor' para crear uno.",
+    "form": {
+      "namePlaceholder": "Nombre del Proveedor",
+      "emailPlaceholder": "Correo (opcional)"
+    }
+  },
+  "purchases": {
+    "title": "Órdenes de Compra",
+    "addPurchaseOrder": "Nueva Orden de Compra",
+    "editPurchaseOrder": "Editar Orden de Compra",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar esta orden de compra?",
+    "markAsReceivedConfirm": "¿Estás seguro de que quieres marcar esta orden como recibida? Los niveles de stock se actualizarán automáticamente. Esto no se puede deshacer.",
+    "empty": "No se encontraron órdenes de compra. Haz clic en 'Nueva Orden de Compra' para crear una.",
+    "orderDate": "Fecha de Orden",
+    "statusPending": "Pendiente",
+    "statusReceived": "Recibida",
+    "markAsReceived": "Marcar como Recibida",
+    "form": {
+      "selectSupplier": "Selecciona un proveedor...",
+      "selectSupplierAlert": "Por favor, selecciona un proveedor.",
+      "addItem": "+ Añadir Producto"
+    }
+  },
+  "reports": {
+    "title": "Reportes y Análisis",
+    "description": "Analiza el rendimiento de tu negocio con reportes dinámicos y obtén respuestas de tu asistente de IA.",
+    "aiAssistantTitle": "Asistente de Negocios IA",
+    "proFeatureDescription": "Esta es una función Pro. Actualiza tu plan para obtener análisis inteligentes sobre tus datos.",
+    "aiWelcome": "¡Hola! Soy StockBot. Pregúntame cualquier cosa sobre tu inventario o datos de ventas, como '¿Cuál fue mi producto más rentable el mes pasado?' o 'Muéstrame mis ingresos totales'.",
+    "aiDisabledWelcome": "Este es tu Asistente de IA. Actualiza a un plan Pro para activarlo y obtener análisis inteligentes.",
+    "aiThinking": "Pensando...",
+    "aiPlaceholder": "Haz una pregunta sobre tus datos...",
+    "aiDisabledPlaceholder": "Actualiza a Pro para usar el Asistente de IA",
+    "aiError": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
+    "aiErrorNetwork": "Hubo un problema al contactar al asistente de IA. Revisa tu conexión o inténtalo más tarde.",
+    "filters": {
+      "title": "Filtros",
+      "dateRange": "Rango de Fechas",
+      "product": "Producto",
+      "client": "Cliente",
+      "all": "Todos"
+    },
+    "summary": {
+      "revenue": "Ingresos",
+      "profit": "Ganancia",
+      "sales": "Ventas",
+      "itemsSold": "Artículos Vendidos"
+    },
+    "salesOverTime": "Ventas a lo largo del Tiempo",
+    "topProducts": "Productos Top",
+    "byRevenue": "Por Ingresos",
+    "byProfit": "Por Ganancia",
+    "noDataForPeriod": "No hay datos de ventas disponibles para el período seleccionado."
+  },
+  "settings": {
+    "title": "Configuración",
+    "general": {
+      "title": "General"
+    },
+    "lowStockThreshold": "Umbral de Alerta de Stock Bajo",
+    "lowStockThresholdDescription": "Recibe una advertencia visual en los productos cuando el stock llegue a este nivel.",
+    "currency": {
+      "title": "Moneda y Formato",
+      "symbol": "Moneda",
+      "symbolDescription": "Selecciona tu moneda principal.",
+      "format": "Formato de Número",
+      "formatDescription": "Elige tu separador de miles/decimales preferido.",
+      "formats": {
+        "en-US": "1,234.56 (Punto decimal)",
+        "de-DE": "1.234,56 (Coma decimal)"
+      },
+      "currencies": {
+        "USD": "USD - Dólar estadounidense",
+        "EUR": "EUR - Euro",
+        "GBP": "GBP - Libra esterlina",
+        "JPY": "JPY - Yen japonés",
+        "BRL": "BRL - Real brasileño",
+        "CLP": "CLP - Peso chileno",
+        "COP": "COP - Peso colombiano",
+        "MXN": "MXN - Peso mexicano"
+      }
+    },
+    "data": {
+      "title": "Gestión de Datos"
+    },
+    "backup": {
+      "button": "Crear Copia",
+      "description": "Exporta todos los datos locales a un archivo JSON para guardarlos.",
+      "success": "¡Copia de seguridad creada con éxito!"
+    },
+    "restore": {
+      "button": "Restaurar",
+      "description": "Importa datos desde un archivo de copia de seguridad, sobrescribiendo los datos actuales.",
+      "confirmation": "¿Estás seguro de que quieres restaurar desde este archivo? Esto sobrescribirá todos los datos locales actuales.",
+      "invalidFileError": "El archivo seleccionado no es una copia de seguridad válida.",
+      "success": "¡Datos restaurados con éxito!",
+      "genericError": "Ocurrió un error durante la restauración."
+    },
+    "import": {
+      "button": "Importar CSV",
+      "cardDescription": "Añade o actualiza productos en masa desde un archivo CSV.",
+      "title": "Importar Productos desde CSV",
+      "description": "Sube un archivo CSV para añadir o actualizar múltiples productos a la vez. Para mejores resultados, descarga y usa nuestra plantilla.",
+      "downloadTemplate": "Descargar Plantilla",
+      "selectFile": "Selecciona un archivo .csv",
+      "noFileSelected": "Ningún archivo seleccionado",
+      "conflictStrategy": "Si un producto con el mismo SKU ya existe:",
+      "strategySkip": "Omitirlo (mantener existente)",
+      "strategyUpdate": "Actualizarlo (sobrescribir con nuevos datos)",
+      "importing": "Importando...",
+      "success": "Se importaron {{count}} productos con éxito.",
+      "error": "La importación falló: {{error}}",
+      "invalidHeaderError": "Archivo CSV no válido. Por favor, asegúrate de que las cabeceras coincidan con la plantilla."
+    },
+    "reset": {
+      "button": "Reiniciar Datos",
+      "description": "Elimina permanentemente todos los datos de este dispositivo.",
+      "confirmation": "¿Estás absolutamente seguro? Esto eliminará todos tus datos locales de forma permanente.",
+      "success": "Todos los datos han sido reiniciados."
+    },
+    "team": {
+      "title": "Gestión de Equipo",
+      "description": "Invita y gestiona miembros del equipo para colaborar en tu inventario.",
+      "invite": "Invitar Miembro",
+      "proFeatureDescription": "Actualiza al plan PYME para invitar a miembros del equipo y establecer permisos.",
+      "inviteTitle": "Invitar a un Nuevo Miembro",
+      "inviteDescription": "Introduce el correo de la persona que quieres invitar y asígnale un rol.",
+      "role": "Rol",
+      "roles": {
+        "owner": "Propietario",
+        "admin": "Admin",
+        "member": "Miembro"
+      },
+      "sendInvitation": "Enviar Invitación",
+      "emailPlaceholder": "miembro@ejemplo.com"
+    },
+    "feedback": {
+      "title": "Sugerencias y Soporte",
+      "description": "¿Tienes una idea o encontraste un error? ¡Cuéntanos!",
+      "placeholder": "Tu mensaje...",
+      "button": "Enviar Sugerencia",
+      "success": "¡Gracias! Tu sugerencia ha sido enviada."
+    }
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "logout": "Cerrar Sesión",
+    "signup": "Registrarse",
+    "loading": "Cargando...",
+    "loggingOut": "Cerrando sesión...",
+    "loggingIn": "Iniciando sesión...",
+    "creatingAccount": "Creando cuenta...",
+    "loginTitle": "Inicia Sesión en tu Cuenta",
+    "signupTitle": "Crear una Cuenta",
+    "createLocalAccount": "Crear Cuenta Local",
+    "loginToLocalAccount": "Iniciar Sesión Local",
+    "createAccount": "Crear Cuenta",
+    "noAccount": "¿No tienes una cuenta?",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "emailPlaceholder": "Correo electrónico",
+    "passwordPlaceholder": "Contraseña",
+    "confirmPasswordPlaceholder": "Confirmar Contraseña",
+    "passwordMismatch": "Las contraseñas no coinciden.",
+    "fillAllFields": "Por favor, completa todos los campos.",
+    "loginError": "Error al iniciar sesión. Verifica tus credenciales.",
+    "signupError": "Error al crear la cuenta. Inténtalo de nuevo.",
+    "recoverAccount": "Recuperar cuenta",
+    "or": "o",
+    "loginGuest": "Entrar como Invitado (Modo Offline)",
+    "error": {
+      "generic": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
+      "invalid-credential": "Correo o contraseña no válidos. Inténtalo de nuevo.",
+      "email-in-use": "Este correo ya está registrado. Por favor, inicia sesión.",
+      "weak-password": "La contraseña debe tener al menos 6 caracteres."
+    }
+  },
+  "validation": {
+    "nameRequired": "El nombre es obligatorio.",
+    "phoneRequired": "El número de teléfono es obligatorio.",
+    "invalidEmail": "Por favor, introduce una dirección de correo válida.",
+    "quantityNonNegative": "La cantidad debe ser un número entero no negativo.",
+    "priceNonNegative": "El precio debe ser un número no negativo.",
+    "costNonNegative": "El costo debe ser un número no negativo.",
+    "imageSizeError": "La imagen debe ser menor de 2MB.",
+    "saleItemsRequired": "Una venta debe tener al menos un artículo.",
+    "selectProduct": "Por favor, selecciona un producto.",
+    "insufficientStock": "Stock insuficiente. Disponible: {{stock}}.",
+    "quantityPositive": "La cantidad debe ser un número positivo.",
+    "poItemsRequired": "Una orden de compra debe tener al menos un artículo.",
+    "poItemQuantityPositive": "La cantidad del artículo debe ser un número positivo.",
+    "poItemCostNonNegative": "El costo del artículo debe ser un número no negativo."
+  },
+  "modal": {
+    "close": "Cerrar modal"
+  },
+  "scanner": {
+    "title": "Escanear Código de Barras/QR",
+    "checking": "Buscando cámaras...",
+    "noCameras": "No se encontraron cámaras en este dispositivo.",
+    "permissionDenied": "Se denegó el permiso para la cámara.",
+    "permissionDeniedHelp": "Por favor, activa el acceso a la cámara en la configuración de tu navegador para usar el escáner.",
+    "genericError": "Ocurrió un error inesperado al iniciar el escáner."
+  },
+  "subscription": {
+    "title": "Actualizar a Pro",
+    "description": "Elige un plan para desbloquear funciones potentes y apoyar el desarrollo de Shelf.",
+    "month": "mes",
+    "upgradeNow": "Actualizar Ahora",
+    "currentPlan": "Plan Actual",
+    "selectPlan": "Seleccionar Plan",
+    "cancelAnytime": "Cancela cuando quieras. Tu suscripción se renovará automáticamente.",
+    "loginRequired": "Debes iniciar sesión para suscribirte.",
+    "redirecting": "Redirigiendo al pago...",
+    "paymentError": "Error al iniciar el proceso de pago. Inténtalo de nuevo.",
+    "upgradeToPyme": "Actualizar a PYME",
+    "pro": {
+      "title": "Pro",
+      "description": "Para profesionales y negocios en crecimiento.",
+      "price": "$5",
+      "features": [
+        "subscription.features.cloudSync",
+        "subscription.features.aiAssistant",
+        "subscription.features.noAds"
+      ]
+    },
+    "pyme": {
+      "title": "PYME",
+      "description": "Herramientas avanzadas para usuarios exigentes.",
+      "price": "$15",
+      "popular": "Más Popular",
+      "features": [
+        "subscription.features.cloudSync",
+        "subscription.features.aiAssistant",
+        "subscription.features.noAds",
+        "subscription.features.advancedReports",
+        "subscription.features.prioritySupport"
+      ]
+    },
+    "features": {
+      "cloudSync": "Sincronización en la Nube",
+      "aiAssistant": "Asistente de IA",
+      "noAds": "Experiencia Sin Anuncios",
+      "advancedReports": "Reportes Avanzados",
+      "prioritySupport": "Soporte Prioritario"
+    }
+  },
+  "landing": {
+    "title": "Cada cosa en su lugar.",
+    "subtitle": "La forma simple, moderna y potente de gestionar el inventario de tu negocio. Gratis para siempre.",
+    "cta": "Empieza Gratis",
+    "featuresTitle": "¿Por qué elegir Shelf.?",
+    "footer": "Todos los derechos reservados.",
+    "feature1": {
+      "title": "Simple e Intuitivo",
+      "description": "Sin configuraciones complicadas. Empieza a gestionar tu inventario en minutos con una interfaz limpia y amigable."
+    },
+    "feature2": {
+      "title": "Seguimiento de Ventas",
+      "description": "Registra ventas al instante y mira cómo tu stock se actualiza automáticamente. No vuelvas a sobrevender."
+    },
+    "feature3": {
+      "title": "Funciona Sin Conexión",
+      "description": "Funciona perfectamente sin conexión a internet. Tus datos siempre están disponibles, en tu dispositivo."
+    },
+    "feature4": {
+      "title": "Sincronización (Pro)",
+      "description": "Actualiza a Pro para sincronizar tus datos en todos tus dispositivos, manteniéndolos seguros y actualizados."
+    }
+  },
+  "welcome": {
+    "title": "¡Bienvenido a Shelf!",
+    "subtitle": "Antes de comenzar, aquí hay algunas cosas importantes que debes saber:",
+    "localMode": "Datos Locales Primero",
+    "localModeDesc": "Tus datos se almacenan de forma segura en este dispositivo. No se necesita conexión a internet para gestionar tu inventario.",
+    "backupResponsibility": "Tus Datos, Tu Responsabilidad",
+    "backupResponsibilityDesc": "Dado que los datos se almacenan localmente, es crucial realizar copias de seguridad periódicas. Puedes exportar tus datos en el menú de Configuración.",
+    "upgradeOption": "Sincronización en la Nube y Más",
+    "upgradeOptionDesc": "Para copias de seguridad automáticas, sincronización en múltiples dispositivos y reportes con IA, considera actualizar a un plan Pro en cualquier momento.",
+    "dontShowAgain": "No volver a mostrar esto",
+    "getStarted": "Comenzar"
+  },
+  "sync": {
+    "status": "Estado de Sincronización",
+    "localOnly": "Solo Local",
+    "cloudSynced": "Sincronizado",
+    "syncing": "Sincronizando..."
+  },
+  "update": {
+    "title": "Nueva versión disponible",
+    "message": "Hay una actualización de Shelf. disponible. Recarga la aplicación para obtener las últimas funciones y mejoras.",
+    "reload": "Actualizar ahora",
+    "later": "Más tarde"
+  }
+}
