@@ -1,74 +1,44 @@
-# Shelf. - Inventory Management PWA
+# Shelf Ecosystem
 
-**Shelf.** is a simple, modern, and powerful Progressive Web App (PWA) designed to help small business owners, e-commerce sellers, and artisans manage their inventory with ease. The app is built with an offline-first approach, ensuring that your data is always accessible, even without an internet connection.
+Shelf es una aplicación descentralizada de gestión de inventario y punto de venta con arquitectura Offline-First. 
+Este repositorio utiliza **pnpm workspace** y **Turborepo** para gestionar sus paquetes y aplicaciones.
 
-**Slogan:** _Every item in its place._
+## Estructura del Monorepo
 
-## ✨ Features
+- `apps/shelf-inventory`: La aplicación principal construida en React (Vite).
+- `apps/docs`: Portal de documentación técnica (VitePress).
+- `packages/p2p-mesh-core`: Motor de sincronización P2P descentralizado, incluyendo criptografía post-cuántica y la lógica de CRDT (Yjs).
 
--   **📊 Dashboard:** Get a quick overview of your business with key metrics like total revenue, profit, and stock levels.
--   **📦 Inventory Management:** Easily add, edit, and delete products. Track quantity, price, cost, and even add images.
--   **🛒 Sales Tracking:** Record sales effortlessly. Stock levels are automatically updated with each sale.
--   **👥 Contact Management:** Keep a record of your clients and suppliers in one place.
--   **🧾 Purchase Orders:** Create and manage purchase orders to suppliers and update your inventory automatically when items are received.
--   **📈 Advanced Reports:** Analyze your sales data with dynamic filters (date, product, client), charts for sales over time, and lists of top-selling products.
--   **⚙️ Settings:** Customize your experience with currency settings, low-stock alerts, and data management tools.
--   **🌐 Multi-language Support:** Available in English, Spanish, and Portuguese.
--   **📱 PWA & Offline-First:** Install Shelf. on your device and use it anywhere, anytime—even without an internet connection. All data is stored locally.
+## Pre-requisitos
 
-### 🚀 Pro Features
+- [Node.js](https://nodejs.org/en/) 20 o superior.
+- [pnpm](https://pnpm.io/) v9 o superior.
 
-Upgrade to a Pro plan to unlock:
+## Instalación y Desarrollo
 
--   **☁️ Cloud Sync & Backup:** Securely sync your data across all your devices with Firebase.
--   **🤖 AI Assistant:** Get intelligent insights by asking questions about your business data in natural language, powered by Google Gemini.
--   **🚫 Ad-Free Experience:** Enjoy a clean, uninterrupted interface.
+1. Instala las dependencias en la raíz:
+   ```bash
+   pnpm install
+   ```
 
-## 💻 Tech Stack
+2. Ejecutar entornos de desarrollo (Aplicación y Documentación):
+   ```bash
+   pnpm run dev
+   ```
+   *Nota: Debes asegurarte de tener un script `dev` en la raíz mapeado a `turbo run dev`.*
 
--   **Frontend:** React (with Vite), TypeScript
--   **Styling:** Tailwind CSS
--   **State Management:** React Context API
--   **Local Storage:** `localStorage` for offline-first data persistence.
--   **Backend & Database (Pro):** Firebase (Authentication, Firestore, Cloud Functions)
--   **AI:** Google Gemini
--   **Deployment:** Firebase Hosting
+3. Compilar para producción:
+   ```bash
+   pnpm run build
+   ```
 
-## 🚀 Getting Started
+## Documentación Técnica
 
-### Prerequisites
+Toda la documentación relacionada a la Arquitectura P2P WebRTC, seguridad Post-Cuántica (ML-KEM) y la gobernanza de datos offline-first está en el módulo de `apps/docs`. 
 
--   Node.js (v18 or higher)
--   pnpm (v9 or higher)
--   Firebase Account (for Pro features and deployment)
+Se compila y despliega de manera automática en GitHub Pages.
 
-### Local Development
-
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    cd shelf-app
-    ```
-
-2.  **Install dependencies:**
-    ```bash
-    pnpm install
-    ```
-
-3.  **Run the development server:**
-    ```bash
-    pnpm run dev
-    ```
-    The app will be available at `http://localhost:5173`.
-
-### Setting up Firebase (Optional, for Pro features)
-
-1.  Create a new project in the [Firebase Console](https://console.firebase.google.com/).
-2.  Go to **Project Settings** and add a new Web App.
-3.  Copy the `firebaseConfig` object.
-4.  In the project, open `firebase.ts` and replace the placeholder configuration with your actual config.
-5.  Follow the instructions in `docs/PRODUCTION_CHECKLIST.md` to enable Authentication, set up Firestore rules, and configure Cloud Functions.
-
-## 📄 License
-
-This project is open-source and available under the [MIT License](LICENSE).
+Para previsualizar localmente:
+```bash
+pnpm run --filter shelf-docs dev
+```
