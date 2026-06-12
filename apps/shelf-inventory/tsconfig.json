@@ -39,5 +39,8 @@
     "lib/**/*.tsx"
   ],
   "exclude": ["node_modules", "functions", "src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "references": [
+    { "path": "./tsconfig.node.json" },
+    { "path": "../../packages/p2p-mesh-core" }
+  ]
 }
