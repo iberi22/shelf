@@ -1,6 +1,6 @@
-import { readFileSync } from 'fs';
-import { execSync } from 'child_process';
 import react from '@vitejs/plugin-react';
+import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 

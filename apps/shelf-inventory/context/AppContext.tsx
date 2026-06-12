@@ -15,7 +15,7 @@ import type {
   TeamMember,
 } from 'p2p-mesh-core';
 import { dbSync, p2pManager } from 'p2p-mesh-core';
-import React, { createContext, useCallback, useContext, useEffect, type Dispatch, type ReactNode } from 'react';
+import React, { createContext, type Dispatch, type ReactNode, useCallback, useContext, useEffect } from 'react';
 import usePersistedReducer from '../hooks/usePersistedReducer';
 
 const initialState: AppState = {
@@ -58,6 +58,7 @@ type Action =
   | { type: 'SET_ROLE'; payload: P2PRole }
   | { type: 'SET_EXPELLED'; payload: boolean }
   | { type: 'SYNC_STATE'; payload: Partial<AppState> }
+  | { type: 'SYNC_ENTITIES'; payload: { collection: keyof AppState; items: any[]; deletedIds: string[] } }
   | { type: 'RECOVER_ITEM'; payload: { type: AuditEntry['entityType']; id: string } }
   | { type: 'ADD_ARQUEO_SESSION'; payload: ArqueoSession }
   | { type: 'UPDATE_ARQUEO_SESSION'; payload: ArqueoSession }
@@ -346,9 +347,27 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
     case 'SYNC_STATE':
       if (action.payload.auditLogs) {
-        console.log('[DEBUG] SYNC_STATE payload.auditLogs:', action.payload.auditLogs.length, action.payload.auditLogs.map((l: any) => l.action));
+        console.log(
+          '[DEBUG] SYNC_STATE payload.auditLogs:',
+          action.payload.auditLogs.length,
+          action.payload.auditLogs.map((l: any) => l.action),
+        );
       }
       return { ...state, ...action.payload };
+
+    case 'SYNC_ENTITIES': {
+      const { collection, items, deletedIds } = action.payload;
+      const existingItems = (state[collection] as any[]) || [];
+      const updatedIds = new Set(items.map((i) => i.id));
+      const deletedIdsSet = new Set(deletedIds);
+
+      const filteredExisting = existingItems.filter((i) => !updatedIds.has(i.id) && !deletedIdsSet.has(i.id));
+
+      return {
+        ...state,
+        [collection]: [...filteredExisting, ...items],
+      };
+    }
 
     case 'RECOVER_ITEM': {
       const { type, id } = action.payload;
@@ -399,7 +418,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
   // Audit Logging for state-mutating actions
   const mutationActions = ['ADD', 'UPDATE', 'DELETE', 'IMPORT', 'BATCH', 'RECOVER'];
   if (mutationActions.some((prefix) => action.type.startsWith(prefix))) {
-    let details: any = undefined;
+    let details: any;
 
     if (action.type.includes('IMPORT') || action.type.includes('BATCH')) {
       details = action.payload;
@@ -466,14 +485,32 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, rawDispatch, isLoaded] = usePersistedReducer(appReducer, initialState, 'shelfState');
+  const stateRef = React.useRef(state);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Initialize Distributed Backend
   useEffect(() => {
-    // Listen for CRDT updates from other peers
+    // Reactive incremental sync
+    const unobserve = dbSync.onObserve((collection, items, deletedIds) => {
+      rawDispatch({ type: 'SYNC_ENTITIES', payload: { collection, items, deletedIds } });
+    });
+
+    // Listen for CRDT updates from other peers (metadata & expulsion)
     dbSync.onChange((_update, origin) => {
       if (origin !== 'local') {
         const remoteState = dbSync.getState(dbSync.localPeerId);
-        rawDispatch({ type: 'SYNC_STATE', payload: remoteState });
+        // We only sync role/permissions/peers from the full state update to avoid heavy react re-renders
+        rawDispatch({
+          type: 'SYNC_STATE',
+          payload: {
+            role: remoteState.role,
+            permissions: remoteState.permissions,
+            peers: remoteState.peers,
+          },
+        });
       }
 
       // Expulsion check!
@@ -506,6 +543,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     return () => {
+      unobserve();
       p2pManager.disconnect();
     };
   }, [rawDispatch]);
@@ -513,13 +551,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Populate Yjs CRDT once initial state is loaded from IndexedDB
   useEffect(() => {
     if (isLoaded) {
-      dbSync.initWithState(state);
+      dbSync.initWithState(stateRef.current);
     }
-  }, [isLoaded, state]);
+  }, [isLoaded]);
 
   // Start Garbage Collection if Admin/Master
   useEffect(() => {
-    if (isLoaded && (state.role === 'admin')) {
+    if (isLoaded && state.role === 'admin') {
       const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
       const ONE_HOUR_MS = 60 * 60 * 1000;
       dbSync.startGarbageCollection('auditLogs', THIRTY_DAYS_MS, ONE_HOUR_MS);
@@ -536,35 +574,114 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       // 2. Synchronize to CRDT surgically
       if (!isLoaded) return;
-      if (action.type === 'SYNC_STATE' || action.type === 'RESET_DATA') return;
+      if (action.type === 'SYNC_STATE' || action.type === 'SYNC_ENTITIES' || action.type === 'RESET_DATA') return;
 
       const typeStr = action.type;
       const payload = (action as any).payload;
-      
-      if (typeStr.startsWith('ADD_') || typeStr.startsWith('UPDATE_')) {
-        if (payload && payload.id) {
-          if (typeStr.includes('PRODUCT')) dbSync.upsertEntity('products', payload);
-          else if (typeStr.includes('SALE')) dbSync.upsertEntity('sales', payload);
-          else if (typeStr.includes('CLIENT')) dbSync.upsertEntity('clients', payload);
-          else if (typeStr.includes('SUPPLIER')) dbSync.upsertEntity('suppliers', payload);
-          else if (typeStr.includes('PURCHASE_ORDER')) dbSync.upsertEntity('purchaseOrders', payload);
-          else if (typeStr.includes('ARQUEO_SESSION')) dbSync.upsertEntity('arqueoSessions', payload);
-          else if (typeStr.includes('OCR_RESULT')) dbSync.upsertEntity('ocrResults', payload);
+      const currentState = stateRef.current;
+
+      if (typeStr === 'BATCH_UPDATE_PRODUCTS') {
+        const { toAdd, toUpdate } = payload;
+        toAdd.forEach((p: any) => {
+          dbSync.upsertEntity('products', enrich(currentState, p));
+        });
+        toUpdate.forEach((p: any) => {
+          dbSync.upsertEntity('products', enrich(currentState, p));
+        });
+      } else if (typeStr === 'IMPORT_PRODUCTS') {
+        const { products: newProductsData, strategy } = payload;
+        const existingSkus = new Map<string, Product>();
+        currentState.products.forEach((p) => {
+          if (p.sku) existingSkus.set(p.sku, p);
+        });
+
+        newProductsData.forEach((newProductData: any) => {
+          const sku = newProductData.sku;
+          if (sku && existingSkus.has(sku)) {
+            if (strategy === 'update') {
+              const existingProduct = existingSkus.get(sku);
+              if (existingProduct) {
+                dbSync.upsertEntity('products', enrich(currentState, { ...existingProduct, ...newProductData }));
+              }
+            }
+          } else {
+            dbSync.upsertEntity(
+              'products',
+              enrich(currentState, {
+                id: `${new Date().toISOString()}_${Math.random()}`,
+                ...newProductData,
+              }),
+            );
+          }
+        });
+      } else if (typeStr === 'ADD_SALE') {
+        const salePayload = enrich(currentState, payload);
+        dbSync.upsertEntity('sales', salePayload);
+
+        // Decrement product quantities in CRDT
+        for (const item of payload.items) {
+          const product = currentState.products.find((p) => p.id === item.productId);
+          if (product) {
+            dbSync.upsertEntity(
+              'products',
+              enrich(currentState, {
+                ...product,
+                quantity: product.quantity - item.quantity,
+              }),
+            );
+          }
+        }
+      } else if (typeStr.startsWith('ADD_') || typeStr.startsWith('UPDATE_')) {
+        if (payload?.id) {
+          const collectionMap: Record<string, keyof AppState> = {
+            PRODUCT: 'products',
+            SALE: 'sales',
+            CLIENT: 'clients',
+            SUPPLIER: 'suppliers',
+            PURCHASE_ORDER: 'purchaseOrders',
+            ARQUEO_SESSION: 'arqueoSessions',
+            OCR_RESULT: 'ocrResults',
+          };
+          for (const [key, collection] of Object.entries(collectionMap)) {
+            if (typeStr.includes(key)) {
+              dbSync.upsertEntity(collection, payload);
+              break;
+            }
+          }
         }
       } else if (typeStr.startsWith('DELETE_')) {
         const id = typeof payload === 'string' ? payload : payload?.id;
         if (id) {
-          if (typeStr.includes('PRODUCT')) dbSync.deleteEntity('products', id);
-          else if (typeStr.includes('SALE')) dbSync.deleteEntity('sales', id);
-          else if (typeStr.includes('CLIENT')) dbSync.deleteEntity('clients', id);
-          else if (typeStr.includes('SUPPLIER')) dbSync.deleteEntity('suppliers', id);
-          else if (typeStr.includes('PURCHASE_ORDER')) dbSync.deleteEntity('purchaseOrders', id);
-          else if (typeStr.includes('ARQUEO_SESSION')) dbSync.deleteEntity('arqueoSessions', id);
-          else if (typeStr.includes('OCR_RESULT')) dbSync.deleteEntity('ocrResults', id);
+          const collectionMap: Record<string, keyof AppState> = {
+            PRODUCT: 'products',
+            SALE: 'sales',
+            CLIENT: 'clients',
+            SUPPLIER: 'suppliers',
+            PURCHASE_ORDER: 'purchaseOrders',
+            ARQUEO_SESSION: 'arqueoSessions',
+            OCR_RESULT: 'ocrResults',
+          };
+
+          for (const [key, collection] of Object.entries(collectionMap)) {
+            if (typeStr.includes(key)) {
+              const item = (currentState[collection] as any[]).find((i) => i.id === id);
+              if (item) {
+                dbSync.upsertEntity(collection, {
+                  ...item,
+                  isActive: false,
+                  updatedAt: new Date().toISOString(),
+                  updatedBy: currentState.localPeerId || 'local',
+                });
+              } else {
+                dbSync.deleteEntity(collection, id);
+              }
+              break;
+            }
+          }
         }
       }
     },
-    [rawDispatch, isLoaded]
+    [rawDispatch, isLoaded],
   );
 
   // Sync Audit Logs optimally (O(1) comparison on the first element)

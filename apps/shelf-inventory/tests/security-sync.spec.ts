@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Security & Unauthorized Mutations', () => {
   test('Collaborator is blocked from mutating unauthorized tables locally', async ({ browser }) => {
@@ -7,10 +7,10 @@ test.describe('Security & Unauthorized Mutations', () => {
 
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();
-    adminPage.on('console', msg => console.log(`[ADMIN] ${msg.type()}: ${msg.text()}`));
-    collabPage.on('console', msg => console.log(`[COLLAB] ${msg.type()}: ${msg.text()}`));
-    adminPage.on('pageerror', error => console.log(`[ADMIN] page error: ${error.message}`));
-    collabPage.on('pageerror', error => console.log(`[COLLAB] page error: ${error.message}`));
+    adminPage.on('console', (msg) => console.log(`[ADMIN] ${msg.type()}: ${msg.text()}`));
+    collabPage.on('console', (msg) => console.log(`[COLLAB] ${msg.type()}: ${msg.text()}`));
+    adminPage.on('pageerror', (error) => console.log(`[ADMIN] page error: ${error.message}`));
+    collabPage.on('pageerror', (error) => console.log(`[COLLAB] page error: ${error.message}`));
 
     await adminPage.goto('http://localhost:5173');
     await collabPage.goto('http://localhost:5173');
@@ -47,7 +47,9 @@ test.describe('Security & Unauthorized Mutations', () => {
 
     await adminPage.getByRole('button', { name: /^Conectar$|^Connect$/i }).click();
 
-    await expect(adminPage.locator('text=Configuración del Colaborador').or(adminPage.locator('text=Collaborator Configuration'))).toBeVisible();
+    await expect(
+      adminPage.locator('text=Configuración del Colaborador').or(adminPage.locator('text=Collaborator Configuration')),
+    ).toBeVisible();
     await adminPage.getByRole('button', { name: /Sincronizar y Conectar|Synchronize/i }).click();
 
     await adminPage.waitForTimeout(2000);
@@ -63,7 +65,7 @@ test.describe('Security & Unauthorized Mutations', () => {
         dbSync.upsertEntity('auditLogs', {
           id: 'hack-123',
           action: 'ELEVATE_PRIVILEGES',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
         return 'EXECUTED';
       } catch (err: any) {

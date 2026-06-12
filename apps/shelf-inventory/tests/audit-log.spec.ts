@@ -1,8 +1,8 @@
-import { test, expect, Page } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 test.describe('Audit Log Tracing', () => {
   const captureLogs = (page: Page, name: string) => {
-    page.on('console', msg => console.log(`[${name}] ${msg.type()}: ${msg.text()}`));
+    page.on('console', (msg) => console.log(`[${name}] ${msg.type()}: ${msg.text()}`));
   };
 
   test('Audit logs capture peerId, peerRole and correct action', async ({ browser }) => {
@@ -48,8 +48,10 @@ test.describe('Audit Log Tracing', () => {
     await adminPage.getByRole('button', { name: /^Conectar$|^Connect$/i }).click();
 
     // Admin assigns "Collaborator" role to Collab in the confirm modal
-    await expect(adminPage.locator('text=Configuración del Colaborador').or(adminPage.locator('text=Collaborator Configuration'))).toBeVisible();
-    
+    await expect(
+      adminPage.locator('text=Configuración del Colaborador').or(adminPage.locator('text=Collaborator Configuration')),
+    ).toBeVisible();
+
     // Click the Collaborator role button (it should be the default, but we ensure it's selected)
     // Actually the default is collaborator, but let's click it to be safe if possible, or just sync
     // The button might be name: /^Colaborador$/i
@@ -57,7 +59,7 @@ test.describe('Audit Log Tracing', () => {
 
     // Wait for them to sync
     await expect(adminPage.locator('text=/En línea|Online/i').first()).toBeVisible({ timeout: 20000 });
-    
+
     // Debug Collab's Role before action
     const collabStateDetails = await collabPage.evaluate(() => {
       const state = (window as any)._shelfStateForTest || JSON.parse(localStorage.getItem('shelfState') || '{}');
@@ -65,20 +67,20 @@ test.describe('Audit Log Tracing', () => {
       const dbSync = (window as any)._dbSyncForTest;
       return {
         role: state.role,
-        linkedNodes: dbSync ? dbSync.getLinkedNodes() : 'no dbSync'
+        linkedNodes: dbSync ? dbSync.getLinkedNodes() : 'no dbSync',
       };
     });
     console.log('Playwright observed collab details:', collabStateDetails);
-    
+
     // Collab adds a product
     await collabPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
     await collabPage.getByTestId('add-product-button').click();
-    
+
     await collabPage.getByTestId('product-name-input').fill('Audit Product X');
     await collabPage.getByTestId('product-quantity-input').fill('10');
     await collabPage.getByTestId('product-price-input').fill('20');
     await collabPage.getByTestId('product-cost-input').fill('10');
-    
+
     await collabPage.getByTestId('save-product-button').click();
     await collabPage.waitForTimeout(1000);
 
@@ -88,20 +90,27 @@ test.describe('Audit Log Tracing', () => {
 
     // Verify Admin's Audit Log
     // We check the local storage state directly and wait for it
-    await expect.poll(async () => {
-      return await adminPage.evaluate(() => {
-        const state = (window as any)._shelfStateForTest || JSON.parse(localStorage.getItem('shelfState') || '{}');
-        console.log('Test evaluate state:', Object.keys(state), state.auditLogs?.length);
-        return (state.auditLogs || []).length;
-      });
-    }, { timeout: 15000 }).toBeGreaterThan(0);
+    await expect
+      .poll(
+        async () => {
+          return await adminPage.evaluate(() => {
+            const state = (window as any)._shelfStateForTest || JSON.parse(localStorage.getItem('shelfState') || '{}');
+            console.log('Test evaluate state:', Object.keys(state), state.auditLogs?.length);
+            return (state.auditLogs || []).length;
+          });
+        },
+        { timeout: 15000 },
+      )
+      .toBeGreaterThan(0);
 
     const adminAuditLog = await adminPage.evaluate(() => {
       const state = (window as any)._shelfStateForTest || JSON.parse(localStorage.getItem('shelfState') || '{}');
       return state.auditLogs || [];
     });
 
-    const addedLog = adminAuditLog.find((l: any) => l.action === 'ADD_PRODUCT' && l.details?.payload?.name === 'Audit Product X');
+    const addedLog = adminAuditLog.find(
+      (l: any) => l.action === 'ADD_PRODUCT' && l.details?.payload?.name === 'Audit Product X',
+    );
     expect(addedLog).toBeDefined();
     expect(addedLog.peerId).toBe(collabId);
     expect(addedLog.peerRole).toBe('collaborator');

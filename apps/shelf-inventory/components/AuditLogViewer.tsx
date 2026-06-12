@@ -17,7 +17,10 @@ const LogDetails: React.FC<{ details: any; action: string }> = ({ details, actio
           if (typeof newVal === 'object') newVal = JSON.stringify(newVal);
 
           return (
-            <div key={key} className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono bg-black/20 p-1 rounded">
+            <div
+              key={key}
+              className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono bg-black/20 p-1 rounded"
+            >
               <span className="font-bold text-[#F5F5DC]/80">{key}:</span>
               <span className="text-red-400/90 line-through truncate max-w-[100px]" title={String(oldVal)}>
                 {String(oldVal)}
@@ -40,13 +43,19 @@ const LogDetails: React.FC<{ details: any; action: string }> = ({ details, actio
     if (action === 'BATCH_UPDATE_PRODUCTS') {
       const toAdd = details.payload.toAdd?.length || 0;
       const toUpdate = details.payload.toUpdate?.length || 0;
-      return <span className="text-xs text-blue-400/80 font-mono">Added: {toAdd}, Updated: {toUpdate}</span>;
+      return (
+        <span className="text-xs text-blue-400/80 font-mono">
+          Added: {toAdd}, Updated: {toUpdate}
+        </span>
+      );
     }
 
     if (typeof details.payload === 'object' && !Array.isArray(details.payload)) {
       const displayKey = details.payload.name || details.payload.id || 'Item';
       return (
-        <span className={`text-xs font-mono ${isDelete ? 'text-red-400/80' : isAdd ? 'text-green-400/80' : 'text-blue-400/80'}`}>
+        <span
+          className={`text-xs font-mono ${isDelete ? 'text-red-400/80' : isAdd ? 'text-green-400/80' : 'text-blue-400/80'}`}
+        >
           {isDelete ? 'Deleted' : isAdd ? 'Added' : 'Processed'}: {displayKey}
         </span>
       );
@@ -146,13 +155,18 @@ const AuditLogViewer: React.FC = () => {
             </thead>
             <tbody>
               {filteredLogs.map((log, index) => (
-                <tr key={log.id || index} className="border-b border-[#F5F5DC]/5 hover:bg-[#F5F5DC]/5 transition-colors">
+                <tr
+                  key={log.id || index}
+                  className="border-b border-[#F5F5DC]/5 hover:bg-[#F5F5DC]/5 transition-colors"
+                >
                   <td className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/70 whitespace-nowrap">
                     {new Date(log.timestamp).toLocaleString()}
                   </td>
                   <td className="p-2 font-mono text-[10px] md:text-xs text-yellow-400/80">{log.peerId}</td>
                   <td className="p-2">
-                    <span className="px-2 py-0.5 rounded-full bg-foreground/10 text-[10px] md:text-xs font-semibold">{log.action}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-foreground/10 text-[10px] md:text-xs font-semibold">
+                      {log.action}
+                    </span>
                   </td>
                   <td className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/60">{log.entityId || '-'}</td>
                   <td className="p-2 align-top">

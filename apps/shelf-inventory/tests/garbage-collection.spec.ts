@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Garbage Collection & Data Purge', () => {
   test.beforeEach(async ({ page }) => {
@@ -26,19 +26,19 @@ test.describe('Garbage Collection & Data Purge', () => {
         dbSync.upsertEntity('auditLogs', {
           id: 'log-old-1',
           action: 'ADD_PRODUCT',
-          timestamp: new Date(nowMs - thirtyOneDaysMs).toISOString()
+          timestamp: new Date(nowMs - thirtyOneDaysMs).toISOString(),
         });
         dbSync.upsertEntity('auditLogs', {
           id: 'log-old-2',
           action: 'UPDATE_PRODUCT',
-          timestamp: new Date(nowMs - thirtyFiveDaysMs).toISOString()
+          timestamp: new Date(nowMs - thirtyFiveDaysMs).toISOString(),
         });
 
         // New log
         dbSync.upsertEntity('auditLogs', {
           id: 'log-new-1',
           action: 'DELETE_PRODUCT',
-          timestamp: new Date(nowMs - oneDayMs).toISOString()
+          timestamp: new Date(nowMs - oneDayMs).toISOString(),
         });
 
         return 'INSERTED';
@@ -59,7 +59,7 @@ test.describe('Garbage Collection & Data Purge', () => {
     const hasOld1 = logsBefore.some((l: any) => l.id === 'log-old-1');
     const hasOld2 = logsBefore.some((l: any) => l.id === 'log-old-2');
     const hasNew1 = logsBefore.some((l: any) => l.id === 'log-new-1');
-    
+
     expect(hasOld1).toBe(true);
     expect(hasOld2).toBe(true);
     expect(hasNew1).toBe(true);
@@ -69,10 +69,10 @@ test.describe('Garbage Collection & Data Purge', () => {
       const dbSync = (window as any)._dbSyncForTest;
       const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
       const ONE_SEC_MS = 1000;
-      
+
       // Stop the regular one from AppContext first to avoid conflicts
       dbSync.stopGarbageCollection('auditLogs');
-      
+
       // Force admin role for test
       dbSync.localPeerId = 'admin-123';
       dbSync.setMasterPeerId('admin-123');
@@ -97,6 +97,6 @@ test.describe('Garbage Collection & Data Purge', () => {
 
     expect(stillHasOld1).toBe(false); // Should be purged!
     expect(stillHasOld2).toBe(false); // Should be purged!
-    expect(stillHasNew1).toBe(true);  // Should remain!
+    expect(stillHasNew1).toBe(true); // Should remain!
   });
 });
