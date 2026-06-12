@@ -91,11 +91,13 @@ class P2PManager {
       }
 
       // Initialize Yjs Sync
-      dbSync.onChange((update) => {
-        this.broadcast({
-          type: 'YJS_UPDATE',
-          payload: { update: toHex(update) },
-        });
+      dbSync.onChange((update, origin) => {
+        if (origin === 'local') {
+          this.broadcast({
+            type: 'YJS_UPDATE',
+            payload: { update: toHex(update) },
+          });
+        }
       });
 
       // Start GC loop
