@@ -117,6 +117,16 @@ class P2PManager {
 
     this.peer.on('error', (err: any) => {
       console.error('PeerJS error:', err);
+      if (err.type === 'unavailable-id') {
+        console.warn('Saved Peer ID is taken (probably lingering connection). Generating a new one...');
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('shelf_local_peer_id');
+        }
+        // Destroy old peer and re-init without ID
+        this.peer?.destroy();
+        this.peer = null;
+        setTimeout(() => this.init(), 1000);
+      }
     });
   }
 
