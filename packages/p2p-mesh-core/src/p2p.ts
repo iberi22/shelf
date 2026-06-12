@@ -398,6 +398,16 @@ class P2PManager {
     });
   }
 
+  public disconnectPeer(peerId: string) {
+    const conn = this.connections.get(peerId);
+    if (conn) {
+      conn.close();
+      this.connections.delete(peerId);
+      this.sharedSecrets.delete(peerId);
+      this.notifyConnectionChange();
+    }
+  }
+
   public disconnect() {
     for (const conn of Array.from(this.connections.values())) {
       conn.close();

@@ -397,7 +397,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
         const oldItem = (state[stateKey] as any[])?.find((i) => i.id === (action as any).payload.id);
         if (oldItem) {
           const diff: any = {};
-          for (const key in action.payload) {
+          for (const key in action.payload as any) {
             if ((action.payload as any)[key] !== oldItem[key] && key !== 'updatedAt' && key !== 'updatedBy') {
               diff[key] = { old: oldItem[key], new: (action.payload as any)[key] };
             }
@@ -450,7 +450,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Initialize Distributed Backend
   useEffect(() => {
     // Listen for CRDT updates from other peers
-    dbSync.onChange((update, origin) => {
+    dbSync.onChange((_update, origin) => {
       if (origin !== 'local') {
         const remoteState = dbSync.getState(dbSync.localPeerId);
         rawDispatch({ type: 'SYNC_STATE', payload: remoteState });
@@ -499,7 +499,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Start Garbage Collection if Admin/Master
   useEffect(() => {
-    if (isLoaded && (state.role === 'admin' || state.role === 'master')) {
+    if (isLoaded && (state.role === 'admin')) {
       const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
       const ONE_HOUR_MS = 60 * 60 * 1000;
       dbSync.startGarbageCollection('auditLogs', THIRTY_DAYS_MS, ONE_HOUR_MS);

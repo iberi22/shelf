@@ -40,7 +40,6 @@ const P2PSyncManager: React.FC = () => {
   >({});
   const { t } = useI18n();
 
-  const prevStateRef = useRef(state);
   const stateRef = useRef(state);
   stateRef.current = state;
 
@@ -485,7 +484,7 @@ const P2PSyncManager: React.FC = () => {
                               )}
                               <button
                                 type="button"
-                                onClick={() => p2pManager.kick(peer.id)}
+                                onClick={() => p2pManager.disconnectPeer(peer.id)}
                                 className="text-xs text-red-400 hover:text-red-300 font-bold hover:underline cursor-pointer"
                               >
                                 Expulsar
