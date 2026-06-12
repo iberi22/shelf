@@ -1,5 +1,6 @@
 import * as Y from 'yjs';
 import type { AppState, ArqueoSession, InvoiceOCRResult, Product } from './types';
+import { logger } from './utils/logger';
 
 /**
  * Distributed Database Manager using Yjs (CRDT)
@@ -44,7 +45,7 @@ class DatabaseSyncManager {
       // Default to strict collaborator restrictions if node is unknown!
       if (collectionName === 'auditLogs') {
         if (item && item.action && typeof item.action === 'string' && item.action.includes('PRIVILEGE')) {
-          console.warn(`[SECURITY] Blocked malicious audit log from unknown node`);
+          logger.warn(`[SECURITY] Blocked malicious audit log from unknown node`);
           return false;
         }
         return true;
@@ -66,7 +67,7 @@ class DatabaseSyncManager {
       case 'auditLogs': 
         // Collaborators can only append normal audit logs, block malicious ones
         if (item && item.action && typeof item.action === 'string' && item.action.includes('PRIVILEGE')) {
-          console.warn(`[SECURITY] Blocked malicious audit log from collaborator`);
+          logger.warn(`[SECURITY] Blocked malicious audit log from collaborator`);
           return false;
         }
         return true;
@@ -79,7 +80,7 @@ class DatabaseSyncManager {
    */
   public upsertEntity<T extends { id: string }>(collectionName: keyof AppState, item: T) {
     if (!this.checkPermissions(collectionName, item)) {
-      console.warn(`[SECURITY] Unauthorized mutation attempt on ${collectionName}`);
+      logger.warn(`[SECURITY] Unauthorized mutation attempt on ${collectionName}`);
       return;
     }
 
@@ -99,7 +100,7 @@ class DatabaseSyncManager {
    */
   public deleteEntity(collectionName: keyof AppState, id: string) {
     if (!this.checkPermissions(collectionName)) {
-      console.warn(`[SECURITY] Unauthorized deletion attempt on ${collectionName}`);
+      logger.warn(`[SECURITY] Unauthorized deletion attempt on ${collectionName}`);
       return;
     }
 
@@ -282,10 +283,14 @@ class DatabaseSyncManager {
       } else if (this.localPeerId && this.metadata.get('masterPeerId') === this.localPeerId) {
         role = 'admin';
       }
-      
-      console.log(`[DEBUG-GC] role resolved to: ${role}, localPeerId: ${this.localPeerId}`);
 
-      if (role !== 'admin' && role !== 'master') return;
+      // Final check: if we are not admin/master, we should NOT be running GC
+      if (role !== 'admin' && role !== 'master') {
+        logger.debug(`[GC] Skipping GC for ${collectionName}: insufficient permissions (role: ${role})`);
+        return;
+      }
+
+      logger.debug(`[GC] Running cleanup for ${collectionName} (role: ${role}, peerId: ${this.localPeerId})`);
 
       const yMap = this.getMapForCollection(collectionName);
       if (!yMap) return;
@@ -308,7 +313,7 @@ class DatabaseSyncManager {
             yMap.delete(key);
           }
         }, 'local');
-        console.log(`[GC] Purged ${keysToDelete.length} old items from ${collectionName}`);
+        logger.log(`[GC] Purged ${keysToDelete.length} old items from ${collectionName}`);
       }
     }, checkIntervalMs);
 

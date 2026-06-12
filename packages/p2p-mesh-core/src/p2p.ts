@@ -3,6 +3,7 @@ import type { AppState, P2PRole, PeerInfo } from './types';
 import { decryptData, deriveKey, encryptData } from './crypto';
 import { decapsulate, encapsulate, fromHex, generateDSAKeyPair, generateKEMKeyPair, toHex } from './crypto-pqc';
 import { dbSync } from './database-sync';
+import { logger, setLoggerPeerId } from './utils/logger';
 
 export type SyncMessage =
   | { type: 'ENCRYPTED_PAYLOAD'; payload: { ciphertext: string } }
@@ -16,6 +17,8 @@ export type SyncMessage =
   | { type: 'PQC_HANDSHAKE_RESPONSE'; payload: { cipherText: string; signature: string; dsaPubKey: string } }
   | { type: 'YJS_UPDATE'; payload: { update: string } }
   | { type: 'UPDATE_PEER_PERMISSIONS'; payload: { targetPeerId: string; permissions: any } }
+  | { type: 'PING' }
+  | { type: 'PONG' }
   // Auth recovery messages
   | {
       type: 'REQUEST_ACCOUNT_RECOVERY';
@@ -30,6 +33,10 @@ class P2PManager {
   private connections: Map<string, DataConnection> = new Map();
   private sharedSecrets: Map<string, Uint8Array> = new Map();
   private encryptionKeys: Map<string, CryptoKey> = new Map();
+
+  private reconnectionAttempts = 0;
+  private readonly MAX_RECONNECT_DELAY = 30000;
+  private readonly INITIAL_RECONNECT_DELAY = 1000;
 
   private onMessageCallbacks: ((message: SyncMessage, fromPeerId: string) => void)[] = [];
   private onConnectionChangeCallbacks: ((peers: PeerInfo[]) => void)[] = [];
@@ -46,7 +53,7 @@ class P2PManager {
   public role: P2PRole = 'collaborator';
   private peers: PeerInfo[] = [];
   private lastMessageTime = new Map<string, number>();
-  private gcInterval: any;
+  private heartbeatInterval: any;
 
   // PQC Keypairs
   private kemKeyPair = generateKEMKeyPair();
@@ -81,10 +88,12 @@ class P2PManager {
 
     this.peer.on('open', (id) => {
       this.localPeerId = id;
+      setLoggerPeerId(id);
+      this.reconnectionAttempts = 0;
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('shelf_local_peer_id', id);
       }
-      console.log(`My peer ID is: ${id}`);
+      logger.log(`My peer ID is: ${id}`);
       // Master node is admin by default
       if (finalPeerId === 'shelf-master') {
         this.role = 'admin';
@@ -98,10 +107,10 @@ class P2PManager {
         });
       });
 
-      // Start GC loop
-      this.gcInterval = setInterval(() => {
-        this.runGarbageCollection();
-      }, 60000);
+      // Start heartbeat/GC loop
+      this.heartbeatInterval = setInterval(() => {
+        this.runHeartbeat();
+      }, 30000);
     });
 
     this.peer.on('connection', (conn) => {
@@ -109,20 +118,30 @@ class P2PManager {
     });
 
     this.peer.on('disconnected', () => {
-      console.warn('PeerJS disconnected from signaling server. Attempting to reconnect...');
-      if (!this.peer?.destroyed) {
-        this.peer?.reconnect();
-      }
+      const delay = Math.min(this.INITIAL_RECONNECT_DELAY * 2 ** this.reconnectionAttempts, this.MAX_RECONNECT_DELAY);
+      logger.warn(`PeerJS disconnected. Retrying in ${delay}ms (attempt ${this.reconnectionAttempts + 1})...`);
+
+      setTimeout(() => {
+        if (!this.peer?.destroyed && this.peer?.disconnected) {
+          this.reconnectionAttempts++;
+          this.peer?.reconnect();
+        }
+      }, delay);
     });
 
     this.peer.on('error', (err: any) => {
-      console.error('PeerJS error:', err);
+      logger.error('PeerJS error:', err);
       if (err.type === 'unavailable-id') {
-        console.warn('Saved Peer ID is taken (probably lingering connection). Retrying with the same ID...');
+        const delay = Math.min(this.INITIAL_RECONNECT_DELAY * 2 ** this.reconnectionAttempts, this.MAX_RECONNECT_DELAY);
+        logger.warn(`Peer ID taken. Retrying in ${delay}ms (attempt ${this.reconnectionAttempts + 1})...`);
+
         // Destroy old peer and re-init WITH the same ID after a short delay
         this.peer?.destroy();
         this.peer = null;
-        setTimeout(() => this.init(finalPeerId), 2000);
+        setTimeout(() => {
+          this.reconnectionAttempts++;
+          this.init(finalPeerId);
+        }, delay);
       }
     });
 
@@ -160,7 +179,7 @@ class P2PManager {
         if (message.type === 'PEER_LIST_UPDATE') {
           message.payload.forEach((peerInfo) => {
             if (peerInfo.id !== this.localPeerId && !this.connections.has(peerInfo.id)) {
-              console.log(`Discovered new peer via mesh: ${peerInfo.id}`);
+              logger.log(`Discovered new peer via mesh: ${peerInfo.id}`);
               this.connect(peerInfo.id);
             }
           });
@@ -188,7 +207,7 @@ class P2PManager {
             type: 'PQC_KEM_REPLY',
             payload: { ciphertext: toHex(ciphertext) },
           });
-          console.log(`PQC Handshake established with ${conn.peer}`);
+          logger.log(`PQC Handshake established with ${conn.peer}`);
           return;
         }
 
@@ -196,7 +215,7 @@ class P2PManager {
           const sharedSecret = decapsulate(fromHex(message.payload.ciphertext), this.kemKeyPair.secretKey);
           this.sharedSecrets.set(conn.peer, sharedSecret);
           this.setupEncryption(conn.peer, sharedSecret).then(() => {
-            console.log(`PQC Shared secret recovered from ${conn.peer}`);
+            logger.log(`PQC Shared secret recovered from ${conn.peer}`);
             
             dbSync.updateLinkedNode(conn.peer, {
               status: 'verified',
@@ -206,6 +225,17 @@ class P2PManager {
             this.updatePeerList(conn.peer, 'collaborator');
             this.notifyConnectionChange();
           });
+          return;
+        }
+
+        // Handle PING/PONG
+        if (message.type === 'PING') {
+          conn.send({ type: 'PONG' });
+          return;
+        }
+
+        if (message.type === 'PONG') {
+          // lastMessageTime already updated above
           return;
         }
 
@@ -269,18 +299,25 @@ class P2PManager {
     this.handleConnection(conn);
   }
 
-  private runGarbageCollection() {
+  private runHeartbeat() {
     const now = Date.now();
     for (const [peerId, conn] of this.connections.entries()) {
       if (!conn.open) {
         conn.close(); // Triggers the 'close' event handler which cleans up
         continue;
       }
+
+      // Check for inactivity
       const lastSeen = this.lastMessageTime.get(peerId) || now;
-      if (now - lastSeen > 120000) { // 2 minutes timeout
-        console.warn(`[GC] Peer ${peerId} inactive for > 2m. Closing connection.`);
+      if (now - lastSeen > 60000) {
+        // 1 minute timeout
+        logger.warn(`[P2P] Peer ${peerId} heartbeat timeout. Closing connection.`);
         conn.close();
+        continue;
       }
+
+      // Send PING
+      conn.send({ type: 'PING' });
     }
   }
 
@@ -292,7 +329,7 @@ class P2PManager {
   public broadcast(message: SyncMessage) {
     this.connections.forEach((conn) => {
       if (conn.open) {
-        this.sendTo(conn.peer, message).catch(err => console.error('Broadcast encrypt failed', err));
+        this.sendTo(conn.peer, message).catch(err => logger.error('Broadcast encrypt failed', err));
       }
     });
   }
@@ -341,7 +378,7 @@ class P2PManager {
         }
       }
     } catch (err) {
-      console.error('Failed to decrypt PQC message:', err);
+      logger.error('Failed to decrypt PQC message:', err);
     }
   }
 
