@@ -29,7 +29,7 @@ test.describe('Audit Log Tracing', () => {
     const masterPeerIdLocator = adminPage.locator('span.font-mono.text-yellow-400').first();
     await masterPeerIdLocator.waitFor({ state: 'visible' });
     await expect(masterPeerIdLocator).not.toHaveText('Initializing...', { timeout: 15000 });
-    const masterId = await masterPeerIdLocator.innerText();
+    const _masterId = await masterPeerIdLocator.innerText();
 
     // Setup Collab
     await collabPage.goto('/');
@@ -63,7 +63,7 @@ test.describe('Audit Log Tracing', () => {
     // Debug Collab's Role before action
     const collabStateDetails = await collabPage.evaluate(() => {
       const state = (window as any)._shelfStateForTest || JSON.parse(localStorage.getItem('shelfState') || '{}');
-      const p2pManager = (window as any)._p2pManagerForTest;
+      const _p2pManager = (window as any)._p2pManagerForTest;
       const dbSync = (window as any)._dbSyncForTest;
       return {
         role: state.role,
