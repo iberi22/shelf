@@ -177,119 +177,7 @@ class P2PManager {
 
       conn.on('data', (data) => {
         this.lastMessageTime.set(conn.peer, Date.now());
-        const message = data as SyncMessage;
-
-        // Handle Peer List Updates (Mesh Discovery)
-        if (message.type === 'PEER_LIST_UPDATE') {
-          message.payload.forEach((peerInfo) => {
-            if (peerInfo.id !== this.localPeerId && !this.connections.has(peerInfo.id)) {
-              logger.log(`Discovered new peer via mesh: ${peerInfo.id}`);
-              this.connect(peerInfo.id);
-            }
-          });
-          return;
-        }
-
-        // Handle PQC Handshake
-        if (message.type === 'PQC_HANDSHAKE') {
-          const { ciphertext, sharedSecret } = encapsulate(fromHex(message.payload.kemPublicKey));
-          this.sharedSecrets.set(conn.peer, sharedSecret);
-          this.setupEncryption(conn.peer, sharedSecret).then(() => {
-            // Update status in linkedNodes map
-            dbSync.updateLinkedNode(conn.peer, {
-              status: 'verified',
-              role: 'collaborator',
-              isMaster: false,
-              lastSeen: new Date().toISOString(),
-            });
-            // Update local peer list
-            this.updatePeerList(conn.peer, 'collaborator');
-            this.notifyConnectionChange();
-
-            // Perform initial Yjs state sync to the newly connected peer
-            this.sendTo(conn.peer, {
-              type: 'YJS_UPDATE',
-              payload: { update: toHex(dbSync.getLocalUpdate()) }
-            });
-          });
-
-          conn.send({
-            type: 'PQC_KEM_REPLY',
-            payload: { ciphertext: toHex(ciphertext) },
-          });
-          logger.log(`PQC Handshake established with ${conn.peer}`);
-          return;
-        }
-
-        if (message.type === 'PQC_KEM_REPLY') {
-          const sharedSecret = decapsulate(fromHex(message.payload.ciphertext), this.kemKeyPair.secretKey);
-          this.sharedSecrets.set(conn.peer, sharedSecret);
-          this.setupEncryption(conn.peer, sharedSecret).then(() => {
-            logger.log(`PQC Shared secret recovered from ${conn.peer}`);
-            
-            dbSync.updateLinkedNode(conn.peer, {
-              status: 'verified',
-              role: 'collaborator',
-              lastSeen: new Date().toISOString(),
-            });
-            this.updatePeerList(conn.peer, 'collaborator');
-            this.notifyConnectionChange();
-
-            // Perform initial Yjs state sync to the newly connected peer
-            this.sendTo(conn.peer, {
-              type: 'YJS_UPDATE',
-              payload: { update: toHex(dbSync.getLocalUpdate()) }
-            });
-          });
-          return;
-        }
-
-        // Handle PING/PONG
-        if (message.type === 'PING') {
-          conn.send({ type: 'PONG' });
-          return;
-        }
-
-        if (message.type === 'PONG') {
-          // lastMessageTime already updated above
-          return;
-        }
-
-        // Handle Encrypted Payload
-        if (message.type === 'ENCRYPTED_PAYLOAD') {
-          this.handleEncryptedMessage(conn.peer, message.payload.ciphertext);
-          return;
-        }
-
-        // Handle Yjs Updates
-        if (message.type === 'YJS_UPDATE') {
-          dbSync.applyUpdate(fromHex(message.payload.update), conn.peer);
-        }
-
-        if (message.type === 'PQC_HANDSHAKE_REQUEST') {
-          for (const cb of this.onHandshakeRequestCallbacks) {
-            cb(message.payload, conn.peer);
-          }
-          return;
-        }
-
-        if (message.type === 'PQC_HANDSHAKE_RESPONSE') {
-          for (const cb of this.onHandshakeResponseCallbacks) {
-            cb(message.payload, conn.peer);
-          }
-          return;
-        }
-
-        // Route recovery requests to dedicated callbacks
-        if (message.type === 'REQUEST_ACCOUNT_RECOVERY') {
-          for (const cb of this.onRecoveryRequestCallbacks) {
-            cb(message.payload.requestId, message.payload.email, message.payload.deviceName, conn.peer);
-          }
-          return;
-        }
-        for (const cb of this.onMessageCallbacks) {
-          cb(message, conn.peer);
-        }
+        this.handleMessage(conn.peer, data as SyncMessage);
       });
 
       conn.on('close', () => {
@@ -384,16 +272,120 @@ class P2PManager {
       const decrypted = await decryptData(ciphertext, key);
       const message = JSON.parse(decrypted) as SyncMessage;
 
-      // Dispatch the decrypted message
-      if (message.type === 'YJS_UPDATE') {
-        dbSync.applyUpdate(fromHex(message.payload.update), fromPeerId);
-      }
-
-      for (const cb of this.onMessageCallbacks) {
-        cb(message, fromPeerId);
-      }
+      // Process the decrypted message through the central handler
+      this.handleMessage(fromPeerId, message);
     } catch (err) {
       logger.error('Failed to decrypt PQC message:', err);
+    }
+  }
+
+  private handleMessage(fromPeerId: string, message: SyncMessage) {
+    const conn = this.connections.get(fromPeerId);
+
+    switch (message.type) {
+      case 'PEER_LIST_UPDATE':
+        message.payload.forEach((peerInfo) => {
+          if (peerInfo.id !== this.localPeerId && !this.connections.has(peerInfo.id)) {
+            logger.log(`Discovered new peer via mesh: ${peerInfo.id}`);
+            this.connect(peerInfo.id);
+          }
+        });
+        return;
+
+      case 'PQC_HANDSHAKE': {
+        const { ciphertext, sharedSecret } = encapsulate(fromHex(message.payload.kemPublicKey));
+        this.sharedSecrets.set(fromPeerId, sharedSecret);
+        this.setupEncryption(fromPeerId, sharedSecret).then(() => {
+          // Update status in linkedNodes map
+          dbSync.updateLinkedNode(fromPeerId, {
+            status: 'verified',
+            role: 'collaborator',
+            isMaster: false,
+            lastSeen: new Date().toISOString(),
+          });
+          // Update local peer list
+          this.updatePeerList(fromPeerId, 'collaborator');
+          this.notifyConnectionChange();
+
+          // Perform initial Yjs state sync to the newly connected peer
+          this.sendTo(fromPeerId, {
+            type: 'YJS_UPDATE',
+            payload: { update: toHex(dbSync.getLocalUpdate()) },
+          });
+        });
+
+        conn?.send({
+          type: 'PQC_KEM_REPLY',
+          payload: { ciphertext: toHex(ciphertext) },
+        });
+        logger.log(`PQC Handshake established with ${fromPeerId}`);
+        return;
+      }
+
+      case 'PQC_KEM_REPLY': {
+        const sharedSecret = decapsulate(fromHex(message.payload.ciphertext), this.kemKeyPair.secretKey);
+        this.sharedSecrets.set(fromPeerId, sharedSecret);
+        this.setupEncryption(fromPeerId, sharedSecret).then(() => {
+          logger.log(`PQC Shared secret recovered from ${fromPeerId}`);
+
+          dbSync.updateLinkedNode(fromPeerId, {
+            status: 'verified',
+            role: 'collaborator',
+            lastSeen: new Date().toISOString(),
+          });
+          this.updatePeerList(fromPeerId, 'collaborator');
+          this.notifyConnectionChange();
+
+          // Perform initial Yjs state sync to the newly connected peer
+          this.sendTo(fromPeerId, {
+            type: 'YJS_UPDATE',
+            payload: { update: toHex(dbSync.getLocalUpdate()) },
+          });
+        });
+        return;
+      }
+
+      case 'PING':
+        conn?.send({ type: 'PONG' });
+        return;
+
+      case 'PONG':
+        // lastMessageTime already updated in on('data')
+        return;
+
+      case 'ENCRYPTED_PAYLOAD':
+        this.handleEncryptedMessage(fromPeerId, message.payload.ciphertext);
+        return;
+
+      case 'YJS_UPDATE':
+        dbSync.applyUpdate(fromHex(message.payload.update), fromPeerId);
+        break; // Continue to generic onMessage callbacks
+
+      case 'PQC_HANDSHAKE_REQUEST':
+        for (const cb of this.onHandshakeRequestCallbacks) {
+          cb(message.payload, fromPeerId);
+        }
+        return;
+
+      case 'PQC_HANDSHAKE_RESPONSE':
+        for (const cb of this.onHandshakeResponseCallbacks) {
+          cb(message.payload, fromPeerId);
+        }
+        return;
+
+      case 'REQUEST_ACCOUNT_RECOVERY':
+        for (const cb of this.onRecoveryRequestCallbacks) {
+          cb(message.payload.requestId, message.payload.email, message.payload.deviceName, fromPeerId);
+        }
+        return;
+
+      default:
+        break; // Pass other messages (STATE_UPDATE, etc.) to generic callbacks
+    }
+
+    // Default: pass to generic subscribers (e.g., AppContext, UI)
+    for (const cb of this.onMessageCallbacks) {
+      cb(message, fromPeerId);
     }
   }
 
