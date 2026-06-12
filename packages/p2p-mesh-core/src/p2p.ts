@@ -264,6 +264,7 @@ class P2PManager {
         // Handle Yjs Updates
         if (message.type === 'YJS_UPDATE') {
           dbSync.applyUpdate(fromHex(message.payload.update), conn.peer);
+          return;
         }
 
         if (message.type === 'PQC_HANDSHAKE_REQUEST') {
@@ -387,6 +388,7 @@ class P2PManager {
       // Dispatch the decrypted message
       if (message.type === 'YJS_UPDATE') {
         dbSync.applyUpdate(fromHex(message.payload.update), fromPeerId);
+        return;
       }
 
       for (const cb of this.onMessageCallbacks) {
