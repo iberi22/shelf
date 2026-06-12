@@ -140,6 +140,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, 
               {t('auth.login')}
             </button>
           )}
+          <div className="text-center text-[10px] text-foreground/40 font-mono mt-2">
+            v{__APP_VERSION__} • {__COMMIT_HASH__}
+          </div>
         </div>
       </div>
 
@@ -200,6 +203,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, 
               {t('auth.login')}
             </button>
           )}
+          <div className="text-center text-[10px] text-foreground/40 font-mono mt-2">
+            v{__APP_VERSION__} • {__COMMIT_HASH__}
+          </div>
         </div>
       </aside>
     </>
