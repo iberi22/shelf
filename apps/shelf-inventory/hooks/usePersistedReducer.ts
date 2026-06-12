@@ -102,7 +102,7 @@ function usePersistedReducer<T, A extends { type: string; payload?: any }>(
     };
 
     saveState();
-    
+
     // Expose for E2E tests
     if (typeof window !== 'undefined') {
       (window as any)._shelfStateForTest = state;

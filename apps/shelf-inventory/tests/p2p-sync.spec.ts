@@ -1,7 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('P2P Synchronization and Conflict Resolution', () => {
-  test('Two browsers can connect, assign roles, and simultaneously add products without conflicts', async ({ browser }) => {
+  test('Two browsers can connect, assign roles, and simultaneously add products without conflicts', async ({
+    browser,
+  }) => {
     // 1. Create two isolated browser contexts
     const adminContext = await browser.newContext();
     const collabContext = await browser.newContext();
@@ -41,17 +43,19 @@ test.describe('P2P Synchronization and Conflict Resolution', () => {
     const manualInput = adminPage.getByPlaceholder(/ingresa el Peer ID|enter Peer ID/i);
     await expect(manualInput).toBeVisible();
     await manualInput.fill(collabId);
-    
+
     // Click Connect button
     await adminPage.getByRole('button', { name: /^Conectar$|^Connect$/i }).click();
 
     // 5. Admin assigns "Admin" role to Collab in the confirm modal
     // Wait for modal to appear
-    await expect(adminPage.locator('text=Configuración del Colaborador').or(adminPage.locator('text=Collaborator Configuration'))).toBeVisible();
-    
+    await expect(
+      adminPage.locator('text=Configuración del Colaborador').or(adminPage.locator('text=Collaborator Configuration')),
+    ).toBeVisible();
+
     // Click the Admin role button
     await adminPage.getByRole('button', { name: /^Admin$/i }).click();
-    
+
     // Confirm connection
     await adminPage.getByRole('button', { name: /Sincronizar y Conectar|Synchronize/i }).click();
 
@@ -66,7 +70,7 @@ test.describe('P2P Synchronization and Conflict Resolution', () => {
     // 7. Wait for Add Product button and click on both
     const adminAddBtn = adminPage.getByTestId('add-product-button');
     const collabAddBtn = collabPage.getByTestId('add-product-button');
-    
+
     await expect(adminAddBtn).toBeVisible();
     await expect(collabAddBtn).toBeVisible();
 
@@ -89,11 +93,8 @@ test.describe('P2P Synchronization and Conflict Resolution', () => {
     // 9. Submit simultaneously
     const adminSaveBtn = adminPage.getByTestId('save-product-button');
     const collabSaveBtn = collabPage.getByTestId('save-product-button');
-    
-    await Promise.all([
-      adminSaveBtn.click(),
-      collabSaveBtn.click()
-    ]);
+
+    await Promise.all([adminSaveBtn.click(), collabSaveBtn.click()]);
 
     // 10. Verify both products appear on their own browsers first
     await expect(adminPage.locator('text=Product Added By Admin').first()).toBeVisible();

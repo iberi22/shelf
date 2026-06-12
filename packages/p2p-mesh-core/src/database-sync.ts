@@ -351,6 +351,57 @@ class DatabaseSyncManager {
       callback(update, origin);
     });
   }
+
+  /**
+   * High-level observer for granular entity updates.
+   * Useful for reactive UI updates without full state reconstruction.
+   */
+  public onObserve(callback: (collection: keyof AppState, items: any[], deletedIds: string[]) => void): () => void {
+    const collections: (keyof AppState)[] = [
+      'products',
+      'sales',
+      'clients',
+      'suppliers',
+      'purchaseOrders',
+      'auditLogs',
+      'arqueoSessions',
+      'ocrResults',
+    ];
+
+    const observers = collections.map((col) => {
+      const yMap = this.getMapForCollection(col);
+      if (!yMap) return null;
+
+      const observer = (event: Y.YMapEvent<any>) => {
+        if (event.transaction.origin !== 'local') {
+          const items: any[] = [];
+          const deletedIds: string[] = [];
+
+          event.changes.keys.forEach((change, key) => {
+            if (change.action === 'add' || change.action === 'update') {
+              const item = yMap.get(key);
+              if (item) items.push(item);
+            } else if (change.action === 'delete') {
+              deletedIds.push(key);
+            }
+          });
+
+          if (items.length > 0 || deletedIds.length > 0) {
+            callback(col, items, deletedIds);
+          }
+        }
+      };
+
+      yMap.observe(observer);
+      return { yMap, observer };
+    });
+
+    return () => {
+      observers.forEach((obs) => {
+        if (obs) obs.yMap.unobserve(obs.observer);
+      });
+    };
+  }
 }
 
 export const dbSync = new DatabaseSyncManager();
