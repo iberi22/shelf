@@ -536,13 +536,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     dbSync.onChange((_update, origin) => {
       if (origin !== 'local') {
         const remoteState = dbSync.getState(dbSync.localPeerId);
-        // We only sync role/permissions/peers from the full state update to avoid heavy react re-renders
+        // Dispatch full entity sync to ensure UI stays updated with remote changes
         rawDispatch({
           type: 'SYNC_STATE',
           payload: {
+            products: remoteState.products,
+            sales: remoteState.sales,
+            clients: remoteState.clients,
+            suppliers: remoteState.suppliers,
+            purchaseOrders: remoteState.purchaseOrders,
+            arqueoSessions: remoteState.arqueoSessions,
+            ocrResults: remoteState.ocrResults,
             role: remoteState.role,
             permissions: remoteState.permissions,
             peers: remoteState.peers,
+            auditLogs: remoteState.auditLogs,
           },
         });
       }
