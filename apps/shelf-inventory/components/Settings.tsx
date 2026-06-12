@@ -1,4 +1,4 @@
-import type { RestoreStatePayload, TeamMember } from 'p2p-mesh-core';
+import type { RestoreStatePayload } from 'p2p-mesh-core';
 import type React from 'react';
 import { useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
