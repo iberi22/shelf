@@ -55,6 +55,11 @@ class P2PManager {
   public init(peerId?: string) {
     if (this.peer) return;
 
+    let finalPeerId = peerId;
+    if (!finalPeerId && typeof localStorage !== 'undefined') {
+      finalPeerId = localStorage.getItem('shelf_local_peer_id') || undefined;
+    }
+
     // Check if we are in development mode (supports both Vite and generic bundlers)
     // @ts-ignore
     const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV === 'development' : false;
@@ -72,13 +77,16 @@ class P2PManager {
           pingInterval: 5000,
         };
 
-    this.peer = peerId ? new Peer(peerId, peerOptions) : new Peer(peerOptions);
+    this.peer = finalPeerId ? new Peer(finalPeerId, peerOptions) : new Peer(peerOptions);
 
     this.peer.on('open', (id) => {
       this.localPeerId = id;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('shelf_local_peer_id', id);
+      }
       console.log(`My peer ID is: ${id}`);
       // Master node is admin by default
-      if (peerId === 'shelf-master') {
+      if (finalPeerId === 'shelf-master') {
         this.role = 'admin';
       }
 

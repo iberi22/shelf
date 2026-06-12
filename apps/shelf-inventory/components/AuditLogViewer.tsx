@@ -1,7 +1,6 @@
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { InfiniteTable } from './InfiniteTable';
 
 const LogDetails: React.FC<{ details: any; action: string }> = ({ details, action }) => {
   if (!details) return <span className="text-[#F5F5DC]/40 italic text-xs">-</span>;
@@ -131,36 +130,39 @@ const AuditLogViewer: React.FC = () => {
         </div>
       </div>
 
-      <div className="w-full pb-2 flex-1">
-        <InfiniteTable
-          data={filteredLogs}
-          height="400px"
-          emptyContent={<div className="text-center p-4 text-[#F5F5DC]/50 italic">No logs available.</div>}
-          fixedHeaderContent={() => (
-            <tr>
-              <th className="p-2 text-left">Timestamp</th>
-              <th className="p-2 text-left">Peer ID</th>
-              <th className="p-2 text-left">Action</th>
-              <th className="p-2 text-left">Entity ID</th>
-              <th className="p-2 text-left w-1/3">Details</th>
-            </tr>
-          )}
-          itemContent={(_, log) => (
-            <>
-              <td className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/70 whitespace-nowrap">
-                {new Date(log.timestamp).toLocaleString()}
-              </td>
-              <td className="p-2 font-mono text-[10px] md:text-xs text-yellow-400/80">{log.peerId}</td>
-              <td className="p-2">
-                <span className="px-2 py-0.5 rounded-full bg-foreground/10 text-[10px] md:text-xs font-semibold">{log.action}</span>
-              </td>
-              <td className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/60">{log.entityId || '-'}</td>
-              <td className="p-2 align-top">
-                <LogDetails details={log.details} action={log.action} />
-              </td>
-            </>
-          )}
-        />
+      <div className="w-full pb-2 flex-1 overflow-y-auto max-h-[400px] custom-scrollbar">
+        {filteredLogs.length === 0 ? (
+          <div className="text-center p-4 text-[#F5F5DC]/50 italic">No logs available.</div>
+        ) : (
+          <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 bg-[#1a1a1a] z-10 shadow-sm">
+              <tr>
+                <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Timestamp</th>
+                <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Peer ID</th>
+                <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Action</th>
+                <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Entity ID</th>
+                <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10 w-1/3">Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLogs.map((log, index) => (
+                <tr key={log.id || index} className="border-b border-[#F5F5DC]/5 hover:bg-[#F5F5DC]/5 transition-colors">
+                  <td className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/70 whitespace-nowrap">
+                    {new Date(log.timestamp).toLocaleString()}
+                  </td>
+                  <td className="p-2 font-mono text-[10px] md:text-xs text-yellow-400/80">{log.peerId}</td>
+                  <td className="p-2">
+                    <span className="px-2 py-0.5 rounded-full bg-foreground/10 text-[10px] md:text-xs font-semibold">{log.action}</span>
+                  </td>
+                  <td className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/60">{log.entityId || '-'}</td>
+                  <td className="p-2 align-top">
+                    <LogDetails details={log.details} action={log.action} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
