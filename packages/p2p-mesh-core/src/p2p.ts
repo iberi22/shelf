@@ -186,6 +186,12 @@ class P2PManager {
             // Update local peer list
             this.updatePeerList(conn.peer, 'collaborator');
             this.notifyConnectionChange();
+
+            // Perform initial Yjs state sync to the newly connected peer
+            this.sendTo(conn.peer, {
+              type: 'YJS_UPDATE',
+              payload: { update: toHex(dbSync.getLocalUpdate()) }
+            });
           });
 
           conn.send({
@@ -209,6 +215,12 @@ class P2PManager {
             });
             this.updatePeerList(conn.peer, 'collaborator');
             this.notifyConnectionChange();
+
+            // Perform initial Yjs state sync to the newly connected peer
+            this.sendTo(conn.peer, {
+              type: 'YJS_UPDATE',
+              payload: { update: toHex(dbSync.getLocalUpdate()) }
+            });
           });
           return;
         }
