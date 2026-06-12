@@ -42,6 +42,11 @@ export const deriveKey = async (password: string): Promise<CryptoKey> => {
   );
 };
 
+export const importPQCSharedSecret = async (secretHex: string): Promise<CryptoKey> => {
+  const rawKey = new Uint8Array(secretHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []);
+  return await crypto.subtle.importKey('raw', rawKey, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+};
+
 let sessionKeyCache: CryptoKey | null = null;
 
 export const getSessionKey = async (): Promise<CryptoKey> => {

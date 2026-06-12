@@ -122,7 +122,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           'it',
         ];
         const results = await Promise.all(
-          localesList.map((code) => fetch(`/locales/${code}.json`).then((res) => res.json())),
+          localesList.map((code) => fetch(`/locales/${code}.json?v=${Date.now()}`).then((res) => res.json())),
         );
         const transObj: { [key in Locale]?: Translations } = {};
         localesList.forEach((code, index) => {
@@ -164,7 +164,6 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         for (const fk of keys) {
           fallbackResult = fallbackResult?.[fk];
           if (fallbackResult === undefined) {
-            console.warn(`Translation key "${key}" not found.`);
             return key;
           }
         }

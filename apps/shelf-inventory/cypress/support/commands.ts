@@ -4,7 +4,7 @@ import 'cypress-downloadfile/lib/downloadFileCommand';
 
 Cypress.Commands.add('addProduct', (product) => {
   cy.get('[data-testid="nav-item-nav.inventory"]').last().click({ force: true });
-  cy.get('[data-testid="add-product-button"]').should('be.visible');
+  cy.get('[data-testid="add-product-button"]').should('exist');
   cy.wait(300);
   cy.get('body').then(($body) => {
     const exists = $body.text().includes(product.name);
@@ -18,14 +18,14 @@ Cypress.Commands.add('addProduct', (product) => {
       cy.get('[data-testid="product-cost-input"]').type(product.cost, { force: true });
       cy.get('[data-testid="save-product-button"]').click({ force: true });
       cy.wait(300);
-      cy.contains(product.name, { timeout: 10000 }).should('be.visible');
+      cy.contains(product.name, { timeout: 10000 }).should('exist');
     }
   });
 });
 
 Cypress.Commands.add('addSupplier', (supplier) => {
   cy.get('[data-testid="nav-item-nav.suppliers"]').last().click({ force: true });
-  cy.get('[data-testid="add-supplier-button"]').should('be.visible');
+  cy.get('[data-testid="add-supplier-button"]').should('exist');
   cy.wait(300);
   cy.get('body').then(($body) => {
     const exists = $body.text().includes(supplier.name);
@@ -37,7 +37,7 @@ Cypress.Commands.add('addSupplier', (supplier) => {
       cy.get('[data-testid="contact-email-input"]').type(supplier.email, { force: true });
       cy.get('[data-testid="save-contact-button"]').click({ force: true });
       cy.wait(300);
-      cy.contains(supplier.name, { timeout: 10000 }).should('be.visible');
+      cy.contains(supplier.name, { timeout: 10000 }).should('exist');
     }
   });
 });

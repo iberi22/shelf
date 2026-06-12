@@ -1,6 +1,6 @@
+import type { StatCardData } from 'p2p-mesh-core';
 import type React from 'react';
 import { useI18n } from '../context/I18nContext';
-import type { StatCardData } from 'p2p-mesh-core';
 
 const StatCard: React.FC<StatCardData> = ({ titleKey, value, icon, change, changeType }) => {
   const { t } = useI18n();

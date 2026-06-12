@@ -3,31 +3,126 @@ import type { AppState, ArqueoSession, InvoiceOCRResult, Product } from './types
 
 /**
  * Distributed Database Manager using Yjs (CRDT)
- * Optimized to use Y.Map for better entity management.
+ * Optimized to use Y.Map for better entity management and eventual consistency merging.
  */
 class DatabaseSyncManager {
   public doc: Y.Doc;
   private products: Y.Map<Product>;
-  private sales: Y.Array<any>;
-  private clients: Y.Array<any>;
-  private suppliers: Y.Array<any>;
-  private purchaseOrders: Y.Array<any>;
-  private auditLogs: Y.Array<any>;
+  private sales: Y.Map<any>;
+  private clients: Y.Map<any>;
+  private suppliers: Y.Map<any>;
+  private purchaseOrders: Y.Map<any>;
+  private auditLogs: Y.Map<any>;
   private arqueoSessions: Y.Map<ArqueoSession>;
   private ocrResults: Y.Map<InvoiceOCRResult>;
   private metadata: Y.Map<any>;
+  private linkedNodes: Y.Map<any>;
+  public localPeerId: string | null = null;
 
   constructor() {
     this.doc = new Y.Doc();
     this.products = this.doc.getMap('products');
-    this.sales = this.doc.getArray('sales');
-    this.clients = this.doc.getArray('clients');
-    this.suppliers = this.doc.getArray('suppliers');
-    this.purchaseOrders = this.doc.getArray('purchaseOrders');
-    this.auditLogs = this.doc.getArray('auditLogs');
+    this.sales = this.doc.getMap('sales');
+    this.clients = this.doc.getMap('clients');
+    this.suppliers = this.doc.getMap('suppliers');
+    this.purchaseOrders = this.doc.getMap('purchaseOrders');
+    this.auditLogs = this.doc.getMap('auditLogs');
     this.arqueoSessions = this.doc.getMap('arqueoSessions');
     this.ocrResults = this.doc.getMap('ocrResults');
     this.metadata = this.doc.getMap('metadata');
+    this.linkedNodes = this.doc.getMap('linkedNodes');
+  }
+
+  private checkPermissions(collectionName: string, item?: any): boolean {
+    if (!this.localPeerId) return true; // Allow during initialization
+    
+    const selfNode = this.linkedNodes.get(this.localPeerId);
+    if (!selfNode) {
+      if (this.metadata.get('masterPeerId') === this.localPeerId) return true;
+      if (this.metadata.get('role') === 'admin' || this.metadata.get('role') === 'master') return true;
+      
+      // Default to strict collaborator restrictions if node is unknown!
+      if (collectionName === 'auditLogs') {
+        if (item && item.action && typeof item.action === 'string' && item.action.includes('PRIVILEGE')) {
+          console.warn(`[SECURITY] Blocked malicious audit log from unknown node`);
+          return false;
+        }
+        return true;
+      }
+      return false; // Safest fallback
+    }
+    
+    if (selfNode.role === 'admin' || selfNode.role === 'master') return true;
+    
+    const perms = selfNode.permissions || {};
+    switch (collectionName) {
+      case 'products': return !!perms.canEditProducts;
+      case 'sales': return !!perms.canEditSales;
+      case 'clients': return !!perms.canEditClients;
+      case 'suppliers': return !!perms.canEditSuppliers;
+      case 'purchaseOrders': return !!perms.canEditPurchaseOrders;
+      case 'arqueoSessions': return !!perms.canViewArqueo;
+      case 'ocrResults': return !!perms.canEditPurchaseOrders;
+      case 'auditLogs': 
+        // Collaborators can only append normal audit logs, block malicious ones
+        if (item && item.action && typeof item.action === 'string' && item.action.includes('PRIVILEGE')) {
+          console.warn(`[SECURITY] Blocked malicious audit log from collaborator`);
+          return false;
+        }
+        return true;
+      default: return false;
+    }
+  }
+
+  /**
+   * Helper to perform surgical inserts or updates on a Y.Map
+   */
+  public upsertEntity<T extends { id: string }>(collectionName: keyof AppState, item: T) {
+    if (!this.checkPermissions(collectionName, item)) {
+      console.warn(`[SECURITY] Unauthorized mutation attempt on ${collectionName}`);
+      return;
+    }
+
+    const yMap = this.getMapForCollection(collectionName);
+    if (!yMap) return;
+
+    this.doc.transact(() => {
+      const existing = yMap.get(item.id);
+      if (!existing || JSON.stringify(existing) !== JSON.stringify(item)) {
+        yMap.set(item.id, item);
+      }
+    }, 'local');
+  }
+
+  /**
+   * Helper to perform surgical deletes (soft deletes or physical if needed)
+   */
+  public deleteEntity(collectionName: keyof AppState, id: string) {
+    if (!this.checkPermissions(collectionName)) {
+      console.warn(`[SECURITY] Unauthorized deletion attempt on ${collectionName}`);
+      return;
+    }
+
+    const yMap = this.getMapForCollection(collectionName);
+    if (!yMap) return;
+
+    this.doc.transact(() => {
+      yMap.delete(id);
+    }, 'local');
+  }
+
+  private getMapForCollection(collection: string): Y.Map<any> | null {
+    switch (collection) {
+      case 'products': return this.products;
+      case 'sales': return this.sales;
+      case 'clients': return this.clients;
+      case 'suppliers': return this.suppliers;
+      case 'purchaseOrders': return this.purchaseOrders;
+      case 'auditLogs': return this.auditLogs;
+      case 'arqueoSessions': return this.arqueoSessions;
+      case 'ocrResults': return this.ocrResults;
+      default: return null;
+    }
   }
 
   /**
@@ -35,150 +130,203 @@ class DatabaseSyncManager {
    */
   public initWithState(state: AppState) {
     this.doc.transact(() => {
-      // Entities (Map)
-      for (const product of state.products) {
-        this.products.set(product.id, product);
-      }
+      const cleanAndSync = <T extends { id: string }>(yMap: Y.Map<T>, array: T[] = []) => {
+        for (const key of yMap.keys()) {
+          yMap.delete(key);
+        }
+        if (array) {
+          for (const item of array) {
+            yMap.set(item.id, item);
+          }
+        }
+      };
 
-      if (state.arqueoSessions) {
-        for (const session of state.arqueoSessions) {
-          this.arqueoSessions.set(session.id, session);
+      cleanAndSync(this.products, state.products);
+      cleanAndSync(this.arqueoSessions, state.arqueoSessions);
+      cleanAndSync(this.ocrResults, state.ocrResults);
+      cleanAndSync(this.sales, state.sales);
+      cleanAndSync(this.clients, state.clients);
+      cleanAndSync(this.suppliers, state.suppliers);
+      cleanAndSync(this.purchaseOrders, state.purchaseOrders);
+      cleanAndSync(this.auditLogs, state.auditLogs);
+
+      if (state.peers && state.peers.length > 0) {
+        for (const peer of state.peers) {
+          this.linkedNodes.set(peer.id, peer);
         }
       }
-
-      if (state.ocrResults) {
-        for (const result of state.ocrResults) {
-          this.ocrResults.set(result.id, result);
-        }
-      }
-
-      // Arrays (Simplified for this version)
-      this.sales.delete(0, this.sales.length);
-      this.sales.push(state.sales);
-
-      this.clients.delete(0, this.clients.length);
-      this.clients.push(state.clients);
-
-      this.suppliers.delete(0, this.suppliers.length);
-      this.suppliers.push(state.suppliers);
-
-      this.purchaseOrders.delete(0, this.purchaseOrders.length);
-      this.purchaseOrders.push(state.purchaseOrders);
-
-      this.auditLogs.delete(0, this.auditLogs.length);
-      this.auditLogs.push(state.auditLogs);
-
-      this.metadata.set('role', state.role);
     }, 'local');
   }
 
   /**
    * Returns the current state derived from the Yjs Doc.
    */
-  public getState(): Partial<AppState> {
+  public getState(localPeerId?: string | null): Partial<AppState> {
+    const peers = Array.from(this.linkedNodes.values());
+    const effectiveLocalId = localPeerId || this.localPeerId;
+
+    let resolvedRole: any = 'collaborator';
+    let resolvedPermissions: any = undefined;
+
+    if (effectiveLocalId) {
+      const selfNode = this.linkedNodes.get(effectiveLocalId);
+      if (selfNode) {
+        resolvedRole = selfNode.role;
+        resolvedPermissions = selfNode.permissions;
+      } else {
+        const masterId = this.metadata.get('masterPeerId');
+        if (masterId === effectiveLocalId) {
+          resolvedRole = 'admin';
+        }
+      }
+    } else {
+      resolvedRole = this.metadata.get('role') || 'collaborator';
+    }
+
     return {
       products: Array.from(this.products.values()),
-      sales: this.sales.toArray(),
-      clients: this.clients.toArray(),
-      suppliers: this.suppliers.toArray(),
-      purchaseOrders: this.purchaseOrders.toArray(),
-      auditLogs: this.auditLogs.toArray(),
+      sales: Array.from(this.sales.values()),
+      clients: Array.from(this.clients.values()),
+      suppliers: Array.from(this.suppliers.values()),
+      purchaseOrders: Array.from(this.purchaseOrders.values()),
+      auditLogs: Array.from(this.auditLogs.values()),
       arqueoSessions: Array.from(this.arqueoSessions.values()),
       ocrResults: Array.from(this.ocrResults.values()),
-      role: this.metadata.get('role'),
+      role: resolvedRole,
+      permissions: resolvedPermissions,
+      peers: peers,
     };
   }
 
+  public getMasterPeerId(): string | null {
+    for (const node of this.linkedNodes.values()) {
+      if (node.isMaster) return node.id;
+    }
+    return this.metadata.get('masterPeerId') || null;
+  }
+
+  public setMasterPeerId(peerId: string) {
+    this.doc.transact(() => {
+      this.metadata.set('masterPeerId', peerId);
+    }, 'local');
+  }
+
+  public getLinkedNodes(): any[] {
+    return Array.from(this.linkedNodes.values());
+  }
+
+  public updateLinkedNode(peerId: string, info: any) {
+    this.doc.transact(() => {
+      const existing = this.linkedNodes.get(peerId) || {};
+      this.linkedNodes.set(peerId, {
+        id: peerId,
+        permissions: {
+          canViewProducts: true,
+          canEditProducts: true,
+          canViewSales: true,
+          canEditSales: true,
+          canViewClients: true,
+          canEditClients: true,
+          canViewSuppliers: false,
+          canEditSuppliers: false,
+          canViewPurchaseOrders: false,
+          canEditPurchaseOrders: false,
+          canViewReports: false,
+          canViewArqueo: false,
+          canViewDashboard: false,
+        },
+        ...existing,
+        ...info, // Info will override existing, allowing us to force role and isMaster
+        lastSeen: new Date().toISOString(),
+      });
+    }, 'local');
+  }
+
+  public updatePeerConfig(peerId: string, role: string, permissions: any) {
+    this.doc.transact(() => {
+      const existing = this.linkedNodes.get(peerId);
+      if (existing) {
+        this.linkedNodes.set(peerId, {
+          ...existing,
+          role,
+          permissions,
+          isMaster: role === 'admin' ? false : false // Or true if we support multiple masters, but typically we keep the original master
+        });
+      }
+    }, 'local');
+  }
+
+  public removeLinkedNode(peerId: string) {
+    this.doc.transact(() => {
+      this.linkedNodes.delete(peerId);
+    }, 'local');
+  }
+
+  private gcIntervals: Map<string, any> = new Map();
+
   /**
-   * Syncs products map from a local array.
+   * Starts periodic garbage collection for a collection.
+   * Only nodes with 'admin' or 'master' role will execute the deletion.
    */
-  public syncProducts(products: Product[]) {
-    this.doc.transact(() => {
-      // Add or update
-      for (const p of products) {
-        const existing = this.products.get(p.id);
-        if (!existing || JSON.stringify(existing) !== JSON.stringify(p)) {
-          this.products.set(p.id, p);
+  public startGarbageCollection(collectionName: string, maxAgeMs: number, checkIntervalMs: number = 60000) {
+    if (this.gcIntervals.has(collectionName)) {
+      clearInterval(this.gcIntervals.get(collectionName));
+    }
+
+    const interval = setInterval(() => {
+      // Use local properties to resolve role properly
+      const selfNode = this.localPeerId ? this.linkedNodes.get(this.localPeerId) : null;
+      let role = this.metadata.get('role');
+      if (selfNode) {
+        role = selfNode.role;
+      } else if (this.localPeerId && this.metadata.get('masterPeerId') === this.localPeerId) {
+        role = 'admin';
+      }
+      
+      console.log(`[DEBUG-GC] role resolved to: ${role}, localPeerId: ${this.localPeerId}`);
+
+      if (role !== 'admin' && role !== 'master') return;
+
+      const yMap = this.getMapForCollection(collectionName);
+      if (!yMap) return;
+
+      const now = Date.now();
+      const keysToDelete: string[] = [];
+
+      for (const [key, item] of yMap.entries()) {
+        if (item && item.timestamp) {
+          const itemTime = new Date(item.timestamp).getTime();
+          if (now - itemTime > maxAgeMs) {
+            keysToDelete.push(key);
+          }
         }
       }
-      // Handle deletions
-      const currentIds = new Set(products.map((p) => p.id));
-      for (const id of this.products.keys()) {
-        if (!currentIds.has(id)) {
-          this.products.delete(id);
-        }
+
+      if (keysToDelete.length > 0) {
+        this.doc.transact(() => {
+          for (const key of keysToDelete) {
+            yMap.delete(key);
+          }
+        }, 'local');
+        console.log(`[GC] Purged ${keysToDelete.length} old items from ${collectionName}`);
       }
-    }, 'local');
+    }, checkIntervalMs);
+
+    this.gcIntervals.set(collectionName, interval);
   }
 
-  public syncArqueoSessions(sessions: ArqueoSession[]) {
-    this.doc.transact(() => {
-      for (const s of sessions) {
-        const existing = this.arqueoSessions.get(s.id);
-        if (!existing || JSON.stringify(existing) !== JSON.stringify(s)) {
-          this.arqueoSessions.set(s.id, s);
-        }
-      }
-      const currentIds = new Set(sessions.map((s) => s.id));
-      for (const id of this.arqueoSessions.keys()) {
-        if (!currentIds.has(id)) {
-          this.arqueoSessions.delete(id);
-        }
-      }
-    }, 'local');
+  public stopGarbageCollection(collectionName: string) {
+    if (this.gcIntervals.has(collectionName)) {
+      clearInterval(this.gcIntervals.get(collectionName));
+      this.gcIntervals.delete(collectionName);
+    }
   }
 
-  public syncOCRResults(results: InvoiceOCRResult[]) {
-    this.doc.transact(() => {
-      for (const r of results) {
-        const existing = this.ocrResults.get(r.id);
-        if (!existing || JSON.stringify(existing) !== JSON.stringify(r)) {
-          this.ocrResults.set(r.id, r);
-        }
-      }
-      const currentIds = new Set(results.map((r) => r.id));
-      for (const id of this.ocrResults.keys()) {
-        if (!currentIds.has(id)) {
-          this.ocrResults.delete(id);
-        }
-      }
-    }, 'local');
-  }
-
-  public syncSales(sales: any[]) {
-    this.doc.transact(() => {
-      this.sales.delete(0, this.sales.length);
-      this.sales.push(sales);
-    }, 'local');
-  }
-
-  public syncClients(clients: any[]) {
-    this.doc.transact(() => {
-      this.clients.delete(0, this.clients.length);
-      this.clients.push(clients);
-    }, 'local');
-  }
-
-  public syncSuppliers(suppliers: any[]) {
-    this.doc.transact(() => {
-      this.suppliers.delete(0, this.suppliers.length);
-      this.suppliers.push(suppliers);
-    }, 'local');
-  }
-
-  public syncPurchaseOrders(purchaseOrders: any[]) {
-    this.doc.transact(() => {
-      this.purchaseOrders.delete(0, this.purchaseOrders.length);
-      this.purchaseOrders.push(purchaseOrders);
-    }, 'local');
-  }
-
-  public syncAuditLogs(auditLogs: any[]) {
-    this.doc.transact(() => {
-      this.auditLogs.delete(0, this.auditLogs.length);
-      this.auditLogs.push(auditLogs);
-    }, 'local');
-  }
+  /**
+   * Sync methods.
+   * Note: The massive array sync methods (syncProducts, syncSales, etc.) have been removed
+   * in favor of surgical atomic updates via upsertEntity and deleteEntity.
+   */
 
   /**
    * Applies an update from a remote peer.
@@ -196,12 +344,11 @@ class DatabaseSyncManager {
 
   /**
    * Observes changes in the document and triggers a callback.
+   * Passes the origin so consumers can distinguish local vs remote updates.
    */
-  public onChange(callback: (update: Uint8Array) => void) {
+  public onChange(callback: (update: Uint8Array, origin: any) => void) {
     this.doc.on('update', (update, origin) => {
-      if (origin !== 'local') {
-        callback(update);
-      }
+      callback(update, origin);
     });
   }
 }

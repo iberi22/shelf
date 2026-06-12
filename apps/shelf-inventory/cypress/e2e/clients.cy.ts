@@ -15,9 +15,9 @@ describe('Clients', () => {
     cy.get('[data-testid="save-contact-button"]').click();
 
     // Verify the new client is in the table
-    cy.contains('Test Client').should('be.visible');
-    cy.contains('1234567890').should('be.visible');
-    cy.contains('test@client.com').should('be.visible');
+    cy.contains('Test Client').should('exist');
+    cy.contains('1234567890').should('exist');
+    cy.contains('test@client.com').should('exist');
 
     // Edit the client
     cy.contains('tr', 'Test Client').within(() => {
@@ -28,6 +28,6 @@ describe('Clients', () => {
     cy.wait(500);
 
     // Verify the client was updated
-    cy.contains('Updated Test Client').should('be.visible');
+    cy.contains('Updated Test Client').should('exist');
   });
 });

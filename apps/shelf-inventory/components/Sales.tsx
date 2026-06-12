@@ -1,14 +1,14 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import type { Sale, SaleItem } from 'p2p-mesh-core';
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
 import { useSortableTable } from '../hooks/useSortableTable';
-import type { Sale, SaleItem } from 'p2p-mesh-core';
-import Modal from './Modal';
 import { InfiniteTable } from './InfiniteTable';
+import Modal from './Modal';
 
 const Sales: React.FC = () => {
   const { state, dispatch } = useAppContext();

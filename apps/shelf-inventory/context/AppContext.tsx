@@ -1,8 +1,3 @@
-import type React from 'react';
-import { createContext, type Dispatch, type ReactNode, useContext, useEffect } from 'react';
-import usePersistedReducer from '../hooks/usePersistedReducer';
-import { dbSync } from 'p2p-mesh-core';
-import { p2pManager } from 'p2p-mesh-core';
 import type {
   AppState,
   ArqueoSession,
@@ -18,6 +13,9 @@ import type {
   Sale,
   Supplier,
 } from 'p2p-mesh-core';
+import { dbSync, p2pManager } from 'p2p-mesh-core';
+import React, { createContext, useCallback, useContext, useEffect, type Dispatch, type ReactNode } from 'react';
+import usePersistedReducer from '../hooks/usePersistedReducer';
 
 const initialState: AppState = {
   products: [],
@@ -53,6 +51,7 @@ type Action =
   | { type: 'SET_LOCAL_PEER_ID'; payload: string }
   | { type: 'UPDATE_PEERS'; payload: PeerInfo[] }
   | { type: 'SET_ROLE'; payload: P2PRole }
+  | { type: 'SET_EXPELLED'; payload: boolean }
   | { type: 'SYNC_STATE'; payload: Partial<AppState> }
   | { type: 'RECOVER_ITEM'; payload: { type: AuditEntry['entityType']; id: string } }
   | { type: 'ADD_ARQUEO_SESSION'; payload: ArqueoSession }
@@ -73,6 +72,7 @@ const createAuditEntry = (
   id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   timestamp: new Date().toISOString(),
   peerId: state.localPeerId || 'local',
+  peerRole: state.role || 'collaborator',
   action,
   entityId,
   entityType,
@@ -83,6 +83,7 @@ const enrich = (state: AppState, item: any) => ({
   isActive: true,
   updatedAt: new Date().toISOString(),
   updatedBy: state.localPeerId || 'local',
+  updatedByRole: state.role || 'collaborator',
   ...item,
 });
 
@@ -308,6 +309,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
     case 'SET_ROLE':
       return { ...state, role: action.payload };
 
+    case 'SET_EXPELLED':
+      return { ...state, isExpelled: action.payload };
+
     case 'UPDATE_PEER_PERMISSIONS': {
       if (action.payload.targetPeerId === state.localPeerId) {
         return { ...state, permissions: action.payload.permissions };
@@ -315,12 +319,15 @@ const appReducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         peers: state.peers.map((p) =>
-          p.id === action.payload.targetPeerId ? { ...p, permissions: action.payload.permissions } : p
+          p.id === action.payload.targetPeerId ? { ...p, permissions: action.payload.permissions } : p,
         ),
       };
     }
 
     case 'SYNC_STATE':
+      if (action.payload.auditLogs) {
+        console.log('[DEBUG] SYNC_STATE payload.auditLogs:', action.payload.auditLogs.length, action.payload.auditLogs.map((l: any) => l.action));
+      }
       return { ...state, ...action.payload };
 
     case 'RECOVER_ITEM': {
@@ -372,6 +379,40 @@ const appReducer = (state: AppState, action: Action): AppState => {
   // Audit Logging for state-mutating actions
   const mutationActions = ['ADD', 'UPDATE', 'DELETE', 'IMPORT', 'BATCH', 'RECOVER'];
   if (mutationActions.some((prefix) => action.type.startsWith(prefix))) {
+    let details: any = undefined;
+
+    if (action.type.includes('IMPORT') || action.type.includes('BATCH')) {
+      details = action.payload;
+    } else if (action.type.startsWith('UPDATE_') && (action as any).payload?.id) {
+      const typeMap: Record<string, keyof AppState> = {
+        UPDATE_PRODUCT: 'products',
+        UPDATE_CLIENT: 'clients',
+        UPDATE_SUPPLIER: 'suppliers',
+        UPDATE_PURCHASE_ORDER: 'purchaseOrders',
+        UPDATE_ARQUEO_SESSION: 'arqueoSessions',
+        UPDATE_OCR_RESULT: 'ocrResults',
+      };
+      const stateKey = typeMap[action.type];
+      if (stateKey) {
+        const oldItem = (state[stateKey] as any[])?.find((i) => i.id === (action as any).payload.id);
+        if (oldItem) {
+          const diff: any = {};
+          for (const key in action.payload) {
+            if ((action.payload as any)[key] !== oldItem[key] && key !== 'updatedAt' && key !== 'updatedBy') {
+              diff[key] = { old: oldItem[key], new: (action.payload as any)[key] };
+            }
+          }
+          details = { diff };
+        } else {
+          details = { payload: action.payload };
+        }
+      } else {
+        details = { payload: action.payload };
+      }
+    } else if (action.type.startsWith('ADD_') || action.type.startsWith('DELETE_')) {
+      details = { payload: action.payload };
+    }
+
     const auditEntry = createAuditEntry(
       state,
       action.type,
@@ -388,7 +429,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
               : action.type.toLowerCase().includes('purchase')
                 ? 'purchaseOrder'
                 : undefined,
-      action.type.includes('IMPORT') || action.type.includes('BATCH') ? action.payload : undefined,
+      details,
     );
     newState.auditLogs = [auditEntry, ...newState.auditLogs].slice(0, 1000);
   }
@@ -404,114 +445,117 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, dispatch, isLoaded] = usePersistedReducer(appReducer, initialState, 'shelfState');
+  const [state, rawDispatch, isLoaded] = usePersistedReducer(appReducer, initialState, 'shelfState');
 
   // Initialize Distributed Backend
   useEffect(() => {
     // Listen for CRDT updates from other peers
-    dbSync.onChange(() => {
-      const remoteState = dbSync.getState();
-      dispatch({ type: 'SYNC_STATE', payload: remoteState });
+    dbSync.onChange((update, origin) => {
+      if (origin !== 'local') {
+        const remoteState = dbSync.getState(dbSync.localPeerId);
+        rawDispatch({ type: 'SYNC_STATE', payload: remoteState });
+      }
+
+      // Expulsion check!
+      if (dbSync.localPeerId) {
+        const linkedNodes = dbSync.getLinkedNodes();
+        const masterId = dbSync.getMasterPeerId();
+
+        if (masterId && masterId !== dbSync.localPeerId && linkedNodes.length > 0) {
+          const isLinked = linkedNodes.some((node) => node.id === dbSync.localPeerId);
+          if (!isLinked) {
+            console.warn('[P2P Mesh] Expelled by Master Node');
+            p2pManager.disconnect();
+            rawDispatch({ type: 'RESET_DATA' });
+            rawDispatch({ type: 'SET_EXPELLED', payload: true });
+          }
+        }
+      }
     });
 
     // Setup P2P Handlers
-    p2pManager.onConnectionChange((peers) => {
-      dispatch({ type: 'UPDATE_PEERS', payload: peers });
+    p2pManager.onConnectionChange((_peers) => {
+      const remoteState = dbSync.getState(dbSync.localPeerId);
+      rawDispatch({ type: 'SYNC_STATE', payload: remoteState });
     });
+
+    // Expose for Playwright testing
+    if (typeof window !== 'undefined') {
+      (window as any)._p2pManagerForTest = p2pManager;
+      (window as any)._dbSyncForTest = dbSync;
+    }
 
     return () => {
       p2pManager.disconnect();
     };
-  }, [dispatch]);
+  }, [rawDispatch]);
 
   // Populate Yjs CRDT once initial state is loaded from IndexedDB
   useEffect(() => {
     if (isLoaded) {
       dbSync.initWithState(state);
     }
-  }, [isLoaded]);
+  }, [isLoaded, state]);
 
-  // Update CRDT when local state changes (mutations)
-  // We use a simplified debounce/comparison to avoid infinite loops
+  // Start Garbage Collection if Admin/Master
   useEffect(() => {
-    if (!isLoaded) return;
-    const currentState = dbSync.getState();
-    const needsSync = JSON.stringify(state.products) !== JSON.stringify(currentState.products);
-
-    if (needsSync) {
-      dbSync.syncProducts(state.products);
+    if (isLoaded && (state.role === 'admin' || state.role === 'master')) {
+      const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+      const ONE_HOUR_MS = 60 * 60 * 1000;
+      dbSync.startGarbageCollection('auditLogs', THIRTY_DAYS_MS, ONE_HOUR_MS);
+    } else {
+      dbSync.stopGarbageCollection('auditLogs');
     }
-  }, [state.products, isLoaded]);
+  }, [isLoaded, state.role]);
 
+  // Intercept dispatches to surgically update CRDT without massive JSON.stringify
+  const dispatch = useCallback(
+    (action: Action) => {
+      // 1. Update local React state
+      rawDispatch(action);
+
+      // 2. Synchronize to CRDT surgically
+      if (!isLoaded) return;
+      if (action.type === 'SYNC_STATE' || action.type === 'RESET_DATA') return;
+
+      const typeStr = action.type;
+      const payload = (action as any).payload;
+      
+      if (typeStr.startsWith('ADD_') || typeStr.startsWith('UPDATE_')) {
+        if (payload && payload.id) {
+          if (typeStr.includes('PRODUCT')) dbSync.upsertEntity('products', payload);
+          else if (typeStr.includes('SALE')) dbSync.upsertEntity('sales', payload);
+          else if (typeStr.includes('CLIENT')) dbSync.upsertEntity('clients', payload);
+          else if (typeStr.includes('SUPPLIER')) dbSync.upsertEntity('suppliers', payload);
+          else if (typeStr.includes('PURCHASE_ORDER')) dbSync.upsertEntity('purchaseOrders', payload);
+          else if (typeStr.includes('ARQUEO_SESSION')) dbSync.upsertEntity('arqueoSessions', payload);
+          else if (typeStr.includes('OCR_RESULT')) dbSync.upsertEntity('ocrResults', payload);
+        }
+      } else if (typeStr.startsWith('DELETE_')) {
+        const id = typeof payload === 'string' ? payload : payload?.id;
+        if (id) {
+          if (typeStr.includes('PRODUCT')) dbSync.deleteEntity('products', id);
+          else if (typeStr.includes('SALE')) dbSync.deleteEntity('sales', id);
+          else if (typeStr.includes('CLIENT')) dbSync.deleteEntity('clients', id);
+          else if (typeStr.includes('SUPPLIER')) dbSync.deleteEntity('suppliers', id);
+          else if (typeStr.includes('PURCHASE_ORDER')) dbSync.deleteEntity('purchaseOrders', id);
+          else if (typeStr.includes('ARQUEO_SESSION')) dbSync.deleteEntity('arqueoSessions', id);
+          else if (typeStr.includes('OCR_RESULT')) dbSync.deleteEntity('ocrResults', id);
+        }
+      }
+    },
+    [rawDispatch, isLoaded]
+  );
+
+  // Sync Audit Logs optimally (O(1) comparison on the first element)
   useEffect(() => {
-    if (!isLoaded) return;
-    const currentState = dbSync.getState();
-    const needsSync = JSON.stringify(state.sales) !== JSON.stringify(currentState.sales);
-
-    if (needsSync) {
-      dbSync.syncSales(state.sales);
-    }
-  }, [state.sales, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    const currentState = dbSync.getState();
-    const needsSync = JSON.stringify(state.clients) !== JSON.stringify(currentState.clients);
-
-    if (needsSync) {
-      dbSync.syncClients(state.clients);
-    }
-  }, [state.clients, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    const currentState = dbSync.getState();
-    const needsSync = JSON.stringify(state.suppliers) !== JSON.stringify(currentState.suppliers);
-
-    if (needsSync) {
-      dbSync.syncSuppliers(state.suppliers);
-    }
-  }, [state.suppliers, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    const currentState = dbSync.getState();
-    const needsSync = JSON.stringify(state.purchaseOrders) !== JSON.stringify(currentState.purchaseOrders);
-
-    if (needsSync) {
-      dbSync.syncPurchaseOrders(state.purchaseOrders);
-    }
-  }, [state.purchaseOrders, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    const currentState = dbSync.getState();
-    const needsSync = JSON.stringify(state.auditLogs) !== JSON.stringify(currentState.auditLogs);
-
-    if (needsSync) {
-      dbSync.syncAuditLogs(state.auditLogs);
+    if (!isLoaded || state.auditLogs.length === 0) return;
+    const latestLocal = state.auditLogs[0];
+    const latestCRDT = dbSync.getState().auditLogs?.[0];
+    if (!latestCRDT || latestLocal.id !== latestCRDT.id) {
+      dbSync.upsertEntity('auditLogs', latestLocal);
     }
   }, [state.auditLogs, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    const currentState = dbSync.getState();
-    const needsSync = JSON.stringify(state.arqueoSessions) !== JSON.stringify(currentState.arqueoSessions);
-
-    if (needsSync) {
-      dbSync.syncArqueoSessions(state.arqueoSessions);
-    }
-  }, [state.arqueoSessions, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    const currentState = dbSync.getState();
-    const needsSync = JSON.stringify(state.ocrResults) !== JSON.stringify(currentState.ocrResults);
-
-    if (needsSync) {
-      dbSync.syncOCRResults(state.ocrResults);
-    }
-  }, [state.ocrResults, isLoaded]);
 
   return <AppContext.Provider value={{ state, dispatch }}>{children}</AppContext.Provider>;
 };

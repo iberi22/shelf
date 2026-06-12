@@ -1,7 +1,7 @@
+import type { User } from 'p2p-mesh-core';
 import type React from 'react';
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import { type DeviceInfo, localAuthManager } from '../lib/localAuth';
-import type { User } from 'p2p-mesh-core';
 import { useI18n } from './I18nContext';
 import { useUI } from './UIContext';
 

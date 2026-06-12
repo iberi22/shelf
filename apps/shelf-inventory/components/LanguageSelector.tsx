@@ -78,7 +78,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ direction = 'up' })
       </button>
 
       {isOpen && (
-        <div 
+        <div
           className={`absolute ${direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'} left-1/2 -translate-x-1/2 w-56 bg-primary border border-foreground/20 rounded-lg shadow-lg overflow-hidden max-h-64 overflow-y-auto z-50`}
         >
           {languages.map((lang) => (

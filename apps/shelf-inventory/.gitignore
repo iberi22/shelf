@@ -1,0 +1,17 @@
+# Dependency directories
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Turborepo
+.turbo/
+
+# Vercel
+.vercel/
+
+# Cypress downloads
+cypress/downloads/
+cypress/screenshots/
+cypress/videos/

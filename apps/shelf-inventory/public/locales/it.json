@@ -101,7 +101,9 @@
       "newVariantGroup": "Create new variant group",
       "variantSiblings": "Products in the same group:",
       "noSiblings": "No other products in this group"
-    }
+    },
+    "batchProcessing": "Elaborazione delle immagini...",
+    "batchCompiling": "Compressione e preparazione del lotto in corso:"
   },
   "sales": {
     "title": "Sales Records",
@@ -218,6 +220,10 @@
         "CLP": "CLP - Chilean Peso",
         "COP": "COP - Colombian Peso",
         "MXN": "MXN - Mexican Peso"
+      },
+      "formats": {
+        "en-US": "1,234.56 (Dot decimal)",
+        "de-DE": "1.234,56 (Comma decimal)"
       }
     },
     "data": {
@@ -434,5 +440,90 @@
     "message": "A new version of Shelf. is available. Reload the app to get the latest features and improvements.",
     "reload": "Update now",
     "later": "Later"
+  },
+  "p2pSync": {
+    "infoTitle": "Info Sincronizzazione P2P",
+    "infoDistributedDb": "Database Distribuito: Dati sincronizzati direttamente senza server centrale.",
+    "infoPermissions": "Permessi: Gli amministratori controllano gli accessi.",
+    "infoSync": "Sincronizzazione: I dati si sincronizzano in tempo reale.",
+    "infoConfig": "Configurazione: Configura il tuo nodo.",
+    "infoRoles": "Delegazione: Amministratori possono delegare ruoli.",
+    "infoProtection": "Protezione: Dati crittografati sul dispositivo e in transito.",
+    "configTitle": "Configurazione P2P",
+    "qrTitle": "Scansiona QR",
+    "qrInstructions": "Scansiona questo QR da un altro dispositivo.",
+    "close": "Chiudi",
+    "confirmTitle": "Conferma Connessione P2P",
+    "confirmWarning": "Stai per stabilire una connessione P2P sicura. Questo sincronizzerà il tuo database locale con il dispositivo di destinazione.",
+    "confirmStatsTitle": "Dati da Sincronizzare",
+    "confirmSize": "Dimensione Stimata",
+    "confirmProceed": "Sincronizza & Connetti",
+    "myQrTitle": "Il Mio Codice QR",
+    "scanQrTitle": "Scansiona QR per Connetterti",
+    "products": "Prodotti",
+    "sales": "Vendite",
+    "clients": "Clienti",
+    "suppliers": "Fornitori",
+    "orders": "Ordini d'Acquisto",
+    "logs": "Registri di Audit",
+    "statusVerified": "Handshake verificato",
+    "statusConnecting": "Connessione in corso...",
+    "configCollaboratorTitle": "Configurazione Collaboratore",
+    "roleAdmin": "Admin",
+    "roleVendedor": "Venditore",
+    "roleCustom": "Personalizzato",
+    "peerId": "ID del Peer",
+    "encryptedTunnelActive": "Tunnel Crittografato: ATTIVO (ML-KEM-768 via P2PManager)",
+    "roleLabel": "Ruolo",
+    "syncLabel": "Sincronizzazione",
+    "placeholderManual": "O inserisci l'ID del Peer manualmente...",
+    "connect": "Connetti",
+    "linkedDevices": "Dispositivi Associati",
+    "permissionsLink": "Permessi",
+    "promoteLink": "Promuovi",
+    "noDevices": "Nessun dispositivo sicuro associato.",
+    "localPeerIdLabel": "ID del Peer Locale",
+    "yourCurrentRole": "Il Tuo Ruolo Attuale:",
+    "permissions": {
+      "canViewProducts": "Visualizza Prodotti",
+      "canEditProducts": "Modifica Prodotti",
+      "canViewSales": "Visualizza Vendite",
+      "canEditSales": "Modifica Vendite",
+      "canViewClients": "Visualizza Clienti",
+      "canEditClients": "Modifica Clienti",
+      "canViewSuppliers": "Visualizza Fornitori",
+      "canEditSuppliers": "Modifica Fornitori",
+      "canViewPurchaseOrders": "Visualizza Ordini",
+      "canEditPurchaseOrders": "Modifica Ordini",
+      "canViewReports": "Visualizza Report",
+      "canViewArqueo": "Visualizza Chiusura Cassa",
+      "canViewDashboard": "Visualizza Dashboard"
+    },
+    "topBar": {
+      "connectedNodes": "Connected Devices",
+      "status": "Status",
+      "synced": "Synced",
+      "syncing": "Syncing...",
+      "disconnected": "Disconnected",
+      "conflictsFound": "{{count}} product conflicts",
+      "resolve": "Resolve",
+      "autoMerge": "Auto-Merge",
+      "copyId": "Copy ID",
+      "copied": "Copied!",
+      "localNode": "Local Node"
+    },
+    "conflictResolver": {
+      "title": "Resolve Product Conflicts",
+      "warning": "The following products have the same SKU or name but different details. Choose which product's details to keep. Quantities will be combined.",
+      "keepThis": "Keep this product's details",
+      "mergeBtn": "Merge Group",
+      "autoMergeAll": "Auto-Merge All",
+      "noConflicts": "No product conflicts found.",
+      "groupLabel": "Conflict on {{type}}: {{key}}",
+      "quantityMerged": "Combined Quantity: {{qty}}",
+      "price": "Price: {{val}}",
+      "cost": "Cost: {{val}}",
+      "updatedAt": "Updated: {{val}}"
+    }
   }
 }

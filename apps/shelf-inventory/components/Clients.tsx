@@ -1,7 +1,7 @@
+import type { Client } from 'p2p-mesh-core';
 import type React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
-import type { Client } from 'p2p-mesh-core';
 import ContactManagementPage from './ContactManagementPage';
 
 const Clients: React.FC = () => {

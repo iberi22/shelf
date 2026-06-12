@@ -1,6 +1,6 @@
+import type { User } from 'p2p-mesh-core';
 import type React from 'react';
 import { createContext, type ReactNode, useContext, useMemo } from 'react';
-import type { User } from 'p2p-mesh-core';
 
 interface SubscriptionContextType {
   isPro: boolean;

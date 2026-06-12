@@ -1,8 +1,8 @@
 {
-   "servers": {
-      // "firebase": {
-      //    "command": "npx",
-      //    "args": ["-y","@modelcontextprotocol/server-firebase@latest"]
-      // }
-   }
+  "servers": {
+    // "firebase": {
+    //    "command": "npx",
+    //    "args": ["-y","@modelcontextprotocol/server-firebase@latest"]
+    // }
+  }
 }

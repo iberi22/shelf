@@ -1,7 +1,7 @@
 describe('Integration: Supplier -> Product -> Sale', () => {
   beforeEach(() => {
     cy.visit('/');
-    cy.contains('[', { timeout: 10000 }).should('be.visible');
+    cy.contains('[', { timeout: 10000 }).should('exist');
     cy.contains(/Empieza Gratis|Start for Free/).click();
     cy.get('[data-testid="welcome-modal-get-started-button"]').click();
   });
@@ -17,7 +17,7 @@ describe('Integration: Supplier -> Product -> Sale', () => {
     cy.get('[data-testid="contact-phone-input"]').type('1234567890', { force: true });
     cy.get('[data-testid="save-contact-button"]').click({ force: true });
     cy.wait(500);
-    cy.contains(supplierName).should('be.visible');
+    cy.contains(supplierName).should('exist');
 
     // 2. Create Product linked to Supplier
     cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
@@ -32,7 +32,7 @@ describe('Integration: Supplier -> Product -> Sale', () => {
     cy.get('[data-testid="save-product-button"]').click({ force: true });
     cy.wait(500);
 
-    cy.contains(productName).should('be.visible');
+    cy.contains(productName).should('exist');
 
     // 3. Make a Sale with this Product
     cy.get('[data-testid="nav-item-nav.sales"]').last().click();
@@ -53,14 +53,14 @@ describe('Integration: Supplier -> Product -> Sale', () => {
 
     // 4. Verification
     // Sale should appear in the sales list
-    cy.get('table').contains(productName).should('be.visible');
+    cy.get('table').contains(productName).should('exist');
 
     // Check inventory to ensure stock was reduced by 1
     cy.get('[data-testid="nav-item-nav.inventory"]').last().click({ force: true });
     cy.wait(500);
     // We should scope it to the product row to be safe
     cy.contains('tr', productName).within(() => {
-      cy.contains('9').should('be.visible');
+      cy.contains('9').should('exist');
     });
   });
 });

@@ -1,3 +1,4 @@
+import type { RestoreStatePayload, TeamMember } from 'p2p-mesh-core';
 import type React from 'react';
 import { useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
@@ -8,7 +9,6 @@ import { useSubscription } from '../context/SubscriptionContext';
 import { useUI } from '../context/UIContext';
 import { useGoogleDrive } from '../hooks/useGoogleDrive';
 import useLocalStorage from '../hooks/useLocalStorage';
-import type { RestoreStatePayload, TeamMember } from 'p2p-mesh-core';
 import AuditLogViewer from './AuditLogViewer';
 import DataRecovery from './DataRecovery';
 import DeviceManagementPanel from './DeviceManagementPanel';
@@ -52,9 +52,7 @@ const Settings: React.FC = () => {
   const { uploadBackup, downloadBackup, isLoading: isDriveLoading } = useGoogleDrive(googleClientId);
 
   // Real user data for team display
-  const [team] = useState<TeamMember[]>([
-    { id: '1', email: user?.email ?? 'owner@example.com', role: 'owner' }
-  ]);
+  const [team] = useState<TeamMember[]>([{ id: '1', email: user?.email ?? 'owner@example.com', role: 'owner' }]);
 
   const handleCreateBackup = () => {
     const backupData = JSON.stringify(state, null, 2);

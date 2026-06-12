@@ -2,8 +2,7 @@
  * Invitation System for P2P Mesh
  */
 
-import { generateUUID } from 'p2p-mesh-core';
-import { sign, toHex, verify } from 'p2p-mesh-core';
+import { generateUUID, sign, toHex, verify } from 'p2p-mesh-core';
 
 export interface Invitation {
   code: string;

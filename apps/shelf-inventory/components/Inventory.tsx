@@ -18,6 +18,7 @@ const PRESET_COLORS = [
   { name: 'Plateado', hex: '#C0C0C0' },
 ];
 
+import type { Product } from 'p2p-mesh-core';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
@@ -25,16 +26,17 @@ import { useUI } from '../context/UIContext';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { useSortableTable } from '../hooks/useSortableTable';
 import { compressImage } from '../lib/imageCompression';
-import type { Product } from 'p2p-mesh-core';
 import BarcodeScanner from './BarcodeScanner';
-import Modal from './Modal';
 import { InfiniteTable } from './InfiniteTable';
+import Modal from './Modal';
 
 const Inventory: React.FC = () => {
   const { state, dispatch } = useAppContext();
   const canEdit = state.role === 'admin' || state.permissions?.canEditProducts !== false;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isProcessingBatch, setIsProcessingBatch] = useState(false);
+  const [batchProgress, setBatchProgress] = useState('');
   const { t } = useI18n();
   const { formatCurrency } = useCurrency();
   const { showNotification } = useUI();
@@ -85,7 +87,6 @@ const Inventory: React.FC = () => {
           ...editingProduct,
           ...productData,
           updatedAt: timestamp,
-          updatedBy: 'me', // Fallback for now
         } as Product,
       });
     } else {
@@ -94,7 +95,6 @@ const Inventory: React.FC = () => {
         ...productData,
         isActive: true,
         updatedAt: timestamp,
-        updatedBy: 'me', // Fallback for now
       } as Product;
       dispatch({ type: 'ADD_PRODUCT', payload: newProduct });
     }
@@ -162,18 +162,22 @@ const Inventory: React.FC = () => {
   );
 
   const handleBatchImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!canEdit) return;
+    if (!canEdit || isProcessingBatch) return;
     const files = e.target.files;
     if (!files || files.length === 0) return;
+
+    setIsProcessingBatch(true);
+    setBatchProgress(`0 / ${files.length}`);
 
     const newDrafts: Product[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      setBatchProgress(`${i + 1} / ${files.length}`);
       try {
         const base64 = await compressImage(file, 800, 800, 0.8);
 
         const newProduct: Product = {
-          id: `draft_${new Date().getTime()}_${i}`,
+          id: `draft_${Date.now()}_${i}`,
           name: `[BORRADOR] ${file.name.split('.')[0]}`,
           quantity: 0,
           price: 0,
@@ -195,6 +199,7 @@ const Inventory: React.FC = () => {
     }
     // reset input
     e.target.value = '';
+    setIsProcessingBatch(false);
   };
 
   return (
@@ -230,18 +235,20 @@ const Inventory: React.FC = () => {
                   accept="image/png, image/jpeg, image/webp"
                   className="hidden"
                   onChange={handleBatchImageUpload}
+                  disabled={isProcessingBatch}
                   data-testid="batch-image-upload-input"
                 />
                 <label
-                  htmlFor="batchImageUpload"
-                  className="cursor-pointer flex items-center justify-center flex-1 sm:flex-none bg-transparent border border-blue-500/50 text-blue-400 font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-blue-500/10 transition-all duration-200 active:scale-95 text-sm min-h-[44px]"
+                  htmlFor={isProcessingBatch ? undefined : 'batchImageUpload'}
+                  className={`flex items-center justify-center flex-1 sm:flex-none bg-transparent border border-blue-500/50 text-blue-400 font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-blue-500/10 transition-all duration-200 active:scale-95 text-sm min-h-[44px] ${isProcessingBatch ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   title="Subir Lote de Imágenes"
                 >
                   Lote 📸
                 </label>
                 <button
                   onClick={() => handleOpenModal()}
-                  className="flex-1 sm:flex-none bg-[#F5F5DC] text-[#121212] font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm min-h-[44px]"
+                  disabled={isProcessingBatch}
+                  className="flex-1 sm:flex-none bg-[#F5F5DC] text-[#121212] font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm min-h-[44px] disabled:opacity-50"
                   data-testid="add-product-button"
                 >
                   {t('inventory.addProduct')}
@@ -260,6 +267,7 @@ const Inventory: React.FC = () => {
           emptyContent={<div className="text-center p-8 text-[#F5F5DC]/70">{t('inventory.empty')}</div>}
           fixedHeaderContent={() => (
             <tr className="text-xs md:text-sm">
+              <th className="p-2 md:p-3 w-10 text-center text-[#F5F5DC]/50 font-bold">#</th>
               <th className="p-2 md:p-3">{t('common.image')}</th>
               <SortableHeader sortKey="name" labelKey="common.product" />
               <SortableHeader sortKey="sku" labelKey="common.sku" />
@@ -310,8 +318,11 @@ const Inventory: React.FC = () => {
               {canEdit && <th className="p-3">{t('common.actions')}</th>}
             </tr>
           )}
-          itemContent={(_, product) => (
+          itemContent={(index, product) => (
             <>
+              <td className="p-2 md:p-3 text-xs md:text-sm font-semibold text-[#F5F5DC]/40 w-10 text-center select-none font-mono">
+                {index + 1}
+              </td>
               <td className="p-1.5 md:p-2">
                 {product.imageUrl ? (
                   <img
@@ -325,10 +336,7 @@ const Inventory: React.FC = () => {
                   </div>
                 )}
               </td>
-              <td
-                className="p-2 md:p-3 max-w-[90px] md:max-w-[150px] xl:max-w-none truncate"
-                title={product.name}
-              >
+              <td className="p-2 md:p-3 max-w-[90px] md:max-w-[150px] xl:max-w-none truncate" title={product.name}>
                 {product.name}
               </td>
               <td className="p-2 md:p-3 max-w-[60px] md:max-w-[70px] truncate" title={product.sku || ''}>
@@ -350,9 +358,7 @@ const Inventory: React.FC = () => {
                       className="inline-block w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white/20 flex-shrink-0"
                       style={{ backgroundColor: isValidHexColor(product.color) ? product.color : '#808080' }}
                     ></span>
-                    <span className="truncate max-w-[50px] md:max-w-[60px] hidden lg:inline">
-                      {product.color}
-                    </span>
+                    <span className="truncate max-w-[50px] md:max-w-[60px] hidden lg:inline">{product.color}</span>
                   </span>
                 ) : (
                   <span className="text-[#F5F5DC]/40">—</span>
@@ -376,9 +382,7 @@ const Inventory: React.FC = () => {
               >
                 {product.material || <span className="text-[#F5F5DC]/40">—</span>}
               </td>
-              <td className="p-2 md:p-3 whitespace-nowrap hidden xl:table-cell">
-                {formatCurrency(product.cost)}
-              </td>
+              <td className="p-2 md:p-3 whitespace-nowrap hidden xl:table-cell">{formatCurrency(product.cost)}</td>
               {canEdit && (
                 <td className="p-2 md:p-3 whitespace-nowrap">
                   <button
@@ -529,6 +533,20 @@ const Inventory: React.FC = () => {
           <ProductForm product={editingProduct} onSave={handleSaveProduct} onCancel={handleCloseModal} />
         </Modal>
       )}
+
+      {/* Batch Processing Loading Overlay */}
+      {isProcessingBatch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg max-w-sm w-full shadow-2xl flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 border-4 border-[#F5F5DC]/20 border-t-yellow-500 rounded-full animate-spin"></div>
+            <h3 className="font-bold text-[#F5F5DC] text-lg">{t('inventory.batchProcessing')}</h3>
+            <p className="text-sm text-[#F5F5DC]/70">{t('inventory.batchCompiling')}</p>
+            <span className="font-mono text-yellow-400 font-bold bg-[#121212] px-3 py-1.5 rounded border border-[#F5F5DC]/10">
+              {batchProgress}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -587,8 +605,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
         const file = items[i].getAsFile();
         if (file) {
           compressImage(file, 800, 800, 0.8)
-            .then(optimizedBase64 => setImageUrl(optimizedBase64))
-            .catch(error => {
+            .then((optimizedBase64) => setImageUrl(optimizedBase64))
+            .catch((error) => {
               console.error('Error optimizando imagen pegada:', error);
               alert(t('validation.imageSizeError') || 'Error al procesar la imagen');
             });

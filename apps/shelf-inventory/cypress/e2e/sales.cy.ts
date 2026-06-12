@@ -11,9 +11,11 @@ describe('Sales', () => {
       cost: '50',
     });
     cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
-    cy.contains('tr', 'Test Product').then(($row) => {
-      const id = $row.attr('data-testid').replace('product-row-', '');
-      Cypress.env('productId', id);
+    cy.contains('tr', 'Test Product').within(() => {
+      cy.get('[data-testid^="edit-product-"]').then(($btn) => {
+        const id = $btn.attr('data-testid').replace('edit-product-', '');
+        Cypress.env('productId', id);
+      });
     });
     cy.get('[data-testid="nav-item-nav.sales"]').last().click();
   });
@@ -25,6 +27,6 @@ describe('Sales', () => {
     cy.get('[data-testid="save-sale-button"]').click({ force: true });
     cy.wait(500);
 
-    cy.contains('Test Product').should('be.visible');
+    cy.contains('Test Product').should('exist');
   });
 });

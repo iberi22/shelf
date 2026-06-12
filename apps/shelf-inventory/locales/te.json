@@ -101,7 +101,9 @@
       "newVariantGroup": "Create new variant group",
       "variantSiblings": "Products in the same group:",
       "noSiblings": "No other products in this group"
-    }
+    },
+    "batchProcessing": "చిత్రాలను ప్రాసెస్ చేస్తోంది...",
+    "batchCompiling": "బ్యాచ్‌ని కుదించడం మరియు సిద్ధం చేయడం:"
   },
   "sales": {
     "title": "Sales Records",
@@ -218,6 +220,10 @@
         "CLP": "CLP - Chilean Peso",
         "COP": "COP - Colombian Peso",
         "MXN": "MXN - Mexican Peso"
+      },
+      "formats": {
+        "en-US": "1,234.56 (Dot decimal)",
+        "de-DE": "1.234,56 (Comma decimal)"
       }
     },
     "data": {
@@ -421,5 +427,90 @@
     "message": "A new version of Shelf. is available. Reload the app to get the latest features and improvements.",
     "reload": "Update now",
     "later": "Later"
+  },
+  "p2pSync": {
+    "infoTitle": "Secure P2P Sync Info",
+    "infoDistributedDb": "Distributed Database: Data is synchronized directly between peers using Conflict-free Replicated Data Types (CRDTs) without a central server.",
+    "infoPermissions": "Permissions System: Administrators control read/write access for each device securely.",
+    "infoSync": "Data Synchronization: Changes sync in real-time across connected nodes maintaining eventual consistency.",
+    "infoConfig": "Node Configuration: Configure your node's role and manage linked devices locally.",
+    "infoRoles": "User Delegation: Admins can promote others or delegate specific permissions.",
+    "infoProtection": "Data Protection: Data is encrypted at-rest on the device, and in-transit using Post-Quantum cryptography.",
+    "configTitle": "P2P Configuration",
+    "qrTitle": "Scan QR to Connect",
+    "qrInstructions": "Scan this QR code from another device to establish a secure P2P link.",
+    "close": "Close",
+    "confirmTitle": "Confirm P2P Connection",
+    "confirmWarning": "You are about to establish a secure P2P connection. This will synchronize your local database with the target device.",
+    "confirmStatsTitle": "Data to Synchronize",
+    "confirmSize": "Estimated Size",
+    "confirmProceed": "Synchronize & Connect",
+    "myQrTitle": "My QR Code",
+    "scanQrTitle": "Scan QR to Connect",
+    "products": "Products",
+    "sales": "Sales",
+    "clients": "Clients",
+    "suppliers": "Suppliers",
+    "orders": "Purchase Orders",
+    "logs": "Audit Logs",
+    "statusVerified": "Handshake verified",
+    "statusConnecting": "Connecting...",
+    "configCollaboratorTitle": "సహకారి కాన్ఫిగరేషన్",
+    "roleAdmin": "అడ్మిన్",
+    "roleVendedor": "విక్రేత",
+    "roleCustom": "అనుకూలీకరించిన",
+    "peerId": "Peer ID",
+    "encryptedTunnelActive": "Encrypted Tunnel: ACTIVE (ML-KEM-768 via P2PManager)",
+    "roleLabel": "Role",
+    "syncLabel": "Sync",
+    "placeholderManual": "Or enter Peer ID manually...",
+    "connect": "Connect",
+    "linkedDevices": "Linked Devices",
+    "permissionsLink": "Permissions",
+    "promoteLink": "Promote",
+    "noDevices": "No secure devices linked.",
+    "localPeerIdLabel": "Local Peer ID",
+    "yourCurrentRole": "Your Current Role:",
+    "permissions": {
+      "canViewProducts": "View Products",
+      "canEditProducts": "Edit Products",
+      "canViewSales": "View Sales",
+      "canEditSales": "Edit Sales",
+      "canViewClients": "View Clients",
+      "canEditClients": "Edit Clients",
+      "canViewSuppliers": "View Suppliers",
+      "canEditSuppliers": "Edit Suppliers",
+      "canViewPurchaseOrders": "View Purchase Orders",
+      "canEditPurchaseOrders": "Edit Purchase Orders",
+      "canViewReports": "View Reports",
+      "canViewArqueo": "View Cash Count",
+      "canViewDashboard": "View Dashboard"
+    },
+    "topBar": {
+      "connectedNodes": "Connected Devices",
+      "status": "Status",
+      "synced": "Synced",
+      "syncing": "Syncing...",
+      "disconnected": "Disconnected",
+      "conflictsFound": "{{count}} product conflicts",
+      "resolve": "Resolve",
+      "autoMerge": "Auto-Merge",
+      "copyId": "Copy ID",
+      "copied": "Copied!",
+      "localNode": "Local Node"
+    },
+    "conflictResolver": {
+      "title": "Resolve Product Conflicts",
+      "warning": "The following products have the same SKU or name but different details. Choose which product's details to keep. Quantities will be combined.",
+      "keepThis": "Keep this product's details",
+      "mergeBtn": "Merge Group",
+      "autoMergeAll": "Auto-Merge All",
+      "noConflicts": "No product conflicts found.",
+      "groupLabel": "Conflict on {{type}}: {{key}}",
+      "quantityMerged": "Combined Quantity: {{qty}}",
+      "price": "Price: {{val}}",
+      "cost": "Cost: {{val}}",
+      "updatedAt": "Updated: {{val}}"
+    }
   }
 }

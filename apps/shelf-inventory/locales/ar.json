@@ -101,7 +101,9 @@
       "newVariantGroup": "Create new variant group",
       "variantSiblings": "Products in the same group:",
       "noSiblings": "No other products in this group"
-    }
+    },
+    "batchProcessing": "جاري معالجة الصور...",
+    "batchCompiling": "جاري ضغط وتحضير الدفعة:"
   },
   "sales": {
     "title": "Sales Records",
@@ -218,6 +220,10 @@
         "CLP": "CLP - Chilean Peso",
         "COP": "COP - Colombian Peso",
         "MXN": "MXN - Mexican Peso"
+      },
+      "formats": {
+        "en-US": "1,234.56 (Dot decimal)",
+        "de-DE": "1.234,56 (Comma decimal)"
       }
     },
     "data": {
@@ -421,5 +427,90 @@
     "message": "A new version of Shelf. is available. Reload the app to get the latest features and improvements.",
     "reload": "Update now",
     "later": "Later"
+  },
+  "p2pSync": {
+    "infoTitle": "معلومات المزامنة P2P الآمنة",
+    "infoDistributedDb": "قاعدة البيانات الموزعة: تتم مزامنة البيانات مباشرة بين الأقران دون خادم مركزي.",
+    "infoPermissions": "نظام الأذونات: يتحكم المسؤولون في الوصول.",
+    "infoSync": "مزامنة البيانات: تتزامن التغييرات في الوقت الفعلي.",
+    "infoConfig": "تكوين العقدة: قم بتكوين دور العقدة الخاصة بك.",
+    "infoRoles": "تفويض المستخدم: يمكن للمسؤولين تفويض الحقوق.",
+    "infoProtection": "حماية البيانات: البيانات مشفرة (ما بعد الكم).",
+    "configTitle": "تكوين P2P",
+    "qrTitle": "مسح QR للاتصال",
+    "qrInstructions": "امسح رمز QR هذا من جهاز آخر للاتصال.",
+    "close": "إغلاق",
+    "confirmTitle": "تأكيد اتصال P2P",
+    "confirmWarning": "أنت على وشك إنشاء اتصال P2P آمن. سيؤدي هذا إلى مزامنة قاعدة البيانات المحلية الخاصة بك مع الجهاز المستهدف.",
+    "confirmStatsTitle": "البيانات المراد مزامنتها",
+    "confirmSize": "الحجم التقديري",
+    "confirmProceed": "مزامنة واتصال",
+    "myQrTitle": "رمز QR الخاص بي",
+    "scanQrTitle": "امسح QR للاتصال",
+    "products": "المنتجات",
+    "sales": "المبيعات",
+    "clients": "العملاء",
+    "suppliers": "الموردين",
+    "orders": "أوامر الشراء",
+    "logs": "سجلات التدقيق",
+    "statusVerified": "تم التحقق من الاتصال",
+    "statusConnecting": "جاري الاتصال...",
+    "configCollaboratorTitle": "إعدادات العميل/الزميل",
+    "roleAdmin": "مسؤول",
+    "roleVendedor": "بائع",
+    "roleCustom": "مخصص",
+    "peerId": "معرّف النظير",
+    "encryptedTunnelActive": "نفق مشفر: نشط (ML-KEM-768 عبر P2PManager)",
+    "roleLabel": "الدور",
+    "syncLabel": "مزامنة",
+    "placeholderManual": "أو أدخل معرّف النظير يدويًا...",
+    "connect": "اتصال",
+    "linkedDevices": "الأجهزة المرتبطة",
+    "permissionsLink": "الأذونات",
+    "promoteLink": "ترقية",
+    "noDevices": "لا توجد أجهزة آمنة مرتبطة.",
+    "localPeerIdLabel": "معرّف النظير المحلي",
+    "yourCurrentRole": "دورك الحالي:",
+    "permissions": {
+      "canViewProducts": "عرض المنتجات",
+      "canEditProducts": "تعديل المنتجات",
+      "canViewSales": "عرض المبيعات",
+      "canEditSales": "تعديل المبيعات",
+      "canViewClients": "عرض العملاء",
+      "canEditClients": "تعديل العملاء",
+      "canViewSuppliers": "عرض الموردين",
+      "canEditSuppliers": "تعديل الموردين",
+      "canViewPurchaseOrders": "عرض طلبات الشراء",
+      "canEditPurchaseOrders": "تعديل طلبات الشراء",
+      "canViewReports": "عرض التقارير",
+      "canViewArqueo": "عرض الجرد",
+      "canViewDashboard": "عرض لوحة القيادة"
+    },
+    "topBar": {
+      "connectedNodes": "Connected Devices",
+      "status": "Status",
+      "synced": "Synced",
+      "syncing": "Syncing...",
+      "disconnected": "Disconnected",
+      "conflictsFound": "{{count}} product conflicts",
+      "resolve": "Resolve",
+      "autoMerge": "Auto-Merge",
+      "copyId": "Copy ID",
+      "copied": "Copied!",
+      "localNode": "Local Node"
+    },
+    "conflictResolver": {
+      "title": "Resolve Product Conflicts",
+      "warning": "The following products have the same SKU or name but different details. Choose which product's details to keep. Quantities will be combined.",
+      "keepThis": "Keep this product's details",
+      "mergeBtn": "Merge Group",
+      "autoMergeAll": "Auto-Merge All",
+      "noConflicts": "No product conflicts found.",
+      "groupLabel": "Conflict on {{type}}: {{key}}",
+      "quantityMerged": "Combined Quantity: {{qty}}",
+      "price": "Price: {{val}}",
+      "cost": "Cost: {{val}}",
+      "updatedAt": "Updated: {{val}}"
+    }
   }
 }

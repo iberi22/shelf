@@ -19,7 +19,7 @@ export function InfiniteTable<T>({
   itemContent,
   emptyContent,
   circular = true,
-  height = 'calc(100vh - 250px)'
+  height = 'calc(100vh - 250px)',
 }: InfiniteTableProps<T>) {
   if (data.length === 0) {
     return (
@@ -34,24 +34,42 @@ export function InfiniteTable<T>({
   const initialTopMostItemIndex = circular ? START_INDEX - (START_INDEX % data.length) : 0;
 
   return (
-    <div style={{ height, width: '100%' }} className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden">
+    <div
+      style={{ height, width: '100%' }}
+      className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden no-scrollbar"
+    >
       <TableVirtuoso
         totalCount={totalCount}
         initialTopMostItemIndex={initialTopMostItemIndex}
         increaseViewportBy={800} // Carga más elementos pre-emptivemente
         components={{
-          Table: (props) => <table {...props} className="w-full text-left" style={{ ...props.style, borderCollapse: 'collapse' }} />,
+          Table: (props) => (
+            <table {...props} className="w-full text-left" style={{ ...props.style, borderCollapse: 'collapse' }} />
+          ),
           // Aplicamos color de fondo a thead para que no sea transparente al hacer scroll
-          TableHead: React.forwardRef((props, ref) => <thead {...props} ref={ref as React.Ref<HTMLTableSectionElement>} className="bg-[#1e1e1e] border-b border-[#F5F5DC]/20 z-10 sticky top-0" />),
-          TableRow: (props) => <tr {...props} className="border-t border-[#F5F5DC]/20 hover:bg-[#F5F5DC]/5 transition-colors duration-200 text-xs md:text-sm bg-[#1a1a1a]" />,
-          TableBody: React.forwardRef((props, ref) => <tbody {...props} ref={ref as React.Ref<HTMLTableSectionElement>} />),
+          TableHead: React.forwardRef((props, ref) => (
+            <thead
+              {...props}
+              ref={ref as React.Ref<HTMLTableSectionElement>}
+              className="bg-[#1e1e1e] border-b border-[#F5F5DC]/20 z-10 sticky top-0"
+            />
+          )),
+          TableRow: (props) => (
+            <tr
+              {...props}
+              className="border-t border-[#F5F5DC]/20 hover:bg-[#F5F5DC]/5 transition-colors duration-200 text-xs md:text-sm bg-[#1a1a1a]"
+            />
+          ),
+          TableBody: React.forwardRef((props, ref) => (
+            <tbody {...props} ref={ref as React.Ref<HTMLTableSectionElement>} />
+          )),
         }}
         fixedHeaderContent={fixedHeaderContent}
         itemContent={(index) => {
           // Circular logic: Ensure positive mod result even if index is negative
           const safeIndex = ((index % data.length) + data.length) % data.length;
           const item = data[safeIndex];
-          return itemContent(index, item);
+          return itemContent(safeIndex, item);
         }}
       />
     </div>

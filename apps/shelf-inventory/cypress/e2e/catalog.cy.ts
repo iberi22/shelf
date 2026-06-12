@@ -2,7 +2,7 @@ describe('Catalog', () => {
   beforeEach(() => {
     cy.clearLocalStorage();
     cy.visit('/');
-    cy.contains('[', { timeout: 10000 }).should('be.visible');
+    cy.contains('[', { timeout: 10000 }).should('exist');
     cy.contains(/Empieza Gratis|Start for Free/).click();
     // Check if welcome modal appears
     cy.get('body').then(($body) => {

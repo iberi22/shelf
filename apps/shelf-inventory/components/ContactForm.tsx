@@ -1,7 +1,7 @@
+import type { Client, Supplier } from 'p2p-mesh-core';
 import type React from 'react';
 import { useState } from 'react';
 import { useI18n } from '../context/I18nContext';
-import type { Client, Supplier } from 'p2p-mesh-core';
 
 interface ContactFormProps {
   contact: Client | Supplier | null;

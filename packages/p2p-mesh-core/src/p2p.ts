@@ -45,6 +45,8 @@ class P2PManager {
   public localPeerId: string | null = null;
   public role: P2PRole = 'collaborator';
   private peers: PeerInfo[] = [];
+  private lastMessageTime = new Map<string, number>();
+  private gcInterval: any;
 
   // PQC Keypairs
   private kemKeyPair = generateKEMKeyPair();
@@ -87,6 +89,11 @@ class P2PManager {
           payload: { update: toHex(update) },
         });
       });
+
+      // Start GC loop
+      this.gcInterval = setInterval(() => {
+        this.runGarbageCollection();
+      }, 60000);
     });
 
     this.peer.on('connection', (conn) => {
@@ -113,16 +120,19 @@ class P2PManager {
       // Broadcast updated peer list to the mesh
       this.broadcastPeerList();
 
-      // Start PQC Handshake
-      conn.send({
-        type: 'PQC_HANDSHAKE',
-        payload: {
-          kemPublicKey: toHex(this.kemKeyPair.publicKey),
-          dsaPublicKey: toHex(this.dsaKeyPair.publicKey),
-        },
-      });
+      // Start PQC Handshake deterministically to avoid both sides sending it
+      if (this.localPeerId && this.localPeerId > conn.peer) {
+        conn.send({
+          type: 'PQC_HANDSHAKE',
+          payload: {
+            kemPublicKey: toHex(this.kemKeyPair.publicKey),
+            dsaPublicKey: toHex(this.dsaKeyPair.publicKey),
+          },
+        });
+      }
 
       conn.on('data', (data) => {
+        this.lastMessageTime.set(conn.peer, Date.now());
         const message = data as SyncMessage;
 
         // Handle Peer List Updates (Mesh Discovery)
@@ -140,6 +150,19 @@ class P2PManager {
         if (message.type === 'PQC_HANDSHAKE') {
           const { ciphertext, sharedSecret } = encapsulate(fromHex(message.payload.kemPublicKey));
           this.sharedSecrets.set(conn.peer, sharedSecret);
+          this.setupEncryption(conn.peer, sharedSecret).then(() => {
+            // Update status in linkedNodes map
+            dbSync.updateLinkedNode(conn.peer, {
+              status: 'verified',
+              role: 'collaborator',
+              isMaster: false,
+              lastSeen: new Date().toISOString(),
+            });
+            // Update local peer list
+            this.updatePeerList(conn.peer, 'collaborator');
+            this.notifyConnectionChange();
+          });
+
           conn.send({
             type: 'PQC_KEM_REPLY',
             payload: { ciphertext: toHex(ciphertext) },
@@ -151,8 +174,17 @@ class P2PManager {
         if (message.type === 'PQC_KEM_REPLY') {
           const sharedSecret = decapsulate(fromHex(message.payload.ciphertext), this.kemKeyPair.secretKey);
           this.sharedSecrets.set(conn.peer, sharedSecret);
-          this.setupEncryption(conn.peer, sharedSecret);
-          console.log(`PQC Shared secret recovered from ${conn.peer}`);
+          this.setupEncryption(conn.peer, sharedSecret).then(() => {
+            console.log(`PQC Shared secret recovered from ${conn.peer}`);
+            
+            dbSync.updateLinkedNode(conn.peer, {
+              status: 'verified',
+              role: 'collaborator',
+              lastSeen: new Date().toISOString(),
+            });
+            this.updatePeerList(conn.peer, 'collaborator');
+            this.notifyConnectionChange();
+          });
           return;
         }
 
@@ -197,8 +229,15 @@ class P2PManager {
       conn.on('close', () => {
         this.connections.delete(conn.peer);
         this.sharedSecrets.delete(conn.peer);
+        this.lastMessageTime.delete(conn.peer);
         this.peers = this.peers.filter((p) => p.id !== conn.peer);
         this.notifyConnectionChange();
+        
+        // Mark offline in DB without deleting config
+        dbSync.updateLinkedNode(conn.peer, {
+          status: 'offline',
+          lastSeen: new Date().toISOString()
+        });
       });
     });
   }
@@ -207,6 +246,26 @@ class P2PManager {
     if (!this.peer || this.connections.has(peerId)) return;
     const conn = this.peer.connect(peerId);
     this.handleConnection(conn);
+  }
+
+  private runGarbageCollection() {
+    const now = Date.now();
+    for (const [peerId, conn] of this.connections.entries()) {
+      if (!conn.open) {
+        conn.close(); // Triggers the 'close' event handler which cleans up
+        continue;
+      }
+      const lastSeen = this.lastMessageTime.get(peerId) || now;
+      if (now - lastSeen > 120000) { // 2 minutes timeout
+        console.warn(`[GC] Peer ${peerId} inactive for > 2m. Closing connection.`);
+        conn.close();
+      }
+    }
+  }
+
+  public isPeerConnected(peerId: string): boolean {
+    const conn = this.connections.get(peerId);
+    return conn ? conn.open : false;
   }
 
   public broadcast(message: SyncMessage) {
@@ -238,8 +297,9 @@ class P2PManager {
     return ['STATE_UPDATE', 'YJS_UPDATE', 'RECOVERY_APPROVED'].includes(message.type);
   }
 
-  private async setupEncryption(peerId: string, secret: Uint8Array) {
-    const key = await deriveKey(toHex(secret));
+  private async setupEncryption(peerId: string, sharedSecret: Uint8Array) {
+    const { importPQCSharedSecret } = await import('./crypto');
+    const key = await importPQCSharedSecret(toHex(sharedSecret));
     this.encryptionKeys.set(peerId, key);
   }
 

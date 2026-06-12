@@ -1,12 +1,12 @@
+import type { PurchaseOrder, PurchaseOrderItem } from 'p2p-mesh-core';
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
 import { useSortableTable } from '../hooks/useSortableTable';
-import type { PurchaseOrder, PurchaseOrderItem } from 'p2p-mesh-core';
-import Modal from './Modal';
 import { InfiniteTable } from './InfiniteTable';
+import Modal from './Modal';
 
 const PurchaseOrders: React.FC = () => {
   const { state, dispatch } = useAppContext();

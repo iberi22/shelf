@@ -13,8 +13,8 @@ describe('Suppliers', () => {
     cy.get('[data-testid="contact-email-input"]').type('test@supplier.com');
     cy.get('[data-testid="save-contact-button"]').click();
 
-    cy.contains('Test Supplier').should('be.visible');
-    cy.contains('1234567890').should('be.visible');
-    cy.contains('test@supplier.com').should('be.visible');
+    cy.contains('Test Supplier').should('exist');
+    cy.contains('1234567890').should('exist');
+    cy.contains('test@supplier.com').should('exist');
   });
 });

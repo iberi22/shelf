@@ -21,7 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, 
   const drawerRef = useRef<HTMLDivElement>(null);
   const { state } = useAppContext();
 
-  const filteredNavItems = NAV_ITEMS.filter(item => {
+  const filteredNavItems = NAV_ITEMS.filter((item) => {
     const p = state.permissions;
     if (!p || state.role === 'admin') return true;
     if (item.nameKey === 'nav.summary' && p.canViewDashboard === false) return false;
@@ -212,8 +212,8 @@ export const MobileBottomNav: React.FC<{ activeComponent: string; setActiveCompo
 }) => {
   const { t } = useI18n();
   const { state } = useAppContext();
-  
-  const filteredNavItems = NAV_ITEMS.filter(item => {
+
+  const filteredNavItems = NAV_ITEMS.filter((item) => {
     const p = state.permissions;
     if (!p || state.role === 'admin') return true;
     if (item.nameKey === 'nav.summary' && p.canViewDashboard === false) return false;

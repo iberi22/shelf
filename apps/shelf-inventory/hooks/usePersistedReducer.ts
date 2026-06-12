@@ -1,5 +1,5 @@
-import { type Dispatch, useEffect, useReducer, useState } from 'react';
 import { decryptData, encryptData, getSessionKey } from 'p2p-mesh-core';
+import { type Dispatch, useEffect, useReducer, useState } from 'react';
 
 // Tiny IndexedDB wrapper for unlimited storage
 const getDB = (): Promise<IDBDatabase> => {
@@ -56,7 +56,7 @@ function usePersistedReducer<T, A extends { type: string; payload?: any }>(
       try {
         // Try IDB first
         let stored = await idbGet(localStorageKey);
-        
+
         // Fallback to localStorage for migration
         if (!stored) {
           stored = window.localStorage.getItem(localStorageKey);
@@ -102,6 +102,11 @@ function usePersistedReducer<T, A extends { type: string; payload?: any }>(
     };
 
     saveState();
+    
+    // Expose for E2E tests
+    if (typeof window !== 'undefined') {
+      (window as any)._shelfStateForTest = state;
+    }
   }, [state, isLoaded, localStorageKey]);
 
   return [state, dispatch, isLoaded];

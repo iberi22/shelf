@@ -9,7 +9,9 @@ export interface BaseEntity {
   id: string;
   isActive: boolean;
   updatedBy: string; // Peer ID
+  updatedByRole?: P2PRole; // Role of the peer that updated
   updatedAt: string; // ISO String
+  signature?: string; // Cryptographic signature of the entity state
 }
 
 export interface Product extends BaseEntity {
@@ -111,16 +113,19 @@ export interface PeerInfo {
   lastSeen: string;
   isMaster?: boolean;
   permissions?: PeerPermissions;
+  status?: 'connected' | 'verified' | 'offline';
 }
 
 export interface AuditEntry {
   id: string;
   timestamp: string;
   peerId: string;
+  peerRole?: P2PRole; // Role of the peer that performed the action
   action: string;
   entityId?: string;
   entityType?: 'product' | 'sale' | 'client' | 'supplier' | 'purchaseOrder';
   details?: any;
+  signature?: string; // Cryptographic signature of the log entry
 }
 
 export interface StatCardData {
@@ -144,6 +149,7 @@ export interface AppState {
   permissions?: PeerPermissions;
   arqueoSessions: ArqueoSession[];
   ocrResults: InvoiceOCRResult[];
+  isExpelled?: boolean;
 }
 
 export type ImportStrategy = 'skip' | 'update';

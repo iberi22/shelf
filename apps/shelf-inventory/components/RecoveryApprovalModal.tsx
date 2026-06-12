@@ -1,6 +1,6 @@
+import { p2pManager } from 'p2p-mesh-core';
 import { useState } from 'react';
 import { localAuthManager } from '../lib/localAuth';
-import { p2pManager } from 'p2p-mesh-core';
 
 interface RecoveryRequest {
   requestId: string;

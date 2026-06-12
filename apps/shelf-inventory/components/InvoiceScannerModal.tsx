@@ -1,7 +1,7 @@
 import { Html5Qrcode } from 'html5-qrcode';
+import type { ExtractedInvoiceData, InvoiceLineItem } from 'p2p-mesh-core';
 import { useEffect, useRef, useState } from 'react';
 import { createWorker } from 'tesseract.js';
-import type { ExtractedInvoiceData, InvoiceLineItem } from 'p2p-mesh-core';
 import Modal from './Modal';
 
 interface InvoiceScannerModalProps {

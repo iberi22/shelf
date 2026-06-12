@@ -1,8 +1,7 @@
 import { Html5QrcodeScanner } from 'html5-qrcode';
+import { decryptDataLegacy as decryptData, generateUUID, p2pManager } from 'p2p-mesh-core';
 import { useEffect, useRef, useState } from 'react';
-import { decryptDataLegacy as decryptData, generateUUID } from 'p2p-mesh-core';
 import { localAuthManager } from '../lib/localAuth';
-import { p2pManager } from 'p2p-mesh-core';
 
 interface P2PRecoveryModalProps {
   onClose: () => void;

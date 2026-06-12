@@ -1,0 +1,445 @@
+{
+  "metadata": {
+    "protocol_version": "3.6.0",
+    "project": "shelf",
+    "project_display": "Shelf Inventory Management",
+    "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
+    "created": "2026-06-11",
+    "updated": "2026-06-11",
+    "version": "1.2.0",
+    "sdlc_phase": "production",
+    "total_features": 19,
+    "features_implemented": 19,
+    "implementation_percentage": 100,
+    "stack": {
+      "monorepo": "pnpm + Turborepo",
+      "frontend": "React 19 + Vite 8",
+      "language": "TypeScript 6",
+      "styling": "Tailwind CSS 4 + PostCSS",
+      "p2p": "PeerJS (WebRTC) + Yjs (CRDT)",
+      "crypto": "@noble/post-quantum (ML-KEM-768, ML-DSA-65)",
+      "auth": "Firebase Auth",
+      "payments": "Stripe",
+      "deploy": "Vercel",
+      "testing": "Cypress + Biome + Husky"
+    },
+    "categories": {
+      "FUN": {"name": "Funcionalidades Core", "count": 14, "description": "Funcionalidades core del sistema de inventario SaaS"},
+      "PQC": {"name": "Post-Quantum Cryptography", "count": 1, "description": "Criptografía post-cuántica (ML-KEM-768, ML-DSA-65)"},
+      "P2P": {"name": "P2P Mesh Sync", "count": 1, "description": "Sincronización P2P descentralizada vía WebRTC"},
+      "CRDT": {"name": "CRDT Conflict Resolution", "count": 1, "description": "Resolución de conflictos vía CRDT (Yjs)"},
+      "QA": {"name": "Quality Assurance", "count": 1, "description": "Infraestructura de testing y calidad"},
+      "PWA": {"name": "PWA & Offline", "count": 1, "description": "Progressive Web App con soporte offline"}
+    }
+  },
+  "features": [
+    {
+      "id": "SRC-FUN-001",
+      "name": "Inventory Management",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "CRUD completo de productos con nombre, SKU, cantidad, precio, costo e imágenes",
+      "user_story": "Como dueño de negocio, quiero gestionar mi inventario digitalmente para saber exactamente qué tengo en stock",
+      "actor": "Dueño de Negocio",
+      "dependencies": [],
+      "technologies": ["React", "localStorage", "Firestore"],
+      "acceptance_criteria": [
+        "Crear producto con nombre, SKU, cantidad, precio, costo, imagen",
+        "Editar producto existente",
+        "Eliminar producto",
+        "Listar productos con búsqueda y filtros",
+        "Cantidad se actualiza automáticamente al vender"
+      ]
+    },
+    {
+      "id": "SRC-FUN-002",
+      "name": "Sales Tracking",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Registro de ventas con decremento automático de stock",
+      "user_story": "Como vendedor, quiero registrar ventas para que el stock se actualice automáticamente",
+      "actor": "Vendedor / Cajero",
+      "dependencies": ["SRC-FUN-001"],
+      "technologies": ["React", "localStorage", "Context API"],
+      "acceptance_criteria": [
+        "Registrar venta seleccionando productos del inventario",
+        "Decremento automático de stock al confirmar venta",
+        "Historial de ventas con fecha, productos y total",
+        "Cálculo automático de revenue y profit por venta"
+      ]
+    },
+    {
+      "id": "SRC-FUN-003",
+      "name": "Dashboard",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Panel principal con métricas clave del negocio en tiempo real",
+      "user_story": "Como dueño, quiero ver un dashboard con mis métricas clave de un vistazo",
+      "actor": "Dueño de Negocio",
+      "dependencies": ["SRC-FUN-001", "SRC-FUN-002"],
+      "technologies": ["React", "chart.js", "react-chartjs-2"],
+      "acceptance_criteria": [
+        "Tarjetas con Revenue, Profit, Ventas totales, Productos totales",
+        "Dashboard personalizable (elegir qué stats mostrar)",
+        "Gráficos de ventas en el tiempo (chart.js)",
+        "Top productos más vendidos"
+      ]
+    },
+    {
+      "id": "SRC-FUN-004",
+      "name": "Contact Management",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Gestión unificada de clientes y proveedores",
+      "user_story": "Como usuario, quiero gestionar clientes y proveedores desde un mismo lugar",
+      "actor": "Vendedor / Cajero",
+      "dependencies": [],
+      "technologies": ["React", "localStorage", "Firestore"],
+      "acceptance_criteria": [
+        "CRUD de clientes (nombre, teléfono, email)",
+        "CRUD de proveedores (nombre, teléfono, email)",
+        "Componente genérico ContactManagementPage (sin duplicación)",
+        "Refactorizado: ahorro de 300+ líneas de código duplicado"
+      ]
+    },
+    {
+      "id": "SRC-FUN-005",
+      "name": "Purchase Orders",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Órdenes de compra a proveedores con actualización automática de stock al recibirlas",
+      "user_story": "Como dueño, quiero crear órdenes de compra a proveedores y que el stock se actualice al recibirlas",
+      "actor": "Dueño de Negocio",
+      "dependencies": ["SRC-FUN-001", "SRC-FUN-004"],
+      "technologies": ["React", "localStorage", "Context API"],
+      "acceptance_criteria": [
+        "Crear orden de compra seleccionando proveedor y productos",
+        "Marcar orden como recibida → stock se incrementa",
+        "Listar órdenes activas e históricas",
+        "Estado de orden: pendiente, recibida, cancelada"
+      ]
+    },
+    {
+      "id": "SRC-FUN-006",
+      "name": "Barcode/QR Scanner",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Escaneo de códigos de barras y QR para entrada rápida de SKU usando cámara del dispositivo",
+      "user_story": "Como usuario de bodega, quiero escanear códigos de barras para no escribir SKUs manualmente",
+      "actor": "Vendedor / Cajero",
+      "dependencies": ["SRC-FUN-001"],
+      "technologies": ["html5-qrcode", "React", "cámara Web"],
+      "acceptance_criteria": [
+        "Escaneo usando cámara del dispositivo",
+        "Parseo automático de código de barras a campo SKU",
+        "Soporte para QR y códigos de barras estándar (EAN, UPC, Code128)",
+        "Feedback visual de escaneo exitoso"
+      ]
+    },
+    {
+      "id": "SRC-FUN-007",
+      "name": "AI Assistant",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P2",
+      "category": "FUN",
+      "description": "Asistente IA para análisis de inventario y preguntas en lenguaje natural (gated para usuarios Pro)",
+      "user_story": "Como usuario Pro, quiero preguntarle a un AI sobre mi inventario en lenguaje natural",
+      "actor": "Usuario Pro",
+      "dependencies": ["SRC-FUN-008", "SRC-FUN-001"],
+      "technologies": ["@google/genai", "Firebase Cloud Functions", "Gemini API"],
+      "acceptance_criteria": [
+        "Chat integrado en reports page",
+        "Gemini API vía Firebase Cloud Function proxy",
+        "Gated para usuarios Pro",
+        "Preguntas sobre datos de inventario, ventas, tendencias"
+      ]
+    },
+    {
+      "id": "SRC-FUN-008",
+      "name": "Authentication & Cloud Sync",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Autenticación Firebase y sincronización cloud para usuarios Pro",
+      "user_story": "Como usuario, quiero crear una cuenta para sincronizar mis datos en la nube",
+      "actor": "Usuario Pro",
+      "dependencies": [],
+      "technologies": ["Firebase Auth", "Firestore", "localStorage"],
+      "acceptance_criteria": [
+        "Registro/login con email y contraseña (Firebase Auth)",
+        "Sync de estado local (localStorage) a Firestore",
+        "Restauración de datos al iniciar sesión en otro dispositivo",
+        "Segregación de datos por usuario"
+      ]
+    },
+    {
+      "id": "SRC-FUN-009",
+      "name": "Monetization (Ads + Subscriptions)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Sistema de monetización con anuncios (DesktopAdColumn, MobileAdBars) y planes de suscripción (Basic/Pro/Pyme) vía Stripe",
+      "user_story": "Como negocio, quiero que la app genere ingresos vía anuncios y suscripciones Pro",
+      "actor": "Usuario Free / Pro",
+      "dependencies": ["SRC-FUN-008"],
+      "technologies": ["Stripe", "Firebase", "AdSense", "React"],
+      "acceptance_criteria": [
+        "Anuncios para usuarios free (DesktopAdColumn, MobileAdBars)",
+        "Modal de suscripción con planes Basic/Pro/Pyme",
+        "Stripe integrado con webhooks en producción",
+        "Anuncios ocultos para usuarios Pro",
+        "AdSense IDs via environment variables"
+      ]
+    },
+    {
+      "id": "SRC-FUN-010",
+      "name": "Multi-language Support",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Soporte multi-idioma (Inglés, Español, Portugués) con persistencia de preferencia",
+      "user_story": "Como usuario, quiero usar la app en mi idioma",
+      "actor": "Usuario Free",
+      "dependencies": [],
+      "technologies": ["React", "localStorage (i18n)", "JSON locale files"],
+      "acceptance_criteria": [
+        "Toggle EN/ES/PT en settings",
+        "Traducción completa de UI",
+        "Persistencia de preferencia de idioma",
+        "Sistema de traducción vía archivos de locales"
+      ]
+    },
+    {
+      "id": "SRC-FUN-011",
+      "name": "Settings & Data Management",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Configuraciones de usuario (moneda, umbral stock bajo) y gestión de datos (backup/restore JSON, reset)",
+      "user_story": "Como usuario, quiero configurar la app y gestionar mis datos",
+      "actor": "Usuario Free",
+      "dependencies": [],
+      "technologies": ["React", "localStorage", "File API (JSON)"],
+      "acceptance_criteria": [
+        "Respaldo y restauración JSON",
+        "Reset de datos con confirmación",
+        "Selección de moneda y formato numérico",
+        "Configuración de umbral de stock bajo",
+        "Persistencia de todas las configuraciones"
+      ]
+    },
+    {
+      "id": "SRC-FUN-012",
+      "name": "Reports & Analytics",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Reportes avanzados con gráficos (chart.js), filtros, análisis de márgenes y valor de inventario",
+      "user_story": "Como dueño, quiero ver reportes detallados de mi negocio para tomar decisiones",
+      "actor": "Dueño de Negocio",
+      "dependencies": ["SRC-FUN-001", "SRC-FUN-002"],
+      "technologies": ["chart.js", "react-chartjs-2", "React"],
+      "acceptance_criteria": [
+        "Gráficos de ventas en el tiempo (chart.js)",
+        "Top productos más vendidos",
+        "Filtros por fecha, producto y cliente",
+        "Análisis de márgenes de ganancia",
+        "Valor total de inventario"
+      ]
+    },
+    {
+      "id": "SRC-FUN-013",
+      "name": "Multi-user Access (Pyme Plan)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P2",
+      "category": "FUN",
+      "description": "Acceso multi-usuario para plan Pyme con roles (admin, editor, viewer) e invitación por email",
+      "user_story": "Como dueño de negocio, quiero invitar a mi equipo con roles y permisos específicos",
+      "actor": "Dueño de Negocio",
+      "dependencies": ["SRC-FUN-008"],
+      "technologies": ["Firebase", "Firestore", "React"],
+      "acceptance_criteria": [
+        "Invitación de miembros del equipo",
+        "Roles con permisos específicos (admin, editor, viewer)",
+        "Separación de datos por usuario dentro de la misma organización",
+        "UI de gestión de equipo en settings"
+      ]
+    },
+    {
+      "id": "SRC-FUN-014",
+      "name": "Data Import (CSV)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P2",
+      "category": "FUN",
+      "description": "Importación de inventario desde archivos CSV con parseo automático y validación",
+      "user_story": "Como usuario con inventario existente, quiero importarlo desde un archivo CSV",
+      "actor": "Usuario de Bodega",
+      "dependencies": ["SRC-FUN-001"],
+      "technologies": ["React", "File API", "CSV parser"],
+      "acceptance_criteria": [
+        "Upload de archivo CSV",
+        "Parseo y mapeo de columnas automático",
+        "Validación de datos importados",
+        "Feedback visual del proceso de importación"
+      ]
+    },
+    {
+      "id": "SRC-PQC-001",
+      "name": "Post-Quantum Cryptography",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "PQC",
+      "description": "Criptografía post-cuántica usando @noble/post-quantum (ML-KEM-768 para intercambio de llaves, ML-DSA-65 para firmas, AES-GCM para cifrado)",
+      "user_story": "Como usuario, quiero que mis datos estén protegidos incluso contra computación cuántica",
+      "actor": "Usuario Pro",
+      "dependencies": [],
+      "technologies": ["@noble/post-quantum", "ML-KEM-768", "ML-DSA-65", "AES-GCM"],
+      "acceptance_criteria": [
+        "Intercambio de llaves ML-KEM-768 (NIST estandarizado)",
+        "Firmas digitales ML-DSA-65",
+        "Cifrado en reposo AES-GCM con derivación de llave PQC",
+        "Cifrado en tránsito AES-GCM sobre WebRTC",
+        "Integración con p2p-mesh-core para handshake seguro"
+      ]
+    },
+    {
+      "id": "SRC-P2P-001",
+      "name": "P2P Mesh Network",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "P2P",
+      "description": "Red mesh P2P descentralizada vía WebRTC (PeerJS) para sincronización offline-first sin servidor central",
+      "user_story": "Como usuario, quiero que los datos se sincronicen entre mis dispositivos sin servidor central",
+      "actor": "Usuario de Bodega",
+      "dependencies": ["SRC-PQC-001"],
+      "technologies": ["PeerJS", "WebRTC", "p2p-mesh-core"],
+      "acceptance_criteria": [
+        "Descubrimiento de peers vía WebRTC",
+        "Topología mesh descentralizada (cada nodo a múltiples peers)",
+        "Admin Node designado para coordinación",
+        "Reconexión automática ante caídas",
+        "Empaquetado como p2p-mesh-core (package reutilizable)"
+      ]
+    },
+    {
+      "id": "SRC-CRDT-001",
+      "name": "CRDT Sync (Yjs)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "CRDT",
+      "description": "Sincronización CRDT usando Yjs para consistencia eventual sin servidor central",
+      "user_story": "Como usuario, quiero que los cambios se sincronicen sin conflictos entre dispositivos",
+      "actor": "Usuario de Bodega",
+      "dependencies": ["SRC-P2P-001"],
+      "technologies": ["Yjs", "y-protocols"],
+      "acceptance_criteria": [
+        "Integración Yjs para tipos de datos compartidos",
+        "Resolución automática de conflictos (CRDT)",
+        "Consistencia eventual sin servidor central",
+        "Sincronización eficiente (solo cambios delta, no datos completos)",
+        "Funciona 100% offline → sync cuando hay conexión"
+      ]
+    },
+    {
+      "id": "SRC-QA-001",
+      "name": "Testing Infrastructure",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "QA",
+      "description": "Infraestructura de testing E2E con Cypress, linting con Biome, pre-commit hooks con Husky + lint-staged",
+      "user_story": "Como desarrollador, quiero tests automatizados para asegurar calidad del código",
+      "actor": "Desarrollador",
+      "dependencies": [],
+      "technologies": ["Cypress", "Biome", "Husky", "lint-staged", "GitHub Actions"],
+      "acceptance_criteria": [
+        "data-testid en todos los elementos interactivos",
+        "Tests E2E con Cypress para flujos críticos",
+        "Linting con Biome configurado",
+        "Husky + lint-staged para pre-commit hooks",
+        "CI/CD con GitHub Actions (.github/workflows/ci.yml)"
+      ]
+    },
+    {
+      "id": "SRC-PWA-001",
+      "name": "PWA & Offline Support",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "PWA",
+      "description": "Progressive Web App con soporte offline completo (Service Worker, localStorage, IndexedDB, vite-plugin-pwa)",
+      "user_story": "Como usuario, quiero instalar la app y usarla sin internet",
+      "actor": "Usuario Free",
+      "dependencies": [],
+      "technologies": ["vite-plugin-pwa", "workbox-window", "Service Worker", "IndexedDB"],
+      "acceptance_criteria": [
+        "Instalable como PWA",
+        "Funciona 100% sin conexión a internet",
+        "Service worker configurado para caching offline",
+        "Persistencia en localStorage + IndexedDB",
+        "Actualización automática cuando hay nueva versión"
+      ]
+    }
+  ],
+  "future_roadmap": [
+    {
+      "id": "ROADMAP-001",
+      "name": "Error Monitoring (Sentry)",
+      "priority": "P1",
+      "description": "Integración de Sentry para monitoreo de errores en producción"
+    },
+    {
+      "id": "ROADMAP-002",
+      "name": "User Analytics (GA4)",
+      "priority": "P2",
+      "description": "Google Analytics 4 para análisis de uso y comportamiento"
+    },
+    {
+      "id": "ROADMAP-003",
+      "name": "Full Cloud Sync (Pro)",
+      "priority": "P1",
+      "description": "Sincronización cloud completa para usuarios Pro con Firestore"
+    },
+    {
+      "id": "ROADMAP-004",
+      "name": "Multi-user Backend Logic",
+      "priority": "P2",
+      "description": "Lógica backend completa para multi-usuario (Pyme plan)"
+    },
+    {
+      "id": "ROADMAP-005",
+      "name": "Advanced Reporting Suite",
+      "priority": "P2",
+      "description": "Suite de reportes avanzados con descarga PDF y exportación"
+    },
+    {
+      "id": "ROADMAP-006",
+      "name": "E-commerce Integrations",
+      "priority": "P3",
+      "description": "Integración con plataformas e-commerce (Shopify, WooCommerce, Mercado Libre)"
+    }
+  ]
+}

@@ -95,18 +95,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 Gobernanza de Datos y Backend Distribuido
               </h3>
               <p className="text-lg text-foreground/80 mb-4 leading-relaxed">
-                Shelf opera con una arquitectura de <strong>Backend Distribuido P2P (Peer-to-Peer)</strong>. Esto significa que no dependes de servidores centrales opacos que puedan caerse, ser hackeados o comprometer tu información. Tus datos residen localmente en tu dispositivo y se sincronizan directamente.
+                Shelf opera con una arquitectura de <strong>Backend Distribuido P2P (Peer-to-Peer)</strong>. Esto
+                significa que no dependes de servidores centrales opacos que puedan caerse, ser hackeados o comprometer
+                tu información. Tus datos residen localmente en tu dispositivo y se sincronizan directamente.
               </p>
               <p className="text-lg text-foreground/80 mb-4 leading-relaxed">
-                A través de una estricta <strong>Gobernanza de Datos</strong>, tú mantienes el control absoluto. Puedes compartir la información de forma <em>segmentada y protegida</em> con todos los miembros de la operación que necesiten interactuar con el inventario.
+                A través de una estricta <strong>Gobernanza de Datos</strong>, tú mantienes el control absoluto. Puedes
+                compartir la información de forma <em>segmentada y protegida</em> con todos los miembros de la operación
+                que necesiten interactuar con el inventario.
               </p>
               <p className="text-lg text-foreground/80 leading-relaxed">
-                Conecta de forma segura a cajeros, administradores o socios usando un identificador encriptado, otorgando permisos específicos y granulares (ej. "Solo ver ventas", "Editar productos"). Todo respaldado por criptografía Post-Cuántica avanzada.
+                Conecta de forma segura a cajeros, administradores o socios usando un identificador encriptado,
+                otorgando permisos específicos y granulares (ej. "Solo ver ventas", "Editar productos"). Todo respaldado
+                por criptografía Post-Cuántica avanzada.
               </p>
             </div>
-            <div className="hidden md:flex flex-1 justify-center text-9xl opacity-80 drop-shadow-2xl">
-              🛡️
-            </div>
+            <div className="hidden md:flex flex-1 justify-center text-9xl opacity-80 drop-shadow-2xl">🛡️</div>
           </div>
         </div>
       </section>

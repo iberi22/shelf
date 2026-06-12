@@ -1,11 +1,11 @@
 import { CreateMLCEngine } from '@mlc-ai/web-llm';
+import type { ChatMessage } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useSubscription } from '../context/SubscriptionContext';
-import type { ChatMessage } from 'p2p-mesh-core';
 
 const AIChat: React.FC = () => {
   const { t } = useI18n();

@@ -1,7 +1,7 @@
+import type { ArqueoSession, ExtractedInvoiceData, InvoiceOCRResult, Product } from 'p2p-mesh-core';
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useSubscription } from '../context/SubscriptionContext';
-import type { ArqueoSession, ExtractedInvoiceData, InvoiceOCRResult, Product } from 'p2p-mesh-core';
 import InvoiceConfirmationModal from './InvoiceConfirmationModal';
 import InvoiceScannerModal from './InvoiceScannerModal';
 

@@ -1,11 +1,11 @@
+import type { Client, Supplier } from 'p2p-mesh-core';
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import { useI18n } from '../context/I18nContext';
 import { useSortableTable } from '../hooks/useSortableTable';
-import type { Client, Supplier } from 'p2p-mesh-core';
 import ContactForm from './ContactForm';
-import Modal from './Modal';
 import { InfiniteTable } from './InfiniteTable';
+import Modal from './Modal';
 
 type Contact = Client | Supplier;
 

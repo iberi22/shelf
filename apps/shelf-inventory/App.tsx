@@ -1,3 +1,4 @@
+import { p2pManager } from 'p2p-mesh-core';
 import { useEffect, useState } from 'react';
 import AccountRecoveryModal from './components/AccountRecoveryModal';
 import LandingPage from './components/LandingPage';
@@ -17,7 +18,6 @@ import { SubscriptionProvider } from './context/SubscriptionContext';
 import { UIProvider, useUI } from './context/UIContext';
 import useErrorMonitoring from './hooks/useErrorMonitoring';
 import useLocalStorage from './hooks/useLocalStorage';
-import { p2pManager } from 'p2p-mesh-core';
 import MainApp from './MainApp';
 
 type ModalType = 'local-login' | 'local-signup' | 'recovery-seed' | 'recovery-p2p' | null;

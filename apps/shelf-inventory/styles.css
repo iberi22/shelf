@@ -180,3 +180,14 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(245, 245, 220, 0.2) var(--color-background);
 }
+
+/* Hide all scrollbars inside an element with class .no-scrollbar */
+.no-scrollbar * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.no-scrollbar *::-webkit-scrollbar {
+  display: none !important;
+}
+

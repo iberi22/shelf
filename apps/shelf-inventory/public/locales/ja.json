@@ -101,7 +101,9 @@
       "newVariantGroup": "Create new variant group",
       "variantSiblings": "Products in the same group:",
       "noSiblings": "No other products in this group"
-    }
+    },
+    "batchProcessing": "画像を処理中...",
+    "batchCompiling": "バッチを圧縮および準備中:"
   },
   "sales": {
     "title": "Sales Records",
@@ -218,6 +220,10 @@
         "CLP": "CLP - Chilean Peso",
         "COP": "COP - Colombian Peso",
         "MXN": "MXN - Mexican Peso"
+      },
+      "formats": {
+        "en-US": "1,234.56 (Dot decimal)",
+        "de-DE": "1.234,56 (Comma decimal)"
       }
     },
     "data": {
@@ -434,5 +440,90 @@
     "message": "A new version of Shelf. is available. Reload the app to get the latest features and improvements.",
     "reload": "Update now",
     "later": "Later"
+  },
+  "p2pSync": {
+    "infoTitle": "安全なP2P同期情報",
+    "infoDistributedDb": "分散データベース：中央サーバーなしでピア間で直接データを同期します。",
+    "infoPermissions": "権限：管理者がアクセスを制御します。",
+    "infoSync": "同期：変更はリアルタイムで同期されます。",
+    "infoConfig": "構成：ノードの役割を構成します。",
+    "infoRoles": "委任：管理者は他のユーザーに権限を委任できます。",
+    "infoProtection": "データ保護：データは暗号化されます（耐量子）。",
+    "configTitle": "P2P設定",
+    "qrTitle": "QRをスキャン",
+    "qrInstructions": "他のデバイスからこのQRコードをスキャンして接続します。",
+    "close": "閉じる",
+    "confirmTitle": "P2P接続の確認",
+    "confirmWarning": "安全なP2P接続を確立しようとしています。これにより、ローカルデータベースがターゲットデバイスと同期されます。",
+    "confirmStatsTitle": "同期するデータ",
+    "confirmSize": "推定サイズ",
+    "confirmProceed": "同期して接続",
+    "myQrTitle": "マイQRコード",
+    "scanQrTitle": "QRをスキャンして接続",
+    "products": "製品",
+    "sales": "売上",
+    "clients": "顧客",
+    "suppliers": "仕入先",
+    "orders": "購入注文",
+    "logs": "監査ログ",
+    "statusVerified": "検証済みのハンドシェイク",
+    "statusConnecting": "接続中...",
+    "configCollaboratorTitle": "コラボレーター設定",
+    "roleAdmin": "管理者",
+    "roleVendedor": "販売者",
+    "roleCustom": "カスタム",
+    "peerId": "ピアID",
+    "encryptedTunnelActive": "暗号化トンネル：アクティブ (P2PManager経由のML-KEM-768)",
+    "roleLabel": "役割",
+    "syncLabel": "同期",
+    "placeholderManual": "またはピアIDを手動で入力...",
+    "connect": "接続",
+    "linkedDevices": "リンクされたデバイス",
+    "permissionsLink": "権限",
+    "promoteLink": "昇格",
+    "noDevices": "安全なデバイスがリンクされていません。",
+    "localPeerIdLabel": "ローカルピアID",
+    "yourCurrentRole": "現在の役割：",
+    "permissions": {
+      "canViewProducts": "商品を表示",
+      "canEditProducts": "商品を編集",
+      "canViewSales": "売上を表示",
+      "canEditSales": "売上を編集",
+      "canViewClients": "顧客を表示",
+      "canEditClients": "顧客を編集",
+      "canViewSuppliers": "仕入先を表示",
+      "canEditSuppliers": "仕入先を編集",
+      "canViewPurchaseOrders": "注文を表示",
+      "canEditPurchaseOrders": "注文を編集",
+      "canViewReports": "レポートを表示",
+      "canViewArqueo": "点検計を表示",
+      "canViewDashboard": "ダッシュボードを表示"
+    },
+    "topBar": {
+      "connectedNodes": "Connected Devices",
+      "status": "Status",
+      "synced": "Synced",
+      "syncing": "Syncing...",
+      "disconnected": "Disconnected",
+      "conflictsFound": "{{count}} product conflicts",
+      "resolve": "Resolve",
+      "autoMerge": "Auto-Merge",
+      "copyId": "Copy ID",
+      "copied": "Copied!",
+      "localNode": "Local Node"
+    },
+    "conflictResolver": {
+      "title": "Resolve Product Conflicts",
+      "warning": "The following products have the same SKU or name but different details. Choose which product's details to keep. Quantities will be combined.",
+      "keepThis": "Keep this product's details",
+      "mergeBtn": "Merge Group",
+      "autoMergeAll": "Auto-Merge All",
+      "noConflicts": "No product conflicts found.",
+      "groupLabel": "Conflict on {{type}}: {{key}}",
+      "quantityMerged": "Combined Quantity: {{qty}}",
+      "price": "Price: {{val}}",
+      "cost": "Cost: {{val}}",
+      "updatedAt": "Updated: {{val}}"
+    }
   }
 }

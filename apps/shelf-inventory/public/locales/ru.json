@@ -101,7 +101,9 @@
       "newVariantGroup": "Create new variant group",
       "variantSiblings": "Products in the same group:",
       "noSiblings": "No other products in this group"
-    }
+    },
+    "batchProcessing": "Обработка изображений...",
+    "batchCompiling": "Сжатие и подготовка партии:"
   },
   "sales": {
     "title": "Sales Records",
@@ -218,6 +220,10 @@
         "CLP": "CLP - Chilean Peso",
         "COP": "COP - Colombian Peso",
         "MXN": "MXN - Mexican Peso"
+      },
+      "formats": {
+        "en-US": "1,234.56 (Dot decimal)",
+        "de-DE": "1.234,56 (Comma decimal)"
       }
     },
     "data": {
@@ -434,5 +440,90 @@
     "message": "A new version of Shelf. is available. Reload the app to get the latest features and improvements.",
     "reload": "Update now",
     "later": "Later"
+  },
+  "p2pSync": {
+    "infoTitle": "Информация о безопасной P2P-синхронизации",
+    "infoDistributedDb": "Распределенная база данных: данные синхронизируются напрямую без центрального сервера.",
+    "infoPermissions": "Система разрешений: администраторы контролируют доступ.",
+    "infoSync": "Синхронизация данных: изменения синхронизируются в реальном времени.",
+    "infoConfig": "Конфигурация узла: настройте роль вашего узла.",
+    "infoRoles": "Делегирование пользователей: администраторы могут делегировать права.",
+    "infoProtection": "Защита данных: данные зашифрованы (постквантовая криптография).",
+    "configTitle": "Конфигурация P2P",
+    "qrTitle": "Сканировать QR",
+    "qrInstructions": "Отсканируйте этот QR-код с другого устройства.",
+    "close": "Закрыть",
+    "confirmTitle": "Подтвердить P2P-подключение",
+    "confirmWarning": "Вы собираетесь установить безопасное P2P-подключение. Это синхронизирует вашу локальную базу данных с целевым устройством.",
+    "confirmStatsTitle": "Данные для синхронизации",
+    "confirmSize": "Оценочный размер",
+    "confirmProceed": "Синхронизировать и подключить",
+    "myQrTitle": "Мой QR-код",
+    "scanQrTitle": "Сканировать QR для подключения",
+    "products": "Продукты",
+    "sales": "Продажи",
+    "clients": "Клиенты",
+    "suppliers": "Поставщики",
+    "orders": "Заказы на закупку",
+    "logs": "Журналы аудита",
+    "statusVerified": "Рукопожатие проверено",
+    "statusConnecting": "Подключение...",
+    "configCollaboratorTitle": "Настройка сотрудника",
+    "roleAdmin": "Администратор",
+    "roleVendedor": "Продавец",
+    "roleCustom": "Свой вариант",
+    "peerId": "Идентификатор узла",
+    "encryptedTunnelActive": "Зашифрованный туннель: АКТИВЕН (ML-KEM-768 через P2PManager)",
+    "roleLabel": "Роль",
+    "syncLabel": "Синхронизация",
+    "placeholderManual": "Или введите идентификатор узла вручную...",
+    "connect": "Подключиться",
+    "linkedDevices": "Связанные устройства",
+    "permissionsLink": "Разрешения",
+    "promoteLink": "Повысить",
+    "noDevices": "Связанные безопасные устройства отсутствуют.",
+    "localPeerIdLabel": "Локальный идентификатор узла",
+    "yourCurrentRole": "Ваша текущая роль:",
+    "permissions": {
+      "canViewProducts": "Просмотр товаров",
+      "canEditProducts": "Редактирование товаров",
+      "canViewSales": "Просмотр продаж",
+      "canEditSales": "Редактирование продаж",
+      "canViewClients": "Просмотр клиентов",
+      "canEditClients": "Редактирование клиентов",
+      "canViewSuppliers": "Просмотр поставщиков",
+      "canEditSuppliers": "Редактирование поставщиков",
+      "canViewPurchaseOrders": "Просмотр заказов",
+      "canEditPurchaseOrders": "Редактирование заказов",
+      "canViewReports": "Просмотр отчетов",
+      "canViewArqueo": "Просмотр кассы",
+      "canViewDashboard": "Просмотр панели управления"
+    },
+    "topBar": {
+      "connectedNodes": "Connected Devices",
+      "status": "Status",
+      "synced": "Synced",
+      "syncing": "Syncing...",
+      "disconnected": "Disconnected",
+      "conflictsFound": "{{count}} product conflicts",
+      "resolve": "Resolve",
+      "autoMerge": "Auto-Merge",
+      "copyId": "Copy ID",
+      "copied": "Copied!",
+      "localNode": "Local Node"
+    },
+    "conflictResolver": {
+      "title": "Resolve Product Conflicts",
+      "warning": "The following products have the same SKU or name but different details. Choose which product's details to keep. Quantities will be combined.",
+      "keepThis": "Keep this product's details",
+      "mergeBtn": "Merge Group",
+      "autoMergeAll": "Auto-Merge All",
+      "noConflicts": "No product conflicts found.",
+      "groupLabel": "Conflict on {{type}}: {{key}}",
+      "quantityMerged": "Combined Quantity: {{qty}}",
+      "price": "Price: {{val}}",
+      "cost": "Cost: {{val}}",
+      "updatedAt": "Updated: {{val}}"
+    }
   }
 }

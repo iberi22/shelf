@@ -5,7 +5,8 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "format": "turbo run format"
+    "format": "turbo run format",
+    "peer-server": "pnpm dlx peer --port 9000 --path /"
   },
   "devDependencies": {
     "turbo": "^2.1.2"

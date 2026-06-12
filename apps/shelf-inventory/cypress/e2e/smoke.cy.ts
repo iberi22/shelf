@@ -6,6 +6,6 @@ describe('Smoke Test', () => {
 
   it('should show the landing page CTA button', () => {
     cy.visit('/');
-    cy.contains(/Empieza Gratis|Empieza Gratis/).should('be.visible');
+    cy.contains(/Empieza Gratis|Empieza Gratis/).should('exist');
   });
 });

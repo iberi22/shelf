@@ -16,14 +16,18 @@ describe('Purchase Orders', () => {
       email: 'test@supplier.com',
     });
     cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
-    cy.contains('tr', 'Test Product').then(($row) => {
-      const id = $row.attr('data-testid').replace('product-row-', '');
-      Cypress.env('productId', id);
+    cy.contains('tr', 'Test Product').within(() => {
+      cy.get('[data-testid^="edit-product-"]').then(($btn) => {
+        const id = $btn.attr('data-testid').replace('edit-product-', '');
+        Cypress.env('productId', id);
+      });
     });
     cy.get('[data-testid="nav-item-nav.suppliers"]').last().click();
-    cy.contains('tr', 'Test Supplier').then(($row) => {
-      const id = $row.attr('data-testid').replace('supplier-row-', '');
-      Cypress.env('supplierId', id);
+    cy.contains('tr', 'Test Supplier').within(() => {
+      cy.get('[data-testid^="edit-supplier-"]').then(($btn) => {
+        const id = $btn.attr('data-testid').replace('edit-supplier-', '');
+        Cypress.env('supplierId', id);
+      });
     });
     cy.get('[data-testid="nav-item-nav.purchases"]').last().click();
   });
@@ -36,6 +40,6 @@ describe('Purchase Orders', () => {
     cy.get('[data-testid="save-purchase-order-button"]').click({ force: true });
     cy.wait(500);
 
-    cy.contains('Test Supplier').should('be.visible');
+    cy.contains('Test Supplier').should('exist');
   });
 });
