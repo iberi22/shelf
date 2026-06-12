@@ -118,16 +118,19 @@ class P2PManager {
     this.peer.on('error', (err: any) => {
       console.error('PeerJS error:', err);
       if (err.type === 'unavailable-id') {
-        console.warn('Saved Peer ID is taken (probably lingering connection). Generating a new one...');
-        if (typeof localStorage !== 'undefined') {
-          localStorage.removeItem('shelf_local_peer_id');
-        }
-        // Destroy old peer and re-init without ID
+        console.warn('Saved Peer ID is taken (probably lingering connection). Retrying with the same ID...');
+        // Destroy old peer and re-init WITH the same ID after a short delay
         this.peer?.destroy();
         this.peer = null;
-        setTimeout(() => this.init(), 1000);
+        setTimeout(() => this.init(finalPeerId), 2000);
       }
     });
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', () => {
+        this.peer?.destroy();
+      });
+    }
   }
 
   private handleConnection(conn: DataConnection) {
