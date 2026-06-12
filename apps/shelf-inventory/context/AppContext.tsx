@@ -93,6 +93,30 @@ const enrich = (state: AppState, item: any) => ({
   ...item,
 });
 
+const getTimestamp = (item: any): number => {
+  const ts = item.updatedAt || item.timestamp || item.lastSeen || 0;
+  return ts ? new Date(ts).getTime() : 0;
+};
+
+const mergeCollections = <T extends { id: string }>(local: T[], remote: T[] | undefined): T[] => {
+  if (!remote || remote.length === 0) return local;
+  if (local.length === 0) return remote;
+
+  const map = new Map<string, T>();
+  for (const item of local) {
+    map.set(item.id, item);
+  }
+
+  for (const remoteItem of remote) {
+    const localItem = map.get(remoteItem.id);
+    if (!localItem || getTimestamp(remoteItem) > getTimestamp(localItem)) {
+      map.set(remoteItem.id, remoteItem);
+    }
+  }
+
+  return Array.from(map.values());
+};
+
 const appReducer = (state: AppState, action: Action): AppState => {
   let newState: AppState;
 
@@ -345,15 +369,23 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
     }
 
-    case 'SYNC_STATE':
-      if (action.payload.auditLogs) {
-        console.log(
-          '[DEBUG] SYNC_STATE payload.auditLogs:',
-          action.payload.auditLogs.length,
-          action.payload.auditLogs.map((l: any) => l.action),
-        );
-      }
-      return { ...state, ...action.payload };
+    case 'SYNC_STATE': {
+      const p = action.payload;
+      return {
+        ...state,
+        products: mergeCollections(state.products, p.products),
+        sales: mergeCollections(state.sales, p.sales),
+        clients: mergeCollections(state.clients, p.clients),
+        suppliers: mergeCollections(state.suppliers, p.suppliers),
+        purchaseOrders: mergeCollections(state.purchaseOrders, p.purchaseOrders),
+        auditLogs: mergeCollections(state.auditLogs, p.auditLogs),
+        arqueoSessions: mergeCollections(state.arqueoSessions, p.arqueoSessions),
+        ocrResults: mergeCollections(state.ocrResults, p.ocrResults),
+        peers: mergeCollections(state.peers, p.peers),
+        role: p.role || state.role,
+        permissions: p.permissions || state.permissions,
+      };
+    }
 
     case 'SYNC_ENTITIES': {
       const { collection, items, deletedIds } = action.payload;
@@ -485,8 +517,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, rawDispatch, isLoaded] = usePersistedReducer(appReducer, initialState, 'shelfState');
+  const isSyncInitialized = React.useRef(false);
   const stateRef = React.useRef(state);
 
+  // Keep stateRef in sync for the dispatch closure
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
@@ -550,8 +584,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Populate Yjs CRDT once initial state is loaded from IndexedDB
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && !isSyncInitialized.current) {
       dbSync.initWithState(stateRef.current);
+      isSyncInitialized.current = true;
     }
   }, [isLoaded]);
 

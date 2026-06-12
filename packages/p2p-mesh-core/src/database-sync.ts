@@ -86,9 +86,14 @@ class DatabaseSyncManager {
     const yMap = this.getMapForCollection(collectionName);
     if (!yMap) return;
 
+    const getTs = (obj: any) => {
+      const ts = obj.updatedAt || obj.timestamp || obj.lastSeen || 0;
+      return ts ? new Date(ts).getTime() : 0;
+    };
+
     this.doc.transact(() => {
       const existing = yMap.get(item.id);
-      if (!existing || JSON.stringify(existing) !== JSON.stringify(item)) {
+      if (!existing || getTs(item) > getTs(existing)) {
         yMap.set(item.id, item);
       }
     }, 'local');
@@ -121,6 +126,7 @@ class DatabaseSyncManager {
       case 'auditLogs': return this.auditLogs;
       case 'arqueoSessions': return this.arqueoSessions;
       case 'ocrResults': return this.ocrResults;
+      case 'peers': return this.linkedNodes;
       default: return null;
     }
   }
@@ -130,29 +136,26 @@ class DatabaseSyncManager {
    */
   public initWithState(state: AppState) {
     this.doc.transact(() => {
-      const cleanAndSync = <T extends { id: string }>(yMap: Y.Map<T>, array: T[] = []) => {
-        for (const key of yMap.keys()) {
-          yMap.delete(key);
-        }
+      const mergeAndSync = <T extends { id: string }>(collectionName: keyof AppState, array: T[] = []) => {
         if (array) {
           for (const item of array) {
-            yMap.set(item.id, item);
+            this.upsertEntity(collectionName, item);
           }
         }
       };
 
-      cleanAndSync(this.products, state.products);
-      cleanAndSync(this.arqueoSessions, state.arqueoSessions);
-      cleanAndSync(this.ocrResults, state.ocrResults);
-      cleanAndSync(this.sales, state.sales);
-      cleanAndSync(this.clients, state.clients);
-      cleanAndSync(this.suppliers, state.suppliers);
-      cleanAndSync(this.purchaseOrders, state.purchaseOrders);
-      cleanAndSync(this.auditLogs, state.auditLogs);
+      mergeAndSync('products', state.products);
+      mergeAndSync('arqueoSessions', state.arqueoSessions);
+      mergeAndSync('ocrResults', state.ocrResults);
+      mergeAndSync('sales', state.sales);
+      mergeAndSync('clients', state.clients);
+      mergeAndSync('suppliers', state.suppliers);
+      mergeAndSync('purchaseOrders', state.purchaseOrders);
+      mergeAndSync('auditLogs', state.auditLogs);
 
       if (state.peers && state.peers.length > 0) {
         for (const peer of state.peers) {
-          this.linkedNodes.set(peer.id, peer);
+          this.upsertEntity('peers' as any, peer); // Special case for peers/linkedNodes
         }
       }
     }, 'local');
