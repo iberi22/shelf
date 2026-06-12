@@ -81,6 +81,7 @@ class P2PManager {
 
     this.peer.on('open', (id) => {
       this.localPeerId = id;
+      dbSync.localPeerId = id; // Sync local peer ID to dbSync for permissions and role resolution
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('shelf_local_peer_id', id);
       }
@@ -91,11 +92,14 @@ class P2PManager {
       }
 
       // Initialize Yjs Sync
-      dbSync.onChange((update) => {
-        this.broadcast({
-          type: 'YJS_UPDATE',
-          payload: { update: toHex(update) },
-        });
+      dbSync.onChange((update, origin) => {
+        // Only broadcast if the update originated locally to prevent infinite loops
+        if (origin === 'local') {
+          this.broadcast({
+            type: 'YJS_UPDATE',
+            payload: { update: toHex(update) },
+          });
+        }
       });
 
       // Start GC loop
@@ -217,8 +221,7 @@ class P2PManager {
 
         // Handle Yjs Updates
         if (message.type === 'YJS_UPDATE') {
-          dbSync.applyUpdate(fromHex(message.payload.update));
-          return;
+          dbSync.applyUpdate(fromHex(message.payload.update), conn.peer);
         }
 
         if (message.type === 'PQC_HANDSHAKE_REQUEST') {
@@ -334,11 +337,11 @@ class P2PManager {
 
       // Dispatch the decrypted message
       if (message.type === 'YJS_UPDATE') {
-        dbSync.applyUpdate(fromHex(message.payload.update));
-      } else {
-        for (const cb of this.onMessageCallbacks) {
-          cb(message, fromPeerId);
-        }
+        dbSync.applyUpdate(fromHex(message.payload.update), fromPeerId);
+      }
+
+      for (const cb of this.onMessageCallbacks) {
+        cb(message, fromPeerId);
       }
     } catch (err) {
       console.error('Failed to decrypt PQC message:', err);

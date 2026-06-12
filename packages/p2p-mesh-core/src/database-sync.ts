@@ -331,8 +331,8 @@ class DatabaseSyncManager {
   /**
    * Applies an update from a remote peer.
    */
-  public applyUpdate(update: Uint8Array) {
-    Y.applyUpdate(this.doc, update);
+  public applyUpdate(update: Uint8Array, origin?: any) {
+    Y.applyUpdate(this.doc, update, origin);
   }
 
   /**
