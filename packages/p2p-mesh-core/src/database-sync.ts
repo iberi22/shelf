@@ -17,6 +17,7 @@ class DatabaseSyncManager {
   private ocrResults: Y.Map<InvoiceOCRResult>;
   private metadata: Y.Map<any>;
   private linkedNodes: Y.Map<any>;
+  private _isInitialized = false;
   public localPeerId: string | null = null;
 
   constructor() {
@@ -155,7 +156,12 @@ class DatabaseSyncManager {
           this.linkedNodes.set(peer.id, peer);
         }
       }
+      this._isInitialized = true;
     }, 'local');
+  }
+
+  public isReady(): boolean {
+    return this._isInitialized;
   }
 
   /**
@@ -331,8 +337,8 @@ class DatabaseSyncManager {
   /**
    * Applies an update from a remote peer.
    */
-  public applyUpdate(update: Uint8Array) {
-    Y.applyUpdate(this.doc, update);
+  public applyUpdate(update: Uint8Array, origin: any = 'remote') {
+    Y.applyUpdate(this.doc, update, origin);
   }
 
   /**

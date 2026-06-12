@@ -91,11 +91,13 @@ class P2PManager {
       }
 
       // Initialize Yjs Sync
-      dbSync.onChange((update) => {
-        this.broadcast({
-          type: 'YJS_UPDATE',
-          payload: { update: toHex(update) },
-        });
+      dbSync.onChange((update, origin) => {
+        if (dbSync.isReady() && origin === 'local') {
+          this.broadcast({
+            type: 'YJS_UPDATE',
+            payload: { update: toHex(update) },
+          });
+        }
       });
 
       // Start GC loop
@@ -217,7 +219,7 @@ class P2PManager {
 
         // Handle Yjs Updates
         if (message.type === 'YJS_UPDATE') {
-          dbSync.applyUpdate(fromHex(message.payload.update));
+          dbSync.applyUpdate(fromHex(message.payload.update), 'remote');
           return;
         }
 
@@ -334,7 +336,7 @@ class P2PManager {
 
       // Dispatch the decrypted message
       if (message.type === 'YJS_UPDATE') {
-        dbSync.applyUpdate(fromHex(message.payload.update));
+        dbSync.applyUpdate(fromHex(message.payload.update), 'remote');
       } else {
         for (const cb of this.onMessageCallbacks) {
           cb(message, fromPeerId);

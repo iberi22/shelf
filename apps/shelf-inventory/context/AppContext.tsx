@@ -495,12 +495,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     // Reactive incremental sync
     const unobserve = dbSync.onObserve((collection, items, deletedIds) => {
-      rawDispatch({ type: 'SYNC_ENTITIES', payload: { collection, items, deletedIds } });
+      if (dbSync.isReady()) {
+        rawDispatch({ type: 'SYNC_ENTITIES', payload: { collection, items, deletedIds } });
+      }
     });
 
     // Listen for CRDT updates from other peers (metadata & expulsion)
     dbSync.onChange((_update, origin) => {
-      if (origin !== 'local') {
+      if (dbSync.isReady() && origin !== 'local') {
         const remoteState = dbSync.getState(dbSync.localPeerId);
         // We only sync role/permissions/peers from the full state update to avoid heavy react re-renders
         rawDispatch({
