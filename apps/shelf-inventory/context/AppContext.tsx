@@ -12,6 +12,7 @@ import type {
   RestoreStatePayload,
   Sale,
   Supplier,
+  TeamMember,
 } from 'p2p-mesh-core';
 import { dbSync, p2pManager } from 'p2p-mesh-core';
 import React, { createContext, useCallback, useContext, useEffect, type Dispatch, type ReactNode } from 'react';
@@ -25,6 +26,7 @@ const initialState: AppState = {
   purchaseOrders: [],
   auditLogs: [],
   peers: [],
+  teamMembers: [],
   localPeerId: null,
   role: 'admin',
   arqueoSessions: [],
@@ -46,6 +48,9 @@ type Action =
   | { type: 'ADD_PURCHASE_ORDER'; payload: PurchaseOrder }
   | { type: 'UPDATE_PURCHASE_ORDER'; payload: PurchaseOrder }
   | { type: 'DELETE_PURCHASE_ORDER'; payload: string }
+  | { type: 'ADD_TEAM_MEMBER'; payload: TeamMember }
+  | { type: 'UPDATE_TEAM_MEMBER'; payload: TeamMember }
+  | { type: 'DELETE_TEAM_MEMBER'; payload: string }
   | { type: 'RESTORE_STATE'; payload: RestoreStatePayload }
   | { type: 'BATCH_UPDATE_PRODUCTS'; payload: { toAdd: Product[]; toUpdate: Product[] } }
   | { type: 'SET_LOCAL_PEER_ID'; payload: string }
@@ -279,6 +284,21 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
       break;
 
+    case 'ADD_TEAM_MEMBER':
+      newState = { ...state, teamMembers: [...state.teamMembers, action.payload] };
+      break;
+    case 'UPDATE_TEAM_MEMBER':
+      newState = {
+        ...state,
+        teamMembers: state.teamMembers.map((m) => (m.id === action.payload.id ? action.payload : m)),
+      };
+      break;
+    case 'DELETE_TEAM_MEMBER':
+      newState = {
+        ...state,
+        teamMembers: state.teamMembers.filter((m) => m.id !== action.payload),
+      };
+      break;
     case 'ADD_ARQUEO_SESSION':
       newState = { ...state, arqueoSessions: [...state.arqueoSessions, enrich(state, action.payload)] };
       break;

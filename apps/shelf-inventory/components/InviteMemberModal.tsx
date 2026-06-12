@@ -1,19 +1,32 @@
 import type { UserRole } from 'p2p-mesh-core';
 import type React from 'react';
 import { useState } from 'react';
+import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import Modal from './Modal';
 
 interface InviteMemberModalProps {
   onClose: () => void;
-  onInviteSent: () => void; // Simplified for UI-only implementation
+  onInviteSent: () => void;
 }
 
 const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInviteSent }) => {
   const { t } = useI18n();
+  const { state, dispatch } = useAppContext();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('member');
   const [error, setError] = useState('');
+
+  const generateInviteLink = (peerId: string, role: UserRole, email: string) => {
+    const baseUrl = window.location.origin;
+    const params = new URLSearchParams({
+      peerId,
+      role,
+      email,
+      invite: 'true',
+    });
+    return `${baseUrl}?${params.toString()}`;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,9 +34,34 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
       setError(t('validation.invalidEmail'));
       return;
     }
+
+    if (state.teamMembers.find((m) => m.email === email)) {
+      setError(t('settings.team.alreadyMember') || 'This user is already a team member');
+      return;
+    }
+
     setError('');
-    // In a real app, this would trigger a backend call.
-    // For now, we just call the success callback.
+
+    const inviteLink = generateInviteLink(state.localPeerId || 'shelf-master', role, email);
+
+    // Dispatch to local state to show it in the list (as pending or added)
+    dispatch({
+      type: 'ADD_TEAM_MEMBER',
+      payload: {
+        id: crypto.randomUUID(),
+        email: email.trim().toLowerCase(),
+        role: role,
+      },
+    });
+
+    // Use mailto fallback to "send" the invitation
+    const subject = encodeURIComponent(t('settings.team.inviteSubject') || 'Invitation to join Shelf Team');
+    const body = encodeURIComponent(
+      `${t('settings.team.inviteBody') || 'You have been invited to join the Shelf team. Click the link below to accept:'}\n\n${inviteLink}`,
+    );
+
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+
     onInviteSent();
   };
 
