@@ -555,18 +555,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         });
       }
 
-      // Expulsion check!
-      if (dbSync.localPeerId) {
+      // Expulsion check — with grace period to avoid false positives during init
+      if (dbSync.localPeerId && isSyncInitialized.current) {
         const linkedNodes = dbSync.getLinkedNodes();
         const masterId = dbSync.getMasterPeerId();
 
         if (masterId && masterId !== dbSync.localPeerId && linkedNodes.length > 0) {
-          const isLinked = linkedNodes.some((node) => node.id === dbSync.localPeerId);
-          if (!isLinked) {
+          const myNode = linkedNodes.find((node) => node.id === dbSync.localPeerId);
+          const isExplicitlyExpelled = myNode && (myNode as any).status === 'expelled';
+          const isMissing = !myNode;
+
+          // Only expel if explicitly marked as expelled, not just missing from linkedNodes
+          if (isExplicitlyExpelled) {
             console.warn('[P2P Mesh] Expelled by Master Node');
             p2pManager.disconnect();
             rawDispatch({ type: 'RESET_DATA' });
             rawDispatch({ type: 'SET_EXPELLED', payload: true });
+          } else if (isMissing) {
+            // Unexpcted absence — request full state to re-sync, don't wipe
+            console.log('[P2P Mesh] Peer not in linkedNodes yet (stale sync). Requesting state refresh...');
+            p2pManager.broadcast({ type: 'REQUEST_FULL_STATE', payload: {} } as any);
           }
         }
       }
