@@ -17,8 +17,8 @@ export type SyncMessage =
   | { type: 'PQC_HANDSHAKE_RESPONSE'; payload: { cipherText: string; signature: string; dsaPubKey: string } }
   | { type: 'YJS_UPDATE'; payload: { update: string } }
   | { type: 'UPDATE_PEER_PERMISSIONS'; payload: { targetPeerId: string; permissions: any } }
-  | { type: 'PING' }
-  | { type: 'PONG' }
+  | { type: 'PING'; peerId?: string; timestamp?: number }
+  | { type: 'PONG'; peerId?: string; timestamp?: number }
   // Auth recovery messages
   | {
       type: 'REQUEST_ACCOUNT_RECOVERY';
@@ -37,6 +37,12 @@ class P2PManager {
   private reconnectionAttempts = 0;
   private readonly MAX_RECONNECT_DELAY = 30000;
   private readonly INITIAL_RECONNECT_DELAY = 1000;
+  private readonly MAX_RECONNECT_ATTEMPTS = 10;
+
+  // Per-peer pong tracking: peerId -> timestamp of last PING sent
+  private pendingPings: Map<string, number> = new Map();
+  private readonly PING_INTERVAL = 30000;
+  private readonly PONG_TIMEOUT = 10000;
 
   private onMessageCallbacks: ((message: SyncMessage, fromPeerId: string) => void)[] = [];
   private onConnectionChangeCallbacks: ((peers: PeerInfo[]) => void)[] = [];
@@ -100,8 +106,15 @@ class P2PManager {
         this.role = 'admin';
       }
 
+      // Sync role to dbSync for GC coordination
+      dbSync.masterRole = this.role;
+
       // Initialize Yjs Sync
       dbSync.onChange((update, origin) => {
+        // Don't broadcast before initWithState() has populated the CRDT.
+        // Otherwise a new peer would send empty state and overwrite remote data.
+        if (!dbSync.isReady) return;
+
         // Only broadcast if the update originated locally to prevent infinite loops
         if (origin === 'local') {
           this.broadcast({
@@ -122,6 +135,10 @@ class P2PManager {
     });
 
     this.peer.on('disconnected', () => {
+      if (this.reconnectionAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
+        logger.error(`Max reconnection attempts (${this.MAX_RECONNECT_ATTEMPTS}) reached. Giving up.`);
+        return;
+      }
       const delay = Math.min(this.INITIAL_RECONNECT_DELAY * 2 ** this.reconnectionAttempts, this.MAX_RECONNECT_DELAY);
       logger.warn(`PeerJS disconnected. Retrying in ${delay}ms (attempt ${this.reconnectionAttempts + 1})...`);
 
@@ -136,6 +153,10 @@ class P2PManager {
     this.peer.on('error', (err: any) => {
       logger.error('PeerJS error:', err);
       if (err.type === 'unavailable-id') {
+        if (this.reconnectionAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
+          logger.error(`Max reconnection attempts (${this.MAX_RECONNECT_ATTEMPTS}) reached for unavailable-id. Giving up.`);
+          return;
+        }
         const delay = Math.min(this.INITIAL_RECONNECT_DELAY * 2 ** this.reconnectionAttempts, this.MAX_RECONNECT_DELAY);
         logger.warn(`Peer ID taken. Retrying in ${delay}ms (attempt ${this.reconnectionAttempts + 1})...`);
 
@@ -246,12 +267,13 @@ class P2PManager {
 
         // Handle PING/PONG
         if (message.type === 'PING') {
-          conn.send({ type: 'PONG' });
+          conn.send({ type: 'PONG', peerId: this.localPeerId, timestamp: Date.now() });
           return;
         }
 
         if (message.type === 'PONG') {
-          // lastMessageTime already updated above
+          // Clear pending ping tracking for this peer
+          this.pendingPings.delete(conn.peer);
           return;
         }
 
@@ -323,17 +345,32 @@ class P2PManager {
         continue;
       }
 
-      // Check for inactivity
+      // Check if we are waiting for a PONG response from a previous PING
+      const pingSentAt = this.pendingPings.get(peerId);
+      if (pingSentAt !== undefined) {
+        if (now - pingSentAt > this.PONG_TIMEOUT) {
+          // No pong received within 10s — consider peer disconnected
+          logger.warn(`Pong timeout for peer ${peerId} (${now - pingSentAt}ms). Closing connection.`);
+          this.pendingPings.delete(peerId);
+          conn.close();
+          continue;
+        }
+        // Still waiting, skip sending another PING
+        continue;
+      }
+
+      // Check for inactivity (no message of any kind received)
       const lastSeen = this.lastMessageTime.get(peerId) || now;
       if (now - lastSeen > 60000) {
         // 1 minute timeout
-        logger.warn(`[P2P] Peer ${peerId} heartbeat timeout. Closing connection.`);
+        logger.warn(`Peer ${peerId} heartbeat inactivity timeout (${now - lastSeen}ms). Closing connection.`);
         conn.close();
         continue;
       }
 
-      // Send PING
-      conn.send({ type: 'PING' });
+      // Send PING and track it
+      this.pendingPings.set(peerId, now);
+      conn.send({ type: 'PING', peerId: this.localPeerId, timestamp: now });
     }
   }
 

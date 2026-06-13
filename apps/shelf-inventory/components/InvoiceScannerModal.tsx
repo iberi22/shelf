@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createWorker } from 'tesseract.js';
 import Modal from './Modal';
 
+const CAPTURE_CANVAS_ID = 'invoice-capture-canvas';
+
 interface InvoiceScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -155,13 +157,31 @@ export default function InvoiceScannerModal({
     }
 
     try {
-      const canvas = document.querySelector(`#${cameraContainerId} canvas`) as HTMLCanvasElement | null;
-      if (canvas) {
-        const imageBase64 = canvas.toDataURL('image/jpeg');
-        await processImage(imageBase64);
-      } else {
-        setCameraError('Failed to capture image');
+      // html5-qrcode renders a <video> element inside the container, not a <canvas>
+      const video = document.querySelector(`#${cameraContainerId} video`) as HTMLVideoElement | null;
+      if (!video || video.readyState < 2) {
+        setCameraError('Camera feed not ready yet. Please wait a moment and try again.');
+        return;
       }
+
+      // Draw the current video frame onto our hidden canvas
+      const canvas = document.getElementById(CAPTURE_CANVAS_ID) as HTMLCanvasElement;
+      if (!canvas) {
+        setCameraError('Internal error: capture surface not found');
+        return;
+      }
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        setCameraError('Failed to initialize image capture');
+        return;
+      }
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageBase64 = canvas.toDataURL('image/jpeg', 0.85);
+      await processImage(imageBase64);
     } catch (error) {
       console.error('Photo capture error:', error);
       setCameraError('Failed to capture photo');
@@ -196,6 +216,8 @@ export default function InvoiceScannerModal({
   const handleClose = () => {
     setScanMode(null);
     setCameraError('');
+    setIsProcessing(false);
+    setOcrProgress(0);
     onClose();
   };
 
@@ -231,13 +253,28 @@ export default function InvoiceScannerModal({
         ) : scanMode === 'camera' ? (
           <div className="flex flex-col gap-3">
             {cameraError ? (
-              <div className="text-center text-red-500 text-sm font-medium mb-2">{cameraError}</div>
+              <div className="text-center">
+                <div className="text-red-500 text-sm font-medium mb-3">{cameraError}</div>
+                <button
+                  onClick={() => {
+                    setCameraError('');
+                    setScanMode('camera');
+                  }}
+                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm mb-2"
+                >
+                  🔄 Try Again
+                </button>
+              </div>
             ) : (
               <>
                 <div
                   id={cameraContainerId}
                   className="w-full rounded border-2 border-gray-600 overflow-hidden bg-black"
                   style={{ aspectRatio: '1' }}
+                />
+                <canvas
+                  id={CAPTURE_CANVAS_ID}
+                  style={{ display: 'none' }}
                 />
                 <button
                   onClick={capturePhoto}
@@ -249,7 +286,10 @@ export default function InvoiceScannerModal({
               </>
             )}
             <button
-              onClick={() => setScanMode(null)}
+              onClick={() => {
+                setCameraError('');
+                setScanMode(null);
+              }}
               disabled={isLoading || isProcessing}
               className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
             >
@@ -266,9 +306,22 @@ export default function InvoiceScannerModal({
               disabled={isLoading || isProcessing}
               className="block w-full text-sm text-gray-400 file:mr-4 file:px-4 file:py-2 file:rounded file:bg-blue-600 file:text-white file:font-medium hover:file:bg-blue-700 disabled:opacity-50"
             />
-            {cameraError && <div className="text-red-500 text-sm font-medium">{cameraError}</div>}
+            {cameraError && (
+              <div className="flex flex-col items-center gap-2">
+                <div className="text-red-500 text-sm font-medium">{cameraError}</div>
+                <button
+                  onClick={() => setCameraError('')}
+                  className="text-blue-400 text-sm underline hover:text-blue-300"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
             <button
-              onClick={() => setScanMode(null)}
+              onClick={() => {
+                setCameraError('');
+                setScanMode(null);
+              }}
               disabled={isLoading || isProcessing}
               className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
             >

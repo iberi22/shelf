@@ -19,6 +19,11 @@ class DatabaseSyncManager {
   private metadata: Y.Map<any>;
   private linkedNodes: Y.Map<any>;
   public localPeerId: string | null = null;
+  /**
+   * Guards against premature YJS_UPDATE broadcasts.
+   * Set to true only after initWithState() completes.
+   */
+  public isReady: boolean = false;
 
   constructor() {
     this.doc = new Y.Doc();
@@ -160,6 +165,11 @@ class DatabaseSyncManager {
         }
       }
     }, 'local');
+
+    // Mark as ready AFTER the initial state has been fully loaded into Y.Doc.
+    // This prevents the on('update') handler in p2p.ts from broadcasting
+    // empty state before the CRDT has been populated.
+    this.isReady = true;
   }
 
   /**
@@ -266,6 +276,9 @@ class DatabaseSyncManager {
     }, 'local');
   }
 
+  /** Role override set by p2pManager to sync the effective peer role into database-sync */
+  public masterRole: string | null = null;
+
   private gcIntervals: Map<string, any> = new Map();
 
   /**
@@ -278,22 +291,22 @@ class DatabaseSyncManager {
     }
 
     const interval = setInterval(() => {
-      // Use local properties to resolve role properly
-      const selfNode = this.localPeerId ? this.linkedNodes.get(this.localPeerId) : null;
-      let role = this.metadata.get('role');
-      if (selfNode) {
-        role = selfNode.role;
-      } else if (this.localPeerId && this.metadata.get('masterPeerId') === this.localPeerId) {
-        role = 'admin';
+      // Resolve role: prefer explicit masterRole (set by p2pManager), then linkedNodes, then metadata
+      let role = this.masterRole;
+      if (!role) {
+        const selfNode = this.localPeerId ? this.linkedNodes.get(this.localPeerId) : null;
+        role = selfNode?.role || this.metadata.get('role') || null;
+        if (!role && this.localPeerId && this.metadata.get('masterPeerId') === this.localPeerId) {
+          role = 'admin';
+        }
       }
 
-      // Final check: if we are not admin/master, we should NOT be running GC
+      // Guard: only admin/master peers execute cleanup
       if (role !== 'admin' && role !== 'master') {
-        logger.debug(`[GC] Skipping GC for ${collectionName}: insufficient permissions (role: ${role})`);
         return;
       }
 
-      logger.debug(`[GC] Running cleanup for ${collectionName} (role: ${role}, peerId: ${this.localPeerId})`);
+      logger.debug(`[GC] Running cleanup for ${collectionName} (role: ${role})`);
 
       const yMap = this.getMapForCollection(collectionName);
       if (!yMap) return;

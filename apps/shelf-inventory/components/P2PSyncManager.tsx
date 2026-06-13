@@ -19,6 +19,7 @@ const P2PSyncManager: React.FC = () => {
   const [showScannerModal, setShowScannerModal] = useState(false);
   const [showConfirmConnectModal, setShowConfirmConnectModal] = useState(false);
   const [pendingPeerId, setPendingPeerId] = useState('');
+  const [showLogsForPeer, setShowLogsForPeer] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<'admin' | 'vendedor' | 'custom'>('vendedor');
   const [selectedPermissions, setSelectedPermissions] = useState<Record<string, boolean>>({
     canViewProducts: true,
@@ -360,6 +361,16 @@ const P2PSyncManager: React.FC = () => {
                 >
                   {t('p2pSync.shareQrButton') || 'Compartir QR'}
                 </button>
+                <button
+                  onClick={() => {
+                    const text = `¡Hola! Conéctate a mi nodo P2P en Shelf Inventory usando este Peer ID: ${state.localPeerId}`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                  }}
+                  className="text-xs bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.115.545 4.183 1.583 6.002L0 24l6.126-1.55c1.761.968 3.738 1.48 5.905 1.48 6.646 0 12.031-5.385 12.031-12.031S18.677 0 12.031 0zm6.545 17.37c-.266.75-1.55 1.442-2.155 1.503-.538.053-1.226.113-3.618-.878-2.887-1.196-4.737-4.14-4.88-4.327-.143-.188-1.164-1.553-1.164-2.96 0-1.408.73-2.106 1-2.394.27-.287.587-.36.782-.36.195 0 .39 0 .563.008.188.007.442-.075.69.525.263.638.85 2.086.925 2.235.075.15.128.323.03.51-.098.188-.15.308-.3.458-.15.15-.315.33-.45.465-.15.15-.315.315-.143.608.173.293.765 1.26 1.642 2.036 1.127.994 2.08 1.3 2.378 1.444.298.143.473.12.65-.083.178-.203.758-.885.968-1.19.21-.305.42-.255.698-.15.278.105 1.76.828 2.06.978.3.15.42.225.548.33.848.105.3.105 1.725-.16 2.475z"/></svg>
+                  WhatsApp
+                </button>
               </div>
             )}
           </div>
@@ -491,9 +502,16 @@ const P2PSyncManager: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => setShowPermissions(showPermissions === peer.id ? null : peer.id)}
-                                className="text-xs text-blue-400 hover:underline cursor-pointer"
+                                className="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-2 py-1 rounded cursor-pointer transition-colors"
                               >
                                 {t('p2pSync.permissionsLink') || 'Permisos'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setShowLogsForPeer(peer.id)}
+                                className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/30 hover:bg-purple-500/20 px-2 py-1 rounded cursor-pointer transition-colors"
+                              >
+                                Actividad
                               </button>
                               {peer.role !== 'admin' && (
                                 <button
@@ -813,6 +831,52 @@ const P2PSyncManager: React.FC = () => {
                 className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-[#1a1a1a] rounded text-sm font-bold transition-colors"
               >
                 {t('p2pSync.confirmProceed')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Activity Log Modal */}
+      {showLogsForPeer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="flex justify-between items-center p-4 border-b border-[#F5F5DC]/10">
+              <h3 className="font-bold text-[#F5F5DC] flex items-center gap-2">
+                📋 Registro de Actividad
+              </h3>
+              <button onClick={() => setShowLogsForPeer(null)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1 space-y-2">
+              <div className="mb-4">
+                <span className="text-sm opacity-70">Peer ID:</span>{' '}
+                <code className="text-yellow-400 text-sm font-mono break-all">{showLogsForPeer}</code>
+              </div>
+              {state.auditLogs && state.auditLogs.filter(log => log.peerId === showLogsForPeer).length > 0 ? (
+                [...state.auditLogs]
+                  .filter(log => log.peerId === showLogsForPeer)
+                  .reverse()
+                  .map(log => (
+                    <div key={log.id} className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 text-sm flex flex-col gap-1">
+                      <div className="flex justify-between items-center text-xs opacity-70">
+                        <span>{new Date(log.timestamp).toLocaleString()}</span>
+                        <span className="capitalize px-2 py-0.5 bg-foreground/10 rounded">{log.entityType || 'General'}</span>
+                      </div>
+                      <div className="text-[#F5F5DC] mt-1">{log.action}</div>
+                    </div>
+                  ))
+              ) : (
+                <div className="text-center text-sm opacity-50 p-6">No hay actividad registrada para este nodo.</div>
+              )}
+            </div>
+            <div className="p-4 border-t border-[#F5F5DC]/10 flex justify-end">
+              <button
+                onClick={() => setShowLogsForPeer(null)}
+                className="px-4 py-2 bg-[#333] hover:bg-[#444] rounded text-white text-sm font-medium transition-colors"
+              >
+                {t('p2pSync.close') || 'Cerrar'}
               </button>
             </div>
           </div>

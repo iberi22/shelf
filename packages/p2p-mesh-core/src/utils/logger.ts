@@ -4,7 +4,7 @@ export const setLoggerPeerId = (id: string) => {
   localPeerId = id;
 };
 
-const format = (msg: string) => `[P2P] [${new Date().toISOString()}] [${localPeerId}] ${msg}`;
+const format = (msg: string) => `[P2P:${localPeerId}@${Date.now()}] ${msg}`;
 
 export const logger = {
   log: (msg: string, ...args: any[]) => console.log(format(msg), ...args),

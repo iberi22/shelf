@@ -7,7 +7,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useUI } from '../context/UIContext';
-import { useGoogleDrive } from '../hooks/useGoogleDrive';
+import { deriveKey, getSessionKey, encryptData, decryptData } from 'p2p-mesh-core';
 import useLocalStorage from '../hooks/useLocalStorage';
 import AuditLogViewer from './AuditLogViewer';
 import DataRecovery from './DataRecovery';
@@ -48,25 +48,34 @@ const Settings: React.FC = () => {
   const { user, hasAppLock, setAppLock } = useAuth();
   const [newPin, setNewPin] = useState('');
 
-  const { uploadBackup, downloadBackup, isLoading: isDriveLoading } = useGoogleDrive();
-
   const team = [
     { id: 'owner', email: user?.email ?? 'owner@example.com', role: 'owner' as const },
     ...state.teamMembers,
   ];
 
-  const handleCreateBackup = () => {
-    const backupData = JSON.stringify(state, null, 2);
-    const blob = new Blob([backupData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `shelf_backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    showNotification(t('settings.backup.success'), 'success');
+  const handleCreateBackup = async () => {
+    try {
+      const backupData = JSON.stringify(state);
+      
+      const password = window.prompt(t('settings.backup.passwordPrompt') || 'Introduce una contraseña para cifrar el respaldo (déjalo en blanco para usar la clave de este dispositivo):');
+      if (password === null) return; // User cancelled
+      
+      const key = password ? await deriveKey(password) : await getSessionKey();
+      const encryptedData = await encryptData(backupData, key);
+      
+      const blob = new Blob([encryptedData], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `shelf_backup_${new Date().toISOString().split('T')[0]}.encrypted`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showNotification(t('settings.backup.success'), 'success');
+    } catch (err) {
+      showNotification(err instanceof Error ? err.message : 'Error al cifrar el respaldo', 'error');
+    }
   };
 
   const handleRestoreChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,11 +83,29 @@ const Settings: React.FC = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const text = e.target?.result;
         if (typeof text !== 'string') throw new Error('File content is not readable');
-        const parsedData = JSON.parse(text);
+        
+        let decryptedText = text;
+        
+        try {
+          JSON.parse(text); 
+          // If this succeeds, it's an old unencrypted backup
+        } catch {
+          // It's likely encrypted
+          const password = window.prompt(t('settings.restore.passwordPrompt') || 'Introduce la contraseña del respaldo (déjalo en blanco si se creó en este dispositivo sin contraseña):');
+          
+          if (password === null) {
+            throw new Error('Operación cancelada');
+          }
+          
+          const key = password ? await deriveKey(password) : await getSessionKey();
+          decryptedText = await decryptData(text, key);
+        }
+
+        const parsedData = JSON.parse(decryptedText);
 
         // Basic validation
         if (
@@ -94,7 +121,9 @@ const Settings: React.FC = () => {
       } catch (error) {
         console.error('Restore failed:', error);
         const message = error instanceof Error ? error.message : t('settings.restore.genericError');
-        showNotification(message, 'error');
+        if (message !== 'Operación cancelada') {
+          showNotification(message, 'error');
+        }
       } finally {
         // Reset file input
         if (fileInputRef.current) {
@@ -112,28 +141,6 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleDriveBackup = async () => {
-    try {
-      await uploadBackup(state);
-      showNotification('Respaldo en Google Drive exitoso', 'success');
-    } catch (err) {
-      showNotification(err instanceof Error ? err.message : 'Error al respaldar en Google Drive', 'error');
-    }
-  };
-
-  const handleDriveRestore = async () => {
-    try {
-      const data = await downloadBackup();
-      if (data) {
-        if (window.confirm(t('settings.restore.confirmation'))) {
-          dispatch({ type: 'RESTORE_STATE', payload: data as RestoreStatePayload });
-          showNotification(t('settings.restore.success'), 'success');
-        }
-      }
-    } catch (err) {
-      showNotification(err instanceof Error ? err.message : 'Error al descargar el respaldo', 'error');
-    }
-  };
 
   const handleInviteSent = () => {
     setInviteModalOpen(false);
@@ -142,7 +149,12 @@ const Settings: React.FC = () => {
 
   const handleSendFeedback = () => {
     if (!feedback.trim()) return;
-    console.log('Feedback submitted:', feedback);
+    
+    const subject = encodeURIComponent('Soporte / Sugerencia - Shelf Inventory');
+    const body = encodeURIComponent(feedback);
+    // Reemplaza esto con tu correo real
+    window.location.href = `mailto:soporte@tudominio.com?subject=${subject}&body=${body}`;
+    
     showNotification(t('settings.feedback.success'), 'success');
     setFeedback('');
   };
@@ -501,38 +513,7 @@ const Settings: React.FC = () => {
               </div>
             </div>
 
-            {/* Cloud Backup (Google Drive) */}
-            <div className="mt-8 border-t border-[#F5F5DC]/10 pt-6">
-              <h4 className="text-lg font-bold text-[#F5F5DC] mb-2">☁️ Respaldo en la Nube (Google Drive)</h4>
-              <p className="text-xs text-[#F5F5DC]/70 mb-4">
-                Guarda una copia de seguridad directamente en tu cuenta de Google Drive para mayor seguridad.
-              </p>
 
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button
-                    onClick={handleCreateBackup}
-                    className="flex-1 bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all text-sm flex items-center justify-center gap-2"
-                  >
-                    💾 Descargar Respaldo Local (.json)
-                  </button>
-                  <button
-                    onClick={handleDriveBackup}
-                    disabled={isDriveLoading}
-                    className="flex-1 bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-all text-sm disabled:opacity-50"
-                  >
-                    {isDriveLoading ? 'Subiendo...' : '☁️ Subir a mi Drive'}
-                  </button>
-                  <button
-                    onClick={handleDriveRestore}
-                    disabled={isDriveLoading}
-                    className="flex-1 bg-transparent border border-blue-600 text-blue-400 font-bold py-2 px-4 rounded-lg hover:bg-blue-600/10 transition-all text-sm disabled:opacity-50"
-                  >
-                    {isDriveLoading ? 'Descargando...' : 'Restaurar desde Drive'}
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

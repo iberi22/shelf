@@ -5,6 +5,7 @@ import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useSubscription } from '../context/SubscriptionContext';
+import GlobalSearch from './GlobalSearch';
 import LanguageSelector from './LanguageSelector';
 
 interface SidebarProps {
@@ -36,6 +37,20 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, 
   });
 
   // Close drawer when a nav item is clicked
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Global keyboard shortcut: Ctrl+K / Cmd+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleNavClick = (nameKey: string) => {
     setActiveComponent(nameKey);
     setMobileMenuOpen(false);
@@ -80,13 +95,25 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, 
       >
         <div className="flex items-center justify-between p-4 border-b border-foreground/20">
           <h1 className="text-xl font-bold tracking-widest">[ Shelf. ]</h1>
-          <button
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-2xl text-foreground/70 hover:text-foreground active:scale-95"
-            aria-label="Cerrar menú"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="p-2 text-foreground/60 hover:text-foreground hover:bg-foreground/10 rounded-lg transition-colors active:scale-95"
+              aria-label="Buscar"
+              title="Buscar (Ctrl+K)"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-2xl text-foreground/70 hover:text-foreground active:scale-95"
+              aria-label="Cerrar menú"
+            >
+              ✕
+            </button>
+          </div>
         </div>
         <nav className="flex-1 px-3 py-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
           <ul>
@@ -148,8 +175,18 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, 
 
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-primary border-r border-foreground/20">
-        <div className="p-6">
+        <div className="p-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-widest">[ Shelf. ]</h1>
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="p-2 text-foreground/60 hover:text-foreground hover:bg-foreground/10 rounded-lg transition-colors active:scale-95"
+            aria-label="Buscar"
+            title="Buscar (Ctrl+K)"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
         </div>
         <nav className="flex-1 px-4 py-2">
           <ul>
@@ -208,6 +245,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, 
           </div>
         </div>
       </aside>
+
+      {/* Global Search Modal */}
+      <GlobalSearch
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onNavigate={setActiveComponent}
+      />
     </>
   );
 };
