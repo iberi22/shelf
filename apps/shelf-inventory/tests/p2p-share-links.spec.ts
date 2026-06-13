@@ -1,0 +1,37 @@
+import { expect, test } from '@playwright/test';
+import { dismissModals, setupPage } from './helpers';
+
+test.describe('P2P share links', () => {
+  test('Exposes a PWA install link and a node invite link with the current peer id', async ({ page }) => {
+    await setupPage(page);
+
+    await page.locator('[data-testid="nav-item-nav.settings"]').last().click();
+    await dismissModals(page);
+
+    const peerIdLocator = page.locator('span.font-mono.text-yellow-400').first();
+    await peerIdLocator.waitFor({ state: 'visible' });
+    await expect(peerIdLocator).not.toHaveText('Initializing...', { timeout: 15000 });
+    const peerId = (await peerIdLocator.innerText()).split('\n')[0].trim();
+    expect(peerId.length).toBeGreaterThan(0);
+
+    const pwaLink = page.locator('[data-testid="p2p-pwa-link"]');
+    const inviteLink = page.locator('[data-testid="p2p-invite-link"]');
+
+    await expect(pwaLink).toBeVisible();
+    await expect(inviteLink).toBeVisible();
+
+    const pwaHref = await pwaLink.getAttribute('href');
+    const inviteHref = await inviteLink.getAttribute('href');
+
+    if (!pwaHref || !inviteHref) {
+      throw new Error('Missing share links');
+    }
+
+    const pwaUrl = new URL(pwaHref, page.url());
+    const inviteUrl = new URL(inviteHref, page.url());
+
+    expect(pwaUrl.search).toBe('');
+    expect(inviteUrl.searchParams.get('invite')).toBe('true');
+    expect(inviteUrl.searchParams.get('peerId')).toBe(peerId);
+  });
+});

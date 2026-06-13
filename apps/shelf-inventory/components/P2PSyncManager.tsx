@@ -1,11 +1,76 @@
-import { Info, QrCode, Settings, X } from 'lucide-react';
-import { dbSync, p2pManager, type SyncMessage } from 'p2p-mesh-core';
+import { Download, Info, Link2, QrCode, Settings, X } from 'lucide-react';
+import { dbSync, type P2PRole, type PeerPermissions, p2pManager, type SyncMessage } from 'p2p-mesh-core';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
+import { buildPeerInviteLink, buildPeerInviteMessage, buildPwaInstallLink } from '../lib/share-links';
 import { isBiometricsSupported } from '../lib/webauthn';
 import QRScannerModal from './QRScannerModal';
+
+const permissionPresets: Record<'admin' | 'collaborator' | 'vendedor', PeerPermissions> = {
+  admin: {
+    canViewProducts: true,
+    canEditProducts: true,
+    canViewSales: true,
+    canEditSales: true,
+    canViewClients: true,
+    canEditClients: true,
+    canViewSuppliers: true,
+    canEditSuppliers: true,
+    canViewPurchaseOrders: true,
+    canEditPurchaseOrders: true,
+    canViewReports: true,
+    canViewArqueo: true,
+    canViewDashboard: true,
+  },
+  collaborator: {
+    canViewProducts: true,
+    canEditProducts: true,
+    canViewSales: true,
+    canEditSales: true,
+    canViewClients: true,
+    canEditClients: true,
+    canViewSuppliers: false,
+    canEditSuppliers: false,
+    canViewPurchaseOrders: false,
+    canEditPurchaseOrders: false,
+    canViewReports: false,
+    canViewArqueo: false,
+    canViewDashboard: false,
+  },
+  vendedor: {
+    canViewProducts: true,
+    canEditProducts: false,
+    canViewSales: true,
+    canEditSales: true,
+    canViewClients: true,
+    canEditClients: true,
+    canViewSuppliers: false,
+    canEditSuppliers: false,
+    canViewPurchaseOrders: false,
+    canEditPurchaseOrders: false,
+    canViewReports: false,
+    canViewArqueo: false,
+    canViewDashboard: false,
+  },
+};
+
+const permissionOptions: { key: keyof PeerPermissions; label: string }[] = [
+  { key: 'canViewProducts', label: 'Ver Productos' },
+  { key: 'canEditProducts', label: 'Editar Productos' },
+  { key: 'canViewSales', label: 'Ver Ventas' },
+  { key: 'canEditSales', label: 'Editar Ventas' },
+  { key: 'canViewClients', label: 'Ver Clientes' },
+  { key: 'canEditClients', label: 'Editar Clientes' },
+  { key: 'canViewSuppliers', label: 'Ver Proveedores' },
+  { key: 'canEditSuppliers', label: 'Editar Proveedores' },
+  { key: 'canViewPurchaseOrders', label: 'Ver Ordenes' },
+  { key: 'canEditPurchaseOrders', label: 'Editar Ordenes' },
+  { key: 'canViewReports', label: 'Ver Reportes' },
+  { key: 'canViewArqueo', label: 'Ver Arqueo' },
+  { key: 'canViewDashboard', label: 'Ver Dashboard' },
+];
 
 const P2PSyncManager: React.FC = () => {
   const { state, dispatch } = useAppContext();
@@ -21,34 +86,53 @@ const P2PSyncManager: React.FC = () => {
   const [pendingPeerId, setPendingPeerId] = useState('');
   const [showLogsForPeer, setShowLogsForPeer] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'vendedor' | 'custom'>('vendedor');
-  const [selectedPermissions, setSelectedPermissions] = useState<Record<string, boolean>>({
-    canViewProducts: true,
-    canEditProducts: true,
-    canViewSales: true,
-    canEditSales: true,
-    canViewClients: true,
-    canEditClients: true,
-    canViewSuppliers: false,
-    canEditSuppliers: false,
-    canViewPurchaseOrders: false,
-    canEditPurchaseOrders: false,
-    canViewReports: false,
-    canViewArqueo: false,
-    canViewDashboard: false,
-  });
-  const [pendingConfigs, setPendingConfigs] = useState<
-    Record<string, { role: 'admin' | 'collaborator'; permissions: any }>
-  >({});
+  const [selectedRole, setSelectedRole] = useState<P2PRole>('collaborator');
+  const [selectedPermissions, setSelectedPermissions] = useState<PeerPermissions>(permissionPresets.collaborator);
+  const [pendingConfigs, setPendingConfigs] = useState<Record<string, { role: P2PRole; permissions: PeerPermissions }>>(
+    {},
+  );
   const { t } = useI18n();
 
   const stateRef = useRef(state);
   const copyStatusTimerRef = useRef<number | null>(null);
+  const masterPeerId = dbSync.getMasterPeerId();
+  const isLocalHostAuthority = Boolean(state.localPeerId && masterPeerId && state.localPeerId === masterPeerId);
+  const appOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+  const pwaInstallLink = appOrigin ? buildPwaInstallLink(appOrigin) : '';
+  const peerInviteLink = state.localPeerId && appOrigin ? buildPeerInviteLink(appOrigin, state.localPeerId) : '';
+  const inviteMessage = state.localPeerId && appOrigin ? buildPeerInviteMessage(appOrigin, state.localPeerId) : '';
   stateRef.current = state;
 
   useEffect(() => {
     isBiometricsSupported().then(setIsBiometricAvailable);
     p2pManager.init();
+
+    const isAuthorizedConfigSender = (fromPeerId: string) => {
+      return dbSync.getMasterPeerId() === fromPeerId;
+    };
+
+    const applyLocalPeerConfig = (
+      role: P2PRole,
+      permissions?: PeerPermissions,
+      authorityPeerId: string | null = dbSync.getMasterPeerId(),
+    ) => {
+      if (!p2pManager.localPeerId) return;
+      const isLocalHost = dbSync.getMasterPeerId() === p2pManager.localPeerId;
+      const effectiveRole = !isLocalHost && role === 'admin' ? 'collaborator' : role;
+      const effectivePermissions = effectiveRole === role ? permissions : permissions || permissionPresets.collaborator;
+
+      p2pManager.role = effectiveRole;
+      dbSync.masterRole = effectiveRole;
+      dbSync.updateLinkedNode(
+        p2pManager.localPeerId,
+        { role: effectiveRole, permissions: effectivePermissions },
+        authorityPeerId,
+      );
+      dispatch({
+        type: 'UPDATE_PEER_CONFIG',
+        payload: { targetPeerId: p2pManager.localPeerId, role: effectiveRole, permissions: effectivePermissions },
+      });
+    };
 
     const handleMessage = async (message: SyncMessage, fromPeerId: string) => {
       switch (message.type) {
@@ -84,18 +168,33 @@ const P2PSyncManager: React.FC = () => {
           });
           break;
         }
-        case 'PROMOTE_ADMIN': {
-          const sender = stateRef.current.peers.find((p) => p.id === fromPeerId);
-          if (sender?.role === 'admin' || sender?.isMaster) {
+        case 'CHANGE_ROLE': {
+          if (isAuthorizedConfigSender(fromPeerId)) {
             if (message.payload.targetPeerId === p2pManager.localPeerId) {
-              dispatch({ type: 'SET_ROLE', payload: 'admin' });
+              applyLocalPeerConfig(message.payload.role, message.payload.permissions, fromPeerId);
             }
+            dbSync.updatePeerConfig(
+              message.payload.targetPeerId,
+              message.payload.role,
+              message.payload.permissions,
+              fromPeerId,
+            );
           }
           break;
         }
         case 'UPDATE_PEER_PERMISSIONS': {
-          const sender = stateRef.current.peers.find((p) => p.id === fromPeerId);
-          if (sender?.role === 'admin' || sender?.isMaster) {
+          if (isAuthorizedConfigSender(fromPeerId)) {
+            if (message.payload.targetPeerId === p2pManager.localPeerId && message.payload.role) {
+              applyLocalPeerConfig(message.payload.role, message.payload.permissions, fromPeerId);
+            }
+            if (message.payload.role) {
+              dbSync.updatePeerConfig(
+                message.payload.targetPeerId,
+                message.payload.role,
+                message.payload.permissions,
+                fromPeerId,
+              );
+            }
             dispatch({ type: 'UPDATE_PEER_PERMISSIONS', payload: message.payload });
           }
           break;
@@ -106,7 +205,6 @@ const P2PSyncManager: React.FC = () => {
     p2pManager.onMessage(handleMessage);
 
     p2pManager.onConnectionChange((peers) => {
-      dispatch({ type: 'UPDATE_PEERS', payload: peers });
       if (peers.length > 0) setSyncProgress(100);
     });
 
@@ -148,57 +246,39 @@ const P2PSyncManager: React.FC = () => {
     p2pManager.connect(peerId);
   };
 
+  const prepareConfiguredConnect = (peerId: string) => {
+    if (!peerId.trim()) return;
+
+    if (isLocalHostAuthority) {
+      setPendingPeerId(peerId.trim());
+      setSelectedRole('collaborator');
+      setSelectedPermissions(permissionPresets.collaborator);
+      setShowConfirmConnectModal(true);
+      return;
+    }
+
+    initiateHandshake(peerId.trim());
+  };
+
   const handleManualConnect = () => {
     if (!manualPeerId.trim()) return;
-    setPendingPeerId(manualPeerId.trim());
-    setShowConfirmConnectModal(true);
+    prepareConfiguredConnect(manualPeerId.trim());
   };
 
   const handleScanConnect = (scannedPeerId: string) => {
     setShowScannerModal(false);
     if (!scannedPeerId.trim()) return;
-    setPendingPeerId(scannedPeerId.trim());
-    setShowConfirmConnectModal(true);
+    prepareConfiguredConnect(scannedPeerId.trim());
   };
 
-  const handleRoleChange = (role: 'admin' | 'vendedor' | 'custom') => {
+  const handleRoleChange = (role: P2PRole) => {
     setSelectedRole(role);
-    if (role === 'admin') {
-      setSelectedPermissions({
-        canViewProducts: true,
-        canEditProducts: true,
-        canViewSales: true,
-        canEditSales: true,
-        canViewClients: true,
-        canEditClients: true,
-        canViewSuppliers: true,
-        canEditSuppliers: true,
-        canViewPurchaseOrders: true,
-        canEditPurchaseOrders: true,
-        canViewReports: true,
-        canViewArqueo: true,
-        canViewDashboard: true,
-      });
-    } else if (role === 'vendedor') {
-      setSelectedPermissions({
-        canViewProducts: true,
-        canEditProducts: true,
-        canViewSales: true,
-        canEditSales: true,
-        canViewClients: true,
-        canEditClients: true,
-        canViewSuppliers: false,
-        canEditSuppliers: false,
-        canViewPurchaseOrders: false,
-        canEditPurchaseOrders: false,
-        canViewReports: false,
-        canViewArqueo: false,
-        canViewDashboard: false,
-      });
+    if (role === 'admin' || role === 'collaborator' || role === 'vendedor') {
+      setSelectedPermissions(permissionPresets[role]);
     }
   };
 
-  const handleCustomPermissionToggle = (key: string) => {
+  const handleCustomPermissionToggle = (key: keyof PeerPermissions) => {
     setSelectedPermissions((prev) => ({
       ...prev,
       [key]: !prev[key],
@@ -209,7 +289,7 @@ const P2PSyncManager: React.FC = () => {
     if (!pendingPeerId) return;
 
     // Save to pending configuration
-    const finalRole = selectedRole === 'admin' ? 'admin' : 'collaborator';
+    const finalRole = selectedRole;
     setPendingConfigs((prev) => ({
       ...prev,
       [pendingPeerId]: {
@@ -256,23 +336,31 @@ const P2PSyncManager: React.FC = () => {
       const peer = state.peers.find((p) => p.id === matchingPeerId);
 
       if (peer) {
-        // Promote to admin if configured
-        if (config.role === 'admin' && peer.role !== 'admin' && state.role === 'admin') {
-          p2pManager.broadcast({ type: 'PROMOTE_ADMIN', payload: { targetPeerId: matchingPeerId } });
-        }
+        if (peer.status !== 'verified') return;
 
         // Apply permissions
-        if (state.role === 'admin') {
-          // Update the CRDT map first so the new role and permissions are replicated securely
-          dbSync.updatePeerConfig(matchingPeerId, config.role, config.permissions);
+        if (isLocalHostAuthority) {
+          // Refresh the host's authority marker before pushing the peer config
+          if (state.localPeerId) {
+            dbSync.setMasterPeerId(state.localPeerId);
+            // Ensure host's own node is marked as master in linkedNodes
+            dbSync.updateLinkedNode(state.localPeerId, { role: 'admin', isMaster: true }, state.localPeerId);
+          }
 
-          p2pManager.broadcast({
-            type: 'UPDATE_PEER_PERMISSIONS',
-            payload: { targetPeerId: matchingPeerId, permissions: config.permissions },
-          });
+          // Update the CRDT map first so the new role and permissions are replicated securely
+          dbSync.updatePeerConfig(matchingPeerId, config.role, config.permissions, state.localPeerId);
           dispatch({
+            type: 'UPDATE_PEER_CONFIG',
+            payload: { targetPeerId: matchingPeerId, role: config.role, permissions: config.permissions },
+          });
+
+          p2pManager.sendTo(matchingPeerId, {
+            type: 'CHANGE_ROLE',
+            payload: { targetPeerId: matchingPeerId, role: config.role, permissions: config.permissions },
+          });
+          p2pManager.sendTo(matchingPeerId, {
             type: 'UPDATE_PEER_PERMISSIONS',
-            payload: { targetPeerId: matchingPeerId, permissions: config.permissions },
+            payload: { targetPeerId: matchingPeerId, role: config.role, permissions: config.permissions },
           });
         }
 
@@ -284,7 +372,7 @@ const P2PSyncManager: React.FC = () => {
         });
       }
     }
-  }, [state.peers, pendingConfigs, state.role, dispatch]);
+  }, [state.peers, pendingConfigs, dispatch, isLocalHostAuthority, state.localPeerId]);
 
   const getDbStats = () => {
     const counts = {
@@ -320,20 +408,40 @@ const P2PSyncManager: React.FC = () => {
 
   const { counts, sizeStr } = getDbStats();
 
-  const handlePromote = (peerId: string) => {
-    if (state.role === 'admin') {
-      p2pManager.broadcast({ type: 'PROMOTE_ADMIN', payload: { targetPeerId: peerId } });
+  const handleChangePeerRole = (peerId: string, newRole: string) => {
+    if (isLocalHostAuthority) {
+      const peer = state.peers.find((p) => p.id === peerId);
+      const role = newRole as P2PRole;
+      if (peer) {
+        const permissions = permissionPresets[role as keyof typeof permissionPresets] || peer.permissions;
+        dbSync.updatePeerConfig(peerId, role, permissions, state.localPeerId);
+        dispatch({ type: 'UPDATE_PEER_CONFIG', payload: { targetPeerId: peerId, role, permissions } });
+      }
+      p2pManager.sendTo(peerId, { type: 'CHANGE_ROLE', payload: { targetPeerId: peerId, role } });
     }
   };
 
   const togglePermission = (peerId: string, perm: string, currentVal: boolean) => {
-    const updatedPerms = {
-      ...(state.peers.find((p) => p.id === peerId)?.permissions || {}),
+    if (!isLocalHostAuthority) return;
+
+    const peer = state.peers.find((p) => p.id === peerId);
+    if (!peer) return;
+
+    const basePermissions =
+      peer.permissions ||
+      permissionPresets[peer.role as keyof typeof permissionPresets] ||
+      permissionPresets.collaborator;
+    const updatedPerms: PeerPermissions = {
+      ...basePermissions,
       [perm]: !currentVal,
     };
-    p2pManager.broadcast({
+
+    // Update CRDT to persist permissions
+    dbSync.updatePeerConfig(peerId, peer.role, updatedPerms, state.localPeerId);
+
+    p2pManager.sendTo(peerId, {
       type: 'UPDATE_PEER_PERMISSIONS',
-      payload: { targetPeerId: peerId, permissions: updatedPerms },
+      payload: { targetPeerId: peerId, role: peer.role, permissions: updatedPerms },
     });
     dispatch({
       type: 'UPDATE_PEER_PERMISSIONS',
@@ -394,11 +502,7 @@ const P2PSyncManager: React.FC = () => {
               {t('p2pSync.encryptedTunnelActive') || 'Encrypted Tunnel: ACTIVE (ML-KEM-768 via P2PManager)'}
             </span>
             {copyStatus !== 'idle' && state.localPeerId && (
-              <span
-                className={`mt-1 text-[10px] ${
-                  copyStatus === 'copied' ? 'text-green-400' : 'text-red-400'
-                }`}
-              >
+              <span className={`mt-1 text-[10px] ${copyStatus === 'copied' ? 'text-green-400' : 'text-red-400'}`}>
                 {copyStatus === 'copied' ? 'Peer ID copiado al portapapeles' : 'No se pudo copiar el Peer ID'}
               </span>
             )}
@@ -409,22 +513,44 @@ const P2PSyncManager: React.FC = () => {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
-                  onClick={() => setShowMyQrModal(true)}
-                  className="text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 text-[#F5F5DC] border border-[#F5F5DC]/30 px-3 py-1.5 rounded-lg transition-colors font-medium"
-                >
-                  {t('p2pSync.shareQrButton') || 'Compartir QR'}
-                </button>
-                <button
-                  onClick={() => {
-                    const appUrl = window.location.origin;
-                    const text = `¡Hola! Únete a mi red de Shelf Inventory.\n\n1. Ingresa a la aplicación aquí: ${appUrl}\n2. Ve a Configuración -> Secure P2P Sync\n3. Envíame tu "Peer ID" para poder enlazarte de forma segura.`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                  }}
-                  className="text-xs bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5"
-                >
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.115.545 4.183 1.583 6.002L0 24l6.126-1.55c1.761.968 3.738 1.48 5.905 1.48 6.646 0 12.031-5.385 12.031-12.031S18.677 0 12.031 0zm6.545 17.37c-.266.75-1.55 1.442-2.155 1.503-.538.053-1.226.113-3.618-.878-2.887-1.196-4.737-4.14-4.88-4.327-.143-.188-1.164-1.553-1.164-2.96 0-1.408.73-2.106 1-2.394.27-.287.587-.36.782-.36.195 0 .39 0 .563.008.188.007.442-.075.69.525.263.638.85 2.086.925 2.235.075.15.128.323.03.51-.098.188-.15.308-.3.458-.15.15-.315.33-.45.465-.15.15-.315.315-.143.608.173.293.765 1.26 1.642 2.036 1.127.994 2.08 1.3 2.378 1.444.298.143.473.12.65-.083.178-.203.758-.885.968-1.19.21-.305.42-.255.698-.15.278.105 1.76.828 2.06.978.3.15.42.225.548.33.848.105.3.105 1.725 -.16 2.475z"/></svg>
-                  WhatsApp
-                </button>
+                    onClick={() => setShowMyQrModal(true)}
+                    className="text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 text-[#F5F5DC] border border-[#F5F5DC]/30 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                  >
+                    {t('p2pSync.shareQrButton') || 'Compartir QR'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      window.open(`https://wa.me/?text=${encodeURIComponent(inviteMessage)}`, '_blank');
+                    }}
+                    className="text-xs bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5"
+                  >
+                    <svg aria-hidden="true" className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.115.545 4.183 1.583 6.002L0 24l6.126-1.55c1.761.968 3.738 1.48 5.905 1.48 6.646 0 12.031-5.385 12.031-12.031S18.677 0 12.031 0zm6.545 17.37c-.266.75-1.55 1.442-2.155 1.503-.538.053-1.226.113-3.618-.878-2.887-1.196-4.737-4.14-4.88-4.327-.143-.188-1.164-1.553-1.164-2.96 0-1.408.73-2.106 1-2.394.27-.287.587-.36.782-.36.195 0 .39 0 .563.008.188.007.442-.075.69.525.263.638.85 2.086.925 2.235.075.15.128.323.03.51-.098.188-.15.308-.3.458-.15.15-.315.33-.45.465-.15.15-.315.315-.143.608.173.293.765 1.26 1.642 2.036 1.127.994 2.08 1.3 2.378 1.444.298.143.473.12.65-.083.178-.203.758-.885.968-1.19.21-.305.42-.255.698-.15.278.105 1.76.828 2.06.978.3.15.42.225.548.33.848.105.3.105 1.725-.16 2.475z" />
+                    </svg>
+                    WhatsApp
+                  </button>
+                  <a
+                    href={pwaInstallLink || window.location.origin}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-testid="p2p-pwa-link"
+                    className="text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 text-[#F5F5DC] border border-[#F5F5DC]/30 px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5"
+                    title="Abrir o instalar la PWA"
+                  >
+                    <Download size={14} />
+                    PWA
+                  </a>
+                  <a
+                    href={peerInviteLink || window.location.origin}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-testid="p2p-invite-link"
+                    className="text-xs bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5"
+                    title="Abrir enlace de invitación del nodo"
+                  >
+                    <Link2 size={14} />
+                    Nodo
+                  </a>
                 </div>
               </div>
             )}
@@ -491,8 +617,7 @@ const P2PSyncManager: React.FC = () => {
               {state.peers.map((peer) => {
                 const masterId = dbSync.getMasterPeerId();
                 const isOnline = p2pManager.isPeerConnected(peer.id) || peer.id === state.localPeerId;
-                const canManagePeer =
-                  state.localPeerId === masterId && peer.id !== masterId && peer.id !== state.localPeerId;
+                const canManagePeer = isLocalHostAuthority && peer.id !== state.localPeerId;
                 const isLocal = peer.id === state.localPeerId;
                 const isPeerMaster = peer.id === masterId || peer.isMaster;
 
@@ -568,13 +693,21 @@ const P2PSyncManager: React.FC = () => {
                               >
                                 Actividad
                               </button>
-                              {peer.role !== 'admin' && (
+                              {peer.role !== 'admin' ? (
                                 <button
                                   type="button"
-                                  onClick={() => handlePromote(peer.id)}
-                                  className="text-xs text-yellow-400 hover:underline cursor-pointer"
+                                  onClick={() => handleChangePeerRole(peer.id, 'admin')}
+                                  className="text-xs text-yellow-400 hover:text-yellow-300 font-bold hover:underline cursor-pointer transition-colors"
                                 >
-                                  {t('p2pSync.promoteLink') || 'Promote'}
+                                  {t('p2pSync.promoteLink') || 'Promover a Admin'}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleChangePeerRole(peer.id, 'collaborator')}
+                                  className="text-xs text-orange-400 hover:text-orange-300 font-bold hover:underline cursor-pointer transition-colors"
+                                >
+                                  {t('p2pSync.demoteLink') || 'Quitar Admin'}
                                 </button>
                               )}
                               <button
@@ -614,7 +747,7 @@ const P2PSyncManager: React.FC = () => {
                                 <input
                                   type="checkbox"
                                   checked={hasPerm}
-                                  onChange={() => togglePermission(peer.id, perm.key, hasPerm)}
+                                  onChange={() => togglePermission(peer.id, perm.key as keyof PeerPermissions, hasPerm)}
                                   className="accent-yellow-500 rounded-sm"
                                 />
                                 <span className="text-[#F5F5DC]/80">
@@ -635,6 +768,103 @@ const P2PSyncManager: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Confirm Connection Modal */}
+      {showConfirmConnectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg max-w-xl w-full shadow-2xl overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-[#F5F5DC]/10">
+              <h3 className="font-bold text-[#F5F5DC]">{t('p2pSync.confirmTitle') || 'Confirmar Conexion P2P'}</h3>
+              <button
+                type="button"
+                onClick={() => setShowConfirmConnectModal(false)}
+                className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4 space-y-4 text-sm text-[#F5F5DC]/80">
+              <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10">
+                <p className="text-xs text-[#F5F5DC]/60 mb-1">Peer ID destino</p>
+                <code className="font-mono text-yellow-400 break-all">{pendingPeerId}</code>
+              </div>
+
+              <div>
+                <p className="mb-2 font-semibold text-[#F5F5DC]">
+                  {t('p2pSync.configCollaboratorTitle') || 'Configuracion del Colaborador'}
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { role: 'admin' as P2PRole, label: t('p2pSync.roleAdmin') || 'Admin' },
+                    { role: 'collaborator' as P2PRole, label: 'Usuario normal' },
+                    { role: 'vendedor' as P2PRole, label: t('p2pSync.roleVendedor') || 'Vendedor' },
+                    { role: 'custom' as P2PRole, label: t('p2pSync.roleCustom') || 'Personalizado' },
+                  ].map((option) => (
+                    <button
+                      key={option.role}
+                      type="button"
+                      onClick={() => handleRoleChange(option.role)}
+                      className={`px-3 py-2 rounded border text-xs font-bold transition-colors ${
+                        selectedRole === option.role
+                          ? 'bg-yellow-400 text-[#121212] border-yellow-300'
+                          : 'bg-[#121212] text-[#F5F5DC] border-[#F5F5DC]/20 hover:border-[#F5F5DC]/50'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                {permissionOptions.map((perm) => (
+                  <label key={perm.key} className="flex items-center gap-2 p-2 rounded bg-[#121212]">
+                    <input
+                      type="checkbox"
+                      checked={selectedPermissions[perm.key]}
+                      disabled={selectedRole !== 'custom'}
+                      onChange={() => handleCustomPermissionToggle(perm.key)}
+                      className="accent-yellow-500 rounded-sm"
+                    />
+                    <span className={selectedRole === 'custom' ? 'text-[#F5F5DC]/80' : 'text-[#F5F5DC]/45'}>
+                      {t(`p2pSync.permissions.${perm.key}`) || perm.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                {Object.entries(counts).map(([key, value]) => (
+                  <div key={key} className="p-2 rounded bg-[#121212] border border-[#F5F5DC]/10">
+                    <span className="block text-[#F5F5DC]/50">{t(`p2pSync.${key}`) || key}</span>
+                    <span className="font-mono text-[#F5F5DC]">{value}</span>
+                  </div>
+                ))}
+                <div className="p-2 rounded bg-[#121212] border border-[#F5F5DC]/10">
+                  <span className="block text-[#F5F5DC]/50">{t('p2pSync.confirmSize') || 'Peso Estimado'}</span>
+                  <span className="font-mono text-[#F5F5DC]">{sizeStr}</span>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t border-[#F5F5DC]/10 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowConfirmConnectModal(false)}
+                className="px-4 py-2 bg-[#333] hover:bg-[#444] rounded text-white text-sm font-medium transition-colors"
+              >
+                {t('p2pSync.close') || 'Cerrar'}
+              </button>
+              <button
+                type="button"
+                onClick={confirmAndConnect}
+                className="px-4 py-2 bg-[#F5F5DC] hover:bg-white rounded text-[#121212] text-sm font-bold transition-colors"
+              >
+                {t('p2pSync.confirmProceed') || 'Sincronizar y Conectar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Info Modal */}
       {showInfoModal && (
@@ -702,9 +932,15 @@ const P2PSyncManager: React.FC = () => {
                 <p className="mb-2 text-xs opacity-70">{t('p2pSync.localPeerIdLabel') || 'Peer ID local'}</p>
                 <code className="font-mono text-yellow-400 break-all select-all">{state.localPeerId}</code>
               </div>
-              <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 flex justify-between items-center">
-                <span>{t('p2pSync.yourCurrentRole') || 'Tu Rol Actual:'}</span>
-                <span className="font-bold text-green-400 capitalize">{state.role}</span>
+              <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <span>{t('p2pSync.yourCurrentRole') || 'Tu Rol Actual:'}</span>
+                  <span className="font-bold text-green-400 capitalize">{state.role}</span>
+                </div>
+                <p className="text-xs text-[#F5F5DC]/55">
+                  Solo el host original puede conceder permisos o promover nodos. Los nodos compartidos fuera del host
+                  quedan en modo comprador/portafolio.
+                </p>
               </div>
             </div>
             <div className="p-4 border-t border-[#F5F5DC]/10 flex justify-end">
@@ -759,135 +995,18 @@ const P2PSyncManager: React.FC = () => {
       {/* QR Scanner Modal */}
       {showScannerModal && <QRScannerModal onScan={handleScanConnect} onClose={() => setShowScannerModal(false)} />}
 
-      {/* Confirm Connection Modal */}
-      {showConfirmConnectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg max-w-md w-full shadow-2xl overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b border-[#F5F5DC]/10">
-              <h3 className="font-bold text-red-400 flex items-center gap-2">🛡️ {t('p2pSync.confirmTitle')}</h3>
-              <button
-                onClick={() => setShowConfirmConnectModal(false)}
-                className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
-              >
-                <X size={20} />
-              </button>
+      {/* Sync Progress Modal */}
+      {syncProgress > 0 && syncProgress < 100 && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity duration-300">
+          <div className="bg-[#1a1a1a] border border-green-500/30 rounded-lg max-w-sm w-full shadow-[0_0_30px_rgba(34,197,94,0.15)] overflow-hidden p-6 text-center flex flex-col items-center gap-4">
+            <h3 className="font-bold text-green-400 text-lg animate-pulse">Sincronizando Datos...</h3>
+            <div className="w-full bg-[#121212] rounded-full h-3 border border-[#F5F5DC]/10 overflow-hidden relative">
+              <div
+                className="bg-green-500 h-full rounded-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(34,197,94,0.8)]"
+                style={{ width: `${syncProgress}%` }}
+              />
             </div>
-            <div className="p-4 space-y-4 text-sm text-[#F5F5DC]/80">
-              <p className="leading-relaxed bg-yellow-500/10 border border-yellow-500/20 p-3 rounded text-yellow-400">
-                {t('p2pSync.confirmWarning')}
-              </p>
-
-              <div className="space-y-2">
-                <h4 className="font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10 pb-1">
-                  {t('p2pSync.confirmStatsTitle')}
-                </h4>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex justify-between p-1 bg-[#121212] rounded">
-                    <span className="opacity-70">{t('p2pSync.products')}:</span>
-                    <span className="font-bold text-yellow-400">{counts.products}</span>
-                  </div>
-                  <div className="flex justify-between p-1 bg-[#121212] rounded">
-                    <span className="opacity-70">{t('p2pSync.sales')}:</span>
-                    <span className="font-bold text-yellow-400">{counts.sales}</span>
-                  </div>
-                  <div className="flex justify-between p-1 bg-[#121212] rounded">
-                    <span className="opacity-70">{t('p2pSync.clients')}:</span>
-                    <span className="font-bold text-yellow-400">{counts.clients}</span>
-                  </div>
-                  <div className="flex justify-between p-1 bg-[#121212] rounded">
-                    <span className="opacity-70">{t('p2pSync.suppliers')}:</span>
-                    <span className="font-bold text-yellow-400">{counts.suppliers}</span>
-                  </div>
-                  <div className="flex justify-between p-1 bg-[#121212] rounded">
-                    <span className="opacity-70">{t('p2pSync.orders')}:</span>
-                    <span className="font-bold text-yellow-400">{counts.orders}</span>
-                  </div>
-                  <div className="flex justify-between p-1 bg-[#121212] rounded">
-                    <span className="opacity-70">{t('p2pSync.logs')}:</span>
-                    <span className="font-bold text-yellow-400">{counts.logs}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-3 bg-[#121212] rounded flex justify-between items-center border border-[#F5F5DC]/10">
-                <span className="font-bold">{t('p2pSync.confirmSize')}:</span>
-                <span className="text-green-400 font-bold font-mono">{sizeStr}</span>
-              </div>
-
-              {/* Role and Permissions Configuration */}
-              <div className="space-y-3 border-t border-[#F5F5DC]/10 pt-3">
-                <h4 className="font-bold text-[#F5F5DC]">
-                  {t('p2pSync.configCollaboratorTitle') || 'Configuración del Colaborador'}
-                </h4>
-
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'admin', label: t('p2pSync.roleAdmin') || 'Admin' },
-                    { id: 'vendedor', label: t('p2pSync.roleVendedor') || 'Vendedor' },
-                    { id: 'custom', label: t('p2pSync.roleCustom') || 'Personalizado' },
-                  ].map((roleOpt) => (
-                    <button
-                      key={roleOpt.id}
-                      type="button"
-                      onClick={() => handleRoleChange(roleOpt.id as any)}
-                      className={`py-1.5 px-2 rounded text-xs font-bold border transition-colors ${
-                        selectedRole === roleOpt.id
-                          ? 'bg-yellow-500 border-yellow-500 text-[#1a1a1a]'
-                          : 'bg-[#121212] border-[#F5F5DC]/20 text-[#F5F5DC]/80 hover:border-[#F5F5DC]/40'
-                      }`}
-                    >
-                      {roleOpt.label}
-                    </button>
-                  ))}
-                </div>
-
-                {selectedRole === 'custom' && (
-                  <div className="mt-2 p-2 bg-[#121212] border border-[#F5F5DC]/15 rounded max-h-[150px] overflow-y-auto grid grid-cols-2 gap-2 text-xs">
-                    {[
-                      { key: 'canViewProducts', label: 'Ver Productos' },
-                      { key: 'canEditProducts', label: 'Editar Productos' },
-                      { key: 'canViewSales', label: 'Ver Ventas' },
-                      { key: 'canEditSales', label: 'Editar Ventas' },
-                      { key: 'canViewClients', label: 'Ver Clientes' },
-                      { key: 'canEditClients', label: 'Editar Clientes' },
-                      { key: 'canViewSuppliers', label: 'Ver Proveedores' },
-                      { key: 'canEditSuppliers', label: 'Editar Proveedores' },
-                      { key: 'canViewPurchaseOrders', label: 'Ver Órdenes' },
-                      { key: 'canEditPurchaseOrders', label: 'Editar Órdenes' },
-                      { key: 'canViewReports', label: 'Ver Reportes' },
-                      { key: 'canViewArqueo', label: 'Ver Arqueo' },
-                      { key: 'canViewDashboard', label: 'Ver Dashboard' },
-                    ].map((perm) => (
-                      <label key={perm.key} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedPermissions[perm.key] !== false}
-                          onChange={() => handleCustomPermissionToggle(perm.key)}
-                          className="accent-yellow-500 rounded-sm"
-                        />
-                        <span className="text-[#F5F5DC]/80 truncate">
-                          {t(`p2pSync.permissions.${perm.key}`) || perm.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="p-4 border-t border-[#F5F5DC]/10 flex justify-end gap-3">
-              <button
-                onClick={() => setShowConfirmConnectModal(false)}
-                className="px-4 py-2 bg-[#333] hover:bg-[#444] rounded text-white text-sm font-medium transition-colors"
-              >
-                {t('p2pSync.close')}
-              </button>
-              <button
-                onClick={confirmAndConnect}
-                className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-[#1a1a1a] rounded text-sm font-bold transition-colors"
-              >
-                {t('p2pSync.confirmProceed')}
-              </button>
-            </div>
+            <p className="text-[#F5F5DC]/70 text-sm font-mono font-bold">{Math.round(syncProgress)}% Completado</p>
           </div>
         </div>
       )}
@@ -897,9 +1016,7 @@ const P2PSyncManager: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
             <div className="flex justify-between items-center p-4 border-b border-[#F5F5DC]/10">
-              <h3 className="font-bold text-[#F5F5DC] flex items-center gap-2">
-                📋 Registro de Actividad
-              </h3>
+              <h3 className="font-bold text-[#F5F5DC] flex items-center gap-2">📋 Registro de Actividad</h3>
               <button onClick={() => setShowLogsForPeer(null)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
                 <X size={20} />
               </button>
@@ -909,15 +1026,20 @@ const P2PSyncManager: React.FC = () => {
                 <span className="text-sm opacity-70">Peer ID:</span>{' '}
                 <code className="text-yellow-400 text-sm font-mono break-all">{showLogsForPeer}</code>
               </div>
-              {state.auditLogs && state.auditLogs.filter(log => log.peerId === showLogsForPeer).length > 0 ? (
+              {state.auditLogs && state.auditLogs.filter((log) => log.peerId === showLogsForPeer).length > 0 ? (
                 [...state.auditLogs]
-                  .filter(log => log.peerId === showLogsForPeer)
+                  .filter((log) => log.peerId === showLogsForPeer)
                   .reverse()
-                  .map(log => (
-                    <div key={log.id} className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 text-sm flex flex-col gap-1">
+                  .map((log) => (
+                    <div
+                      key={log.id}
+                      className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 text-sm flex flex-col gap-1"
+                    >
                       <div className="flex justify-between items-center text-xs opacity-70">
                         <span>{new Date(log.timestamp).toLocaleString()}</span>
-                        <span className="capitalize px-2 py-0.5 bg-foreground/10 rounded">{log.entityType || 'General'}</span>
+                        <span className="capitalize px-2 py-0.5 bg-foreground/10 rounded">
+                          {log.entityType || 'General'}
+                        </span>
                       </div>
                       <div className="text-[#F5F5DC] mt-1">{log.action}</div>
                     </div>
