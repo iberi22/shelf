@@ -47,9 +47,8 @@ const Settings: React.FC = () => {
   const { isPyme } = useSubscription();
   const { user, hasAppLock, setAppLock } = useAuth();
   const [newPin, setNewPin] = useState('');
-  const [googleClientId, setGoogleClientId] = useLocalStorage('googleClientId', '');
 
-  const { uploadBackup, downloadBackup, isLoading: isDriveLoading } = useGoogleDrive(googleClientId);
+  const { uploadBackup, downloadBackup, isLoading: isDriveLoading } = useGoogleDrive();
 
   const team = [
     { id: 'owner', email: user?.email ?? 'owner@example.com', role: 'owner' as const },
@@ -114,31 +113,25 @@ const Settings: React.FC = () => {
   };
 
   const handleDriveBackup = async () => {
-    if (!googleClientId) {
-      showNotification('Por favor, configura tu Google Client ID primero.', 'error');
-      return;
-    }
-    const success = await uploadBackup(state);
-    if (success) {
+    try {
+      await uploadBackup(state);
       showNotification('Respaldo en Google Drive exitoso', 'success');
-    } else {
-      showNotification('Error al respaldar en Google Drive', 'error');
+    } catch (err) {
+      showNotification(err instanceof Error ? err.message : 'Error al respaldar en Google Drive', 'error');
     }
   };
 
   const handleDriveRestore = async () => {
-    if (!googleClientId) {
-      showNotification('Por favor, configura tu Google Client ID primero.', 'error');
-      return;
-    }
-    const data = await downloadBackup();
-    if (data) {
-      if (window.confirm(t('settings.restore.confirmation'))) {
-        dispatch({ type: 'RESTORE_STATE', payload: data as RestoreStatePayload });
-        showNotification(t('settings.restore.success'), 'success');
+    try {
+      const data = await downloadBackup();
+      if (data) {
+        if (window.confirm(t('settings.restore.confirmation'))) {
+          dispatch({ type: 'RESTORE_STATE', payload: data as RestoreStatePayload });
+          showNotification(t('settings.restore.success'), 'success');
+        }
       }
-    } else {
-      showNotification('No se encontró respaldo en Google Drive', 'error');
+    } catch (err) {
+      showNotification(err instanceof Error ? err.message : 'Error al descargar el respaldo', 'error');
     }
   };
 
@@ -516,32 +509,6 @@ const Settings: React.FC = () => {
               </p>
 
               <div className="space-y-4">
-                <div>
-                  <label htmlFor="googleClientId" className="block text-sm font-medium text-[#F5F5DC]/90 mb-1">
-                    Google Client ID
-                  </label>
-                  <input
-                    id="googleClientId"
-                    type="text"
-                    value={googleClientId}
-                    onChange={(e) => setGoogleClientId(e.target.value)}
-                    placeholder="Tu Client ID de Google Cloud Console"
-                    className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC] mb-2"
-                  />
-                  <p className="text-[10px] text-[#F5F5DC]/40">
-                    Opcional: Si quieres automatizar la subida, crea un proyecto en{' '}
-                    <a
-                      href="https://console.cloud.google.com/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:text-blue-400"
-                    >
-                      Google Cloud Console
-                    </a>{' '}
-                    y habilita la 'Google Drive API' para obtener un Client ID.
-                  </p>
-                </div>
-
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={handleCreateBackup}
