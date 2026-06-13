@@ -348,6 +348,20 @@ const P2PSyncManager: React.FC = () => {
             <span className="text-[10px] text-[#F5F5DC]/50 mt-1">
               {t('p2pSync.encryptedTunnelActive') || 'Encrypted Tunnel: ACTIVE (ML-KEM-768 via P2PManager)'}
             </span>
+            {/* Inline QR mini-preview */}
+            {state.localPeerId && (
+              <div className="mt-2 flex items-center gap-3">
+                <div className="bg-white p-1 rounded-md inline-flex">
+                  <QRCodeCanvas value={state.localPeerId} size={48} level="M" includeMargin={false} />
+                </div>
+                <button
+                  onClick={() => setShowMyQrModal(true)}
+                  className="text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 text-[#F5F5DC] border border-[#F5F5DC]/30 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                >
+                  {t('p2pSync.shareQrButton') || 'Compartir QR'}
+                </button>
+              </div>
+            )}
           </div>
           <div className="flex flex-col items-end gap-1">
             <span className="text-xs sm:text-sm font-semibold capitalize px-2 py-0.5 rounded-full bg-foreground/10 w-fit">

@@ -39,6 +39,8 @@ type Action =
   | { type: 'DELETE_PRODUCT'; payload: string }
   | { type: 'IMPORT_PRODUCTS'; payload: ImportProductsPayload }
   | { type: 'ADD_SALE'; payload: Sale }
+  | { type: 'UPDATE_SALE'; payload: Sale }
+  | { type: 'DELETE_SALE'; payload: string }
   | { type: 'ADD_CLIENT'; payload: Client }
   | { type: 'UPDATE_CLIENT'; payload: Client }
   | { type: 'DELETE_CLIENT'; payload: string }
@@ -205,6 +207,92 @@ const appReducer = (state: AppState, action: Action): AppState => {
       break;
     }
 
+    case 'UPDATE_SALE': {
+      const oldSale = state.sales.find((s) => s.id === action.payload.id);
+      if (!oldSale) {
+        return state;
+      }
+
+      // Restore quantities from old sale items
+      let updatedProducts = state.products;
+      for (const oldItem of oldSale.items) {
+        const productIndex = updatedProducts.findIndex((p) => p.id === oldItem.productId);
+        if (productIndex !== -1) {
+          updatedProducts = [
+            ...updatedProducts.slice(0, productIndex),
+            enrich(state, {
+              ...updatedProducts[productIndex],
+              quantity: updatedProducts[productIndex].quantity + oldItem.quantity,
+            }),
+            ...updatedProducts.slice(productIndex + 1),
+          ];
+        }
+      }
+
+      // Deduct quantities from new sale items
+      for (const newItem of action.payload.items) {
+        const productIndex = updatedProducts.findIndex((p) => p.id === newItem.productId);
+        if (productIndex !== -1) {
+          updatedProducts = [
+            ...updatedProducts.slice(0, productIndex),
+            enrich(state, {
+              ...updatedProducts[productIndex],
+              quantity: updatedProducts[productIndex].quantity - newItem.quantity,
+            }),
+            ...updatedProducts.slice(productIndex + 1),
+          ];
+        }
+      }
+
+      const salePayload = enrich(state, action.payload);
+      if (salePayload.clientId) {
+        const client = state.clients.find((c) => c.id === salePayload.clientId);
+        if (client) {
+          salePayload.clientName = client.name;
+        }
+      }
+
+      newState = {
+        ...state,
+        products: updatedProducts,
+        sales: state.sales.map((s) => (s.id === action.payload.id ? salePayload : s)),
+      };
+      break;
+    }
+
+    case 'DELETE_SALE': {
+      const deletedSale = state.sales.find((s) => s.id === action.payload);
+      let productsAfterDelete = state.products;
+
+      // Restore quantities when soft-deleting a sale
+      if (deletedSale) {
+        for (const item of deletedSale.items) {
+          const productIndex = productsAfterDelete.findIndex((p) => p.id === item.productId);
+          if (productIndex !== -1) {
+            productsAfterDelete = [
+              ...productsAfterDelete.slice(0, productIndex),
+              enrich(state, {
+                ...productsAfterDelete[productIndex],
+                quantity: productsAfterDelete[productIndex].quantity + item.quantity,
+              }),
+              ...productsAfterDelete.slice(productIndex + 1),
+            ];
+          }
+        }
+      }
+
+      newState = {
+        ...state,
+        products: productsAfterDelete,
+        sales: state.sales.map((s) =>
+          s.id === action.payload
+            ? { ...s, isActive: false, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' }
+            : s,
+        ),
+      };
+      break;
+    }
+
     case 'ADD_SALE': {
       const newProducts = [...state.products];
       for (const item of action.payload.items) {
@@ -212,7 +300,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
         if (productIndex !== -1) {
           newProducts[productIndex] = enrich(state, {
             ...newProducts[productIndex],
-            quantity: newProducts[productIndex].quantity - item.quantity,
+            quantity: Math.max(0, newProducts[productIndex].quantity - item.quantity),
           });
         }
       }
@@ -457,6 +545,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
     } else if (action.type.startsWith('UPDATE_') && (action as any).payload?.id) {
       const typeMap: Record<string, keyof AppState> = {
         UPDATE_PRODUCT: 'products',
+        UPDATE_SALE: 'sales',
         UPDATE_CLIENT: 'clients',
         UPDATE_SUPPLIER: 'suppliers',
         UPDATE_PURCHASE_ORDER: 'purchaseOrders',
@@ -677,7 +766,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               'products',
               enrich(currentState, {
                 ...product,
-                quantity: product.quantity - item.quantity,
+                quantity: Math.max(0, product.quantity - item.quantity),
               }),
             );
           }

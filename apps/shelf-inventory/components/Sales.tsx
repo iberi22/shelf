@@ -14,6 +14,8 @@ const Sales: React.FC = () => {
   const { state, dispatch } = useAppContext();
   const canEdit = state.role === 'admin' || state.permissions?.canEditSales !== false;
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [deletingSaleId, setDeletingSaleId] = useState<string | null>(null);
   const { t } = useI18n();
   const { formatCurrency } = useCurrency();
 
@@ -75,23 +77,34 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
     window.open(url, '_blank');
   };
 
-  const handleOpenModal = () => {
+  const handleOpenModal = (sale?: Sale) => {
     if (!canEdit) return;
+    setEditingSale(sale || null);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
+    setEditingSale(null);
     setIsModalOpen(false);
   };
 
   const handleSaveSale = (saleData: Omit<Sale, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>) => {
     if (!canEdit) return;
-    const newSale = {
-      id: new Date().toISOString(),
-      ...saleData,
-    } as Sale;
-    dispatch({ type: 'ADD_SALE', payload: newSale });
+    if (editingSale) {
+      dispatch({ type: 'UPDATE_SALE', payload: { ...editingSale, ...saleData } as Sale });
+    } else {
+      const newSale = {
+        id: new Date().toISOString(),
+        ...saleData,
+      } as Sale;
+      dispatch({ type: 'ADD_SALE', payload: newSale });
+    }
     handleCloseModal();
+  };
+
+  const handleDeleteSale = (saleId: string) => {
+    dispatch({ type: 'DELETE_SALE', payload: saleId });
+    setDeletingSaleId(null);
   };
 
   const SortableHeader: React.FC<{ sortKey: keyof Sale; labelKey: string }> = ({ sortKey, labelKey }) => (
@@ -113,7 +126,7 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
         <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC] shrink-0">{t('sales.title')}</h2>
         {canEdit && (
           <button
-            onClick={handleOpenModal}
+            onClick={() => handleOpenModal()}
             className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
             data-testid="add-sale-button"
           >
@@ -151,6 +164,24 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
               <td className="p-4">{formatCurrency(sale.profit)}</td>
               <td className="p-4">{sale.clientName || t('common.notAvailable')}</td>
               <td className="p-4 flex gap-2">
+                {canEdit && (
+                  <button
+                    onClick={() => handleOpenModal(sale)}
+                    className="text-yellow-400 hover:text-yellow-300 transition-colors"
+                    title={t('common.edit') || 'Edit'}
+                  >
+                    ✏️
+                  </button>
+                )}
+                {canEdit && (
+                  <button
+                    onClick={() => setDeletingSaleId(sale.id)}
+                    className="text-red-400 hover:text-red-300 transition-colors"
+                    title={t('common.delete') || 'Delete'}
+                  >
+                    🗑️
+                  </button>
+                )}
                 <button
                   onClick={() => generateReceipt(sale)}
                   className="text-blue-400 hover:text-blue-300 transition-colors"
@@ -197,6 +228,24 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
               <div className="flex items-center justify-between">
                 <span className="text-xs text-[#F5F5DC]/50">{sale.clientName || t('common.notAvailable')}</span>
                 <div className="flex gap-3">
+                  {canEdit && (
+                    <button
+                      onClick={() => handleOpenModal(sale)}
+                      className="bg-transparent border border-yellow-500/50 text-yellow-400 font-bold py-2 px-3 rounded-lg text-xs hover:bg-yellow-500/10 transition-all active:scale-95 min-h-[44px]"
+                      title={t('common.edit') || 'Edit'}
+                    >
+                      ✏️
+                    </button>
+                  )}
+                  {canEdit && (
+                    <button
+                      onClick={() => setDeletingSaleId(sale.id)}
+                      className="bg-transparent border border-red-500/50 text-red-400 font-bold py-2 px-3 rounded-lg text-xs hover:bg-red-500/10 transition-all active:scale-95 min-h-[44px]"
+                      title={t('common.delete') || 'Delete'}
+                    >
+                      🗑️
+                    </button>
+                  )}
                   <button
                     onClick={() => generateReceipt(sale)}
                     className="bg-transparent border border-blue-500/50 text-blue-400 font-bold py-2 px-3 rounded-lg text-xs hover:bg-blue-500/10 transition-all active:scale-95 min-h-[44px]"
@@ -226,8 +275,34 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
       </div>
 
       {isModalOpen && (
-        <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={t('sales.addSale')}>
-          <SaleForm onSave={handleSaveSale} onCancel={handleCloseModal} />
+        <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingSale ? (t('sales.editSale') || 'Edit Sale') : t('sales.addSale')}>
+          <SaleForm onSave={handleSaveSale} onCancel={handleCloseModal} editingSale={editingSale} />
+        </Modal>
+      )}
+
+      {deletingSaleId && (
+        <Modal
+          isOpen={!!deletingSaleId}
+          onClose={() => setDeletingSaleId(null)}
+          title={t('sales.deleteConfirmTitle') || 'Delete Sale'}
+        >
+          <div className="space-y-4">
+            <p className="text-[#F5F5DC]/80">{t('sales.deleteConfirmMessage') || 'Are you sure you want to delete this sale? This will restore product quantities.'}</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeletingSaleId(null)}
+                className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2.5 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 min-h-[44px]"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={() => handleDeleteSale(deletingSaleId)}
+                className="bg-red-600 font-bold py-2.5 px-4 rounded-lg hover:bg-red-700 transition-colors active:scale-95 min-h-[44px]"
+              >
+                {t('common.delete') || 'Delete'}
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>
@@ -237,14 +312,17 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
 interface SaleFormProps {
   onSave: (saleData: Omit<Sale, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>) => void;
   onCancel: () => void;
+  editingSale?: Sale | null;
 }
 
-const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
+const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) => {
   const { t } = useI18n();
   const { state } = useAppContext();
   const { formatCurrency } = useCurrency();
-  const [items, setItems] = useState<Omit<SaleItem, 'productName' | 'cost'>[]>([]);
-  const [clientId, setClientId] = useState<string | undefined>();
+  const [items, setItems] = useState<Omit<SaleItem, 'productName' | 'cost'>[]>(
+    () => editingSale?.items.map((item) => ({ productId: item.productId, quantity: item.quantity, price: item.price })) || [],
+  );
+  const [clientId, setClientId] = useState<string | undefined>(editingSale?.clientId);
   const [errors, setErrors] = useState<{ general?: string; items?: { [key: number]: string } }>({});
 
   const availableProducts = useMemo(() => {
@@ -337,7 +415,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel }) => {
         };
       });
       onSave({
-        date: new Date().toISOString(),
+        date: editingSale?.date || new Date().toISOString(),
         items: saleItems,
         totalPrice,
         profit: totalProfit,

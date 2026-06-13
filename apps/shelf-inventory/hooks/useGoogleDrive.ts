@@ -3,7 +3,8 @@ import { useCallback, useState } from 'react';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-export const useGoogleDrive = (clientId: string) => {
+export const useGoogleDrive = () => {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +36,11 @@ export const useGoogleDrive = (clientId: string) => {
       // @ts-expect-error
       if (!window.google) {
         reject(new Error('Google Identity Services not loaded'));
+        return;
+      }
+
+      if (!clientId) {
+        reject(new Error('Google Client ID no está configurado (VITE_GOOGLE_CLIENT_ID)'));
         return;
       }
 
@@ -109,8 +115,9 @@ export const useGoogleDrive = (clientId: string) => {
       return true;
     } catch (err) {
       console.error('Google Drive Backup Error:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error during backup');
-      return false;
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error during backup';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -146,8 +153,9 @@ export const useGoogleDrive = (clientId: string) => {
       }
     } catch (err) {
       console.error('Google Drive Download Error:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error during restore');
-      return null;
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error during restore';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
