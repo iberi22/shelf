@@ -332,30 +332,30 @@ const P2PSyncManager: React.FC = () => {
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-[#121212] rounded-md min-w-0">
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs sm:text-sm break-all flex items-center gap-1.5">
-              {t('p2pSync.peerId') || 'Peer ID'}:{' '}
-              <span className="font-mono text-yellow-400">{state.localPeerId || 'Initializing...'}</span>
+          <div className="flex flex-col min-w-0 w-full">
+            <div className="text-xs sm:text-sm flex flex-wrap items-center gap-1.5 min-w-0 w-full">
+              <span className="shrink-0">{t('p2pSync.peerId') || 'Peer ID'}:</span>
+              <span className="font-mono text-yellow-400 break-all min-w-0 flex-1">{state.localPeerId || 'Initializing...'}</span>
               {state.localPeerId && (
                 <button
                   onClick={() => setShowMyQrModal(true)}
-                  className="text-[#F5F5DC]/60 hover:text-[#F5F5DC] transition-colors"
+                  className="text-[#F5F5DC]/60 hover:text-[#F5F5DC] transition-colors shrink-0"
                   title={t('p2pSync.myQrTitle')}
                 >
                   <QrCode size={14} />
                 </button>
               )}
-            </span>
+            </div>
             <span className="text-[10px] text-[#F5F5DC]/50 mt-1">
               {t('p2pSync.encryptedTunnelActive') || 'Encrypted Tunnel: ACTIVE (ML-KEM-768 via P2PManager)'}
             </span>
-            {/* Inline QR mini-preview */}
             {state.localPeerId && (
-              <div className="mt-2 flex items-center gap-3">
-                <div className="bg-white p-1 rounded-md inline-flex">
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <div className="bg-white p-1 rounded-md inline-flex shrink-0">
                   <QRCodeCanvas value={state.localPeerId} size={48} level="M" includeMargin={false} />
                 </div>
-                <button
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
                   onClick={() => setShowMyQrModal(true)}
                   className="text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 text-[#F5F5DC] border border-[#F5F5DC]/30 px-3 py-1.5 rounded-lg transition-colors font-medium"
                 >
@@ -363,7 +363,8 @@ const P2PSyncManager: React.FC = () => {
                 </button>
                 <button
                   onClick={() => {
-                    const text = `¡Hola! Conéctate a mi nodo P2P en Shelf Inventory usando este Peer ID: ${state.localPeerId}`;
+                    const appUrl = window.location.origin;
+                    const text = `¡Hola! Únete a mi red de Shelf Inventory.\n\n1. Ingresa a la aplicación aquí: ${appUrl}\n2. Ve a Configuración -> Secure P2P Sync\n3. Envíame tu "Peer ID" para poder enlazarte de forma segura.`;
                     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                   }}
                   className="text-xs bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5"
@@ -371,6 +372,7 @@ const P2PSyncManager: React.FC = () => {
                   <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.115.545 4.183 1.583 6.002L0 24l6.126-1.55c1.761.968 3.738 1.48 5.905 1.48 6.646 0 12.031-5.385 12.031-12.031S18.677 0 12.031 0zm6.545 17.37c-.266.75-1.55 1.442-2.155 1.503-.538.053-1.226.113-3.618-.878-2.887-1.196-4.737-4.14-4.88-4.327-.143-.188-1.164-1.553-1.164-2.96 0-1.408.73-2.106 1-2.394.27-.287.587-.36.782-.36.195 0 .39 0 .563.008.188.007.442-.075.69.525.263.638.85 2.086.925 2.235.075.15.128.323.03.51-.098.188-.15.308-.3.458-.15.15-.315.33-.45.465-.15.15-.315.315-.143.608.173.293.765 1.26 1.642 2.036 1.127.994 2.08 1.3 2.378 1.444.298.143.473.12.65-.083.178-.203.758-.885.968-1.19.21-.305.42-.255.698-.15.278.105 1.76.828 2.06.978.3.15.42.225.548.33.848.105.3.105 1.725-.16 2.475z"/></svg>
                   WhatsApp
                 </button>
+                </div>
               </div>
             )}
           </div>
@@ -386,13 +388,13 @@ const P2PSyncManager: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 mt-1">
+        <div className="flex flex-wrap items-center gap-2 mt-1 w-full min-w-0">
           <input
             type="text"
             placeholder={t('p2pSync.placeholderManual') || 'O ingresa el Peer ID manualmente...'}
             value={manualPeerId}
             onChange={(e) => setManualPeerId(e.target.value)}
-            className="flex-1 bg-[#121212] border border-[#F5F5DC]/30 rounded-lg px-3 py-2.5 text-sm text-[#F5F5DC] placeholder-[#F5F5DC]/30 focus:outline-none focus:border-[#F5F5DC]/60 transition-colors"
+            className="flex-1 min-w-[200px] w-full bg-[#121212] border border-[#F5F5DC]/30 rounded-lg px-3 py-2.5 text-sm text-[#F5F5DC] placeholder-[#F5F5DC]/30 focus:outline-none focus:border-[#F5F5DC]/60 transition-colors"
           />
           <button
             type="button"
