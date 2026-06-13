@@ -672,7 +672,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Setup P2P Handlers
     p2pManager.onConnectionChange((_peers) => {
       const remoteState = dbSync.getState(dbSync.localPeerId);
-      rawDispatch({ type: 'SYNC_STATE', payload: remoteState });
+      const currentLocal = stateRef.current;
+      const filterNew = <T extends { id: string }>(remote: T[] | undefined, local: T[]): T[] => {
+        if (!remote || remote.length === 0) return [];
+        const localIds = new Set(local.map((l) => l.id));
+        return remote.filter((r) => !localIds.has(r.id));
+      };
+      rawDispatch({
+        type: 'SYNC_STATE',
+        payload: {
+          products: filterNew(remoteState.products, currentLocal.products),
+          sales: filterNew(remoteState.sales, currentLocal.sales),
+          clients: filterNew(remoteState.clients, currentLocal.clients),
+          suppliers: filterNew(remoteState.suppliers, currentLocal.suppliers),
+          purchaseOrders: filterNew(remoteState.purchaseOrders, currentLocal.purchaseOrders),
+          arqueoSessions: filterNew(remoteState.arqueoSessions, currentLocal.arqueoSessions),
+          ocrResults: filterNew(remoteState.ocrResults, currentLocal.ocrResults),
+          role: remoteState.role,
+          permissions: remoteState.permissions,
+          peers: remoteState.peers,
+          auditLogs: remoteState.auditLogs,
+        },
+      });
     });
 
     // Expose for Playwright testing

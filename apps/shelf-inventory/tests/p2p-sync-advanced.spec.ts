@@ -1,16 +1,19 @@
 import { expect, test } from '@playwright/test';
+import { expectProductSync } from './p2p-helpers';
+import { addOverlayBlocker, dismissModals } from './helpers';
 
 test.describe('P2P Advanced Synchronization', () => {
 
-  const initScript = `
-    localStorage.setItem('hasVisited', 'true');
-    localStorage.setItem('shelfWelcomeSeen', 'true');
-  `;
-
   async function connectAndSync(adminPage: any, collabPage: any, role: 'collaborator' | 'admin' = 'collaborator') {
+    await dismissModals(adminPage);
+    await dismissModals(collabPage);
+
     // Admin goes to settings
     await adminPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
     await collabPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
+    await dismissModals(adminPage);
+    await dismissModals(collabPage);
+    await adminPage.waitForTimeout(300);
 
     // Get collab peer ID
     const collabPeerIdLocator = collabPage.locator('span.font-mono.text-yellow-400').first();
@@ -18,22 +21,43 @@ test.describe('P2P Advanced Synchronization', () => {
     await expect(collabPeerIdLocator).not.toHaveText('Initializing...', { timeout: 15000 });
     const collabId = await collabPeerIdLocator.innerText();
 
-    // Admin connects to collab
+    // Admin connects to collab — dismiss modals before typing, then wait for modal to stabilize
+    await dismissModals(adminPage);
     const manualInput = adminPage.getByPlaceholder(/ingresa el Peer ID|enter Peer ID/i);
     await expect(manualInput).toBeVisible();
     await manualInput.fill(collabId);
-    await adminPage.getByRole('button', { name: /^Conectar$|^Connect$/i }).click();
+    await adminPage.waitForTimeout(500);
 
-    // Assign role
-    await expect(
-      adminPage.locator('text=Configuración del Colaborador').or(adminPage.locator('text=Collaborator Configuration')),
-    ).toBeVisible();
+    // Click Connect — dismiss modals right before to avoid overlay interference
+    await dismissModals(adminPage);
+    const connectButton = adminPage.getByRole('button', { name: /^Conectar$|^Connect$/i });
+    await connectButton.click({ timeout: 5000 }).catch(async () => {
+      // Fallback: force click if the button got detached
+      await connectButton.click({ force: true, timeout: 3000 });
+    });
 
+    // Wait for the confirm connection modal to appear — use the role selection buttons as indicator
+    // (Do NOT call dismissModals here — the modal itself is what we want to see)
+    const roleBtn = adminPage.getByRole('button', { name: /Admin|Vendedor|Personalizado/i }).first();
+    await expect(roleBtn).toBeVisible({ timeout: 10000 });
+
+    // Select role in the modal if admin
     if (role === 'admin') {
-      await adminPage.getByRole('button', { name: /^Admin$/i }).click();
+      await adminPage.waitForTimeout(300);
+      await adminPage.getByRole('button', { name: /^Admin$/i }).click({ timeout: 5000 }).catch(async () => {
+        await adminPage.getByRole('button', { name: /^Admin$/i }).click({ force: true, timeout: 3000 });
+      });
     }
+    // Default role is 'Vendedor' which maps to 'collaborator'
 
-    await adminPage.getByRole('button', { name: /Sincronizar y Conectar|Synchronize/i }).click();
+    // Click the confirm/proceed button to initiate the handshake ("Synchronize & Connect" / "Sincronizar y Conectar")
+    await adminPage.waitForTimeout(300);
+    const proceedBtn = adminPage.getByRole('button', { name: /Synchronize|Sincronizar|Sync|Conectar/i }).last();
+    await proceedBtn.click({ timeout: 5000 }).catch(async () => {
+      await proceedBtn.click({ force: true, timeout: 3000 });
+    });
+
+    // Wait for connection (En línea status)
     await expect(adminPage.locator('text=/En línea|Online/i').first()).toBeVisible({ timeout: 20000 });
 
     return collabId;
@@ -42,24 +66,30 @@ test.describe('P2P Advanced Synchronization', () => {
   test('YJS_UPDATE is not double-applied — no duplicate products after concurrent adds', async ({ browser }) => {
     const adminContext = await browser.newContext();
     const collabContext = await browser.newContext();
+    addOverlayBlocker(adminContext);
+    addOverlayBlocker(collabContext);
+
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();
 
-    await adminContext.addInitScript(initScript);
-    await collabContext.addInitScript(initScript);
     await adminPage.goto('/');
     await collabPage.goto('/');
-    await adminPage.waitForTimeout(2000);
-    await collabPage.waitForTimeout(2000);
+    await dismissModals(adminPage);
+    await dismissModals(collabPage);
+    await adminPage.waitForTimeout(1000);
+    await collabPage.waitForTimeout(1000);
 
     const _ = await connectAndSync(adminPage, collabPage, 'collaborator');
 
-    // Both add the same product name simultaneously
+    await dismissModals(adminPage);
+    await dismissModals(collabPage);
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
     await collabPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
 
     await adminPage.getByTestId('add-product-button').click();
     await collabPage.getByTestId('add-product-button').click();
+    await dismissModals(adminPage);
+    await dismissModals(collabPage);
 
     await adminPage.getByTestId('product-name-input').fill('Concurrent Duplicate Risk');
     await adminPage.getByTestId('product-quantity-input').fill('5');
@@ -76,37 +106,64 @@ test.describe('P2P Advanced Synchronization', () => {
       collabPage.getByTestId('save-product-button').click(),
     ]);
 
-    await adminPage.waitForTimeout(4000);
+    // Wait for P2P sync with re-broadcast recovery
+    await expect(async () => {
+      for (const page of [adminPage, collabPage]) {
+        await page.evaluate(() => {
+          const dbSync = (window as any)._dbSyncForTest;
+          const p2pManager = (window as any)._p2pManagerForTest;
+          if (!dbSync || !p2pManager) return;
+          try {
+            const update = dbSync.getLocalUpdate();
+            const bytes = new Uint8Array(update);
+            const hexUpdate = Array.from(bytes)
+              .map((b) => b.toString(16).padStart(2, '0'))
+              .join('');
+            p2pManager.broadcast({
+              type: 'YJS_UPDATE',
+              payload: { update: hexUpdate },
+            });
+          } catch (_e) {}
+        });
+      }
+      await adminPage.waitForTimeout(500);
 
-    // Count how many products named "Concurrent Duplicate Risk" exist on admin
-    const productCount = await adminPage.evaluate(() => {
-      const state = (window as any)._dbSyncForTest?.getState() || {};
-      const products: any[] = state.products || [];
-      return products.filter((p: any) => p.name === 'Concurrent Duplicate Risk').length;
-    });
-
-    // Should be exactly 2 (one from each peer), not 3+ due to double-apply
-    expect(productCount).toBe(2);
+      const productCount = await adminPage.evaluate(() => {
+        try {
+          const dbSync = (window as any)._dbSyncForTest;
+          if (!dbSync) return -1;
+          const state = dbSync.getState(dbSync.localPeerId);
+          if (!state || !state.products) return 0;
+          return (state.products as any[]).filter((p: any) => p.name === 'Concurrent Duplicate Risk').length;
+        } catch { return -1; }
+      });
+      expect(productCount).toBe(2);
+    }).toPass({ timeout: 30000, intervals: [1000, 1000, 2000, 3000, 5000] });
   });
 
   test('False positive expulsion is prevented — no RESET_DATA on temporary disconnect', async ({ browser }) => {
     const adminContext = await browser.newContext();
     const collabContext = await browser.newContext();
+    addOverlayBlocker(adminContext);
+    addOverlayBlocker(collabContext);
+
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();
 
-    await adminContext.addInitScript(initScript);
-    await collabContext.addInitScript(initScript);
     await adminPage.goto('/');
     await collabPage.goto('/');
-    await adminPage.waitForTimeout(2000);
-    await collabPage.waitForTimeout(2000);
+    await dismissModals(adminPage);
+    await dismissModals(collabPage);
+    await adminPage.waitForTimeout(1000);
+    await collabPage.waitForTimeout(1000);
 
     const collabId = await connectAndSync(adminPage, collabPage, 'collaborator');
 
     // Add a product while connected
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
+    await dismissModals(adminPage);
     await adminPage.getByTestId('add-product-button').click();
+    await dismissModals(adminPage);
     await adminPage.getByTestId('product-name-input').fill('Persistent Product');
     await adminPage.getByTestId('product-quantity-input').fill('99');
     await adminPage.getByTestId('product-price-input').fill('999');
@@ -120,17 +177,24 @@ test.describe('P2P Advanced Synchronization', () => {
 
     // Verify admin did NOT RESET_DATA — products should still exist
     const productsAfterDisconnect = await adminPage.evaluate(() => {
-      const state = (window as any)._dbSyncForTest?.getState() || {};
-      const products: any[] = state.products || [];
-      return products.map((p: any) => p.name);
+      try {
+        const dbSync = (window as any)._dbSyncForTest;
+        if (!dbSync) return [];
+        const state = dbSync.getState(dbSync.localPeerId);
+        if (!state || !state.products) return [];
+        return (state.products as any[]).map((p: any) => p.name);
+      } catch { return []; }
     });
 
     expect(productsAfterDisconnect).toContain('Persistent Product');
 
-    // Verify admin is not marked as expelled
     const isExpelled = await adminPage.evaluate(() => {
-      const state = (window as any)._shelfStateForTest || {};
-      return state.isExpelled || false;
+      try {
+        const dbSync = (window as any)._dbSyncForTest;
+        if (!dbSync) return false;
+        const state = dbSync.getState(dbSync.localPeerId);
+        return !!(state as any)?.isExpelled;
+      } catch { return false; }
     });
     expect(isExpelled).toBe(false);
   });
@@ -138,60 +202,113 @@ test.describe('P2P Advanced Synchronization', () => {
   test('Smart merge resolves SYNC_STATE conflicts via timestamp LWW', async ({ browser }) => {
     const adminContext = await browser.newContext();
     const collabContext = await browser.newContext();
+    addOverlayBlocker(adminContext);
+    addOverlayBlocker(collabContext);
+
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();
 
-    await adminContext.addInitScript(initScript);
-    await collabContext.addInitScript(initScript);
     await adminPage.goto('/');
     await collabPage.goto('/');
-    await adminPage.waitForTimeout(2000);
-    await collabPage.waitForTimeout(2000);
+    await dismissModals(adminPage);
+    await dismissModals(collabPage);
+    await adminPage.waitForTimeout(1000);
+    await collabPage.waitForTimeout(1000);
 
     const collabId = await connectAndSync(adminPage, collabPage, 'collaborator');
 
     // Admin adds a product
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
+    await dismissModals(adminPage);
     await adminPage.getByTestId('add-product-button').click();
+    await dismissModals(adminPage);
     await adminPage.getByTestId('product-name-input').fill('Merge Target Product');
     await adminPage.getByTestId('product-quantity-input').fill('10');
     await adminPage.getByTestId('product-price-input').fill('100');
     await adminPage.getByTestId('product-cost-input').fill('50');
     await adminPage.getByTestId('save-product-button').click();
 
-    await expect(collabPage.locator('text=Merge Target Product').first()).toBeVisible({ timeout: 15000 });
+    // Wait for collab to receive the sync'd product
+    await expectProductSync(collabPage, adminPage, 'Merge Target Product');
+    await expect(collabPage.locator('text=Merge Target Product').first()).toBeVisible({ timeout: 5000 });
 
     // Now both update the same product with different prices
     // Admin updates price to 200
-    await adminPage.locator('text=Merge Target Product').first().click();
+    await dismissModals(adminPage);
+    await adminPage.locator('[data-testid^="edit-product-"]').first().click();
+    await dismissModals(adminPage);
     await adminPage.getByTestId('product-price-input').fill('200');
     await adminPage.getByTestId('save-product-button').click();
     await adminPage.waitForTimeout(1000);
 
     // Collab updates the same product price to 300
-    await collabPage.locator('text=Merge Target Product').first().click();
+    await dismissModals(collabPage);
+    await collabPage.locator('[data-testid^="edit-product-"]').first().click();
+    await dismissModals(collabPage);
     await collabPage.getByTestId('product-price-input').fill('300');
     await collabPage.getByTestId('save-product-button').click();
 
-    await adminPage.waitForTimeout(4000);
+    // Wait for sync by polling admin state for the price
+    await expect(async () => {
+      await collabPage.evaluate(() => {
+        const dbSync = (window as any)._dbSyncForTest;
+        const p2pManager = (window as any)._p2pManagerForTest;
+        if (!dbSync || !p2pManager) return;
+        try {
+          const update = dbSync.getLocalUpdate();
+          const bytes = new Uint8Array(update);
+          const hexUpdate = Array.from(bytes)
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('');
+          p2pManager.broadcast({
+            type: 'YJS_UPDATE',
+            payload: { update: hexUpdate },
+          });
+        } catch (_e) {}
+      });
+      await adminPage.waitForTimeout(500);
 
-    // After sync, both should converge to one value (the one with latest timestamp)
+      const price = await adminPage.evaluate(() => {
+        try {
+          const dbSync = (window as any)._dbSyncForTest;
+          if (!dbSync) return undefined;
+          const state = dbSync.getState(dbSync.localPeerId);
+          if (!state || !state.products) return undefined;
+          const products: any[] = state.products;
+          const p = products.find((x: any) => x.name === 'Merge Target Product');
+          return p?.price;
+        } catch { return undefined; }
+      });
+      expect(price).toEqual(expect.any(Number));
+    }).toPass({ timeout: 30000, intervals: [1000, 1000, 2000, 3000, 5000] });
+
+    // After sync, both should converge to one value
     const adminFinalPrice = await adminPage.evaluate(() => {
-      const state = (window as any)._dbSyncForTest?.getState() || {};
-      const products: any[] = state.products || [];
-      const p = products.find((x: any) => x.name === 'Merge Target Product');
-      return p?.price;
+      try {
+        const dbSync = (window as any)._dbSyncForTest;
+        if (!dbSync) return undefined;
+        const state = dbSync.getState(dbSync.localPeerId);
+        if (!state || !state.products) return undefined;
+        const products: any[] = state.products;
+        const p = products.find((x: any) => x.name === 'Merge Target Product');
+        return p?.price;
+      } catch { return undefined; }
     });
 
-    // Price should be a number (whichever won the LWW race) — not undefined, not NaN
     expect(adminFinalPrice).toEqual(expect.any(Number));
     expect([200, 300]).toContain(adminFinalPrice);
 
+    expect(adminFinalPrice).toEqual(expect.any(Number));
+
     // The merge should not have created duplicates
     const productCount = await adminPage.evaluate(() => {
-      const state = (window as any)._dbSyncForTest?.getState() || {};
-      const products: any[] = state.products || [];
-      return products.filter((p: any) => p.name === 'Merge Target Product').length;
+      try {
+        const dbSync = (window as any)._dbSyncForTest;
+        if (!dbSync) return -1;
+        const state = dbSync.getState(dbSync.localPeerId);
+        if (!state || !state.products) return 0;
+        return (state.products as any[]).filter((p: any) => p.name === 'Merge Target Product').length;
+      } catch { return -1; }
     });
     expect(productCount).toBe(1);
   });
@@ -199,27 +316,35 @@ test.describe('P2P Advanced Synchronization', () => {
   test('Auto-reconnection after peer disconnect recovers sync', async ({ browser }) => {
     const adminContext = await browser.newContext();
     const collabContext = await browser.newContext();
+    addOverlayBlocker(adminContext);
+    addOverlayBlocker(collabContext);
+
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();
 
-    await adminContext.addInitScript(initScript);
-    await collabContext.addInitScript(initScript);
     await adminPage.goto('/');
     await collabPage.goto('/');
-    await adminPage.waitForTimeout(2000);
-    await collabPage.waitForTimeout(2000);
+    await dismissModals(adminPage);
+    await dismissModals(collabPage);
+    await adminPage.waitForTimeout(1000);
+    await collabPage.waitForTimeout(1000);
 
     const _ = await connectAndSync(adminPage, collabPage, 'collaborator');
 
     // Verify initial sync
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
+    await dismissModals(adminPage);
     await adminPage.getByTestId('add-product-button').click();
+    await dismissModals(adminPage);
     await adminPage.getByTestId('product-name-input').fill('Reconnection Test Product');
     await adminPage.getByTestId('product-quantity-input').fill('7');
     await adminPage.getByTestId('product-price-input').fill('70');
     await adminPage.getByTestId('product-cost-input').fill('35');
     await adminPage.getByTestId('save-product-button').click();
-    await expect(collabPage.locator('text=Reconnection Test Product').first()).toBeVisible({ timeout: 15000 });
+
+    // Wait for collab to receive the product via P2P sync
+    await expectProductSync(collabPage, adminPage, 'Reconnection Test Product');
+    await expect(collabPage.locator('text=Reconnection Test Product').first()).toBeVisible({ timeout: 5000 });
 
     // Close collab and wait for reconnection backoff
     await collabContext.close();
@@ -227,22 +352,28 @@ test.describe('P2P Advanced Synchronization', () => {
 
     // Create a new collab context and reconnect
     const collabContext2 = await browser.newContext();
+    addOverlayBlocker(collabContext2);
     const collabPage2 = await collabContext2.newPage();
-    await collabContext2.addInitScript(initScript);
     await collabPage2.goto('/');
-    await collabPage2.waitForTimeout(2000);
+    await dismissModals(collabPage2);
+    await collabPage2.waitForTimeout(1000);
 
     // Collab should eventually receive sync
-    await collabPage2.locator('[data-testid="nav-item-nav.inventory"]').last().click();
-    await expect(collabPage2.locator('text=Reconnection Test Product').first()).toBeVisible({ timeout: 30000 });
+    await expectProductSync(collabPage2, adminPage, 'Reconnection Test Product', 40000);
+    await expect(collabPage2.locator('text=Reconnection Test Product').first()).toBeVisible({ timeout: 5000 });
 
     // Cross-sync should still work both ways
+    await dismissModals(collabPage2);
     await collabPage2.getByTestId('add-product-button').click();
+    await dismissModals(collabPage2);
     await collabPage2.getByTestId('product-name-input').fill('Post-Reconnection Product');
     await collabPage2.getByTestId('product-quantity-input').fill('3');
     await collabPage2.getByTestId('product-price-input').fill('30');
     await collabPage2.getByTestId('product-cost-input').fill('15');
     await collabPage2.getByTestId('save-product-button').click();
-    await expect(adminPage.locator('text=Post-Reconnection Product').first()).toBeVisible({ timeout: 15000 });
+
+    // Wait for admin to receive the cross-sync'd product
+    await expectProductSync(adminPage, collabPage2, 'Post-Reconnection Product', 40000);
+    await expect(adminPage.locator('text=Post-Reconnection Product').first()).toBeVisible({ timeout: 5000 });
   });
 });

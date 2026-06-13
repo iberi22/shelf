@@ -20,6 +20,7 @@ const P2PSyncManager: React.FC = () => {
   const [showConfirmConnectModal, setShowConfirmConnectModal] = useState(false);
   const [pendingPeerId, setPendingPeerId] = useState('');
   const [showLogsForPeer, setShowLogsForPeer] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [selectedRole, setSelectedRole] = useState<'admin' | 'vendedor' | 'custom'>('vendedor');
   const [selectedPermissions, setSelectedPermissions] = useState<Record<string, boolean>>({
     canViewProducts: true,
@@ -42,6 +43,7 @@ const P2PSyncManager: React.FC = () => {
   const { t } = useI18n();
 
   const stateRef = useRef(state);
+  const copyStatusTimerRef = useRef<number | null>(null);
   stateRef.current = state;
 
   useEffect(() => {
@@ -118,6 +120,9 @@ const P2PSyncManager: React.FC = () => {
     return () => {
       // Cleanup interval if component unmounts before it fires
       clearInterval(interval);
+      if (copyStatusTimerRef.current) {
+        window.clearTimeout(copyStatusTimerRef.current);
+      }
       // NOTE: For a full fix, p2pManager should expose offMessage
     };
   }, [dispatch]);
@@ -217,6 +222,27 @@ const P2PSyncManager: React.FC = () => {
     setPendingPeerId('');
     setManualPeerId('');
     setShowConfirmConnectModal(false);
+  };
+
+  const copyLocalPeerId = async () => {
+    if (!state.localPeerId) return;
+
+    try {
+      await navigator.clipboard.writeText(state.localPeerId);
+      setCopyStatus('copied');
+    } catch (error) {
+      console.error('Failed to copy Peer ID:', error);
+      setCopyStatus('error');
+    }
+
+    if (copyStatusTimerRef.current) {
+      window.clearTimeout(copyStatusTimerRef.current);
+    }
+
+    copyStatusTimerRef.current = window.setTimeout(() => {
+      setCopyStatus('idle');
+      copyStatusTimerRef.current = null;
+    }, 1400);
   };
 
   useEffect(() => {
@@ -335,7 +361,25 @@ const P2PSyncManager: React.FC = () => {
           <div className="flex flex-col min-w-0 w-full">
             <div className="text-xs sm:text-sm flex flex-wrap items-center gap-1.5 min-w-0 w-full">
               <span className="shrink-0">{t('p2pSync.peerId') || 'Peer ID'}:</span>
-              <span className="font-mono text-yellow-400 break-all min-w-0 flex-1">{state.localPeerId || 'Initializing...'}</span>
+              <button
+                type="button"
+                onClick={copyLocalPeerId}
+                onPointerUp={copyLocalPeerId}
+                disabled={!state.localPeerId}
+                className="group min-w-0 flex-1 text-left disabled:cursor-default"
+                title={state.localPeerId ? 'Tocar o hacer click para copiar el Peer ID' : 'Inicializando Peer ID...'}
+              >
+                <span className="font-mono text-yellow-400 break-all min-w-0 inline-flex items-center gap-2">
+                  <span className={state.localPeerId ? 'group-hover:underline group-active:opacity-80' : 'opacity-60'}>
+                    {state.localPeerId || 'Initializing...'}
+                  </span>
+                  {state.localPeerId && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-[#F5F5DC]/20 text-[#F5F5DC]/60 group-hover:text-[#F5F5DC]/90 group-active:scale-95 transition">
+                      Copiar
+                    </span>
+                  )}
+                </span>
+              </button>
               {state.localPeerId && (
                 <button
                   onClick={() => setShowMyQrModal(true)}
@@ -349,6 +393,15 @@ const P2PSyncManager: React.FC = () => {
             <span className="text-[10px] text-[#F5F5DC]/50 mt-1">
               {t('p2pSync.encryptedTunnelActive') || 'Encrypted Tunnel: ACTIVE (ML-KEM-768 via P2PManager)'}
             </span>
+            {copyStatus !== 'idle' && state.localPeerId && (
+              <span
+                className={`mt-1 text-[10px] ${
+                  copyStatus === 'copied' ? 'text-green-400' : 'text-red-400'
+                }`}
+              >
+                {copyStatus === 'copied' ? 'Peer ID copiado al portapapeles' : 'No se pudo copiar el Peer ID'}
+              </span>
+            )}
             {state.localPeerId && (
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <div className="bg-white p-1 rounded-md inline-flex shrink-0">
@@ -369,7 +422,7 @@ const P2PSyncManager: React.FC = () => {
                   }}
                   className="text-xs bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5"
                 >
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.115.545 4.183 1.583 6.002L0 24l6.126-1.55c1.761.968 3.738 1.48 5.905 1.48 6.646 0 12.031-5.385 12.031-12.031S18.677 0 12.031 0zm6.545 17.37c-.266.75-1.55 1.442-2.155 1.503-.538.053-1.226.113-3.618-.878-2.887-1.196-4.737-4.14-4.88-4.327-.143-.188-1.164-1.553-1.164-2.96 0-1.408.73-2.106 1-2.394.27-.287.587-.36.782-.36.195 0 .39 0 .563.008.188.007.442-.075.69.525.263.638.85 2.086.925 2.235.075.15.128.323.03.51-.098.188-.15.308-.3.458-.15.15-.315.33-.45.465-.15.15-.315.315-.143.608.173.293.765 1.26 1.642 2.036 1.127.994 2.08 1.3 2.378 1.444.298.143.473.12.65-.083.178-.203.758-.885.968-1.19.21-.305.42-.255.698-.15.278.105 1.76.828 2.06.978.3.15.42.225.548.33.848.105.3.105 1.725-.16 2.475z"/></svg>
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.115.545 4.183 1.583 6.002L0 24l6.126-1.55c1.761.968 3.738 1.48 5.905 1.48 6.646 0 12.031-5.385 12.031-12.031S18.677 0 12.031 0zm6.545 17.37c-.266.75-1.55 1.442-2.155 1.503-.538.053-1.226.113-3.618-.878-2.887-1.196-4.737-4.14-4.88-4.327-.143-.188-1.164-1.553-1.164-2.96 0-1.408.73-2.106 1-2.394.27-.287.587-.36.782-.36.195 0 .39 0 .563.008.188.007.442-.075.69.525.263.638.85 2.086.925 2.235.075.15.128.323.03.51-.098.188-.15.308-.3.458-.15.15-.315.33-.45.465-.15.15-.315.315-.143.608.173.293.765 1.26 1.642 2.036 1.127.994 2.08 1.3 2.378 1.444.298.143.473.12.65-.083.178-.203.758-.885.968-1.19.21-.305.42-.255.698-.15.278.105 1.76.828 2.06.978.3.15.42.225.548.33.848.105.3.105 1.725 -.16 2.475z"/></svg>
                   WhatsApp
                 </button>
                 </div>

@@ -64,9 +64,27 @@ class P2PManager {
   // PQC Keypairs
   private kemKeyPair = generateKEMKeyPair();
   private dsaKeyPair = generateDSAKeyPair();
+  private yjsSyncInitialized = false;
+
+  private initYjsSync() {
+    if (this.yjsSyncInitialized) return;
+    this.yjsSyncInitialized = true;
+
+    dbSync.onChange((update, origin) => {
+      if (!dbSync.isReady) return;
+      // Only broadcast if the update originated locally to prevent infinite loops
+      if (origin === 'local') {
+        this.broadcast({
+          type: 'YJS_UPDATE',
+          payload: { update: toHex(update) },
+        });
+      }
+    });
+  }
 
   public init(peerId?: string) {
     if (this.peer) return;
+    this.initYjsSync();
 
     let finalPeerId = peerId;
     if (!finalPeerId && typeof localStorage !== 'undefined') {
@@ -108,21 +126,6 @@ class P2PManager {
 
       // Sync role to dbSync for GC coordination
       dbSync.masterRole = this.role;
-
-      // Initialize Yjs Sync
-      dbSync.onChange((update, origin) => {
-        // Don't broadcast before initWithState() has populated the CRDT.
-        // Otherwise a new peer would send empty state and overwrite remote data.
-        if (!dbSync.isReady) return;
-
-        // Only broadcast if the update originated locally to prevent infinite loops
-        if (origin === 'local') {
-          this.broadcast({
-            type: 'YJS_UPDATE',
-            payload: { update: toHex(update) },
-          });
-        }
-      });
 
       // Start heartbeat/GC loop
       this.heartbeatInterval = setInterval(() => {

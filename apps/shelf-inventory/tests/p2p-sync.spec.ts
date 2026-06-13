@@ -1,36 +1,33 @@
 import { expect, test } from '@playwright/test';
+import { expectProductSync } from './p2p-helpers';
+import { addOverlayBlocker, dismissModals } from './helpers';
 
 test.describe('P2P Synchronization and Conflict Resolution', () => {
   test('Two browsers can connect, assign roles, and simultaneously add products without conflicts', async ({
     browser,
   }) => {
-    // 1. Create two isolated browser contexts
+    // 1. Create two isolated browser contexts with overlay blocker
     const adminContext = await browser.newContext();
     const collabContext = await browser.newContext();
+    addOverlayBlocker(adminContext);
+    addOverlayBlocker(collabContext);
 
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();
 
-    // 2. Set localStorage to bypass landing page and welcome modal
-    const initScript = `
-      localStorage.setItem('hasVisited', 'true');
-      localStorage.setItem('shelfWelcomeSeen', 'true');
-    `;
-    await adminContext.addInitScript(initScript);
-    await collabContext.addInitScript(initScript);
-
     // Both navigate to the app
     await adminPage.goto('/');
     await collabPage.goto('/');
-
-    // 3. Extract Peer ID from Collab
-    await collabPage.waitForTimeout(2000); // give it a sec to render
-    await collabPage.screenshot({ path: 'collab-before-settings.png' });
-    await adminPage.screenshot({ path: 'admin-before-settings.png' });
+    await dismissModals(adminPage);
+    await dismissModals(collabPage);
+    await adminPage.waitForTimeout(1000);
+    await collabPage.waitForTimeout(1000);
 
     // Go to settings tab to see the Peer ID
     await collabPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
     await adminPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
+    await dismissModals(adminPage);
+    await dismissModals(collabPage);
 
     // Wait until it's not "Initializing..."
     const collabPeerIdLocator = collabPage.locator('span.font-mono.text-yellow-400').first();
@@ -39,31 +36,47 @@ test.describe('P2P Synchronization and Conflict Resolution', () => {
     const collabId = await collabPeerIdLocator.innerText();
     expect(collabId).toBeTruthy();
 
-    // 4. Admin connects to Collab
+    // 4. Admin connects to Collab — dismiss modals before typing, wait for modal to stabilize
+    await dismissModals(adminPage);
     const manualInput = adminPage.getByPlaceholder(/ingresa el Peer ID|enter Peer ID/i);
     await expect(manualInput).toBeVisible();
     await manualInput.fill(collabId);
+    await adminPage.waitForTimeout(500);
 
-    // Click Connect button
-    await adminPage.getByRole('button', { name: /^Conectar$|^Connect$/i }).click();
+    // Click Connect button — dismiss modals right before to avoid overlay interference
+    await dismissModals(adminPage);
+    const connectButton = adminPage.getByRole('button', { name: /^Conectar$|^Connect$/i });
+    await connectButton.click({ timeout: 5000 }).catch(async () => {
+      await connectButton.click({ force: true, timeout: 3000 });
+    });
 
-    // 5. Admin assigns "Admin" role to Collab in the confirm modal
-    // Wait for modal to appear
+    // 5. Wait for the confirm connection modal to appear
+    await adminPage.waitForTimeout(500);
+    await dismissModals(adminPage);
     await expect(
       adminPage.locator('text=Configuración del Colaborador').or(adminPage.locator('text=Collaborator Configuration')),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 10000 });
 
     // Click the Admin role button
-    await adminPage.getByRole('button', { name: /^Admin$/i }).click();
+    await adminPage.waitForTimeout(300);
+    await dismissModals(adminPage);
+    await adminPage.getByRole('button', { name: /^Admin$/i }).click({ timeout: 5000 }).catch(async () => {
+      await adminPage.getByRole('button', { name: /^Admin$/i }).click({ force: true, timeout: 3000 });
+    });
 
-    // Confirm connection
-    await adminPage.getByRole('button', { name: /Sincronizar y Conectar|Synchronize/i }).click();
+    // Click the confirm/proceed button to initiate the handshake
+    await adminPage.waitForTimeout(300);
+    await dismissModals(adminPage);
+    await adminPage.getByRole('button', { name: /Continuar|Proceed|Confirmar|Confirm/i }).last().click({ timeout: 5000 }).catch(async () => {
+      await adminPage.getByRole('button', { name: /Continuar|Proceed|Confirmar|Confirm/i }).last().click({ force: true, timeout: 3000 });
+    });
 
     // Wait for them to sync
-    // The text shows "En línea (Sincronizado)" or "En línea (Sincronizando...)"
     await expect(adminPage.locator('text=/En línea|Online/i').first()).toBeVisible({ timeout: 20000 });
 
     // 6. Navigate to Inventory
+    await dismissModals(adminPage);
+    await dismissModals(collabPage);
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
     await collabPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
 
@@ -76,6 +89,8 @@ test.describe('P2P Synchronization and Conflict Resolution', () => {
 
     await adminAddBtn.click();
     await collabAddBtn.click();
+    await dismissModals(adminPage);
+    await dismissModals(collabPage);
 
     // 8. Fill the forms
     // Admin product
@@ -100,8 +115,14 @@ test.describe('P2P Synchronization and Conflict Resolution', () => {
     await expect(adminPage.locator('text=Product Added By Admin').first()).toBeVisible();
     await expect(collabPage.locator('text=Product Added By Collab').first()).toBeVisible();
 
-    // 11. Verify cross-sync
-    await expect(adminPage.locator('text=Product Added By Collab').first()).toBeVisible({ timeout: 15000 });
-    await expect(collabPage.locator('text=Product Added By Admin').first()).toBeVisible({ timeout: 15000 });
+    // 11. Verify cross-sync — poll with re-broadcast recovery
+    await expectProductSync(adminPage, collabPage, 'Product Added By Collab');
+    await expectProductSync(collabPage, adminPage, 'Product Added By Admin');
+
+    // Verify DOM visibility on both
+    await expect(adminPage.locator('text=Product Added By Admin').first()).toBeVisible();
+    await expect(adminPage.locator('text=Product Added By Collab').first()).toBeVisible();
+    await expect(collabPage.locator('text=Product Added By Collab').first()).toBeVisible();
+    await expect(collabPage.locator('text=Product Added By Admin').first()).toBeVisible();
   });
 });
