@@ -23,8 +23,8 @@ export function InfiniteTable<T>({
 }: InfiniteTableProps<T>) {
   if (data.length === 0) {
     return (
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden flex items-center justify-center min-h-[200px]">
-        {emptyContent || <span className="text-[#F5F5DC]/70">No hay datos</span>}
+      <div className="glass-panel overflow-hidden flex items-center justify-center min-h-[200px]">
+        {emptyContent || <span className="text-neutral-400">No hay datos</span>}
       </div>
     );
   }
@@ -36,7 +36,7 @@ export function InfiniteTable<T>({
   return (
     <div
       style={{ height, width: '100%' }}
-      className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg overflow-hidden no-scrollbar"
+      className="glass-panel overflow-hidden no-scrollbar"
     >
       <TableVirtuoso
         totalCount={totalCount}
@@ -51,13 +51,13 @@ export function InfiniteTable<T>({
             <thead
               {...props}
               ref={ref as React.Ref<HTMLTableSectionElement>}
-              className="bg-[#1e1e1e] border-b border-[#F5F5DC]/20 z-10 sticky top-0"
+              className="bg-[#161616] border-b border-white/5 z-10 sticky top-0"
             />
           )),
           TableRow: (props) => (
             <tr
               {...props}
-              className="border-t border-[#F5F5DC]/20 hover:bg-[#F5F5DC]/5 transition-colors duration-200 text-xs md:text-sm bg-[#1a1a1a]"
+              className="border-b border-white/5 hover:bg-white/[0.02] transition-colors duration-200 text-xs md:text-sm bg-transparent"
             />
           ),
           TableBody: React.forwardRef((props, ref) => (

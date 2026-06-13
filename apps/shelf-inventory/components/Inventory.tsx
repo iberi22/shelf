@@ -204,8 +204,8 @@ const Inventory: React.FC = () => {
 
   return (
     <div>
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 flex-wrap">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC] shrink-0">{t('inventory.title')}</h2>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8 flex-wrap">
+        <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight shrink-0">{t('inventory.title')}</h2>
         <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-wrap sm:flex-nowrap">
           <div className="relative flex-grow">
             <input
@@ -213,15 +213,17 @@ const Inventory: React.FC = () => {
               placeholder={t('inventory.searchPlaceholder')}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full p-2 pl-8 bg-[#121212] border border-[#F5F5DC]/30 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5F5DC] text-sm"
+              className="w-full p-2.5 pl-9 bg-[#1e1e1e] border border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4ADE80] text-sm text-white"
               data-testid="inventory-search-input"
             />
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#F5F5DC]/50">🔍</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </span>
           </div>
-          <div className="flex gap-2 sm:gap-4">
+          <div className="flex gap-2 sm:gap-4 items-center">
             <button
               onClick={handleExportCSV}
-              className="flex-1 sm:flex-none bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
+              className="flex-1 sm:flex-none bg-white/5 border border-white/10 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-white/10 transition-all duration-200 active:scale-95 text-sm"
               data-testid="export-csv-button"
             >
               {t('common.exportCsv')}
@@ -248,7 +250,7 @@ const Inventory: React.FC = () => {
                 <button
                   onClick={() => handleOpenModal()}
                   disabled={isProcessingBatch}
-                  className="flex-1 sm:flex-none bg-[#F5F5DC] text-[#121212] font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm min-h-[44px] disabled:opacity-50"
+                  className="flex-1 sm:flex-none bg-[#4ADE80] text-[#161616] font-bold py-2.5 px-6 rounded-lg hover:bg-[#22C55E] transition-all duration-200 active:scale-95 text-sm disabled:opacity-50 shadow-[0_0_15px_rgba(74,222,128,0.2)]"
                   data-testid="add-product-button"
                 >
                   {t('inventory.addProduct')}
@@ -266,9 +268,9 @@ const Inventory: React.FC = () => {
           height="calc(100vh - 200px)"
           emptyContent={<div className="text-center p-8 text-[#F5F5DC]/70">{t('inventory.empty')}</div>}
           fixedHeaderContent={() => (
-            <tr className="text-xs md:text-sm">
-              <th className="p-2 md:p-3 w-10 text-center text-[#F5F5DC]/50 font-bold">#</th>
-              <th className="p-2 md:p-3">{t('common.image')}</th>
+            <tr className="text-xs md:text-sm text-neutral-400 font-medium tracking-wide">
+              <th className="p-2 md:p-4 w-10 text-center font-bold">#</th>
+              <th className="p-2 md:p-4">{t('common.image')}</th>
               <SortableHeader sortKey="name" labelKey="common.product" />
               <SortableHeader sortKey="sku" labelKey="common.sku" />
               <SortableHeader sortKey="quantity" labelKey="common.quantity" />
@@ -320,10 +322,10 @@ const Inventory: React.FC = () => {
           )}
           itemContent={(index, product) => (
             <>
-              <td className="p-2 md:p-3 text-xs md:text-sm font-semibold text-[#F5F5DC]/40 w-10 text-center select-none font-mono">
+              <td className="p-2 md:p-4 text-xs md:text-sm font-semibold text-neutral-500 w-10 text-center select-none font-mono">
                 {index + 1}
               </td>
-              <td className="p-1.5 md:p-2">
+              <td className="p-1.5 md:p-4">
                 {product.imageUrl ? (
                   <img
                     src={product.imageUrl}
@@ -336,62 +338,74 @@ const Inventory: React.FC = () => {
                   </div>
                 )}
               </td>
-              <td className="p-2 md:p-3 max-w-[90px] md:max-w-[150px] xl:max-w-none truncate" title={product.name}>
+              <td className="p-2 md:p-4 max-w-[90px] md:max-w-[150px] xl:max-w-none truncate font-semibold text-white" title={product.name}>
                 {product.name}
               </td>
-              <td className="p-2 md:p-3 max-w-[60px] md:max-w-[70px] truncate" title={product.sku || ''}>
-                {product.sku || <span className="text-[#F5F5DC]/40">—</span>}
+              <td className="p-2 md:p-4 max-w-[60px] md:max-w-[70px] truncate text-neutral-400" title={product.sku || ''}>
+                {product.sku || <span className="text-neutral-600">—</span>}
               </td>
-              <td className="p-2 md:p-3 whitespace-nowrap">
-                {product.quantity}
-                {product.quantity > 0 && product.quantity <= lowStockThreshold && (
-                  <span className="text-yellow-400 ml-1" title={t('inventory.lowStock')}>
-                    ⚠️
-                  </span>
-                )}
+              <td className="p-2 md:p-4 whitespace-nowrap">
+                <div className="flex items-center gap-2">
+                  {product.quantity > 0 && product.quantity <= lowStockThreshold ? (
+                    <div className="flex items-center gap-1.5 bg-[#EAB308]/10 text-[#EAB308] px-2.5 py-1 rounded-full text-xs font-bold border border-[#EAB308]/20 glow-text-yellow w-max">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#EAB308] animate-pulse"></div>
+                      {product.quantity}
+                    </div>
+                  ) : product.quantity > 0 ? (
+                    <div className="flex items-center gap-1.5 bg-[#4ADE80]/10 text-[#4ADE80] px-2.5 py-1 rounded-full text-xs font-bold border border-[#4ADE80]/20 glow-text-green w-max">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#4ADE80]"></div>
+                      {product.quantity}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 bg-red-500/10 text-red-400 px-2.5 py-1 rounded-full text-xs font-bold border border-red-500/20 w-max">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
+                      {product.quantity}
+                    </div>
+                  )}
+                </div>
               </td>
-              <td className="p-2 md:p-3 whitespace-nowrap">{formatCurrency(product.price)}</td>
-              <td className="p-2 md:p-3">
+              <td className="p-2 md:p-4 whitespace-nowrap text-white font-medium">{formatCurrency(product.price)}</td>
+              <td className="p-2 md:p-4">
                 {product.color ? (
-                  <span title={product.color} className="inline-flex items-center gap-1">
+                  <span title={product.color} className="inline-flex items-center gap-2">
                     <span
                       className="inline-block w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white/20 flex-shrink-0"
                       style={{ backgroundColor: isValidHexColor(product.color) ? product.color : '#808080' }}
                     ></span>
-                    <span className="truncate max-w-[50px] md:max-w-[60px] hidden lg:inline">{product.color}</span>
+                    <span className="truncate max-w-[50px] md:max-w-[60px] hidden lg:inline text-neutral-300">{product.color}</span>
                   </span>
                 ) : (
-                  <span className="text-[#F5F5DC]/40">—</span>
+                  <span className="text-neutral-600">—</span>
                 )}
               </td>
               <td
-                className="p-2 md:p-3 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell"
+                className="p-2 md:p-4 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell text-neutral-300"
                 title={product.dimensions || ''}
               >
-                {product.dimensions || <span className="text-[#F5F5DC]/40">—</span>}
+                {product.dimensions || <span className="text-neutral-600">—</span>}
               </td>
               <td
-                className="p-2 md:p-3 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell"
+                className="p-2 md:p-4 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell text-neutral-300"
                 title={product.capacity || ''}
               >
-                {product.capacity || <span className="text-[#F5F5DC]/40">—</span>}
+                {product.capacity || <span className="text-neutral-600">—</span>}
               </td>
               <td
-                className="p-2 md:p-3 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell"
+                className="p-2 md:p-4 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell text-neutral-300"
                 title={product.material || ''}
               >
-                {product.material || <span className="text-[#F5F5DC]/40">—</span>}
+                {product.material || <span className="text-neutral-600">—</span>}
               </td>
-              <td className="p-2 md:p-3 whitespace-nowrap hidden xl:table-cell">{formatCurrency(product.cost)}</td>
+              <td className="p-2 md:p-4 whitespace-nowrap hidden xl:table-cell text-neutral-300">{formatCurrency(product.cost)}</td>
               {canEdit && (
-                <td className="p-2 md:p-3 whitespace-nowrap">
+                <td className="p-2 md:p-4 whitespace-nowrap">
                   <button
                     onClick={() => handleOpenModal(product)}
                     className="p-1.5 text-yellow-400 hover:bg-yellow-400/10 rounded transition-all active:scale-90"
                     aria-label={t('common.editItem', { item: product.name })}
                     data-testid={`edit-product-${product.id}`}
                   >
-                    ✏️
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                   </button>
                   <button
                     onClick={() => handleDelete(product.id)}
@@ -399,7 +413,7 @@ const Inventory: React.FC = () => {
                     aria-label={t('common.deleteItem', { item: product.name })}
                     data-testid={`delete-product-${product.id}`}
                   >
-                    🗑️
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   </button>
                 </td>
               )}

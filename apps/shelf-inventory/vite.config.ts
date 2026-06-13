@@ -20,6 +20,55 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    {
+      name: 'shelf-version-endpoint',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (!req.url) {
+            next();
+            return;
+          }
+
+          const url = new URL(req.url, 'http://localhost');
+          if (url.pathname !== '/version.json') {
+            next();
+            return;
+          }
+
+          const payload = JSON.stringify(
+            {
+              appVersion: packageJson.version,
+              commitHash,
+              buildId: `${packageJson.version}@${commitHash}`,
+              generatedAt: new Date().toISOString(),
+            },
+            null,
+            2,
+          );
+
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json; charset=utf-8');
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+          res.end(payload);
+        });
+      },
+      generateBundle() {
+        this.emitFile({
+          type: 'asset',
+          fileName: 'version.json',
+          source: JSON.stringify(
+            {
+              appVersion: packageJson.version,
+              commitHash,
+              buildId: `${packageJson.version}@${commitHash}`,
+              generatedAt: new Date().toISOString(),
+            },
+            null,
+            2,
+          ),
+        });
+      },
+    },
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'android-chrome-192x192.png', 'android-chrome-512x512.png'],
@@ -50,6 +99,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        globIgnores: ['version.json'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // Increase to 10MB for large assets
         runtimeCaching: [
           {

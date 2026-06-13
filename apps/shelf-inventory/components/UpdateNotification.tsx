@@ -1,11 +1,15 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../context/I18nContext';
+
+const CURRENT_BUILD_ID = `${__APP_VERSION__}@${__COMMIT_HASH__}`;
+const VERSION_ENDPOINT = '/version.json';
 
 const UpdateNotification: React.FC = () => {
   const { t } = useI18n();
   const [showReload, setShowReload] = useState(false);
+  const updateInProgressRef = useRef(false);
 
   const {
     offlineReady: [offlineReady, setOfflineReady],
@@ -15,19 +19,85 @@ const UpdateNotification: React.FC = () => {
     onRegistered(r) {
       console.log('Service Worker registrado correctamente');
       if (r) {
-        // Primera verificaci�n inmediata
-        setTimeout(() => r.update(), 3000);
-        // Luego cada 5 minutos
-        setInterval(() => r.update(), 5 * 60 * 1000);
+        window.setTimeout(() => r.update(), 3000);
+        const intervalId = window.setInterval(() => r.update(), 5 * 60 * 1000);
+        window.addEventListener(
+          'beforeunload',
+          () => {
+            window.clearInterval(intervalId);
+          },
+          { once: true },
+        );
       }
     },
     onRegisterError(error) {
       console.log('Error al registrar Service Worker', error);
     },
     onNeedRefresh() {
-      console.log('Nueva versi�n de Shelf disponible');
+      console.log('Nueva versión de Shelf disponible');
     },
   });
+
+  useEffect(() => {
+    const verifyRuntimeVersion = async () => {
+      if (typeof window === 'undefined') return;
+
+      try {
+        const response = await fetch(`${VERSION_ENDPOINT}?t=${Date.now()}`, {
+          cache: 'no-store',
+          credentials: 'same-origin',
+        });
+
+        if (!response.ok) return;
+
+        const payload = (await response.json()) as { buildId?: string };
+        const remoteBuildId = payload?.buildId;
+
+        if (!remoteBuildId) return;
+
+        if (remoteBuildId === CURRENT_BUILD_ID) {
+          updateInProgressRef.current = false;
+          window.localStorage.setItem('shelf.lastSeenBuildId', remoteBuildId);
+          return;
+        }
+
+        if (updateInProgressRef.current) return;
+        updateInProgressRef.current = true;
+        window.localStorage.setItem('shelf.lastSeenBuildId', remoteBuildId);
+        setShowReload(true);
+        setNeedRefresh(true);
+
+        // Ask the browser to fetch the newest service worker immediately.
+        void navigator.serviceWorker?.getRegistration?.().then((registration) => registration?.update());
+        window.setTimeout(() => {
+          updateServiceWorker(true);
+        }, 250);
+      } catch (error) {
+        console.warn('No se pudo verificar la version runtime', error);
+      }
+    };
+
+    void verifyRuntimeVersion();
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void verifyRuntimeVersion();
+      }
+    };
+
+    const onFocus = () => void verifyRuntimeVersion();
+    const onOnline = () => void verifyRuntimeVersion();
+
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('online', onOnline);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('online', onOnline);
+    };
+  }, [setNeedRefresh, updateServiceWorker]);
 
   useEffect(() => {
     if (offlineReady) {
@@ -43,9 +113,11 @@ const UpdateNotification: React.FC = () => {
     setOfflineReady(false);
     setNeedRefresh(false);
     setShowReload(false);
+    updateInProgressRef.current = false;
   };
 
   const handleUpdate = () => {
+    updateInProgressRef.current = true;
     updateServiceWorker(true);
   };
 

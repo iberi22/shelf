@@ -1,11 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Fira Code", monospace;
+  --font-sans: "Inter", "Roboto", "Outfit", sans-serif;
   --font-mono: "Fira Code", monospace;
-  --color-background: #121212;
-  --color-foreground: #F5F5DC;
-  --color-primary: #1e1e1e;
+  --color-background: #0a0a0a;
+  --color-foreground: #e0e0e0;
+  --color-primary: #161616;
+  --color-panel: #1e1e1e;
+  --color-accent-green: #4ADE80;
+  --color-accent-yellow: #EAB308;
+  --color-accent-red: #F87171;
 
   --animate-fade-in-down: fade-in-down 0.5s ease-out;
   --animate-fade-in: fade-in 0.2s ease-out;
@@ -158,27 +162,26 @@
 
 /* Custom Scrollbar Styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-background);
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(245, 245, 220, 0.2);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 245, 220, 0.4);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(245, 245, 220, 0.2) var(--color-background);
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
 /* Hide all scrollbars inside an element with class .no-scrollbar */
@@ -189,5 +192,18 @@
 
 .no-scrollbar *::-webkit-scrollbar {
   display: none !important;
+}
+
+/* Base custom utility classes for the new aesthetic */
+.glass-panel {
+  @apply bg-[#1e1e1e] border border-white/5 rounded-2xl shadow-xl;
+}
+
+.glow-text-green {
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+}
+
+.glow-text-yellow {
+  text-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
 }
 

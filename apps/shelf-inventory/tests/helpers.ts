@@ -31,15 +31,12 @@ export function addOverlayBlocker(context: BrowserContext): void {
  * Use this in beforeEach when using the `page` fixture.
  */
 export async function setupPage(page: Page): Promise<void> {
-  // Navigate to the app first
-  await page.goto('/');
-  // Set localStorage flags directly for the next load
-  await page.evaluate(() => {
+  // Ensure the flags exist before the first app navigation.
+  await page.addInitScript(() => {
     localStorage.setItem('hasVisited', 'true');
     localStorage.setItem('shelfWelcomeSeen', 'true');
   });
-  // Reload so the app reads the updated localStorage
-  await page.reload();
+  await page.goto('/');
   await page.waitForTimeout(2000);
   // Dismiss any overlays that may still appear
   await dismissModals(page);

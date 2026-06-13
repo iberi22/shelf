@@ -67,6 +67,7 @@ type Action =
   | { type: 'ADD_OCR_RESULT'; payload: InvoiceOCRResult }
   | { type: 'UPDATE_OCR_RESULT'; payload: InvoiceOCRResult }
   | { type: 'UPDATE_PEER_PERMISSIONS'; payload: { targetPeerId: string; permissions: any } }
+  | { type: 'UPDATE_PEER_CONFIG'; payload: { targetPeerId: string; role: P2PRole; permissions?: any } }
   | { type: 'CLEAR_AUDIT_LOGS'; payload?: { beforeDate: string } }
   | { type: 'RESET_DATA' };
 
@@ -440,6 +441,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
       return { ...state, peers: action.payload };
 
     case 'SET_ROLE':
+      if (action.payload === 'admin' && !dbSync.isLocalAuthority()) {
+        return state;
+      }
       return { ...state, role: action.payload };
 
     case 'SET_EXPELLED':
@@ -447,6 +451,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
     case 'UPDATE_PEER_PERMISSIONS': {
       if (action.payload.targetPeerId === state.localPeerId) {
+        if (!dbSync.isLocalAuthority()) {
+          return state;
+        }
         return { ...state, permissions: action.payload.permissions };
       }
       return {
@@ -455,6 +462,36 @@ const appReducer = (state: AppState, action: Action): AppState => {
           p.id === action.payload.targetPeerId ? { ...p, permissions: action.payload.permissions } : p,
         ),
       };
+    }
+
+    case 'UPDATE_PEER_CONFIG': {
+      const { targetPeerId, role, permissions } = action.payload;
+      if (targetPeerId === state.localPeerId) {
+        const normalizedRole = role === 'admin' && !dbSync.isLocalAuthority() ? 'collaborator' : role;
+        return {
+          ...state,
+          role: normalizedRole,
+          permissions: permissions || state.permissions,
+          peers: state.peers.map((p) =>
+            p.id === targetPeerId ? { ...p, role: normalizedRole, permissions: permissions || p.permissions } : p,
+          ),
+        };
+      }
+
+      const peerExists = state.peers.some((p) => p.id === targetPeerId);
+      const peers = peerExists
+        ? state.peers.map((p) => (p.id === targetPeerId ? { ...p, role, permissions: permissions || p.permissions } : p))
+        : [
+            ...state.peers,
+            {
+              id: targetPeerId,
+              role,
+              permissions,
+              lastSeen: new Date().toISOString(),
+            },
+          ];
+
+      return { ...state, peers };
     }
 
     case 'SYNC_STATE': {

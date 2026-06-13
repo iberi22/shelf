@@ -83,7 +83,7 @@ export interface User {
 
 export type UserRole = 'owner' | 'admin' | 'member';
 
-export type P2PRole = 'admin' | 'collaborator';
+export type P2PRole = 'admin' | 'collaborator' | 'vendedor' | 'custom';
 
 export interface TeamMember {
   id: string;

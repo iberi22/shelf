@@ -60,12 +60,15 @@ const Dashboard: React.FC = () => {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC]">{t('dashboard.title')}</h2>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-8">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{t('dashboard.title')}</h2>
+          <p className="text-neutral-500 text-sm mt-1 font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
+        </div>
         <button
           data-testid="dashboard-customize-button"
           onClick={() => setIsEditing(!isEditing)}
-          className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
+          className="w-full sm:w-auto bg-[#1A251A] text-[#4ADE80] border border-[#4ADE80]/30 font-bold py-2.5 px-6 rounded-lg hover:bg-[#4ADE80]/10 transition-all duration-200 active:scale-95 text-sm shadow-[0_0_10px_rgba(74,222,128,0.1)]"
         >
           {isEditing ? t('common.done') : t('dashboard.customize')}
         </button>
@@ -120,19 +123,19 @@ const Dashboard: React.FC = () => {
         (isProSectionHidden ? (
           <ProChartsTeaserCard onShowProFeatures={() => setIsProSectionHidden(false)} />
         ) : (
-          <div className="mt-8 md:mt-12 bg-[#0d0d0d] p-4 sm:p-6 md:p-8 rounded-xl border border-[#F5F5DC]/20">
-            <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+          <div className="mt-8 md:mt-12 glass-panel p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-8">
               <div className="w-full sm:w-auto">
-                <h3 className="text-2xl md:text-3xl font-bold mb-3 text-[#F5F5DC]">
+                <h3 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
                   {t('dashboard.proFeaturesTitle')}
                 </h3>
-                <p className="text-[#F5F5DC]/80 mb-6 md:mb-8 max-w-3xl text-sm md:text-base leading-relaxed">
+                <p className="text-neutral-400 mt-2 max-w-3xl text-sm md:text-base leading-relaxed">
                   {t('dashboard.proFeaturesDescription')}
                 </p>
               </div>
               <button
                 onClick={() => setIsProSectionHidden(true)}
-                className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-[#F5F5DC]/10 transition-all duration-200 active:scale-95 text-sm"
+                className="w-full sm:w-auto bg-white/5 border border-white/10 text-white font-medium py-2 px-5 rounded-lg hover:bg-white/10 transition-all duration-200 active:scale-95 text-sm"
               >
                 {t('dashboard.hideProSection')}
               </button>

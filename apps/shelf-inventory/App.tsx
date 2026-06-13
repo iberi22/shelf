@@ -80,7 +80,7 @@ const AppContainer = () => {
   };
 
   if (!hasVisited) {
-    return <LandingPage onNavigate={showMainApp} />;
+      return <LandingPage onNavigate={showMainApp} />;
   }
 
   if (isLocked) {
@@ -90,7 +90,6 @@ const AppContainer = () => {
   return (
     <>
       <MainApp onLoginClick={openLoginModal} />
-      <UpdateNotification />
 
       {/* Local auth modals */}
       {activeModal === 'local-login' && (
@@ -142,6 +141,7 @@ const App = () => (
           <SubscriptionProvider>
             <AppProvider>
               <AppContainer />
+              <UpdateNotification />
             </AppProvider>
           </SubscriptionProvider>
         </CurrencyProvider>

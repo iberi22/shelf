@@ -1,428 +1,749 @@
-import * as Y from 'yjs';
-import type { AppState, ArqueoSession, InvoiceOCRResult, Product } from './types';
-import { logger } from './utils/logger';
+import * as Y from "yjs";
+import type {
+	AppState,
+	ArqueoSession,
+	AuditEntry,
+	Client,
+	InvoiceOCRResult,
+	P2PRole,
+	PeerInfo,
+	PeerPermissions,
+	Product,
+	PurchaseOrder,
+	Sale,
+	Supplier,
+} from "./types";
+import { logger } from "./utils/logger";
+
+type EntityRecord = {
+	id: string;
+	lastSeen?: string;
+	action?: string;
+	timestamp?: string;
+	updatedAt?: string;
+};
+
+type LinkedNodeRecord = Omit<PeerInfo, "lastSeen"> & {
+	permissions?: PeerPermissions;
+	isMaster?: boolean;
+	lastSeen: string;
+	status?: "connected" | "verified" | "offline";
+};
 
 /**
  * Distributed Database Manager using Yjs (CRDT)
  * Optimized to use Y.Map for better entity management and eventual consistency merging.
  */
 class DatabaseSyncManager {
-  public doc: Y.Doc;
-  private products: Y.Map<Product>;
-  private sales: Y.Map<any>;
-  private clients: Y.Map<any>;
-  private suppliers: Y.Map<any>;
-  private purchaseOrders: Y.Map<any>;
-  private auditLogs: Y.Map<any>;
-  private arqueoSessions: Y.Map<ArqueoSession>;
-  private ocrResults: Y.Map<InvoiceOCRResult>;
-  private metadata: Y.Map<any>;
-  private linkedNodes: Y.Map<any>;
-  public localPeerId: string | null = null;
-  /**
-   * Guards against premature YJS_UPDATE broadcasts.
-   * Set to true only after initWithState() completes.
-   */
-  public isReady: boolean = false;
+	public doc: Y.Doc;
+	private products: Y.Map<Product>;
+	private sales: Y.Map<Sale>;
+	private clients: Y.Map<Client>;
+	private suppliers: Y.Map<Supplier>;
+	private purchaseOrders: Y.Map<PurchaseOrder>;
+	private auditLogs: Y.Map<AuditEntry>;
+	private arqueoSessions: Y.Map<ArqueoSession>;
+	private ocrResults: Y.Map<InvoiceOCRResult>;
+	private metadata: Y.Map<string>;
+	private linkedNodes: Y.Map<LinkedNodeRecord>;
+	private ephemeralNodes: Map<string, Partial<LinkedNodeRecord>> = new Map();
+	public localPeerId: string | null = null;
+	/**
+	 * Guards against premature YJS_UPDATE broadcasts.
+	 * Set to true only after initWithState() completes.
+	 */
+	public isReady: boolean = false;
 
-  constructor() {
-    this.doc = new Y.Doc();
-    this.products = this.doc.getMap('products');
-    this.sales = this.doc.getMap('sales');
-    this.clients = this.doc.getMap('clients');
-    this.suppliers = this.doc.getMap('suppliers');
-    this.purchaseOrders = this.doc.getMap('purchaseOrders');
-    this.auditLogs = this.doc.getMap('auditLogs');
-    this.arqueoSessions = this.doc.getMap('arqueoSessions');
-    this.ocrResults = this.doc.getMap('ocrResults');
-    this.metadata = this.doc.getMap('metadata');
-    this.linkedNodes = this.doc.getMap('linkedNodes');
-  }
+	private getAuthorityPeerId(): string | null {
+		return (
+			this.metadata.get("authorityPeerId") ||
+			this.metadata.get("masterPeerId") ||
+			null
+		);
+	}
 
-  private checkPermissions(collectionName: string, item?: any): boolean {
-    if (!this.localPeerId) return true; // Allow during initialization
-    
-    const selfNode = this.linkedNodes.get(this.localPeerId);
-    if (!selfNode) {
-      if (this.metadata.get('masterPeerId') === this.localPeerId) return true;
-      if (this.metadata.get('role') === 'admin' || this.metadata.get('role') === 'master') return true;
-      
-      // Default to strict collaborator restrictions if node is unknown!
-      if (collectionName === 'auditLogs') {
-        if (item && item.action && typeof item.action === 'string' && item.action.includes('PRIVILEGE')) {
-          logger.warn(`[SECURITY] Blocked malicious audit log from unknown node`);
-          return false;
-        }
-        return true;
-      }
-      return false; // Safest fallback
-    }
-    
-    if (selfNode.role === 'admin' || selfNode.role === 'master') return true;
-    
-    const perms = selfNode.permissions || {};
-    switch (collectionName) {
-      case 'products': return !!perms.canEditProducts;
-      case 'sales': return !!perms.canEditSales;
-      case 'clients': return !!perms.canEditClients;
-      case 'suppliers': return !!perms.canEditSuppliers;
-      case 'purchaseOrders': return !!perms.canEditPurchaseOrders;
-      case 'arqueoSessions': return !!perms.canViewArqueo;
-      case 'ocrResults': return !!perms.canEditPurchaseOrders;
-      case 'auditLogs': 
-        // Collaborators can only append normal audit logs, block malicious ones
-        if (item && item.action && typeof item.action === 'string' && item.action.includes('PRIVILEGE')) {
-          logger.warn(`[SECURITY] Blocked malicious audit log from collaborator`);
-          return false;
-        }
-        return true;
-      default: return false;
-    }
-  }
+	public isLocalAuthority(): boolean {
+		if (!this.localPeerId) return false;
+		const masterId = this.getAuthorityPeerId();
+		if (masterId) return masterId === this.localPeerId;
+		const selfNode = this.linkedNodes.get(this.localPeerId);
+		return !!selfNode?.isMaster;
+	}
 
-  /**
-   * Helper to perform surgical inserts or updates on a Y.Map
-   */
-  public upsertEntity<T extends { id: string }>(collectionName: keyof AppState, item: T) {
-    if (!this.checkPermissions(collectionName, item)) {
-      logger.warn(`[SECURITY] Unauthorized mutation attempt on ${collectionName}`);
-      return;
-    }
+	private isAuthorityPeer(peerId?: string | null): boolean {
+		if (!peerId) return false;
+		const masterId = this.getAuthorityPeerId();
+		if (masterId) return peerId === masterId;
+		const node = this.linkedNodes.get(peerId);
+		return !!node?.isMaster;
+	}
 
-    const yMap = this.getMapForCollection(collectionName);
-    if (!yMap) return;
+	private isPeerConfigMutationAllowed(
+		authorityPeerId: string | null | undefined,
+		targetPeerId: string,
+	) {
+		if (!authorityPeerId) return false;
+		if (this.isAuthorityPeer(authorityPeerId)) return true;
+		return (
+			authorityPeerId === targetPeerId && this.isAuthorityPeer(targetPeerId)
+		);
+	}
 
-    const getTs = (obj: any) => {
-      const ts = obj.updatedAt || obj.timestamp || obj.lastSeen || 0;
-      return ts ? new Date(ts).getTime() : 0;
-    };
+	private getEffectivePeerConfig(peerId?: string | null): {
+		role: P2PRole;
+		permissions?: PeerPermissions;
+		isMaster: boolean;
+	} {
+		if (!peerId) {
+			return {
+				role: "collaborator" as P2PRole,
+				permissions: undefined as PeerPermissions | undefined,
+				isMaster: false,
+			};
+		}
 
-    this.doc.transact(() => {
-      const existing = yMap.get(item.id);
-      if (!existing || getTs(item) > getTs(existing)) {
-        yMap.set(item.id, item);
-      }
-    }, 'local');
-  }
+		const node = this.linkedNodes.get(peerId);
+		const isMasterPeer = this.isAuthorityPeer(peerId) || !!node?.isMaster;
 
-  /**
-   * Helper to perform surgical deletes (soft deletes or physical if needed)
-   */
-  public deleteEntity(collectionName: keyof AppState, id: string) {
-    if (!this.checkPermissions(collectionName)) {
-      logger.warn(`[SECURITY] Unauthorized deletion attempt on ${collectionName}`);
-      return;
-    }
+		if (!node) {
+			return {
+				role: (this.metadata.get("role") || "collaborator") as P2PRole,
+				permissions: undefined,
+				isMaster: isMasterPeer,
+			};
+		}
 
-    const yMap = this.getMapForCollection(collectionName);
-    if (!yMap) return;
+		if (isMasterPeer) {
+			return {
+				role: "admin" as P2PRole,
+				permissions: node.permissions,
+				isMaster: true,
+			};
+		}
 
-    this.doc.transact(() => {
-      yMap.delete(id);
-    }, 'local');
-  }
+		if (node.role === "admin") {
+			return {
+				role: "collaborator" as P2PRole,
+				permissions: this.getDefaultPermissions("collaborator"),
+				isMaster: false,
+			};
+		}
 
-  private getMapForCollection(collection: string): Y.Map<any> | null {
-    switch (collection) {
-      case 'products': return this.products;
-      case 'sales': return this.sales;
-      case 'clients': return this.clients;
-      case 'suppliers': return this.suppliers;
-      case 'purchaseOrders': return this.purchaseOrders;
-      case 'auditLogs': return this.auditLogs;
-      case 'arqueoSessions': return this.arqueoSessions;
-      case 'ocrResults': return this.ocrResults;
-      case 'peers': return this.linkedNodes;
-      default: return null;
-    }
-  }
+		return {
+			role: (node.role || "collaborator") as P2PRole,
+			permissions:
+				node.permissions ||
+				this.getDefaultPermissions(node.role || "collaborator"),
+			isMaster: false,
+		};
+	}
 
-  /**
-   * Syncs the local AppState into the Yjs Doc.
-   */
-  public initWithState(state: AppState) {
-    this.doc.transact(() => {
-      const mergeAndSync = <T extends { id: string }>(collectionName: keyof AppState, array: T[] = []) => {
-        if (array) {
-          for (const item of array) {
-            this.upsertEntity(collectionName, item);
-          }
-        }
-      };
+	constructor() {
+		this.doc = new Y.Doc();
+		this.products = this.doc.getMap("products");
+		this.sales = this.doc.getMap("sales");
+		this.clients = this.doc.getMap("clients");
+		this.suppliers = this.doc.getMap("suppliers");
+		this.purchaseOrders = this.doc.getMap("purchaseOrders");
+		this.auditLogs = this.doc.getMap("auditLogs");
+		this.arqueoSessions = this.doc.getMap("arqueoSessions");
+		this.ocrResults = this.doc.getMap("ocrResults");
+		this.metadata = this.doc.getMap("metadata");
+		this.linkedNodes = this.doc.getMap("linkedNodes");
+	}
 
-      mergeAndSync('products', state.products);
-      mergeAndSync('arqueoSessions', state.arqueoSessions);
-      mergeAndSync('ocrResults', state.ocrResults);
-      mergeAndSync('sales', state.sales);
-      mergeAndSync('clients', state.clients);
-      mergeAndSync('suppliers', state.suppliers);
-      mergeAndSync('purchaseOrders', state.purchaseOrders);
-      mergeAndSync('auditLogs', state.auditLogs);
+	private checkPermissions(
+		collectionName: string,
+		item?: Partial<EntityRecord>,
+	): boolean {
+		if (!this.localPeerId) return true; // Allow during initialization
 
-      if (state.peers && state.peers.length > 0) {
-        for (const peer of state.peers) {
-          this.upsertEntity('peers' as any, peer); // Special case for peers/linkedNodes
-        }
-      }
-    }, 'local');
+		const selfNode = this.linkedNodes.get(this.localPeerId);
+		if (!selfNode) {
+			if (this.getAuthorityPeerId() === this.localPeerId) return true;
 
-    // Mark as ready AFTER the initial state has been fully loaded into Y.Doc.
-    // This prevents the on('update') handler in p2p.ts from broadcasting
-    // empty state before the CRDT has been populated.
-    this.isReady = true;
-  }
+			// Default to strict collaborator restrictions if node is unknown!
+			if (collectionName === "auditLogs") {
+				if (
+					item?.action &&
+					typeof item.action === "string" &&
+					item.action.includes("PRIVILEGE")
+				) {
+					logger.warn(
+						`[SECURITY] Blocked malicious audit log from unknown node`,
+					);
+					return false;
+				}
+				return true;
+			}
+			return false; // Safest fallback
+		}
 
-  /**
-   * Returns the current state derived from the Yjs Doc.
-   */
-  public getState(localPeerId?: string | null): Partial<AppState> {
-    const peers = Array.from(this.linkedNodes.values());
-    const effectiveLocalId = localPeerId || this.localPeerId;
+		const effectiveSelf = this.getEffectivePeerConfig(this.localPeerId);
+		if (effectiveSelf.role === "admin" || effectiveSelf.isMaster) return true;
 
-    let resolvedRole: any = 'collaborator';
-    let resolvedPermissions: any = undefined;
+		const perms: Partial<PeerPermissions> = effectiveSelf.permissions || {};
+		switch (collectionName) {
+			case "products":
+				return !!perms.canEditProducts;
+			case "sales":
+				return !!perms.canEditSales;
+			case "clients":
+				return !!perms.canEditClients;
+			case "suppliers":
+				return !!perms.canEditSuppliers;
+			case "purchaseOrders":
+				return !!perms.canEditPurchaseOrders;
+			case "arqueoSessions":
+				return !!perms.canViewArqueo;
+			case "ocrResults":
+				return !!perms.canEditPurchaseOrders;
+			case "auditLogs":
+				// Collaborators can only append normal audit logs, block malicious ones
+				if (
+					item?.action &&
+					typeof item.action === "string" &&
+					item.action.includes("PRIVILEGE")
+				) {
+					logger.warn(
+						`[SECURITY] Blocked malicious audit log from collaborator`,
+					);
+					return false;
+				}
+				return true;
+			default:
+				return false;
+		}
+	}
 
-    if (effectiveLocalId) {
-      const selfNode = this.linkedNodes.get(effectiveLocalId);
-      if (selfNode) {
-        resolvedRole = selfNode.role;
-        resolvedPermissions = selfNode.permissions;
-      } else {
-        const masterId = this.metadata.get('masterPeerId');
-        if (masterId === effectiveLocalId) {
-          resolvedRole = 'admin';
-        }
-      }
-    } else {
-      resolvedRole = this.metadata.get('role') || 'collaborator';
-    }
+	/**
+	 * Helper to perform surgical inserts or updates on a Y.Map
+	 */
+	public upsertEntity<
+		T extends {
+			id: string;
+			lastSeen?: string;
+			action?: string;
+			timestamp?: string;
+			updatedAt?: string;
+		},
+	>(collectionName: keyof AppState, item: T) {
+		if (!this.checkPermissions(collectionName, item)) {
+			logger.warn(
+				`[SECURITY] Unauthorized mutation attempt on ${collectionName}`,
+			);
+			return;
+		}
 
-    return {
-      products: Array.from(this.products.values()),
-      sales: Array.from(this.sales.values()),
-      clients: Array.from(this.clients.values()),
-      suppliers: Array.from(this.suppliers.values()),
-      purchaseOrders: Array.from(this.purchaseOrders.values()),
-      auditLogs: Array.from(this.auditLogs.values()),
-      arqueoSessions: Array.from(this.arqueoSessions.values()),
-      ocrResults: Array.from(this.ocrResults.values()),
-      role: resolvedRole,
-      permissions: resolvedPermissions,
-      peers: peers,
-    };
-  }
+		const yMap = this.getMapForCollection(collectionName);
+		if (!yMap) return;
 
-  public getMasterPeerId(): string | null {
-    for (const node of this.linkedNodes.values()) {
-      if (node.isMaster) return node.id;
-    }
-    return this.metadata.get('masterPeerId') || null;
-  }
+		const getTs = (obj: Partial<EntityRecord>) => {
+			const ts = obj.updatedAt || obj.timestamp || obj.lastSeen || 0;
+			return ts ? new Date(ts).getTime() : 0;
+		};
 
-  public setMasterPeerId(peerId: string) {
-    this.doc.transact(() => {
-      this.metadata.set('masterPeerId', peerId);
-    }, 'local');
-  }
+		this.doc.transact(() => {
+			const existing = yMap.get(item.id);
+			if (!existing || getTs(item) > getTs(existing)) {
+				yMap.set(item.id, item);
+			}
+		}, "local");
+	}
 
-  public getLinkedNodes(): any[] {
-    return Array.from(this.linkedNodes.values());
-  }
+	/**
+	 * Helper to perform surgical deletes (soft deletes or physical if needed)
+	 */
+	public deleteEntity(collectionName: keyof AppState, id: string) {
+		if (!this.checkPermissions(collectionName)) {
+			logger.warn(
+				`[SECURITY] Unauthorized deletion attempt on ${collectionName}`,
+			);
+			return;
+		}
 
-  public updateLinkedNode(peerId: string, info: any) {
-    this.doc.transact(() => {
-      const existing = this.linkedNodes.get(peerId) || {};
-      this.linkedNodes.set(peerId, {
-        id: peerId,
-        permissions: {
-          canViewProducts: true,
-          canEditProducts: true,
-          canViewSales: true,
-          canEditSales: true,
-          canViewClients: true,
-          canEditClients: true,
-          canViewSuppliers: false,
-          canEditSuppliers: false,
-          canViewPurchaseOrders: false,
-          canEditPurchaseOrders: false,
-          canViewReports: false,
-          canViewArqueo: false,
-          canViewDashboard: false,
-        },
-        ...existing,
-        ...info, // Info will override existing, allowing us to force role and isMaster
-        lastSeen: new Date().toISOString(),
-      });
-    }, 'local');
-  }
+		const yMap = this.getMapForCollection(collectionName);
+		if (!yMap) return;
 
-  public updatePeerConfig(peerId: string, role: string, permissions: any) {
-    this.doc.transact(() => {
-      const existing = this.linkedNodes.get(peerId);
-      if (existing) {
-        this.linkedNodes.set(peerId, {
-          ...existing,
-          role,
-          permissions,
-          isMaster: role === 'admin' ? false : false // Or true if we support multiple masters, but typically we keep the original master
-        });
-      }
-    }, 'local');
-  }
+		this.doc.transact(() => {
+			yMap.delete(id);
+		}, "local");
+	}
 
-  public removeLinkedNode(peerId: string) {
-    this.doc.transact(() => {
-      this.linkedNodes.delete(peerId);
-    }, 'local');
-  }
+	private getMapForCollection(collection: string): Y.Map<EntityRecord> | null {
+		switch (collection) {
+			case "products":
+				return this.products as unknown as Y.Map<EntityRecord>;
+			case "sales":
+				return this.sales as unknown as Y.Map<EntityRecord>;
+			case "clients":
+				return this.clients as unknown as Y.Map<EntityRecord>;
+			case "suppliers":
+				return this.suppliers as unknown as Y.Map<EntityRecord>;
+			case "purchaseOrders":
+				return this.purchaseOrders as unknown as Y.Map<EntityRecord>;
+			case "auditLogs":
+				return this.auditLogs as unknown as Y.Map<EntityRecord>;
+			case "arqueoSessions":
+				return this.arqueoSessions as unknown as Y.Map<EntityRecord>;
+			case "ocrResults":
+				return this.ocrResults as unknown as Y.Map<EntityRecord>;
+			case "peers":
+				return this.linkedNodes as unknown as Y.Map<EntityRecord>;
+			default:
+				return null;
+		}
+	}
 
-  /** Role override set by p2pManager to sync the effective peer role into database-sync */
-  public masterRole: string | null = null;
+	/**
+	 * Syncs the local AppState into the Yjs Doc.
+	 */
+	public initWithState(state: AppState) {
+		this.doc.transact(() => {
+			const mergeAndSync = <T extends { id: string }>(
+				collectionName: keyof AppState,
+				array: T[] = [],
+			) => {
+				if (array) {
+					for (const item of array) {
+						this.upsertEntity(collectionName, item);
+					}
+				}
+			};
 
-  private gcIntervals: Map<string, any> = new Map();
+			mergeAndSync("products", state.products);
+			mergeAndSync("arqueoSessions", state.arqueoSessions);
+			mergeAndSync("ocrResults", state.ocrResults);
+			mergeAndSync("sales", state.sales);
+			mergeAndSync("clients", state.clients);
+			mergeAndSync("suppliers", state.suppliers);
+			mergeAndSync("purchaseOrders", state.purchaseOrders);
+			mergeAndSync("auditLogs", state.auditLogs);
 
-  /**
-   * Starts periodic garbage collection for a collection.
-   * Only nodes with 'admin' or 'master' role will execute the deletion.
-   */
-  public startGarbageCollection(collectionName: string, maxAgeMs: number, checkIntervalMs: number = 60000) {
-    if (this.gcIntervals.has(collectionName)) {
-      clearInterval(this.gcIntervals.get(collectionName));
-    }
+			if (state.peers && state.peers.length > 0) {
+				for (const peer of state.peers) {
+					this.upsertEntity("peers", peer); // Special case for peers/linkedNodes
+				}
+			}
+		}, "local");
 
-    const interval = setInterval(() => {
-      // Resolve role: prefer explicit masterRole (set by p2pManager), then linkedNodes, then metadata
-      let role = this.masterRole;
-      if (!role) {
-        const selfNode = this.localPeerId ? this.linkedNodes.get(this.localPeerId) : null;
-        role = selfNode?.role || this.metadata.get('role') || null;
-        if (!role && this.localPeerId && this.metadata.get('masterPeerId') === this.localPeerId) {
-          role = 'admin';
-        }
-      }
+		// Mark as ready AFTER the initial state has been fully loaded into Y.Doc.
+		// This prevents the on('update') handler in p2p.ts from broadcasting
+		// empty state before the CRDT has been populated.
+		this.isReady = true;
+	}
 
-      // Guard: only admin/master peers execute cleanup
-      if (role !== 'admin' && role !== 'master') {
-        return;
-      }
+	/**
+	 * Returns the current state derived from the Yjs Doc.
+	 */
+	public getState(localPeerId?: string | null): Partial<AppState> {
+		const peers = this.getLinkedNodes();
+		const effectiveLocalId = localPeerId || this.localPeerId;
 
-      logger.debug(`[GC] Running cleanup for ${collectionName} (role: ${role})`);
+		let resolvedRole: P2PRole = "collaborator";
+		let resolvedPermissions: PeerPermissions | undefined;
 
-      const yMap = this.getMapForCollection(collectionName);
-      if (!yMap) return;
+		if (effectiveLocalId) {
+			const masterId = this.getMasterPeerId();
+			const effectiveSelf = this.getEffectivePeerConfig(effectiveLocalId);
 
-      const now = Date.now();
-      const keysToDelete: string[] = [];
+			// If we are the original host, we always retain admin privileges
+			if (masterId === effectiveLocalId) {
+				resolvedRole = "admin";
+			} else if (effectiveSelf.role) {
+				resolvedRole = effectiveSelf.role;
+				resolvedPermissions = effectiveSelf.permissions;
+			} else {
+				resolvedRole = "collaborator";
+			}
+		} else {
+			resolvedRole = "collaborator";
+		}
 
-      for (const [key, item] of yMap.entries()) {
-        if (item && item.timestamp) {
-          const itemTime = new Date(item.timestamp).getTime();
-          if (now - itemTime > maxAgeMs) {
-            keysToDelete.push(key);
-          }
-        }
-      }
+		return {
+			products: Array.from(this.products.values()),
+			sales: Array.from(this.sales.values()),
+			clients: Array.from(this.clients.values()),
+			suppliers: Array.from(this.suppliers.values()),
+			purchaseOrders: Array.from(this.purchaseOrders.values()),
+			auditLogs: Array.from(this.auditLogs.values()),
+			arqueoSessions: Array.from(this.arqueoSessions.values()),
+			ocrResults: Array.from(this.ocrResults.values()),
+			role: resolvedRole,
+			permissions: resolvedPermissions,
+			peers: peers,
+		};
+	}
 
-      if (keysToDelete.length > 0) {
-        this.doc.transact(() => {
-          for (const key of keysToDelete) {
-            yMap.delete(key);
-          }
-        }, 'local');
-        logger.log(`[GC] Purged ${keysToDelete.length} old items from ${collectionName}`);
-      }
-    }, checkIntervalMs);
+	public getMasterPeerId(): string | null {
+		const authorityPeerId = this.metadata.get("authorityPeerId");
+		if (authorityPeerId) {
+			return authorityPeerId;
+		}
+		for (const node of this.linkedNodes.values()) {
+			if (node.isMaster) return node.id;
+		}
+		return this.metadata.get("masterPeerId") || null;
+	}
 
-    this.gcIntervals.set(collectionName, interval);
-  }
+	public setMasterPeerId(peerId: string) {
+		const currentMaster = this.getMasterPeerId();
+		if (currentMaster && currentMaster !== peerId) {
+			logger.warn(
+				`[SECURITY] Blocked unauthorized master reassignment to ${peerId}`,
+			);
+			return;
+		}
 
-  public stopGarbageCollection(collectionName: string) {
-    if (this.gcIntervals.has(collectionName)) {
-      clearInterval(this.gcIntervals.get(collectionName));
-      this.gcIntervals.delete(collectionName);
-    }
-  }
+		this.doc.transact(() => {
+			this.metadata.set("authorityPeerId", peerId);
+			this.metadata.set("masterPeerId", peerId);
+		}, "local");
+	}
 
-  /**
-   * Sync methods.
-   * Note: The massive array sync methods (syncProducts, syncSales, etc.) have been removed
-   * in favor of surgical atomic updates via upsertEntity and deleteEntity.
-   */
+	public getLinkedNodes(): LinkedNodeRecord[] {
+		const crdtPeers = Array.from(this.linkedNodes.values());
+		const peersMap = new Map<string, LinkedNodeRecord>();
 
-  /**
-   * Applies an update from a remote peer.
-   */
-  public applyUpdate(update: Uint8Array, origin?: any) {
-    Y.applyUpdate(this.doc, update, origin);
-  }
+		for (const p of crdtPeers) {
+			peersMap.set(p.id, { ...p, ...(this.ephemeralNodes.get(p.id) || {}) });
+		}
 
-  /**
-   * Generates a state vector to synchronize with other peers.
-   */
-  public getLocalUpdate(): Uint8Array {
-    return Y.encodeStateAsUpdate(this.doc);
-  }
+		for (const [id, ephem] of this.ephemeralNodes.entries()) {
+			if (!peersMap.has(id)) {
+				peersMap.set(id, {
+					id,
+					role: "collaborator",
+					...ephem,
+					lastSeen: ephem.lastSeen || new Date().toISOString(),
+				});
+			}
+		}
 
-  /**
-   * Observes changes in the document and triggers a callback.
-   * Passes the origin so consumers can distinguish local vs remote updates.
-   */
-  public onChange(callback: (update: Uint8Array, origin: any) => void) {
-    this.doc.on('update', (update, origin) => {
-      callback(update, origin);
-    });
-  }
+		return Array.from(peersMap.values());
+	}
 
-  /**
-   * High-level observer for granular entity updates.
-   * Useful for reactive UI updates without full state reconstruction.
-   */
-  public onObserve(callback: (collection: keyof AppState, items: any[], deletedIds: string[]) => void): () => void {
-    const collections: (keyof AppState)[] = [
-      'products',
-      'sales',
-      'clients',
-      'suppliers',
-      'purchaseOrders',
-      'auditLogs',
-      'arqueoSessions',
-      'ocrResults',
-    ];
+	public updateLinkedNode(
+		peerId: string,
+		info: Partial<LinkedNodeRecord>,
+		authorityPeerId: string | null = this.localPeerId,
+	) {
+		this.doc.transact(() => {
+			const existing = this.linkedNodes.get(peerId) || ({} as LinkedNodeRecord);
+			const { id: _existingId, ...existingWithoutId } = existing;
+			const canEditPeerConfig = this.isPeerConfigMutationAllowed(
+				authorityPeerId,
+				peerId,
+			);
+			const nextRole =
+				canEditPeerConfig && info.role
+					? info.role
+					: existing.role || "collaborator";
+			const nextPermissions =
+				canEditPeerConfig && info.permissions
+					? info.permissions
+					: existing.permissions || this.getDefaultPermissions(nextRole);
+			const nextIsMaster =
+				peerId === authorityPeerId
+					? typeof info.isMaster === "boolean"
+						? info.isMaster
+						: existing.isMaster || false
+					: false;
+			const safeInfo = canEditPeerConfig
+				? info
+				: (({
+						role: _role,
+						permissions: _permissions,
+						isMaster: _isMaster,
+						...rest
+					}) => rest)(info || {});
 
-    const observers = collections.map((col) => {
-      const yMap = this.getMapForCollection(col);
-      if (!yMap) return null;
+			this.linkedNodes.set(peerId, {
+				...existingWithoutId,
+				...safeInfo,
+				id: peerId,
+				permissions: nextPermissions,
+				role: nextRole,
+				isMaster: nextIsMaster,
+				lastSeen: new Date().toISOString(),
+			});
+		}, "local");
+	}
 
-      const observer = (event: Y.YMapEvent<any>) => {
-        if (event.transaction.origin !== 'local') {
-          const items: any[] = [];
-          const deletedIds: string[] = [];
+	private getDefaultPermissions(
+		role: P2PRole = "collaborator",
+	): PeerPermissions {
+		if (role === "admin") {
+			return {
+				canViewProducts: true,
+				canEditProducts: true,
+				canViewSales: true,
+				canEditSales: true,
+				canViewClients: true,
+				canEditClients: true,
+				canViewSuppliers: true,
+				canEditSuppliers: true,
+				canViewPurchaseOrders: true,
+				canEditPurchaseOrders: true,
+				canViewReports: true,
+				canViewArqueo: true,
+				canViewDashboard: true,
+			};
+		}
 
-          event.changes.keys.forEach((change, key) => {
-            if (change.action === 'add' || change.action === 'update') {
-              const item = yMap.get(key);
-              if (item) items.push(item);
-            } else if (change.action === 'delete') {
-              deletedIds.push(key);
-            }
-          });
+		if (role === "vendedor") {
+			return {
+				canViewProducts: true,
+				canEditProducts: false,
+				canViewSales: true,
+				canEditSales: true,
+				canViewClients: true,
+				canEditClients: true,
+				canViewSuppliers: false,
+				canEditSuppliers: false,
+				canViewPurchaseOrders: false,
+				canEditPurchaseOrders: false,
+				canViewReports: false,
+				canViewArqueo: false,
+				canViewDashboard: false,
+			};
+		}
 
-          if (items.length > 0 || deletedIds.length > 0) {
-            callback(col, items, deletedIds);
-          }
-        }
-      };
+		return {
+			canViewProducts: true,
+			canEditProducts: true,
+			canViewSales: true,
+			canEditSales: true,
+			canViewClients: true,
+			canEditClients: true,
+			canViewSuppliers: false,
+			canEditSuppliers: false,
+			canViewPurchaseOrders: false,
+			canEditPurchaseOrders: false,
+			canViewReports: false,
+			canViewArqueo: false,
+			canViewDashboard: false,
+		};
+	}
 
-      yMap.observe(observer);
-      return { yMap, observer };
-    });
+	public updateEphemeralNode(peerId: string, info: Partial<LinkedNodeRecord>) {
+		const existing = this.ephemeralNodes.get(peerId) || {};
+		this.ephemeralNodes.set(peerId, {
+			...existing,
+			...info,
+			lastSeen: new Date().toISOString(),
+		});
 
-    return () => {
-      observers.forEach((obs) => {
-        if (obs) obs.yMap.unobserve(obs.observer);
-      });
-    };
-  }
+		// We intentionally don't wrap this in a Yjs transaction to avoid broadcasting status changes.
+	}
+
+	public updatePeerConfig(
+		peerId: string,
+		role: P2PRole,
+		permissions?: PeerPermissions,
+		authorityPeerId: string | null = this.localPeerId,
+	) {
+		if (!this.isPeerConfigMutationAllowed(authorityPeerId, peerId)) {
+			logger.warn(
+				`[SECURITY] Blocked unauthorized peer config update for ${peerId}`,
+			);
+			return;
+		}
+
+		this.doc.transact(() => {
+			const existing = this.linkedNodes.get(peerId) || ({} as LinkedNodeRecord);
+			const { id: _existingConfigId, ...existingConfigWithoutId } = existing;
+			const existingEphemeral = this.ephemeralNodes.get(peerId) || {};
+			const nextRole = role;
+			const nextPermissions =
+				permissions || this.getDefaultPermissions(nextRole);
+
+			this.linkedNodes.set(peerId, {
+				...existingEphemeral,
+				...existingConfigWithoutId,
+				id: peerId,
+				role: nextRole,
+				permissions: nextPermissions,
+				isMaster:
+					peerId === authorityPeerId ? existing.isMaster || false : false,
+				lastSeen: new Date().toISOString(),
+			});
+		}, "local");
+	}
+
+	public removeLinkedNode(peerId: string) {
+		this.doc.transact(() => {
+			this.linkedNodes.delete(peerId);
+		}, "local");
+	}
+
+	/** Role override set by p2pManager to sync the effective peer role into database-sync */
+	public masterRole: string | null = null;
+
+	private gcIntervals: Map<string, ReturnType<typeof setInterval>> = new Map();
+
+	/**
+	 * Starts periodic garbage collection for a collection.
+	 * Only nodes with 'admin' or 'master' role will execute the deletion.
+	 */
+	public startGarbageCollection(
+		collectionName: string,
+		maxAgeMs: number,
+		checkIntervalMs: number = 60000,
+	) {
+		if (this.gcIntervals.has(collectionName)) {
+			clearInterval(this.gcIntervals.get(collectionName));
+		}
+
+		const interval = setInterval(() => {
+			// Resolve role: prefer explicit masterRole (set by p2pManager), then linkedNodes, then metadata
+			let role: string | null = this.masterRole;
+			if (!role) {
+				const selfNode = this.localPeerId
+					? this.linkedNodes.get(this.localPeerId)
+					: null;
+				role = selfNode?.role || this.metadata.get("role") || null;
+				if (
+					!role &&
+					this.localPeerId &&
+					this.metadata.get("masterPeerId") === this.localPeerId
+				) {
+					role = "admin";
+				}
+			}
+
+			// Guard: only admin/master peers execute cleanup
+			if (role !== "admin" && role !== "master") {
+				return;
+			}
+
+			logger.debug(
+				`[GC] Running cleanup for ${collectionName} (role: ${role})`,
+			);
+
+			const yMap = this.getMapForCollection(collectionName);
+			if (!yMap) return;
+
+			const now = Date.now();
+			const keysToDelete: string[] = [];
+
+			for (const [key, item] of yMap.entries()) {
+				if (item?.timestamp) {
+					const itemTime = new Date(item.timestamp).getTime();
+					if (now - itemTime > maxAgeMs) {
+						keysToDelete.push(key);
+					}
+				}
+			}
+
+			if (keysToDelete.length > 0) {
+				this.doc.transact(() => {
+					for (const key of keysToDelete) {
+						yMap.delete(key);
+					}
+				}, "local");
+				logger.log(
+					`[GC] Purged ${keysToDelete.length} old items from ${collectionName}`,
+				);
+			}
+		}, checkIntervalMs);
+
+		this.gcIntervals.set(collectionName, interval);
+	}
+
+	public stopGarbageCollection(collectionName: string) {
+		if (this.gcIntervals.has(collectionName)) {
+			clearInterval(this.gcIntervals.get(collectionName));
+			this.gcIntervals.delete(collectionName);
+		}
+	}
+
+	/**
+	 * Sync methods.
+	 * Note: The massive array sync methods (syncProducts, syncSales, etc.) have been removed
+	 * in favor of surgical atomic updates via upsertEntity and deleteEntity.
+	 */
+
+	/**
+	 * Applies an update from a remote peer.
+	 */
+	public applyUpdate(update: Uint8Array, origin?: unknown) {
+		Y.applyUpdate(this.doc, update, origin);
+	}
+
+	/**
+	 * Generates a state vector to synchronize with other peers.
+	 */
+	public getLocalUpdate(): Uint8Array {
+		return Y.encodeStateAsUpdate(this.doc);
+	}
+
+	/**
+	 * Observes changes in the document and triggers a callback.
+	 * Passes the origin so consumers can distinguish local vs remote updates.
+	 */
+	public onChange(callback: (update: Uint8Array, origin: unknown) => void) {
+		this.doc.on("update", (update, origin) => {
+			callback(update, origin);
+		});
+	}
+
+	/**
+	 * High-level observer for granular entity updates.
+	 * Useful for reactive UI updates without full state reconstruction.
+	 */
+	public onObserve(
+		callback: (
+			collection: keyof AppState,
+			items: EntityRecord[],
+			deletedIds: string[],
+		) => void,
+	): () => void {
+		const collections: (keyof AppState)[] = [
+			"products",
+			"sales",
+			"clients",
+			"suppliers",
+			"purchaseOrders",
+			"auditLogs",
+			"arqueoSessions",
+			"ocrResults",
+		];
+
+		const observers = collections.map((col) => {
+			const yMap = this.getMapForCollection(col);
+			if (!yMap) return null;
+
+			const observer = (event: Y.YMapEvent<EntityRecord>) => {
+				if (event.transaction.origin !== "local") {
+					const items: EntityRecord[] = [];
+					const deletedIds: string[] = [];
+
+					event.changes.keys.forEach((change, key) => {
+						if (change.action === "add" || change.action === "update") {
+							const item = yMap.get(key);
+							if (item) items.push(item);
+						} else if (change.action === "delete") {
+							deletedIds.push(key);
+						}
+					});
+
+					if (items.length > 0 || deletedIds.length > 0) {
+						callback(col, items, deletedIds);
+					}
+				}
+			};
+
+			yMap.observe(observer);
+			return { yMap, observer };
+		});
+
+		return () => {
+			observers.forEach((obs) => {
+				if (obs) obs.yMap.unobserve(obs.observer);
+			});
+		};
+	}
 }
 
 export const dbSync = new DatabaseSyncManager();
