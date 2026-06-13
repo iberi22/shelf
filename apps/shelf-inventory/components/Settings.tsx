@@ -1,4 +1,5 @@
 import type { RestoreStatePayload } from 'p2p-mesh-core';
+import { decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
 import type React from 'react';
 import { useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
@@ -7,7 +8,6 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useUI } from '../context/UIContext';
-import { deriveKey, getSessionKey, encryptData, decryptData } from 'p2p-mesh-core';
 import useLocalStorage from '../hooks/useLocalStorage';
 import AuditLogViewer from './AuditLogViewer';
 import DataRecovery from './DataRecovery';
@@ -56,13 +56,16 @@ const Settings: React.FC = () => {
   const handleCreateBackup = async () => {
     try {
       const backupData = JSON.stringify(state);
-      
-      const password = window.prompt(t('settings.backup.passwordPrompt') || 'Introduce una contraseña para cifrar el respaldo (déjalo en blanco para usar la clave de este dispositivo):');
+
+      const password = window.prompt(
+        t('settings.backup.passwordPrompt') ||
+          'Introduce una contraseña para cifrar el respaldo (déjalo en blanco para usar la clave de este dispositivo):',
+      );
       if (password === null) return; // User cancelled
-      
+
       const key = password ? await deriveKey(password) : await getSessionKey();
       const encryptedData = await encryptData(backupData, key);
-      
+
       const blob = new Blob([encryptedData], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -87,20 +90,23 @@ const Settings: React.FC = () => {
       try {
         const text = e.target?.result;
         if (typeof text !== 'string') throw new Error('File content is not readable');
-        
+
         let decryptedText = text;
-        
+
         try {
-          JSON.parse(text); 
+          JSON.parse(text);
           // If this succeeds, it's an old unencrypted backup
         } catch {
           // It's likely encrypted
-          const password = window.prompt(t('settings.restore.passwordPrompt') || 'Introduce la contraseña del respaldo (déjalo en blanco si se creó en este dispositivo sin contraseña):');
-          
+          const password = window.prompt(
+            t('settings.restore.passwordPrompt') ||
+              'Introduce la contraseña del respaldo (déjalo en blanco si se creó en este dispositivo sin contraseña):',
+          );
+
           if (password === null) {
             throw new Error('Operación cancelada');
           }
-          
+
           const key = password ? await deriveKey(password) : await getSessionKey();
           decryptedText = await decryptData(text, key);
         }
@@ -141,7 +147,6 @@ const Settings: React.FC = () => {
     }
   };
 
-
   const handleInviteSent = () => {
     setInviteModalOpen(false);
     showNotification('Invitation sent successfully!', 'success');
@@ -149,12 +154,12 @@ const Settings: React.FC = () => {
 
   const handleSendFeedback = () => {
     if (!feedback.trim()) return;
-    
+
     const subject = encodeURIComponent('Soporte / Sugerencia - Shelf Inventory');
     const body = encodeURIComponent(feedback);
     // Reemplaza esto con tu correo real
     window.location.href = `mailto:soporte@tudominio.com?subject=${subject}&body=${body}`;
-    
+
     showNotification(t('settings.feedback.success'), 'success');
     setFeedback('');
   };
@@ -263,9 +268,12 @@ const Settings: React.FC = () => {
             <div className="mt-4 space-y-2">
               {team.length > 0 ? (
                 team.map((member) => (
-                  <div key={member.id} className="flex justify-between items-center p-2 rounded-md bg-background/50">
-                    <span className="truncate mr-2">{member.email}</span>
-                    <div className="flex items-center gap-2">
+                  <div
+                    key={member.id}
+                    className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-md bg-background/50"
+                  >
+                    <span className="truncate min-w-0">{member.email}</span>
+                    <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
                       <span className="text-[10px] sm:text-sm font-semibold capitalize px-2 py-0.5 rounded-full bg-foreground/10">
                         {member.role}
                       </span>
@@ -455,9 +463,9 @@ const Settings: React.FC = () => {
           {/* Data Management */}
           <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.data.title')}</h3>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Import */}
-              <div className="flex flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
+              <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
                 <h4 className="font-bold text-[#F5F5DC]">{t('settings.import.button')}</h4>
                 <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.import.cardDescription')}</p>
                 <button
@@ -469,7 +477,7 @@ const Settings: React.FC = () => {
               </div>
 
               {/* Backup */}
-              <div className="flex flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
+              <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
                 <h4 className="font-bold text-[#F5F5DC]">{t('settings.backup.button')}</h4>
                 <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.backup.description')}</p>
                 <button
@@ -481,7 +489,7 @@ const Settings: React.FC = () => {
               </div>
 
               {/* Restore */}
-              <div className="flex flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
+              <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
                 <h4 className="font-bold text-[#F5F5DC]">{t('settings.restore.button')}</h4>
                 <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.restore.description')}</p>
                 <input
@@ -501,7 +509,7 @@ const Settings: React.FC = () => {
               </div>
 
               {/* Reset */}
-              <div className="flex flex-col gap-2 p-4 rounded-md bg-background/50 border border-red-500/30">
+              <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-red-500/30">
                 <h4 className="font-bold text-red-400">{t('settings.reset.button')}</h4>
                 <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.reset.description')}</p>
                 <button
@@ -512,8 +520,6 @@ const Settings: React.FC = () => {
                 </button>
               </div>
             </div>
-
-
           </div>
         </div>
       </div>

@@ -643,11 +643,11 @@ const P2PSyncManager: React.FC = () => {
                 return (
                   <div
                     key={peer.id}
-                    className="flex justify-between items-center p-3 rounded-md bg-background/50 text-sm border border-[#F5F5DC]/10 hover:border-[#F5F5DC]/20 transition-all animate-fadeIn"
+                    className="flex flex-col gap-3 p-3 rounded-md bg-background/50 text-sm border border-[#F5F5DC]/10 hover:border-[#F5F5DC]/20 transition-all animate-fadeIn"
                   >
-                    <div className="flex flex-col w-full gap-2">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-2">
-                        <div className="flex flex-col min-w-0">
+                    <div className="flex flex-col w-full gap-2 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between w-full gap-3 min-w-0">
+                        <div className="flex flex-col min-w-0 w-full">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-mono text-xs break-all text-yellow-400">{peer.id}</span>
                             {isPeerMaster && (
@@ -673,7 +673,7 @@ const P2PSyncManager: React.FC = () => {
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 self-end sm:self-center">
+                        <div className="flex flex-wrap items-center gap-2 self-start sm:self-center w-full sm:w-auto">
                           <span className="capitalize px-2 py-0.5 rounded text-xs bg-foreground/10 font-bold border border-[#F5F5DC]/10">
                             {peer.role}
                           </span>
@@ -793,7 +793,7 @@ const P2PSyncManager: React.FC = () => {
                 <p className="mb-2 font-semibold text-[#F5F5DC]">
                   {t('p2pSync.configCollaboratorTitle') || 'Configuracion del Colaborador'}
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
                   {[
                     { role: 'admin' as P2PRole, label: t('p2pSync.roleAdmin') || 'Admin' },
                     { role: 'collaborator' as P2PRole, label: 'Usuario normal' },
@@ -833,7 +833,7 @@ const P2PSyncManager: React.FC = () => {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
                 {Object.entries(counts).map(([key, value]) => (
                   <div key={key} className="p-2 rounded bg-[#121212] border border-[#F5F5DC]/10">
                     <span className="block text-[#F5F5DC]/50">{t(`p2pSync.${key}`) || key}</span>
