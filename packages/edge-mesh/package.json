@@ -1,0 +1,37 @@
+{
+	"name": "edge-mesh",
+	"version": "1.0.0",
+	"type": "module",
+	"private": true,
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc -b --force",
+		"dev": "tsc -w",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"lint": "biome check .",
+		"format": "biome format --write ."
+	},
+	"dependencies": {
+		"events": "^3.3.0",
+		"peerjs": "^1.5.5",
+		"yjs": "^13.6.31",
+		"y-protocols": "^1.0.7",
+		"idb": "^8.0.0",
+		"@noble/post-quantum": "^0.6.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/node": "^25.9.2",
+		"typescript": "^5.6.3",
+		"vitest": "^3.2.6"
+	}
+}

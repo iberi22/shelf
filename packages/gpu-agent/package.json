@@ -1,0 +1,18 @@
+{
+  "name": "gpu-agent",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "private": true,
+  "scripts": {
+    "build": "tsc -b --force",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "edge-mesh": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

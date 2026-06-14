@@ -1,44 +1,117 @@
 # Shelf Ecosystem
 
-Shelf es una aplicación descentralizada de gestión de inventario y punto de venta con arquitectura Offline-First. 
-Este repositorio utiliza **pnpm workspace** y **Turborepo** para gestionar sus paquetes y aplicaciones.
+Shelf is a decentralized, offline-first inventory and point-of-sale platform. The repository is a pnpm workspace managed with Turborepo and is organized around reusable local-first packages plus the main React inventory app.
 
-## Estructura del Monorepo
+## Monorepo Structure
 
-- `apps/shelf-inventory`: La aplicación principal construida en React (Vite).
-- `apps/docs`: Portal de documentación técnica (VitePress).
-- `packages/p2p-mesh-core`: Motor de sincronización P2P descentralizado, incluyendo criptografía post-cuántica y la lógica de CRDT (Yjs).
+| Path | Purpose |
+| --- | --- |
+| `apps/shelf-inventory` | Main React/Vite inventory application |
+| `docs/src` | Technical SRC documentation |
+| `packages/p2p-mesh-core` | Existing P2P sync engine, roles, permissions, audit state, and post-quantum security integration |
+| `packages/edge-mesh` | New reusable Edge Mesh runtime for P2P nodes, CRDT namespaces, transport, storage, protocol, presence, authz, and WebGPU extension points |
+| `packages/edge-mesh-react` | React provider and hooks for Edge Mesh namespaces |
+| `packages/gpu-agent` | GPU/WebGPU agent integration surface |
 
-## Pre-requisitos
+## Edge Mesh Runtime
 
-- [Node.js](https://nodejs.org/en/) 20 o superior.
-- [pnpm](https://pnpm.io/) v9 o superior.
+`@shelf/edge-mesh` is the new package that powers the next generation of browser-to-browser interaction in Shelf.
 
-## Instalación y Desarrollo
+Current implementation:
 
-1. Instala las dependencias en la raíz:
-   ```bash
-   pnpm install
-   ```
+- creates reusable P2P nodes over pluggable transports;
+- wraps Yjs documents into named namespaces;
+- broadcasts local CRDT updates as encoded deltas;
+- applies incoming remote updates with `{ type: 'remote', peerId }`;
+- avoids re-broadcast loops for remote-origin updates;
+- lets Shelf authorize remote mutations before they enter app state;
+- reverts unauthorized remote CRDT changes with a dedicated security origin;
+- exposes a localhost-only Playwright harness for deterministic E2E tests;
+- keeps WebGPU agent execution as an extension point for future edge-local workflows.
 
-2. Ejecutar entornos de desarrollo (Aplicación y Documentación):
-   ```bash
-   pnpm run dev
-   ```
-   *Nota: Debes asegurarte de tener un script `dev` en la raíz mapeado a `turbo run dev`.*
+Shelf currently uses the `shelf` namespace for:
 
-3. Compilar para producción:
-   ```bash
-   pnpm run build
-   ```
+- `products`
+- `sales`
+- `clients`
+- `suppliers`
+- `purchaseOrders`
+- `arqueoSessions`
+- `ocrResults`
+- `auditLogs`
+- `teamMembers`
 
-## Documentación Técnica
+The detailed package documentation is in [`packages/edge-mesh/README.md`](packages/edge-mesh/README.md). The SRC document is [`docs/src/non-functional/SRC-EDGE-001.md`](docs/src/non-functional/SRC-EDGE-001.md).
 
-Toda la documentación relacionada a la Arquitectura P2P WebRTC, seguridad Post-Cuántica (ML-KEM) y la gobernanza de datos offline-first está en el módulo de `apps/docs`. 
+## Prerequisites
 
-Se compila y despliega de manera automática en GitHub Pages.
+- Node.js 20 or newer for the workspace.
+- pnpm 9 or newer.
+- A local PeerServer on port `9000` when running local P2P/Edge Mesh E2E tests.
 
-Para previsualizar localmente:
+## Install
+
 ```bash
-pnpm run --filter shelf-docs dev
+pnpm install
 ```
+
+## Development
+
+Run the workspace dev tasks:
+
+```bash
+pnpm run dev
+```
+
+Run the inventory app directly:
+
+```bash
+pnpm --dir apps/shelf-inventory dev
+```
+
+## Build
+
+```bash
+pnpm build
+```
+
+## Tests
+
+Core Edge Mesh tests:
+
+```bash
+pnpm --dir packages/edge-mesh test
+```
+
+Focused synchronization/security E2E tests:
+
+```bash
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:5187 pnpm --dir apps/shelf-inventory exec playwright test tests/edge-mesh-sync.spec.ts tests/security-sync.spec.ts tests/p2p-sync.spec.ts --project=chromium --reporter=list --config=playwright.config.ts --workers=1
+```
+
+The focused E2E suite covers:
+
+- Edge Mesh CRDT export/import across two browser contexts;
+- remote update application into Edge Mesh and Shelf app state;
+- unauthorized remote mutation rejection and CRDT revert;
+- local unauthorized mutation blocking;
+- compatibility with the existing P2P product sync flow.
+
+## Technical Documentation
+
+The SRC documentation lives in `docs/src`.
+
+Key documents:
+
+- [`docs/src/index.md`](docs/src/index.md)
+- [`docs/src/NON-FUNCTIONAL.md`](docs/src/NON-FUNCTIONAL.md)
+- [`docs/src/non-functional/SRC-P2P-001.md`](docs/src/non-functional/SRC-P2P-001.md)
+- [`docs/src/non-functional/SRC-CRDT-001.md`](docs/src/non-functional/SRC-CRDT-001.md)
+- [`docs/src/non-functional/SRC-EDGE-001.md`](docs/src/non-functional/SRC-EDGE-001.md)
+- [`docs/src/non-functional/SRC-QA-001.md`](docs/src/non-functional/SRC-QA-001.md)
+
+## CI and Deployment
+
+GitHub Actions runs lint/build jobs when hosted runners are available. Vercel deploys previews and `main`.
+
+If GitHub Actions jobs fail immediately with no steps and an annotation about billing or spending limits, that is an account-level runner availability issue rather than a code failure.

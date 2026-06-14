@@ -1,3 +1,4 @@
+import { EdgeMeshProvider } from 'edge-mesh-react';
 import type {
   AppState,
   ArqueoSession,
@@ -16,7 +17,16 @@ import type {
   TeamMember,
 } from 'p2p-mesh-core';
 import { dbSync, p2pManager } from 'p2p-mesh-core';
-import React, { createContext, type Dispatch, type ReactNode, useCallback, useContext, useEffect } from 'react';
+import React, {
+  createContext,
+  type Dispatch,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+} from 'react';
+import EdgeMeshWorkflowBridge from '../components/EdgeMeshWorkflowBridge';
 import usePersistedReducer from '../hooks/usePersistedReducer';
 import { DEFAULT_INVENTORY_CONFIG, normalizeInventoryConfig } from '../lib/inventoryConfig';
 import { getProductVariants, normalizeProduct } from '../lib/productVariants';
@@ -746,7 +756,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Keep stateRef in sync for the dispatch closure
   useEffect(() => {
     stateRef.current = state;
+    if (typeof window !== 'undefined' && ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname)) {
+      (window as any).__shelfAppStateForTest = state;
+    }
   }, [state]);
+
+  const edgeMeshConfig = useMemo(() => {
+    if (!state.localPeerId) return null;
+    return {
+      localPeerId: state.localPeerId,
+      transport: {
+        send: (to: string, data: Uint8Array) => p2pManager.sendTo(to, { type: 'EDGE_MESH_SYNC', payload: data } as any),
+        broadcast: (data: Uint8Array) => p2pManager.broadcast({ type: 'EDGE_MESH_SYNC', payload: data } as any),
+        onMessage: (callback: (from: string, data: Uint8Array) => void) => {
+          p2pManager.onMessage((msg: any, from: string) => {
+            if (msg.type === 'EDGE_MESH_SYNC') {
+              callback(from, msg.payload);
+            }
+          });
+        },
+        onPeerConnect: (_callback: (peerId: string) => void) => {
+          // Simplified, ideally p2pManager should expose this cleanly
+        },
+        onPeerDisconnect: (_callback: (peerId: string) => void) => {
+          // Simplified
+        },
+      },
+    };
+  }, [state.localPeerId]);
 
   // Initialize Distributed Backend
   useEffect(() => {
@@ -1031,7 +1068,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [state.auditLogs, isLoaded]);
 
-  return <AppContext.Provider value={{ state, dispatch }}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={{ state, dispatch }}>
+      <EdgeMeshProvider config={edgeMeshConfig}>
+        <EdgeMeshWorkflowBridge state={state} dispatch={rawDispatch} isLoaded={isLoaded} />
+        {children}
+      </EdgeMeshProvider>
+    </AppContext.Provider>
+  );
 };
 
 export const useAppContext = () => {
