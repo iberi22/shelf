@@ -1,4 +1,4 @@
-import { Download, Info, Link2, MessageCircle, QrCode, RadioTower, Settings, X } from 'lucide-react';
+import { Download, Info, Link2, MessageCircle, QrCode, RadioTower, RefreshCw, Settings, X } from 'lucide-react';
 import {
   dbSync,
   type P2PRole,
@@ -102,6 +102,7 @@ const P2PSyncManager: React.FC = () => {
   const [pendingPeerId, setPendingPeerId] = useState('');
   const [showLogsForPeer, setShowLogsForPeer] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [isForcingSync, setIsForcingSync] = useState(false);
   const [selectedRole, setSelectedRole] = useState<P2PRole>('collaborator');
   const [selectedPermissions, setSelectedPermissions] = useState<PeerPermissions>(permissionPresets.collaborator);
   const [peerHealth, setPeerHealth] = useState<Record<string, PeerHealthInfo>>(() => {
@@ -506,14 +507,33 @@ const P2PSyncManager: React.FC = () => {
     });
   };
 
+  const handleForceSync = () => {
+    const requestedPeers = p2pManager.requestFullSync();
+
+    if (requestedPeers === 0) {
+      showNotification('No hay nodos conectados para sincronizar.', 'error', 5000);
+      return;
+    }
+
+    setIsForcingSync(true);
+    setSyncProgress((prev) => Math.max(prev, 15));
+    showNotification(`Sincronizacion solicitada a ${requestedPeers} nodo(s).`, 'success', 5000);
+
+    window.setTimeout(() => {
+      dispatch({ type: 'SYNC_STATE', payload: dbSync.getState(state.localPeerId) });
+      setSyncProgress(100);
+      setIsForcingSync(false);
+    }, 1200);
+  };
+
   return (
-    <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg mt-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-xl font-bold text-[#F5F5DC]">Secure P2P Sync (Post-Quantum)</h3>
+    <div className="mt-6 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-[#F5F5DC]/30 bg-[#1a1a1a] p-4 md:p-6">
+      <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-2">
+          <h3 className="min-w-0 text-xl font-bold text-[#F5F5DC]">Secure P2P Sync (Post-Quantum)</h3>
           <button
             onClick={() => setShowInfoModal(true)}
-            className="text-[#F5F5DC]/60 hover:text-[#F5F5DC] transition-colors"
+            className="shrink-0 text-[#F5F5DC]/60 transition-colors hover:text-[#F5F5DC]"
             title={t('p2pSync.infoTitle')}
           >
             <Info size={20} />
@@ -522,7 +542,7 @@ const P2PSyncManager: React.FC = () => {
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-[#121212] rounded-md min-w-0">
+        <div className="flex w-full min-w-0 flex-col justify-between gap-2 rounded-md bg-[#121212] p-3 sm:flex-row sm:items-center">
           <div className="flex flex-col min-w-0 w-full">
             <div className="text-xs sm:text-sm flex flex-wrap items-center gap-1.5 min-w-0 w-full">
               <span className="shrink-0">{t('p2pSync.peerId') || 'Peer ID'}:</span>
@@ -589,7 +609,7 @@ const P2PSyncManager: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => setShowMyQrModal(true)}
-                    className="text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 text-[#F5F5DC] border border-[#F5F5DC]/30 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                    className="min-h-9 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 text-[#F5F5DC] border border-[#F5F5DC]/30 px-3 py-1.5 rounded-lg transition-colors font-medium"
                   >
                     {t('p2pSync.shareQrButton') || 'Compartir QR'}
                   </button>
@@ -597,7 +617,7 @@ const P2PSyncManager: React.FC = () => {
                     onClick={() => {
                       window.open(`https://wa.me/?text=${encodeURIComponent(inviteMessage)}`, '_blank');
                     }}
-                    className="text-xs bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5"
+                    className="flex min-h-9 items-center gap-1.5 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-400 transition-colors hover:bg-green-500/20"
                   >
                     <MessageCircle size={14} aria-hidden="true" />
                     WhatsApp
@@ -607,7 +627,7 @@ const P2PSyncManager: React.FC = () => {
                     target="_blank"
                     rel="noreferrer"
                     data-testid="p2p-pwa-link"
-                    className="text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 text-[#F5F5DC] border border-[#F5F5DC]/30 px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5"
+                    className="flex min-h-9 items-center gap-1.5 rounded-lg border border-[#F5F5DC]/30 bg-[#F5F5DC]/10 px-3 py-1.5 text-xs font-medium text-[#F5F5DC] transition-colors hover:bg-[#F5F5DC]/20"
                     title="Abrir o instalar la PWA"
                   >
                     <Download size={14} />
@@ -618,7 +638,7 @@ const P2PSyncManager: React.FC = () => {
                     target="_blank"
                     rel="noreferrer"
                     data-testid="p2p-invite-link"
-                    className="text-xs bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5"
+                    className="flex min-h-9 items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-300 transition-colors hover:bg-blue-500/20"
                     title="Abrir enlace de invitación del nodo"
                   >
                     <Link2 size={14} />
@@ -628,7 +648,7 @@ const P2PSyncManager: React.FC = () => {
               </div>
             )}
           </div>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-col items-start gap-1 sm:items-end">
             <span className="text-xs sm:text-sm font-semibold capitalize px-2 py-0.5 rounded-full bg-foreground/10 w-fit">
               {t('p2pSync.roleLabel') || 'Role'}: {state.role}
             </span>
@@ -640,26 +660,26 @@ const P2PSyncManager: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 mt-1 w-full min-w-0">
+        <div className="mt-1 grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 max-[420px]:grid-cols-1">
           <input
             type="text"
             placeholder={t('p2pSync.placeholderManual') || 'O ingresa el Peer ID manualmente...'}
             value={manualPeerId}
             onChange={(e) => setManualPeerId(e.target.value)}
-            className="flex-1 min-w-[200px] w-full bg-[#121212] border border-[#F5F5DC]/30 rounded-lg px-3 py-2.5 text-sm text-[#F5F5DC] placeholder-[#F5F5DC]/30 focus:outline-none focus:border-[#F5F5DC]/60 transition-colors"
+            className="w-full min-w-0 rounded-lg border border-[#F5F5DC]/30 bg-[#121212] px-3 py-2.5 text-sm text-[#F5F5DC] placeholder-[#F5F5DC]/30 transition-colors focus:outline-none focus:border-[#F5F5DC]/60"
           />
           <button
             type="button"
             onClick={handleManualConnect}
             disabled={!manualPeerId.trim()}
-            className="bg-[#F5F5DC] text-[#1a1a1a] px-4 py-2.5 rounded-lg font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white transition-colors active:scale-95"
+            className="min-h-[44px] rounded-lg bg-[#F5F5DC] px-4 py-2.5 text-sm font-bold text-[#1a1a1a] transition-colors hover:bg-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 max-[420px]:w-full"
           >
             {t('p2pSync.connect') || 'Conectar'}
           </button>
           <button
             type="button"
             onClick={() => setShowScannerModal(true)}
-            className="p-2.5 bg-[#121212] border border-[#F5F5DC]/30 rounded-lg text-[#F5F5DC]/80 hover:text-[#F5F5DC] hover:border-[#F5F5DC]/60 transition-colors"
+            className="min-h-[44px] rounded-lg border border-[#F5F5DC]/30 bg-[#121212] p-2.5 text-[#F5F5DC]/80 transition-colors hover:text-[#F5F5DC] hover:border-[#F5F5DC]/60 max-[420px]:w-full"
             title={t('p2pSync.scanQrTitle')}
           >
             <QrCode size={20} />
@@ -673,17 +693,30 @@ const P2PSyncManager: React.FC = () => {
         )}
 
         <div className="mt-4">
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h4 className="font-bold text-[#F5F5DC] text-sm">{t('p2pSync.linkedDevices') || 'Linked Devices'}</h4>
-            {state.peers.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
               <button
-                onClick={() => setShowConfigModal(true)}
-                className="p-1.5 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-[#F5F5DC]/60 hover:text-[#F5F5DC] hover:border-[#F5F5DC]/60 transition-colors"
-                title={t('p2pSync.configTitle')}
+                type="button"
+                onClick={handleForceSync}
+                disabled={state.peers.length === 0 || isForcingSync}
+                data-testid="p2p-force-sync-button"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1.5 text-xs font-semibold text-cyan-200 transition-colors hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-45"
+                title="Solicitar resincronizacion CRDT con state vectors"
               >
-                <Settings size={16} />
+                <RefreshCw size={14} className={isForcingSync ? 'animate-spin' : ''} />
+                Forzar sync
               </button>
-            )}
+              {state.peers.length > 0 && (
+                <button
+                  onClick={() => setShowConfigModal(true)}
+                  className="min-h-9 rounded-md border border-[#F5F5DC]/30 bg-[#121212] p-1.5 text-[#F5F5DC]/60 transition-colors hover:text-[#F5F5DC] hover:border-[#F5F5DC]/60"
+                  title={t('p2pSync.configTitle')}
+                >
+                  <Settings size={16} />
+                </button>
+              )}
+            </div>
           </div>
           {state.peers.length > 0 ? (
             <div className="space-y-2">

@@ -38,27 +38,11 @@ async function getDbStateProductNames(page: Page): Promise<string[]> {
   });
 }
 
-/**
- * Trigger a manual YJS_UPDATE re-broadcast from the source page.
- * This recovers from dropped broadcasts when P2P connections are
- * briefly disconnected during save operations.
- */
-async function triggerReBroadcast(sourcePage: Page): Promise<void> {
-  await sourcePage.evaluate(() => {
+async function requestCrdtSync(page: Page): Promise<void> {
+  await page.evaluate(() => {
     try {
-      const dbSync = (window as any)._dbSyncForTest;
       const p2pManager = (window as any)._p2pManagerForTest;
-      if (!dbSync || !p2pManager) return;
-
-      const update = dbSync.getLocalUpdate();
-      const bytes = new Uint8Array(update);
-      const hexUpdate = Array.from(bytes)
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('');
-      p2pManager.broadcast({
-        type: 'YJS_UPDATE',
-        payload: { update: hexUpdate },
-      });
+      p2pManager?.requestFullSync?.();
     } catch (_e) {
       // Silently retry next interval
     }
@@ -67,8 +51,7 @@ async function triggerReBroadcast(sourcePage: Page): Promise<void> {
 
 /**
  * Poll the target page for a product name in _dbSyncForTest state.
- * If not found, trigger a manual re-broadcast from the source page
- * to recover from dropped YJS_UPDATE broadcasts.
+ * If not found, request CRDT state-vector sync in both directions.
  */
 export async function expectProductSync(targetPage: Page, sourcePage: Page, productName: string, timeout = 30000) {
   await expect(async () => {
@@ -78,10 +61,11 @@ export async function expectProductSync(targetPage: Page, sourcePage: Page, prod
       return; // already synced!
     }
 
-    // 2. Not synced yet — trigger manual re-broadcast from source
-    await triggerReBroadcast(sourcePage);
+    // 2. Not synced yet: request state-vector diff sync from both sides.
+    await requestCrdtSync(targetPage);
+    await requestCrdtSync(sourcePage);
 
-    // 3. Wait a brief moment for re-broadcast to arrive
+    // 3. Wait a brief moment for diff exchange to arrive
     await targetPage.waitForTimeout(500);
 
     // 4. Re-check
@@ -92,7 +76,7 @@ export async function expectProductSync(targetPage: Page, sourcePage: Page, prod
 
 /**
  * Poll the target page for a product with specific price in _dbSyncForTest state.
- * If not found, trigger re-broadcast from source.
+ * If not found, request CRDT state-vector sync in both directions.
  */
 export async function expectProductPriceSync(
   targetPage: Page,
@@ -120,8 +104,9 @@ export async function expectProductPriceSync(
       return; // already synced!
     }
 
-    // Re-broadcast from source
-    await triggerReBroadcast(sourcePage);
+    // Request state-vector diff sync from both sides.
+    await requestCrdtSync(targetPage);
+    await requestCrdtSync(sourcePage);
 
     await targetPage.waitForTimeout(500);
 

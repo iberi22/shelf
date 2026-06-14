@@ -143,8 +143,8 @@ const AuditLogViewer: React.FC = () => {
         {filteredLogs.length === 0 ? (
           <div className="text-center p-4 text-[#F5F5DC]/50 italic">No logs available.</div>
         ) : (
-          <div className="max-h-[400px] overflow-auto custom-scrollbar">
-            <table className="min-w-[760px] w-full table-fixed text-left border-collapse">
+          <div className="max-h-[400px] overflow-y-auto overflow-x-hidden p-2 custom-scrollbar md:overflow-auto md:p-0">
+            <table className="responsive-table w-full table-fixed border-collapse text-left">
               <colgroup>
                 <col className="w-[150px]" />
                 <col className="w-[180px]" />
@@ -167,24 +167,32 @@ const AuditLogViewer: React.FC = () => {
                     key={log.id || index}
                     className="border-b border-[#F5F5DC]/5 hover:bg-[#F5F5DC]/5 transition-colors"
                   >
-                    <td className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/70 whitespace-nowrap">
+                    <td
+                      data-label="Timestamp"
+                      className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/70 md:whitespace-nowrap"
+                    >
                       {new Date(log.timestamp).toLocaleString()}
                     </td>
-                    <td className="p-2 font-mono text-[10px] md:text-xs text-yellow-400/80 truncate" title={log.peerId}>
+                    <td
+                      data-label="Peer ID"
+                      className="p-2 font-mono text-[10px] md:text-xs text-yellow-400/80 truncate"
+                      title={log.peerId}
+                    >
                       {log.peerId}
                     </td>
-                    <td className="p-2">
+                    <td data-label="Action" className="p-2">
                       <span className="inline-block max-w-full truncate px-2 py-0.5 rounded-full bg-foreground/10 text-[10px] md:text-xs font-semibold">
                         {log.action}
                       </span>
                     </td>
                     <td
+                      data-label="Entity ID"
                       className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/60 truncate"
                       title={log.entityId || '-'}
                     >
                       {log.entityId || '-'}
                     </td>
-                    <td className="p-2 align-top">
+                    <td data-label="Details" className="p-2 align-top">
                       <LogDetails details={log.details} action={log.action} />
                     </td>
                   </tr>

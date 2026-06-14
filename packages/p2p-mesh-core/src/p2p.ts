@@ -45,7 +45,10 @@ export type SyncMessage =
 			payload: { cipherText: string; signature: string; dsaPubKey: string };
 	  }
 	| { type: "YJS_UPDATE"; payload: { update: string } }
-	| { type: "YJS_SYNC_REQUEST"; payload: { stateVector: string } }
+	| {
+			type: "YJS_SYNC_REQUEST";
+			payload: { stateVector: string; respondWithRequest?: boolean };
+	  }
 	| {
 			type: "UPDATE_PEER_PERMISSIONS";
 			payload: {
@@ -250,7 +253,10 @@ class P2PManager {
 		if (!dbSync.isReady) return;
 		this.sendTo(peerId, {
 			type: "YJS_SYNC_REQUEST",
-			payload: { stateVector: toHex(dbSync.getStateVector()) },
+			payload: {
+				stateVector: toHex(dbSync.getStateVector()),
+				respondWithRequest: true,
+			},
 		});
 	}
 
@@ -561,6 +567,12 @@ class P2PManager {
 
 				if (message.type === "YJS_SYNC_REQUEST") {
 					this.sendYjsDiff(conn.peer, message.payload.stateVector);
+					if (message.payload.respondWithRequest) {
+						this.sendTo(conn.peer, {
+							type: "YJS_SYNC_REQUEST",
+							payload: { stateVector: toHex(dbSync.getStateVector()) },
+						});
+					}
 					return;
 				}
 
@@ -777,6 +789,12 @@ class P2PManager {
 
 			if (message.type === "YJS_SYNC_REQUEST") {
 				this.sendYjsDiff(fromPeerId, message.payload.stateVector);
+				if (message.payload.respondWithRequest) {
+					this.sendTo(fromPeerId, {
+						type: "YJS_SYNC_REQUEST",
+						payload: { stateVector: toHex(dbSync.getStateVector()) },
+					});
+				}
 				return;
 			}
 
@@ -864,6 +882,29 @@ class P2PManager {
 
 	public getPeerHealthList(): PeerHealthInfo[] {
 		return this.health.list();
+	}
+
+	/**
+	 * Force a bidirectional CRDT catch-up using state vectors and diffs.
+	 * This intentionally avoids AppState snapshots and full STATE_UPDATE payloads.
+	 */
+	public requestFullSync(peerId?: string): number {
+		if (!dbSync.isReady) return 0;
+
+		if (peerId) {
+			if (!this.isPeerConnected(peerId)) return 0;
+			this.requestYjsSync(peerId);
+			return 1;
+		}
+
+		let requested = 0;
+		for (const targetPeerId of this.connections.keys()) {
+			if (this.isPeerConnected(targetPeerId)) {
+				this.requestYjsSync(targetPeerId);
+				requested++;
+			}
+		}
+		return requested;
 	}
 
 	/**

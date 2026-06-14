@@ -257,7 +257,7 @@ const Settings: React.FC = () => {
       <div className="pb-10">
         <h2 className="text-2xl md:text-3xl font-bold mb-6">{t('settings.title')}</h2>
 
-        <div className="flex flex-col gap-6 md:gap-8 min-w-0">
+        <div className="flex w-full min-w-0 flex-col gap-6 md:gap-8 [&>*]:w-full [&>*]:min-w-0 [&>*]:max-w-full">
           {/* General Settings */}
           <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.general.title')}</h3>

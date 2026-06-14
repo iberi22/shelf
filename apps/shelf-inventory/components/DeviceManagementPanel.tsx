@@ -39,7 +39,7 @@ const DeviceManagementPanel: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-4 md:p-6">
+    <div className="w-full min-w-0 max-w-full rounded-lg border border-[#F5F5DC]/20 bg-[#1a1a1a] p-4 md:p-6">
       <h3 className="text-lg font-bold text-[#F5F5DC] mb-1">Authorized Devices</h3>
       <p className="text-[#F5F5DC]/50 text-xs mb-4">
         Devices that have access to your local account. Revoke access to devices you no longer use.
@@ -53,12 +53,12 @@ const DeviceManagementPanel: React.FC = () => {
           return (
             <div
               key={device.deviceId}
-              className={`flex items-start justify-between p-3 rounded-lg border ${
+              className={`flex min-w-0 flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-start sm:justify-between ${
                 isCurrent ? 'border-[#F5F5DC]/30 bg-[#F5F5DC]/5' : 'border-[#F5F5DC]/10 bg-[#121212]'
               }`}
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2">
                   <span className="text-sm font-medium text-[#F5F5DC] truncate">{device.deviceName}</span>
                   {isCurrent && (
                     <span className="text-xs bg-[#F5F5DC]/20 text-[#F5F5DC]/70 px-1.5 py-0.5 rounded shrink-0">
@@ -73,9 +73,9 @@ const DeviceManagementPanel: React.FC = () => {
               </div>
 
               {!isCurrent && (
-                <div className="ml-3 shrink-0">
+                <div className="shrink-0 sm:ml-3">
                   {confirmRevoke === device.deviceId ? (
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => setConfirmRevoke(null)}
                         className="text-xs text-[#F5F5DC]/50 hover:text-[#F5F5DC] px-2 py-1"
@@ -101,14 +101,14 @@ const DeviceManagementPanel: React.FC = () => {
               )}
 
               {isCurrent && (
-                <div className="ml-3 shrink-0">
+                <div className="shrink-0 sm:ml-3">
                   {editingName ? (
-                    <div className="flex gap-2 items-center">
+                    <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:items-center">
                       <input
                         type="text"
                         value={newDeviceName}
                         onChange={(e) => setNewDeviceName(e.target.value)}
-                        className="text-xs p-1 bg-[#121212] border border-[#F5F5DC]/30 rounded text-[#F5F5DC] w-28"
+                        className="w-full min-w-0 rounded border border-[#F5F5DC]/30 bg-[#121212] p-1 text-xs text-[#F5F5DC] sm:w-28"
                         placeholder="Device name"
                         onKeyDown={(e) => e.key === 'Enter' && handleSaveDeviceName()}
                       />

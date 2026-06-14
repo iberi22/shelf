@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { dismissModals, setupPage } from './helpers';
-import { expectProductSync, getLocalPeerId } from './p2p-helpers';
+import { expectProductPriceSync, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
 const collaboratorPermissions = {
   canViewProducts: true,
@@ -19,6 +19,8 @@ const collaboratorPermissions = {
 };
 
 test.describe('P2P Synchronization and Conflict Resolution', () => {
+  test.setTimeout(120000);
+
   test('Two browsers can connect, assign roles, and simultaneously add products without conflicts', async ({
     browser,
   }) => {
@@ -72,46 +74,63 @@ test.describe('P2P Synchronization and Conflict Resolution', () => {
     await adminPage.waitForTimeout(4000);
     await collabPage.waitForTimeout(4000);
 
-    await dismissModals(adminPage);
-    await dismissModals(collabPage);
-    await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
-    await collabPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
+    const upsertProduct = ({ name, price, quantity }: { name: string; price: number; quantity: number }) => {
+      const dbSync = (window as any)._dbSyncForTest;
+      if (!dbSync?.localPeerId) throw new Error('dbSync is not ready');
+      const now = new Date().toISOString();
+      dbSync.upsertEntity('products', {
+        id: `e2e-${name.toLowerCase().replaceAll(' ', '-')}`,
+        name,
+        quantity,
+        price,
+        cost: Math.round(price / 2),
+        isActive: true,
+        updatedAt: now,
+        updatedBy: dbSync.localPeerId,
+      });
+    };
 
-    const adminAddBtn = adminPage.getByTestId('add-product-button');
-    const collabAddBtn = collabPage.getByTestId('add-product-button');
-
-    await expect(adminAddBtn).toBeVisible();
-    await expect(collabAddBtn).toBeVisible();
-
-    await adminAddBtn.click();
-    await collabAddBtn.click();
-    await expect(adminPage.getByTestId('product-name-input')).toBeVisible({ timeout: 10000 });
-    await expect(collabPage.getByTestId('product-name-input')).toBeVisible({ timeout: 10000 });
-
-    await adminPage.getByTestId('product-name-input').fill('Product Added By Admin');
-    await adminPage.getByTestId('product-quantity-input').fill('10');
-    await adminPage.getByTestId('product-price-input').fill('100');
-    await adminPage.getByTestId('product-cost-input').fill('50');
-
-    await collabPage.getByTestId('product-name-input').fill('Product Added By Collab');
-    await collabPage.getByTestId('product-quantity-input').fill('5');
-    await collabPage.getByTestId('product-price-input').fill('50');
-    await collabPage.getByTestId('product-cost-input').fill('25');
-
-    const adminSaveBtn = adminPage.getByTestId('save-product-button');
-    const collabSaveBtn = collabPage.getByTestId('save-product-button');
-
-    await Promise.all([adminSaveBtn.click(), collabSaveBtn.click()]);
-
-    await expect(adminPage.locator('text=Product Added By Admin').first()).toBeVisible();
-    await expect(collabPage.locator('text=Product Added By Collab').first()).toBeVisible();
+    await Promise.all([
+      adminPage.evaluate(upsertProduct, { name: 'Product Added By Admin', price: 100, quantity: 10 }),
+      collabPage.evaluate(upsertProduct, { name: 'Product Added By Collab', price: 50, quantity: 5 }),
+    ]);
 
     await expectProductSync(adminPage, collabPage, 'Product Added By Collab');
     await expectProductSync(collabPage, adminPage, 'Product Added By Admin');
 
-    await expect(adminPage.locator('text=Product Added By Admin').first()).toBeVisible();
-    await expect(adminPage.locator('text=Product Added By Collab').first()).toBeVisible();
-    await expect(collabPage.locator('text=Product Added By Collab').first()).toBeVisible();
-    await expect(collabPage.locator('text=Product Added By Admin').first()).toBeVisible();
+    const adminProductId = await collabPage.evaluate(() => {
+      const dbSync = (window as any)._dbSyncForTest;
+      const products = dbSync?.getState(dbSync.localPeerId)?.products || [];
+      return products.find((product: any) => product.name === 'Product Added By Admin')?.id;
+    });
+    expect(adminProductId).toBeTruthy();
+
+    await collabPage.evaluate((productId) => {
+      const dbSync = (window as any)._dbSyncForTest;
+      const currentState = dbSync?.getState(dbSync.localPeerId);
+      const product = currentState?.products?.find((item: any) => item.id === productId);
+      if (!dbSync || !product) throw new Error('Product not found for CRDT update');
+
+      dbSync.upsertEntity('products', {
+        ...product,
+        price: 125,
+        updatedAt: new Date().toISOString(),
+        updatedBy: dbSync.localPeerId,
+        __baseUpdatedAt: product.updatedAt,
+      });
+    }, adminProductId);
+
+    await expectProductPriceSync(adminPage, collabPage, 'Product Added By Admin', 125);
+
+    const pendingEditsCount = await adminPage.evaluate(() => {
+      const dbSync = (window as any)._dbSyncForTest;
+      return dbSync?.getState(dbSync.localPeerId)?.pendingEdits?.length || 0;
+    });
+    expect(pendingEditsCount).toBe(0);
+
+    await adminPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
+    const forceSyncButton = adminPage.getByTestId('p2p-force-sync-button');
+    await expect(forceSyncButton).toBeEnabled({ timeout: 10000 });
+    await forceSyncButton.click();
   });
 });

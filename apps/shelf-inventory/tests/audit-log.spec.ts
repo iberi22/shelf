@@ -98,7 +98,7 @@ test.describe('Audit Log Tracing', () => {
 
     await collabPage.getByTestId('save-product-button').click();
 
-    // Wait for Admin to receive the product via P2P sync with re-broadcast recovery
+    // Wait for Admin to receive the product via P2P state-vector sync recovery
     await expectProductSync(adminPage, collabPage, 'Audit Product X');
     await expect(adminPage.locator('text=Audit Product X').first()).toBeVisible({ timeout: 5000 });
 

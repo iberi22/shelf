@@ -108,24 +108,12 @@ test.describe('P2P Advanced Synchronization', () => {
       collabPage.getByTestId('save-product-button').click(),
     ]);
 
-    // Wait for P2P sync with re-broadcast recovery
+    // Wait for P2P sync with state-vector diff recovery
     await expect(async () => {
       for (const page of [adminPage, collabPage]) {
         await page.evaluate(() => {
-          const dbSync = (window as any)._dbSyncForTest;
           const p2pManager = (window as any)._p2pManagerForTest;
-          if (!dbSync || !p2pManager) return;
-          try {
-            const update = dbSync.getLocalUpdate();
-            const bytes = new Uint8Array(update);
-            const hexUpdate = Array.from(bytes)
-              .map((b) => b.toString(16).padStart(2, '0'))
-              .join('');
-            p2pManager.broadcast({
-              type: 'YJS_UPDATE',
-              payload: { update: hexUpdate },
-            });
-          } catch (_e) {}
+          p2pManager?.requestFullSync?.();
         });
       }
       await adminPage.waitForTimeout(500);
@@ -259,20 +247,8 @@ test.describe('P2P Advanced Synchronization', () => {
     // Wait for sync by polling admin state for the price OR the pendingEdits array
     await expect(async () => {
       await collabPage.evaluate(() => {
-        const dbSync = (window as any)._dbSyncForTest;
         const p2pManager = (window as any)._p2pManagerForTest;
-        if (!dbSync || !p2pManager) return;
-        try {
-          const update = dbSync.getLocalUpdate();
-          const bytes = new Uint8Array(update);
-          const hexUpdate = Array.from(bytes)
-            .map((b) => b.toString(16).padStart(2, '0'))
-            .join('');
-          p2pManager.broadcast({
-            type: 'YJS_UPDATE',
-            payload: { update: hexUpdate },
-          });
-        } catch (_e) {}
+        p2pManager?.requestFullSync?.();
       });
       await adminPage.waitForTimeout(500);
 
