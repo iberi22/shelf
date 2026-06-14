@@ -25,6 +25,11 @@ type EntityRecord = {
 	action?: string;
 	timestamp?: string;
 	updatedAt?: string;
+	updatedBy?: string;
+};
+
+type SyncEntityRecord = EntityRecord & {
+	__baseUpdatedAt?: string;
 };
 
 type LinkedNodeRecord = Omit<PeerInfo, "lastSeen"> & {
@@ -241,6 +246,8 @@ export class DatabaseSyncManager {
 			action?: string;
 			timestamp?: string;
 			updatedAt?: string;
+			updatedBy?: string;
+			__baseUpdatedAt?: string;
 		},
 	>(collectionName: keyof AppState, item: T) {
 		if (!this.checkPermissions(collectionName, item)) {
@@ -252,6 +259,8 @@ export class DatabaseSyncManager {
 
 		const yMap = this.getMapForCollection(collectionName);
 		if (!yMap) return;
+		const { __baseUpdatedAt, ...persistableItem } = item as T &
+			SyncEntityRecord;
 
 		// MERGE RESOLUTION SYSTEM
 		// If a collaborator edits a product, we route it to pendingEdits for the admin to approve.
@@ -264,32 +273,39 @@ export class DatabaseSyncManager {
 			
 			if (!isAdmin && !autoApplyProductUpdates) {
 				const originalData = yMap.get(item.id);
-				// If it's an update to an existing item, propose an edit
-				if (originalData) {
+				const hasConcurrentChange =
+					!!originalData?.updatedAt &&
+					!!__baseUpdatedAt &&
+					originalData.updatedAt !== __baseUpdatedAt &&
+					originalData.updatedBy !== item.updatedBy;
+
+				if (originalData && hasConcurrentChange) {
 					const proposalId = `prop-${Date.now()}-${this.localPeerId}`;
 					const proposal: EntityEditProposal = {
 						id: proposalId,
 						entityId: item.id,
 						collectionName: collectionName,
-						proposedData: item,
+						proposedData: persistableItem,
 						originalData: originalData,
 						peerId: this.localPeerId,
 						timestamp: new Date().toISOString(),
-						status: 'pending'
+						status: "pending",
 					};
 					
 					this.doc.transact(() => {
 						this.pendingEdits.set(proposalId, proposal as any);
 					}, "local");
 					
-					logger.log(`[MERGE] Collaborator edit on ${item.id} routed to pendingEdits`);
+					logger.log(
+						`[MERGE] Conflicting collaborator edit on ${item.id} routed to pendingEdits`,
+					);
 					return;
 				}
 			}
 		}
 
 		this.doc.transact(() => {
-			yMap.set(item.id, item as any);
+			yMap.set(item.id, persistableItem as any);
 		}, "local");
 	}
 

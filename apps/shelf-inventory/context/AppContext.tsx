@@ -1012,11 +1012,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           dbSync.upsertEntity('products', enrich(currentState, p));
         });
         toUpdate.forEach((p: any) => {
-          syncProductHistoryEntry(
-            currentState.products.find((product) => product.id === p.id),
-            'BATCH_UPDATE_PRODUCTS',
-          );
-          dbSync.upsertEntity('products', enrich(currentState, p));
+          const baseProduct = currentState.products.find((product) => product.id === p.id);
+          syncProductHistoryEntry(baseProduct, 'BATCH_UPDATE_PRODUCTS');
+          dbSync.upsertEntity('products', {
+            ...enrich(currentState, p),
+            __baseUpdatedAt: baseProduct?.updatedAt,
+          });
         });
       } else if (typeStr === 'IMPORT_PRODUCTS') {
         const { products: newProductsData, strategy } = payload;
@@ -1032,7 +1033,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               const existingProduct = existingSkus.get(sku);
               if (existingProduct) {
                 syncProductHistoryEntry(existingProduct, 'IMPORT_PRODUCTS');
-                dbSync.upsertEntity('products', enrich(currentState, { ...existingProduct, ...newProductData }));
+                dbSync.upsertEntity('products', {
+                  ...enrich(currentState, { ...existingProduct, ...newProductData }),
+                  __baseUpdatedAt: existingProduct.updatedAt,
+                });
               }
             }
           } else {
@@ -1056,6 +1060,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             updatedAt: new Date().toISOString(),
             updatedBy: currentState.localPeerId || 'local',
             updatedByRole: currentState.role || 'collaborator',
+            __baseUpdatedAt: currentProduct.updatedAt,
           });
         }
       } else if (typeStr === 'ADD_SALE') {
@@ -1152,7 +1157,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               }
               const syncPayload =
                 collection === 'products'
-                  ? enrich(currentState, normalizeProduct(payload as Product))
+                  ? {
+                      ...enrich(currentState, normalizeProduct(payload as Product)),
+                      __baseUpdatedAt: currentState.products.find((product) => product.id === payload.id)?.updatedAt,
+                    }
                   : enrich(currentState, payload);
               dbSync.upsertEntity(collection, syncPayload);
               break;
