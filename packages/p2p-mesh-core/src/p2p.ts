@@ -209,13 +209,21 @@ class P2PManager {
 		}
 
 		// Check if we are in development mode without depending on Node globals.
-		const isDev =
+		const isLocalBrowser =
 			typeof globalThis !== "undefined" &&
-			"process" in globalThis &&
-			!!(globalThis as { process?: { env?: { NODE_ENV?: string } } }).process
-				?.env &&
-			(globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env
-				?.NODE_ENV === "development";
+			"location" in globalThis &&
+			["localhost", "127.0.0.1", "::1"].includes(
+				(globalThis as { location?: { hostname?: string } }).location
+					?.hostname || "",
+			);
+		const isDev =
+			isLocalBrowser ||
+			(typeof globalThis !== "undefined" &&
+				"process" in globalThis &&
+				!!(globalThis as { process?: { env?: { NODE_ENV?: string } } }).process
+					?.env &&
+				(globalThis as { process?: { env?: { NODE_ENV?: string } } }).process
+					?.env?.NODE_ENV === "development");
 		const peerOptions = isDev
 			? {
 					host: "localhost",

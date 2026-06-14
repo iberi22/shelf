@@ -94,6 +94,22 @@ export interface CrdtAdapter {
 	doc: import('yjs').Doc;
 }
 
+export interface EdgeMeshRemoteOrigin {
+	type: 'remote';
+	peerId: string;
+}
+
+export const isEdgeMeshRemoteOrigin = (
+	origin: unknown,
+): origin is EdgeMeshRemoteOrigin => {
+	return (
+		Boolean(origin) &&
+		typeof origin === 'object' &&
+		(origin as { type?: unknown }).type === 'remote' &&
+		typeof (origin as { peerId?: unknown }).peerId === 'string'
+	);
+};
+
 export interface EdgeMeshConfig {
 	transport: Transport;
 	localPeerId: string;

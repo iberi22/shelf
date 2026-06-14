@@ -1,5 +1,10 @@
 import * as Y from 'yjs';
-import type { CrdtAdapter, EdgeMeshConfig, Transport } from './types';
+import {
+	type CrdtAdapter,
+	type EdgeMeshConfig,
+	type Transport,
+	isEdgeMeshRemoteOrigin,
+} from './types';
 
 export class YjsAdapter implements CrdtAdapter {
 	public doc: Y.Doc;
@@ -49,7 +54,7 @@ export class EdgeMesh {
 			this.namespaces.set(name, adapter);
 
 			adapter.onChange((update, origin) => {
-				if (origin !== 'remote') {
+				if (!isEdgeMeshRemoteOrigin(origin)) {
 					this.broadcastUpdate(name, update);
 				}
 			});
@@ -77,7 +82,7 @@ export class EdgeMesh {
 			const { namespace, update } = this.decodeMessage(data);
 			const adapter = this.namespaces.get(namespace);
 			if (adapter) {
-				adapter.applyUpdate(update, 'remote');
+				adapter.applyUpdate(update, { type: 'remote', peerId: from });
 			}
 		} catch (e) {
 			console.error('Failed to handle EdgeMesh message', e);

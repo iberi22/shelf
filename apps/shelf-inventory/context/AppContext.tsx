@@ -661,6 +661,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Keep stateRef in sync for the dispatch closure
   useEffect(() => {
     stateRef.current = state;
+    if (typeof window !== 'undefined' && ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname)) {
+      (window as any).__shelfAppStateForTest = state;
+    }
   }, [state]);
 
   const edgeMeshConfig = useMemo(() => {

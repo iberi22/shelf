@@ -1,5 +1,6 @@
+import { isEdgeMeshRemoteOrigin } from 'edge-mesh';
 import { useEdgeMesh } from 'edge-mesh-react';
-import type { AppState } from 'p2p-mesh-core';
+import type { AppState, PeerInfo, PeerPermissions } from 'p2p-mesh-core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type * as Y from 'yjs';
 import {
@@ -39,11 +40,27 @@ const defaultStatus: EdgeMeshWorkflowStatus = {
 };
 
 const EDGE_MESH_STATUS_EVENT = 'shelf-edge-mesh-status';
+const SHELF_EDGE_SECURITY_ORIGIN = 'shelf-edge-security-revert';
+
+const collectionPermissionMap: Partial<Record<ShelfEdgeCollection, keyof PeerPermissions>> = {
+  products: 'canEditProducts',
+  sales: 'canEditSales',
+  clients: 'canEditClients',
+  suppliers: 'canEditSuppliers',
+  purchaseOrders: 'canEditPurchaseOrders',
+  arqueoSessions: 'canViewArqueo',
+  ocrResults: 'canEditPurchaseOrders',
+};
 
 const emitStatus = (status: EdgeMeshWorkflowStatus) => {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent<EdgeMeshWorkflowStatus>(EDGE_MESH_STATUS_EVENT, { detail: status }));
   (window as unknown as { __shelfEdgeMeshStatus?: EdgeMeshWorkflowStatus }).__shelfEdgeMeshStatus = status;
+};
+
+const isLocalTestRuntime = () => {
+  if (typeof window === 'undefined') return false;
+  return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
 };
 
 export function useEdgeMeshWorkflowStatus() {
@@ -72,16 +89,74 @@ interface EdgeMeshWorkflowBridgeProps {
   isLoaded: boolean;
 }
 
+const getMasterPeerId = (state: AppState) => {
+  return state.peers.find((peer) => peer.isMaster)?.id || state.localPeerId || null;
+};
+
+const getPeer = (state: AppState, peerId: string): PeerInfo | undefined => {
+  if (state.localPeerId === peerId) {
+    return {
+      id: peerId,
+      role: state.role,
+      permissions: state.permissions,
+      lastSeen: new Date().toISOString(),
+    };
+  }
+
+  return state.peers.find((peer) => peer.id === peerId);
+};
+
+const isMaliciousAuditEntry = (item: unknown) => {
+  return Boolean(
+    item &&
+      typeof item === 'object' &&
+      typeof (item as { action?: unknown }).action === 'string' &&
+      (item as { action: string }).action.includes('PRIVILEGE'),
+  );
+};
+
+const canPeerMutateCollection = (
+  state: AppState,
+  peerId: string,
+  collection: ShelfEdgeCollection,
+  items: unknown[],
+) => {
+  const masterPeerId = getMasterPeerId(state);
+  if (masterPeerId && peerId === masterPeerId) return true;
+
+  if (collection === 'teamMembers') return false;
+  if (collection === 'auditLogs') {
+    return !items.some(isMaliciousAuditEntry);
+  }
+
+  const permissionKey = collectionPermissionMap[collection];
+  if (!permissionKey) return false;
+
+  const peer = getPeer(state, peerId);
+  if (!peer) return false;
+
+  const permissions = peer.permissions || state.permissions;
+  return permissions?.[permissionKey] === true;
+};
+
+const getStateCollection = (state: AppState, collection: ShelfEdgeCollection) => {
+  return ((state[collection] as unknown[]) || []).filter((item): item is { id: string } => {
+    return Boolean(item && typeof item === 'object' && typeof (item as { id?: unknown }).id === 'string');
+  });
+};
+
 const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, dispatch, isLoaded }) => {
   const mesh = useEdgeMesh();
   const [status, setStatus] = useState<EdgeMeshWorkflowStatus>(defaultStatus);
   const dispatchRef = useRef(dispatch);
+  const stateRef = useRef(state);
   const remoteSyncTimerRef = useRef<number | null>(null);
   const pendingRemoteCollectionsRef = useRef(
     new Map<ShelfEdgeCollection, { items: unknown[]; deletedIds: Set<string> }>(),
   );
 
   dispatchRef.current = dispatch;
+  stateRef.current = state;
 
   const adapter = useMemo(() => {
     if (!mesh) return null;
@@ -91,6 +166,44 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
   useEffect(() => {
     emitStatus(status);
   }, [status]);
+
+  useEffect(() => {
+    if (!isLocalTestRuntime() || !adapter) return;
+
+    (window as unknown as { __shelfEdgeMeshForTest?: unknown }).__shelfEdgeMeshForTest = {
+      getState: () => {
+        return SHELF_EDGE_COLLECTIONS.reduce(
+          (snapshot, collection) => {
+            snapshot[collection] = Array.from(adapter.doc.getMap(collection).values());
+            return snapshot;
+          },
+          {} as Record<ShelfEdgeCollection, unknown[]>,
+        );
+      },
+      applyRemoteUpdate: (peerId: string, update: number[]) => {
+        adapter.applyUpdate(new Uint8Array(update), { type: 'remote', peerId });
+      },
+      getUpdate: () => {
+        return Array.from(adapter.getUpdate());
+      },
+      remove: (collection: ShelfEdgeCollection, id: string) => {
+        const yMap = adapter.doc.getMap(collection);
+        adapter.doc.transact(() => {
+          yMap.delete(id);
+        }, 'shelf-edge-e2e');
+      },
+      upsert: (collection: ShelfEdgeCollection, id: string, item: unknown) => {
+        const yMap = adapter.doc.getMap(collection);
+        adapter.doc.transact(() => {
+          yMap.set(id, item);
+        }, 'shelf-edge-e2e');
+      },
+    };
+
+    return () => {
+      delete (window as unknown as { __shelfEdgeMeshForTest?: unknown }).__shelfEdgeMeshForTest;
+    };
+  }, [adapter]);
 
   useEffect(() => {
     if (!adapter || !isLoaded) {
@@ -160,7 +273,42 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
       const yMap = adapter.doc.getMap(collection);
       const observer = (event: Y.YMapEvent<unknown>) => {
         if (event.transaction.origin === SHELF_EDGE_LOCAL_ORIGIN) return;
-        scheduleRemoteApply(collection, yMap, getDeletedIdsFromYMapEvent(event));
+        if (event.transaction.origin === SHELF_EDGE_SECURITY_ORIGIN) return;
+        if (!isEdgeMeshRemoteOrigin(event.transaction.origin)) {
+          scheduleRemoteApply(collection, yMap, getDeletedIdsFromYMapEvent(event));
+          return;
+        }
+
+        const changedIds = Array.from(event.changes.keys.keys());
+        const changedItems = changedIds.map((id) => yMap.get(id)).filter(Boolean);
+        const deletedIds = getDeletedIdsFromYMapEvent(event);
+        const remotePeerId = event.transaction.origin.peerId;
+        const canApply = canPeerMutateCollection(stateRef.current, remotePeerId, collection, changedItems);
+
+        if (!canApply) {
+          const previousItems = new Map(
+            getStateCollection(stateRef.current, collection).map((item) => [item.id, item]),
+          );
+          adapter.doc.transact(() => {
+            for (const id of changedIds) {
+              const previousItem = previousItems.get(id);
+              if (previousItem) {
+                yMap.set(id, previousItem);
+              } else {
+                yMap.delete(id);
+              }
+            }
+            for (const id of deletedIds) {
+              const previousItem = previousItems.get(id);
+              if (previousItem) {
+                yMap.set(id, previousItem);
+              }
+            }
+          }, SHELF_EDGE_SECURITY_ORIGIN);
+          return;
+        }
+
+        scheduleRemoteApply(collection, yMap, deletedIds);
       };
 
       yMap.observe(observer);

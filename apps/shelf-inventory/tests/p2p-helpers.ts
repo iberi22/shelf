@@ -1,5 +1,26 @@
 import { expect, type Page } from '@playwright/test';
 
+type EdgeCollection =
+  | 'products'
+  | 'sales'
+  | 'clients'
+  | 'suppliers'
+  | 'purchaseOrders'
+  | 'arqueoSessions'
+  | 'ocrResults'
+  | 'auditLogs'
+  | 'teamMembers';
+
+export async function getLocalPeerId(page: Page): Promise<string> {
+  const peerIdLocator = page.locator('span.font-mono.text-yellow-400').first();
+  await peerIdLocator.waitFor({ state: 'visible' });
+  await expect(peerIdLocator).not.toHaveText('Initializing...', { timeout: 15000 });
+
+  const peerId = await page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId);
+  expect(peerId).toBeTruthy();
+  return peerId;
+}
+
 /**
  * Get product names from _dbSyncForTest.getState().products
  */
@@ -49,12 +70,7 @@ async function triggerReBroadcast(sourcePage: Page): Promise<void> {
  * If not found, trigger a manual re-broadcast from the source page
  * to recover from dropped YJS_UPDATE broadcasts.
  */
-export async function expectProductSync(
-  targetPage: Page,
-  sourcePage: Page,
-  productName: string,
-  timeout = 30000,
-) {
+export async function expectProductSync(targetPage: Page, sourcePage: Page, productName: string, timeout = 30000) {
   await expect(async () => {
     // 1. Check if target already has the product
     let products = await getDbStateProductNames(targetPage);
@@ -125,4 +141,91 @@ export async function expectProductPriceSync(
 
     expect(price).toBe(expectedPrice);
   }).toPass({ timeout, intervals: [1000, 1000, 2000, 3000, 5000] });
+}
+
+export async function expectEdgeMeshReady(page: Page, timeout = 15000) {
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() => {
+          return Boolean((window as any).__shelfEdgeMeshStatus?.enabled && (window as any).__shelfEdgeMeshForTest);
+        }),
+      { timeout },
+    )
+    .toBe(true);
+}
+
+export async function upsertEdgeMeshEntity(page: Page, collection: EdgeCollection, id: string, item: unknown) {
+  await expectEdgeMeshReady(page);
+  await page.evaluate(
+    ({ collectionName, entityId, entity }) => {
+      (window as any).__shelfEdgeMeshForTest.upsert(collectionName, entityId, entity);
+    },
+    { collectionName: collection, entityId: id, entity: item },
+  );
+}
+
+export async function exportEdgeMeshUpdate(page: Page): Promise<number[]> {
+  await expectEdgeMeshReady(page);
+  return page.evaluate(() => {
+    return (window as any).__shelfEdgeMeshForTest.getUpdate();
+  });
+}
+
+export async function applyRemoteEdgeMeshUpdate(page: Page, peerId: string, update: number[]) {
+  await expectEdgeMeshReady(page);
+  await page.evaluate(
+    ({ remotePeerId, remoteUpdate }) => {
+      (window as any).__shelfEdgeMeshForTest.applyRemoteUpdate(remotePeerId, remoteUpdate);
+    },
+    { remotePeerId: peerId, remoteUpdate: update },
+  );
+}
+
+export async function getEdgeMeshEntities<T = any>(page: Page, collection: EdgeCollection): Promise<T[]> {
+  await expectEdgeMeshReady(page);
+  return page.evaluate((collectionName) => {
+    const snapshot = (window as any).__shelfEdgeMeshForTest.getState();
+    return snapshot?.[collectionName] || [];
+  }, collection);
+}
+
+export async function getAppStateEntities<T = any>(page: Page, collection: EdgeCollection): Promise<T[]> {
+  return page.evaluate((collectionName) => {
+    const appState = (window as any).__shelfAppStateForTest;
+    if (appState?.[collectionName]) return appState[collectionName];
+
+    const dbSync = (window as any)._dbSyncForTest;
+    if (!dbSync) return [];
+    const state = dbSync.getState(dbSync.localPeerId);
+    return state?.[collectionName] || [];
+  }, collection);
+}
+
+export async function expectEdgeMeshEntity(
+  page: Page,
+  collection: EdgeCollection,
+  predicate: (items: any[]) => boolean,
+  timeout = 30000,
+) {
+  await expect
+    .poll(async () => predicate(await getEdgeMeshEntities(page, collection)), {
+      timeout,
+      intervals: [1000, 1000, 2000, 3000, 5000],
+    })
+    .toBe(true);
+}
+
+export async function expectAppStateEntity(
+  page: Page,
+  collection: EdgeCollection,
+  predicate: (items: any[]) => boolean,
+  timeout = 30000,
+) {
+  await expect
+    .poll(async () => predicate(await getAppStateEntities(page, collection)), {
+      timeout,
+      intervals: [1000, 1000, 2000, 3000, 5000],
+    })
+    .toBe(true);
 }
