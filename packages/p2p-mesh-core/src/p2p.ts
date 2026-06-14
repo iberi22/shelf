@@ -159,6 +159,11 @@ class P2PManager {
 		);
 	}
 
+	private isAuthorizedAuthoritySender(fromPeerId: string): boolean {
+		const masterId = this.getMasterPeerId();
+		return Boolean(masterId && fromPeerId === masterId);
+	}
+
 	private initYjsSync() {
 		if (this.yjsSyncInitialized) return;
 		this.yjsSyncInitialized = true;
@@ -183,7 +188,11 @@ class P2PManager {
 						auditLogs: currentState.auditLogs,
 						arqueoSessions: currentState.arqueoSessions,
 						ocrResults: currentState.ocrResults,
+						teamMembers: currentState.teamMembers,
+						inventoryConfig: currentState.inventoryConfig,
 						peers: currentState.peers,
+						role: currentState.role,
+						permissions: currentState.permissions,
 					},
 				};
 
@@ -470,8 +479,7 @@ class P2PManager {
 				}
 
 				if (this.isAuthorityMessage(message)) {
-					const masterId = this.getMasterPeerId();
-					if (!masterId || conn.peer !== masterId) {
+					if (!this.isAuthorizedAuthoritySender(conn.peer)) {
 						logger.warn(
 							`[SECURITY] Ignored authority message ${message.type} from non-master peer ${conn.peer}`,
 						);
@@ -696,6 +704,16 @@ class P2PManager {
 		try {
 			const decrypted = await decryptData(ciphertext, key);
 			const message = JSON.parse(decrypted) as SyncMessage;
+
+			if (
+				this.isAuthorityMessage(message) &&
+				!this.isAuthorizedAuthoritySender(fromPeerId)
+			) {
+				logger.warn(
+					`[SECURITY] Ignored encrypted authority message ${message.type} from non-master peer ${fromPeerId}`,
+				);
+				return;
+			}
 
 			// Dispatch the decrypted message
 			if (message.type === "YJS_UPDATE") {

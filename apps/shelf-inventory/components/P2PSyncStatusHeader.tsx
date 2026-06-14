@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import ProductConflictResolver, { detectProductConflicts } from './ProductConflictResolver';
+import MergeResolutionModal from './MergeResolutionModal';
 
 const P2PSyncStatusHeader: React.FC = () => {
   const { state, dispatch } = useAppContext();
@@ -11,12 +12,15 @@ const P2PSyncStatusHeader: React.FC = () => {
 
   const [copied, setCopied] = useState(false);
   const [isResolverOpen, setIsResolverOpen] = useState(false);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'disconnected'>('disconnected');
   const [isExpanded, setIsExpanded] = useState(false);
 
   const verifiedPeers = useMemo(() => {
     return state.peers.filter((p) => p.status === 'verified');
   }, [state.peers]);
+
+  const pendingEditsCount = (state.pendingEdits || []).length;
 
   // Compute product conflicts
   const conflicts = useMemo(() => detectProductConflicts(state.products), [state.products]);
@@ -109,6 +113,13 @@ const P2PSyncStatusHeader: React.FC = () => {
         {state.role === 'admin' && conflicts.length > 0 && (
           <span className="absolute -bottom-1 -left-1 flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-[9px] font-bold text-black ring-1 ring-black animate-bounce">
             {conflicts.length}
+          </span>
+        )}
+
+        {/* Pending Edits Badge for Admin */}
+        {state.role === 'admin' && pendingEditsCount > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[9px] font-bold text-white ring-1 ring-black animate-pulse">
+            {pendingEditsCount}
           </span>
         )}
       </button>
@@ -227,11 +238,32 @@ const P2PSyncStatusHeader: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Admin Pending Edits Alert */}
+          {state.role === 'admin' && pendingEditsCount > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 bg-blue-500/10 border border-blue-500/35 rounded-xl text-blue-400 shadow-md mt-2">
+              <div className="flex items-center gap-2.5 text-center sm:text-left">
+                <Layers className="animate-pulse shrink-0" size={18} />
+                <span className="text-xs sm:text-sm font-semibold">
+                  {pendingEditsCount} edición(es) pendiente(s) de revisión.
+                </span>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto shrink-0">
+                <button
+                  onClick={() => setIsMergeModalOpen(true)}
+                  className="flex-1 sm:flex-initial px-3.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition-colors active:scale-95"
+                >
+                  Revisar Ediciones
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Manual Conflict Resolver Modal */}
       <ProductConflictResolver isOpen={isResolverOpen} onClose={() => setIsResolverOpen(false)} />
+      <MergeResolutionModal isOpen={isMergeModalOpen} onClose={() => setIsMergeModalOpen(false)} />
     </div>
   );
 };

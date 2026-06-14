@@ -886,7 +886,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     const nextRows = [...variantRows];
     const row = { ...nextRows[index] };
     if (field === 'sku') row.sku = String(value);
-    if (field === 'quantity' || field === 'price' || field === 'cost') row[field] = Number(value);
+    if (field === 'quantity' || field === 'price' || field === 'cost') row[field] = String(value);
     if (field === 'imageUrl') row.imageUrl = String(value) || undefined;
     nextRows[index] = row;
     setVariantRows(nextRows);
@@ -1386,6 +1386,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                             step="1"
                             value={row.quantity}
                             onChange={(e) => updateVariantRow(rowIndex, 'quantity', e.target.value)}
+                            onFocus={(e) => {
+                              if (e.currentTarget.value === '0') e.currentTarget.select();
+                            }}
                             className={`w-full p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
                               errors[`variant_${rowIndex}_quantity`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
                             }`}
@@ -1399,6 +1402,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                             step="0.01"
                             value={row.price}
                             onChange={(e) => updateVariantRow(rowIndex, 'price', e.target.value)}
+                            onFocus={(e) => {
+                              if (e.currentTarget.value === '0') e.currentTarget.select();
+                            }}
                             className={`w-full p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
                               errors[`variant_${rowIndex}_price`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
                             }`}
@@ -1412,6 +1418,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                             step="0.01"
                             value={row.cost}
                             onChange={(e) => updateVariantRow(rowIndex, 'cost', e.target.value)}
+                            onFocus={(e) => {
+                              if (e.currentTarget.value === '0') e.currentTarget.select();
+                            }}
                             className={`w-full p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
                               errors[`variant_${rowIndex}_cost`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
                             }`}
@@ -1511,6 +1520,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     placeholder={t('common.quantity')}
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === '0') e.currentTarget.select();
+                    }}
                     min="0"
                     step="1"
                     className={`w-full p-2 bg-[#121212] border rounded-md ${errors.quantity ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
@@ -1525,6 +1537,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       placeholder={t('common.price')}
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
+                      onFocus={(e) => {
+                        if (e.currentTarget.value === '0') e.currentTarget.select();
+                      }}
                       min="0"
                       step="0.01"
                       className={`w-full p-2 bg-[#121212] border rounded-md ${errors.price ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
@@ -1538,6 +1553,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       placeholder={t('common.cost')}
                       value={cost}
                       onChange={(e) => setCost(e.target.value)}
+                      onFocus={(e) => {
+                        if (e.currentTarget.value === '0') e.currentTarget.select();
+                      }}
                       min="0"
                       step="0.01"
                       className={`w-full p-2 bg-[#121212] border rounded-md ${errors.cost ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}

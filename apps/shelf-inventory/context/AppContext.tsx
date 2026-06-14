@@ -523,10 +523,13 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
     case 'UPDATE_PEER_PERMISSIONS': {
       if (action.payload.targetPeerId === state.localPeerId) {
-        if (!dbSync.isLocalAuthority()) {
-          return state;
-        }
-        return { ...state, permissions: action.payload.permissions };
+        return {
+          ...state,
+          permissions: action.payload.permissions,
+          peers: state.peers.map((p) =>
+            p.id === action.payload.targetPeerId ? { ...p, permissions: action.payload.permissions } : p,
+          ),
+        };
       }
       return {
         ...state,
@@ -595,6 +598,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
         peers: mergeCollections(state.peers, p.peers),
         role: p.role || state.role,
         permissions: p.permissions || state.permissions,
+        pendingEdits: p.pendingEdits || state.pendingEdits || [],
       };
     }
 
@@ -772,6 +776,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             permissions: remoteState.permissions,
             peers: remoteState.peers,
             auditLogs: remoteState.auditLogs,
+            pendingEdits: remoteState.pendingEdits,
           },
         });
       }

@@ -14,6 +14,17 @@ export interface BaseEntity {
   signature?: string; // Cryptographic signature of the entity state
 }
 
+export interface EntityEditProposal {
+  id: string; // unique ID for the proposal (e.g., proposalId)
+  entityId: string; // ID of the product or entity being edited
+  collectionName: keyof AppState;
+  proposedData: any; // The new data proposed by the collaborator
+  originalData?: any; // The state of the data before the edit (for 3-way merge)
+  peerId: string;
+  timestamp: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
 export interface Product extends BaseEntity {
   name: string;
   sku?: string;
@@ -169,6 +180,7 @@ export interface AppState {
   arqueoSessions: ArqueoSession[];
   ocrResults: InvoiceOCRResult[];
   isExpelled?: boolean;
+  pendingEdits: EntityEditProposal[];
 }
 
 export type ImportStrategy = 'skip' | 'update';

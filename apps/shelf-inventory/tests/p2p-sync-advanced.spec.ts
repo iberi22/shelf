@@ -248,7 +248,7 @@ test.describe('P2P Advanced Synchronization', () => {
     await collabPage.getByTestId('product-price-input').fill('300');
     await collabPage.getByTestId('save-product-button').click();
 
-    // Wait for sync by polling admin state for the price
+    // Wait for sync by polling admin state for the price OR the pendingEdits array
     await expect(async () => {
       await collabPage.evaluate(() => {
         const dbSync = (window as any)._dbSyncForTest;
@@ -268,19 +268,21 @@ test.describe('P2P Advanced Synchronization', () => {
       });
       await adminPage.waitForTimeout(500);
 
-      const price = await adminPage.evaluate(() => {
+      const hasPendingEdit = await adminPage.evaluate(() => {
         try {
           const dbSync = (window as any)._dbSyncForTest;
-          if (!dbSync) return undefined;
+          if (!dbSync) return false;
           const state = dbSync.getState(dbSync.localPeerId);
-          if (!state || !state.products) return undefined;
-          const products: any[] = state.products;
-          const p = products.find((x: any) => x.name === 'Merge Target Product');
-          return p?.price;
-        } catch { return undefined; }
+          return state.pendingEdits && state.pendingEdits.length > 0;
+        } catch { return false; }
       });
-      expect(price).toEqual(expect.any(Number));
+      expect(hasPendingEdit).toBe(true);
     }).toPass({ timeout: 30000, intervals: [1000, 1000, 2000, 3000, 5000] });
+
+    // Admin resolves the pending edit
+    await adminPage.getByRole('button', { name: /Revisar Ediciones/i }).click();
+    await adminPage.getByRole('button', { name: /Fusionar y Guardar/i }).click();
+    await adminPage.waitForTimeout(1000);
 
     // After sync, both should converge to one value
     const adminFinalPrice = await adminPage.evaluate(() => {

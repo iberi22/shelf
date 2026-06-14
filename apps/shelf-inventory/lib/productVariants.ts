@@ -3,9 +3,9 @@ import type { Product, ProductVariant } from 'p2p-mesh-core';
 export type VariantDraft = {
   id: string;
   sku: string;
-  quantity: number;
-  price: number;
-  cost: number;
+  quantity: number | string;
+  price: number | string;
+  cost: number | string;
   imageUrl?: string;
   attributes: Record<string, string>;
 };

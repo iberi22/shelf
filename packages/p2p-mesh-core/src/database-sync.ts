@@ -14,6 +14,7 @@ import type {
 	TeamMember,
 	Sale,
 	Supplier,
+	EntityEditProposal,
 } from "./types";
 import { logger } from "./utils/logger";
 
@@ -49,6 +50,7 @@ class DatabaseSyncManager {
 	private teamMembers: Y.Map<TeamMember>;
 	private metadata: Y.Map<string>;
 	private linkedNodes: Y.Map<LinkedNodeRecord>;
+	private pendingEdits: Y.Map<EntityEditProposal>;
 	private ephemeralNodes: Map<string, Partial<LinkedNodeRecord>> = new Map();
 	public localPeerId: string | null = null;
 	/**
@@ -154,6 +156,7 @@ class DatabaseSyncManager {
 		this.teamMembers = this.doc.getMap("teamMembers");
 		this.metadata = this.doc.getMap("metadata");
 		this.linkedNodes = this.doc.getMap("linkedNodes");
+		this.pendingEdits = this.doc.getMap("pendingEdits");
 	}
 
 	private checkPermissions(
@@ -244,8 +247,40 @@ class DatabaseSyncManager {
 		const yMap = this.getMapForCollection(collectionName);
 		if (!yMap) return;
 
+		// MERGE RESOLUTION SYSTEM
+		// If a collaborator edits a product, we route it to pendingEdits for the admin to approve.
+		if (collectionName === "products" && this.localPeerId && this.isReady) {
+			const effectiveSelf = this.getEffectivePeerConfig(this.localPeerId);
+			const isAdmin = effectiveSelf.role === "admin" || effectiveSelf.isMaster;
+			
+			if (!isAdmin) {
+				const originalData = yMap.get(item.id);
+				// If it's an update to an existing item, propose an edit
+				if (originalData) {
+					const proposalId = `prop-${Date.now()}-${this.localPeerId}`;
+					const proposal: EntityEditProposal = {
+						id: proposalId,
+						entityId: item.id,
+						collectionName: collectionName,
+						proposedData: item,
+						originalData: originalData,
+						peerId: this.localPeerId,
+						timestamp: new Date().toISOString(),
+						status: 'pending'
+					};
+					
+					this.doc.transact(() => {
+						this.pendingEdits.set(proposalId, proposal as any);
+					}, "local");
+					
+					logger.log(`[MERGE] Collaborator edit on ${item.id} routed to pendingEdits`);
+					return;
+				}
+			}
+		}
+
 		this.doc.transact(() => {
-			yMap.set(item.id, item);
+			yMap.set(item.id, item as any);
 		}, "local");
 	}
 
@@ -266,6 +301,38 @@ class DatabaseSyncManager {
 		this.doc.transact(() => {
 			yMap.delete(id);
 		}, "local");
+	}
+
+	/**
+	 * Admin-only function to resolve a pending edit
+	 */
+	public resolvePendingEdit(proposalId: string, resolution: 'approve' | 'reject', mergedData?: any) {
+		const effectiveSelf = this.getEffectivePeerConfig(this.localPeerId);
+		const isAdmin = effectiveSelf.role === "admin" || effectiveSelf.isMaster;
+		
+		if (!isAdmin) {
+			logger.warn(`[SECURITY] Unauthorized attempt to resolve pending edit by ${this.localPeerId}`);
+			return;
+		}
+
+		const proposal = this.pendingEdits.get(proposalId);
+		if (!proposal) return;
+
+		this.doc.transact(() => {
+			if (resolution === 'approve') {
+				const finalData = mergedData || proposal.proposedData;
+				const collectionMap = this.getMapForCollection(proposal.collectionName);
+				if (collectionMap) {
+					// We temporarily bypass the upsertEntity hook by setting it directly to the map
+					collectionMap.set(proposal.entityId, finalData as any);
+				}
+			}
+			
+			// Always remove the proposal once resolved
+			this.pendingEdits.delete(proposalId);
+		}, "local");
+		
+		logger.log(`[MERGE] Proposal ${proposalId} resolved as ${resolution}`);
 	}
 
 	private getMapForCollection(collection: string): Y.Map<EntityRecord> | null {
@@ -320,6 +387,13 @@ class DatabaseSyncManager {
 			mergeAndSync("purchaseOrders", state.purchaseOrders);
 			mergeAndSync("auditLogs", state.auditLogs);
 			mergeAndSync("teamMembers", state.teamMembers);
+			
+			if (state.pendingEdits) {
+				for (const edit of state.pendingEdits) {
+					this.pendingEdits.set(edit.id, edit as any);
+				}
+			}
+
 			this.metadata.set("inventoryConfig", JSON.stringify(state.inventoryConfig));
 
 			if (state.peers && state.peers.length > 0) {
@@ -376,6 +450,7 @@ class DatabaseSyncManager {
 			role: resolvedRole,
 			permissions: resolvedPermissions,
 			peers: peers,
+			pendingEdits: Array.from(this.pendingEdits.values()) as EntityEditProposal[],
 		};
 	}
 
@@ -730,6 +805,7 @@ class DatabaseSyncManager {
 			"arqueoSessions",
 			"ocrResults",
 			"teamMembers",
+			"pendingEdits",
 		];
 
 		const observers = collections.map((col) => {
