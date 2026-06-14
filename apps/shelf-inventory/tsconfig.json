@@ -36,8 +36,15 @@
     "hooks/**/*.ts",
     "hooks/**/*.tsx",
     "lib/**/*.ts",
-    "lib/**/*.tsx"
+    "lib/**/*.tsx",
+    "src/**/*.d.ts"
   ],
   "exclude": ["node_modules", "functions", "src"],
-  "references": [{ "path": "./tsconfig.node.json" }, { "path": "../../packages/p2p-mesh-core" }]
+  "references": [
+    { "path": "./tsconfig.node.json" },
+    { "path": "../../packages/p2p-mesh-core" },
+    { "path": "../../packages/edge-mesh" },
+    { "path": "../../packages/edge-mesh-react" },
+    { "path": "../../packages/gpu-agent" }
+  ]
 }
