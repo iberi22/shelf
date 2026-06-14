@@ -1,5 +1,12 @@
 import { Download, Info, Link2, MessageCircle, QrCode, RadioTower, Settings, X } from 'lucide-react';
-import { dbSync, type P2PRole, type PeerPermissions, p2pManager, type SyncMessage } from 'p2p-mesh-core';
+import {
+  dbSync,
+  type P2PRole,
+  type PeerHealthInfo,
+  type PeerPermissions,
+  p2pManager,
+  type SyncMessage,
+} from 'p2p-mesh-core';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
@@ -97,6 +104,9 @@ const P2PSyncManager: React.FC = () => {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [selectedRole, setSelectedRole] = useState<P2PRole>('collaborator');
   const [selectedPermissions, setSelectedPermissions] = useState<PeerPermissions>(permissionPresets.collaborator);
+  const [peerHealth, setPeerHealth] = useState<Record<string, PeerHealthInfo>>(() => {
+    return Object.fromEntries(p2pManager.getPeerHealthList().map((health) => [health.peerId, health]));
+  });
   const [pendingConfigs, setPendingConfigs] = useState<Record<string, { role: P2PRole; permissions: PeerPermissions }>>(
     {},
   );
@@ -224,6 +234,10 @@ const P2PSyncManager: React.FC = () => {
       if (peers.length > 0) setSyncProgress(100);
     });
 
+    const unsubscribePeerHealth = p2pManager.onPeerHealthChange((health) => {
+      setPeerHealth((current) => ({ ...current, [health.peerId]: health }));
+    });
+
     p2pManager.onConnectionError((issue) => {
       const peerLabel = issue.peerId ? ` (${issue.peerId})` : '';
       const unavailablePeer =
@@ -260,6 +274,7 @@ const P2PSyncManager: React.FC = () => {
       if (copyStatusTimerRef.current) {
         window.clearTimeout(copyStatusTimerRef.current);
       }
+      unsubscribePeerHealth();
       // NOTE: For a full fix, p2pManager should expose offMessage
     };
   }, [dispatch, showNotification]);
@@ -674,6 +689,7 @@ const P2PSyncManager: React.FC = () => {
             <div className="space-y-2">
               {state.peers.map((peer) => {
                 const masterId = dbSync.getMasterPeerId();
+                const health = peerHealth[peer.id];
                 const isOnline = p2pManager.isPeerConnected(peer.id) || peer.id === state.localPeerId;
                 const canManagePeer = isLocalHostAuthority && peer.id !== state.localPeerId;
                 const isLocal = peer.id === state.localPeerId;
@@ -695,8 +711,20 @@ const P2PSyncManager: React.FC = () => {
                   }
                 }
 
+                if (!isLocal && health?.status === 'stale') {
+                  statusText = 'En linea (sin respuesta reciente)';
+                  statusColor = 'text-yellow-400';
+                } else if (!isLocal && health?.status === 'offline') {
+                  statusText = 'Sin respuesta';
+                  statusColor = 'text-red-400';
+                } else if (!isLocal && health?.status === 'healthy') {
+                  statusText = 'En linea (saludable)';
+                  statusColor = 'text-green-400';
+                }
+
                 const lastSeenText =
                   isLocal || isOnline ? 'Ahora' : peer.lastSeen ? new Date(peer.lastSeen).toLocaleString() : 'Nunca';
+                const lastHealthText = health?.lastSeen ? new Date(health.lastSeen).toLocaleTimeString() : null;
 
                 return (
                   <div
@@ -735,6 +763,11 @@ const P2PSyncManager: React.FC = () => {
                           <span className="capitalize px-2 py-0.5 rounded text-xs bg-foreground/10 font-bold border border-[#F5F5DC]/10">
                             {peer.role}
                           </span>
+                          {lastHealthText && (
+                            <span className={`px-2 py-0.5 rounded text-xs border border-[#F5F5DC]/10 ${statusColor}`}>
+                              salud {health?.status}: {lastHealthText}
+                            </span>
+                          )}
                           {canManagePeer && (
                             <div className="flex items-center gap-2">
                               <button

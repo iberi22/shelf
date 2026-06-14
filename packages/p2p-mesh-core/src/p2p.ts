@@ -1,3 +1,8 @@
+import {
+	createPeerHealthMonitor,
+	getReconnectDelay,
+	type PeerHealthState,
+} from "edge-mesh";
 import { type DataConnection, Peer } from "peerjs";
 import { decryptData, encryptData, importPQCSharedSecret } from "./crypto";
 import {
@@ -78,6 +83,8 @@ export type ConnectionErrorInfo = {
 	source: "peerjs" | "connection";
 };
 
+export type PeerHealthInfo = PeerHealthState;
+
 type HandshakeRequestPayload = {
 	kemPubKey: string;
 	dsaPubKey: string;
@@ -95,6 +102,10 @@ class P2PManager {
 	private connections: Map<string, DataConnection> = new Map();
 	private sharedSecrets: Map<string, Uint8Array> = new Map();
 	private encryptionKeys: Map<string, CryptoKey> = new Map();
+	private health = createPeerHealthMonitor({
+		staleAfterMs: 30000,
+		offlineAfterMs: 60000,
+	});
 
 	private reconnectionAttempts = 0;
 	private readonly MAX_RECONNECT_DELAY = 30000;
@@ -127,6 +138,8 @@ class P2PManager {
 	) => void)[] = [];
 	private onConnectionErrorCallbacks: ((issue: ConnectionErrorInfo) => void)[] =
 		[];
+	private onPeerHealthChangeCallbacks: ((state: PeerHealthInfo) => void)[] = [];
+	private healthEventsBound = false;
 
 	public localPeerId: string | null = null;
 	public role: P2PRole = "collaborator";
@@ -210,6 +223,29 @@ class P2PManager {
 		}
 	}
 
+	private bindPeerHealthEvents() {
+		if (this.healthEventsBound) return;
+		this.healthEventsBound = true;
+
+		const emit = (state: PeerHealthState) => {
+			for (const cb of this.onPeerHealthChangeCallbacks) {
+				cb(state);
+			}
+			const status =
+				state.status === "offline"
+					? "offline"
+					: state.status === "stale"
+						? "connected"
+						: "verified";
+			dbSync.updateEphemeralNode(state.peerId, { status });
+			this.notifyConnectionChange();
+		};
+
+		this.health.on("peer:healthy", emit);
+		this.health.on("peer:stale", emit);
+		this.health.on("peer:offline", emit);
+	}
+
 	private requestYjsSync(peerId: string) {
 		if (!dbSync.isReady) return;
 		this.sendTo(peerId, {
@@ -229,6 +265,7 @@ class P2PManager {
 	public init(peerId?: string) {
 		if (this.peer) return;
 		this.initYjsSync();
+		this.bindPeerHealthEvents();
 
 		let finalPeerId = peerId;
 		if (!finalPeerId && typeof localStorage !== "undefined") {
@@ -336,10 +373,10 @@ class P2PManager {
 				);
 				return;
 			}
-			const delay = Math.min(
-				this.INITIAL_RECONNECT_DELAY * 2 ** this.reconnectionAttempts,
-				this.MAX_RECONNECT_DELAY,
-			);
+			const delay = getReconnectDelay(this.reconnectionAttempts, {
+				initialDelayMs: this.INITIAL_RECONNECT_DELAY,
+				maxDelayMs: this.MAX_RECONNECT_DELAY,
+			});
 			logger.warn(
 				`PeerJS disconnected. Retrying in ${delay}ms (attempt ${this.reconnectionAttempts + 1})...`,
 			);
@@ -362,10 +399,10 @@ class P2PManager {
 					);
 					return;
 				}
-				const delay = Math.min(
-					this.INITIAL_RECONNECT_DELAY * 2 ** this.reconnectionAttempts,
-					this.MAX_RECONNECT_DELAY,
-				);
+				const delay = getReconnectDelay(this.reconnectionAttempts, {
+					initialDelayMs: this.INITIAL_RECONNECT_DELAY,
+					maxDelayMs: this.MAX_RECONNECT_DELAY,
+				});
 				logger.warn(
 					`Peer ID taken. Retrying in ${delay}ms (attempt ${this.reconnectionAttempts + 1})...`,
 				);
@@ -400,6 +437,7 @@ class P2PManager {
 	private handleConnection(conn: DataConnection) {
 		conn.on("open", () => {
 			this.connections.set(conn.peer, conn);
+			this.health.markConnected(conn.peer);
 			this.updatePeerList(conn.peer, "collaborator");
 
 			// Broadcast updated peer list to the mesh
@@ -445,6 +483,7 @@ class P2PManager {
 						dbSync.updateEphemeralNode(conn.peer, {
 							status: "verified",
 						});
+						this.health.markPong(conn.peer);
 						// Update local peer list
 						this.updatePeerList(conn.peer, "collaborator");
 						this.notifyConnectionChange();
@@ -472,6 +511,7 @@ class P2PManager {
 						dbSync.updateEphemeralNode(conn.peer, {
 							status: "verified",
 						});
+						this.health.markPong(conn.peer);
 						this.updatePeerList(conn.peer, "collaborator");
 						this.notifyConnectionChange();
 
@@ -502,6 +542,7 @@ class P2PManager {
 				if (message.type === "PONG") {
 					// Clear pending ping tracking for this peer
 					this.pendingPings.delete(conn.peer);
+					this.health.markPong(conn.peer);
 					return;
 				}
 
@@ -560,6 +601,7 @@ class P2PManager {
 				this.lastMessageTime.delete(conn.peer);
 				this.peers = this.peers.filter((p) => p.id !== conn.peer);
 				this.notifyConnectionChange();
+				this.health.markOffline(conn.peer);
 
 				// Mark offline in ephemeral state
 				dbSync.updateEphemeralNode(conn.peer, {
@@ -613,6 +655,7 @@ class P2PManager {
 		const now = Date.now();
 		for (const [peerId, conn] of this.connections.entries()) {
 			if (!conn.open) {
+				this.health.markOffline(peerId);
 				conn.close(); // Triggers the 'close' event handler which cleans up
 				continue;
 			}
@@ -626,6 +669,7 @@ class P2PManager {
 						`Pong timeout for peer ${peerId} (${now - pingSentAt}ms). Closing connection.`,
 					);
 					this.pendingPings.delete(peerId);
+					this.health.markOffline(peerId);
 					conn.close();
 					continue;
 				}
@@ -640,14 +684,17 @@ class P2PManager {
 				logger.warn(
 					`Peer ${peerId} heartbeat inactivity timeout (${now - lastSeen}ms). Closing connection.`,
 				);
+				this.health.markOffline(peerId);
 				conn.close();
 				continue;
 			}
 
 			// Send PING and track it
 			this.pendingPings.set(peerId, now);
+			this.health.markPing(peerId);
 			conn.send({ type: "PING", peerId: this.localPeerId, timestamp: now });
 		}
+		this.health.sweep();
 	}
 
 	public isPeerConnected(peerId: string): boolean {
@@ -803,6 +850,22 @@ class P2PManager {
 		this.onConnectionErrorCallbacks.push(cb);
 	}
 
+	public onPeerHealthChange(cb: (state: PeerHealthInfo) => void) {
+		this.onPeerHealthChangeCallbacks.push(cb);
+		return () => {
+			this.onPeerHealthChangeCallbacks =
+				this.onPeerHealthChangeCallbacks.filter((entry) => entry !== cb);
+		};
+	}
+
+	public getPeerHealth(peerId: string): PeerHealthInfo | undefined {
+		return this.health.get(peerId);
+	}
+
+	public getPeerHealthList(): PeerHealthInfo[] {
+		return this.health.list();
+	}
+
 	/**
 	 * Send an account recovery request to a peer (master device).
 	 */
@@ -854,6 +917,7 @@ class P2PManager {
 			conn.close();
 			this.connections.delete(peerId);
 			this.sharedSecrets.delete(peerId);
+			this.health.markOffline(peerId);
 			this.notifyConnectionChange();
 		}
 	}

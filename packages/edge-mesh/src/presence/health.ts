@@ -59,6 +59,20 @@ export class PeerHealthMonitor extends EventEmitter {
 		this.offlineAfterMs = options.offlineAfterMs ?? 60000;
 	}
 
+	on<K extends keyof PeerHealthEvents>(
+		eventName: K,
+		listener: PeerHealthEvents[K],
+	): this {
+		return super.on(eventName, listener as (...args: unknown[]) => void);
+	}
+
+	off<K extends keyof PeerHealthEvents>(
+		eventName: K,
+		listener: PeerHealthEvents[K],
+	): this {
+		return super.off(eventName, listener as (...args: unknown[]) => void);
+	}
+
 	markConnected(peerId: string): PeerHealthState {
 		return this.setStatus(peerId, 'healthy', {
 			lastSeen: this.now(),

@@ -222,6 +222,9 @@ importers:
       '@noble/post-quantum':
         specifier: ^0.6.1
         version: 0.6.1
+      edge-mesh:
+        specifier: workspace:*
+        version: link:../edge-mesh
       peerjs:
         specifier: ^1.5.5
         version: 1.5.5
