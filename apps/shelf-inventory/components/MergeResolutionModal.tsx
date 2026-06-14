@@ -10,7 +10,7 @@ interface MergeResolutionModalProps {
 }
 
 export default function MergeResolutionModal({ isOpen, onClose }: MergeResolutionModalProps) {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const pendingEdits = state.pendingEdits || [];
   const isAdmin = state.role === 'admin' || dbSync.isLocalAuthority();
 
@@ -33,6 +33,10 @@ export default function MergeResolutionModal({ isOpen, onClose }: MergeResolutio
   const handleResolve = (resolution: 'approve' | 'reject') => {
     if (resolution === 'reject') {
       dbSync.resolvePendingEdit(currentEdit.id, 'reject');
+      dispatch({ type: 'SYNC_STATE', payload: dbSync.getState(state.localPeerId) });
+      if (pendingEdits.length <= 1) {
+        onClose();
+      }
       return;
     }
 
@@ -52,6 +56,7 @@ export default function MergeResolutionModal({ isOpen, onClose }: MergeResolutio
     mergedData.updatedBy = state.localPeerId || 'local';
 
     dbSync.resolvePendingEdit(currentEdit.id, 'approve', mergedData);
+    dispatch({ type: 'SYNC_STATE', payload: dbSync.getState(state.localPeerId) });
 
     // Clear selections for next edit
     setSelectedFields({});

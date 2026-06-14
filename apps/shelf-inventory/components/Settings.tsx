@@ -221,6 +221,10 @@ const Settings: React.FC = () => {
     }));
   };
 
+  const updateInventorySyncSetting = (patch: Partial<InventoryConfig>) => {
+    setInventoryConfigDraft((current) => normalizeInventoryConfig({ ...current, ...patch }));
+  };
+
   const saveInventoryConfig = () => {
     const nextConfig = normalizeInventoryConfig(inventoryConfigDraft);
     setInventoryConfigDraft(nextConfig);
@@ -310,33 +314,64 @@ const Settings: React.FC = () => {
             </div>
 
             <div className="mt-5 space-y-6">
-              <div className="rounded-lg border border-white/5 bg-[#121212] p-4">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div>
+              <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-[#F5F5DC]">Sincronización de productos</h4>
+                    <p className="text-xs text-[#F5F5DC]/55">
+                      Controla cómo el host aplica cambios de productos enviados por otros nodos.
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-[#F5F5DC]/15 bg-[#0f0f0f] px-3 py-1 text-xs text-[#F5F5DC]/65">
+                    Historial: {inventoryConfigDraft.productHistoryLimit} cambios
+                  </span>
+                </div>
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-md border border-[#F5F5DC]/10 bg-[#0f0f0f] p-3">
+                  <input
+                    type="checkbox"
+                    checked={inventoryConfigDraft.autoApplyProductUpdates}
+                    onChange={(event) => updateInventorySyncSetting({ autoApplyProductUpdates: event.target.checked })}
+                    className="mt-1 h-4 w-4 shrink-0 accent-[#4f9d69]"
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-[#F5F5DC]">
+                      Aplicar actualizaciones automáticamente
+                    </span>
+                    <span className="mt-1 block text-xs text-[#F5F5DC]/55">
+                      Si está activo, los cambios de producto con permiso se aplican sin revisión manual y se conserva
+                      una versión anterior para restaurar.
+                    </span>
+                  </span>
+                </label>
+              </div>
+
+              <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
+                <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
                     <h4 className="font-semibold text-[#F5F5DC]">Atributos de variante</h4>
                     <p className="text-xs text-[#F5F5DC]/55">Ejemplo: Color, Medida, Material.</p>
                   </div>
                   <button
                     type="button"
                     onClick={addVariantAttribute}
-                    className="bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-1.5 rounded-md text-xs hover:bg-white/5"
+                    className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto"
                   >
                     + Agregar más
                   </button>
                 </div>
                 <div className="space-y-2">
                   {inventoryConfigDraft.variantAttributes.map((attribute, index) => (
-                    <div key={`${attribute}-${index}`} className="flex gap-2">
+                    <div key={`${attribute}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 min-w-0">
                       <input
                         value={attribute}
                         onChange={(e) => updateVariantAttribute(index, e.target.value)}
-                        className="flex-1 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
+                        className="w-full min-w-0 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
                         placeholder={`Atributo ${index + 1}`}
                       />
                       <button
                         type="button"
                         onClick={() => removeVariantAttribute(index)}
-                        className="px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
+                        className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
                       >
                         Quitar
                       </button>
@@ -345,33 +380,33 @@ const Settings: React.FC = () => {
                 </div>
               </div>
 
-              <div className="rounded-lg border border-white/5 bg-[#121212] p-4">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div>
+              <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
+                <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
                     <h4 className="font-semibold text-[#F5F5DC]">Medidas sugeridas</h4>
                     <p className="text-xs text-[#F5F5DC]/55">Se muestran como botones rápidos al editar productos.</p>
                   </div>
                   <button
                     type="button"
                     onClick={addMeasureOption}
-                    className="bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-1.5 rounded-md text-xs hover:bg-white/5"
+                    className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto"
                   >
                     + Agregar más
                   </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {inventoryConfigDraft.measureOptions.map((option, index) => (
-                    <div key={`${option}-${index}`} className="flex gap-2">
+                    <div key={`${option}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 min-w-0">
                       <input
                         value={option}
                         onChange={(e) => updateMeasureOption(index, e.target.value)}
-                        className="flex-1 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
+                        className="w-full min-w-0 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
                         placeholder={`Medida ${index + 1}`}
                       />
                       <button
                         type="button"
                         onClick={() => removeMeasureOption(index)}
-                        className="px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
+                        className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
                       >
                         Quitar
                       </button>
@@ -380,16 +415,16 @@ const Settings: React.FC = () => {
                 </div>
               </div>
 
-              <div className="rounded-lg border border-white/5 bg-[#121212] p-4">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div>
+              <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
+                <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
                     <h4 className="font-semibold text-[#F5F5DC]">Campos del producto</h4>
                     <p className="text-xs text-[#F5F5DC]/55">Puedes cambiar nombre, tipo y agregar nuevos campos.</p>
                   </div>
                   <button
                     type="button"
                     onClick={addInventoryField}
-                    className="bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-1.5 rounded-md text-xs hover:bg-white/5"
+                    className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto"
                   >
                     + Agregar campo
                   </button>
@@ -398,18 +433,18 @@ const Settings: React.FC = () => {
                   {inventoryConfigDraft.fields.map((field, index) => (
                     <div
                       key={field.id}
-                      className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center rounded-md border border-[#F5F5DC]/10 p-3 bg-[#0f0f0f]"
+                      className="grid grid-cols-1 gap-2 rounded-md border border-[#F5F5DC]/10 p-3 bg-[#0f0f0f] md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center"
                     >
                       <input
                         value={field.key}
                         onChange={(e) => updateInventoryField(index, { key: e.target.value })}
-                        className="w-full p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
+                        className="w-full min-w-0 p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
                         placeholder="Clave"
                       />
                       <input
                         value={field.label}
                         onChange={(e) => updateInventoryField(index, { label: e.target.value })}
-                        className="w-full p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
+                        className="w-full min-w-0 p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
                         placeholder="Etiqueta"
                       />
                       <select
@@ -417,7 +452,7 @@ const Settings: React.FC = () => {
                         onChange={(e) =>
                           updateInventoryField(index, { type: e.target.value as InventoryFieldDefinition['type'] })
                         }
-                        className="w-full p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
+                        className="w-full min-w-0 p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
                       >
                         <option value="text">Texto</option>
                         <option value="color">Color</option>
@@ -426,7 +461,7 @@ const Settings: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => removeInventoryField(index)}
-                        className="px-3 py-2.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs min-h-[44px]"
+                        className="w-full px-3 py-2.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs min-h-[44px] md:w-auto"
                       >
                         Quitar
                       </button>

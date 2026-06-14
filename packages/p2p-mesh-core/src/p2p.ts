@@ -190,6 +190,8 @@ class P2PManager {
 						ocrResults: currentState.ocrResults,
 						teamMembers: currentState.teamMembers,
 						inventoryConfig: currentState.inventoryConfig,
+						pendingEdits: currentState.pendingEdits,
+						productChangeHistory: currentState.productChangeHistory,
 						peers: currentState.peers,
 						role: currentState.role,
 						permissions: currentState.permissions,

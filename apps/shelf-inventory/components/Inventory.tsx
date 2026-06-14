@@ -1,4 +1,4 @@
-import { Box, Images, Layers3, Package2, PencilLine, Ruler, Trash2 } from 'lucide-react';
+import { Box, History, Images, Layers3, Package2, PencilLine, RotateCcw, Ruler, Trash2 } from 'lucide-react';
 import type { Product } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
@@ -716,6 +716,7 @@ const Inventory: React.FC = () => {
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           title={editingProduct ? t('inventory.editProduct') : t('inventory.addProduct')}
+          size="wide"
         >
           <ProductForm product={editingProduct} onSave={handleSaveProduct} onCancel={handleCloseModal} />
         </Modal>
@@ -744,7 +745,7 @@ interface ProductFormProps {
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) => {
-  const { state } = useAppContext();
+  const { state, dispatch } = useAppContext();
   const { t } = useI18n();
   const inventoryConfig = useMemo(
     () => normalizeInventoryConfig(state.inventoryConfig || DEFAULT_INVENTORY_CONFIG),
@@ -774,6 +775,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   const [useVariants, setUseVariants] = useState(initialUseVariants);
   const [variantAttributes, setVariantAttributes] = useState<string[]>(defaultLabels);
   const [variantRows, setVariantRows] = useState<VariantDraft[]>(() => getInitialVariantRows(product, defaultLabels));
+  const productHistory = useMemo(() => {
+    if (!product) return [];
+    return (state.productChangeHistory || [])
+      .filter((entry) => entry.productId === product.id)
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, inventoryConfig.productHistoryLimit);
+  }, [inventoryConfig.productHistoryLimit, product, state.productChangeHistory]);
 
   const handleScanSuccess = (decodedText: string) => {
     setSku(decodedText);
@@ -1027,11 +1035,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     });
   };
 
+  const restoreProductVersion = (historyId: string) => {
+    if (!product) return;
+    dispatch({ type: 'RESTORE_PRODUCT_VERSION', payload: { productId: product.id, historyId } });
+    onCancel();
+  };
+
   return (
     <>
       {isScannerOpen && <BarcodeScanner onScan={handleScanSuccess} onClose={handleScannerClose} />}
-      <form onSubmit={handleSubmit} onPaste={handlePaste} data-testid="product-form">
-        <div className="space-y-4">
+      <form onSubmit={handleSubmit} onPaste={handlePaste} data-testid="product-form" className="min-w-0">
+        <div className="space-y-4 min-w-0">
           <div className="relative flex flex-col sm:flex-row items-center gap-4 overflow-visible">
             <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#121212] border border-[#F5F5DC]/30 rounded-md flex items-center justify-center flex-shrink-0 overflow-hidden">
               {imageUrl ? (
@@ -1163,7 +1177,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
           </div>
 
           {useVariants && (
-            <div className="rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 space-y-4">
+            <div className="rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 space-y-4 min-w-0">
               {inventoryConfig.fields.map((field) => {
                 const fieldValue = getFieldValue(field.key);
                 const isColorField = field.type === 'color';
@@ -1229,7 +1243,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
             </div>
           )}
 
-          <div className="rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 space-y-4">
+          <div className="rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 space-y-4 min-w-0">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
                 type="checkbox"
@@ -1251,30 +1265,30 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
             {useVariants ? (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <h3 className="text-sm font-semibold text-[#F5F5DC]">Atributos de variante</h3>
                     <button
                       type="button"
                       onClick={addVariantAttribute}
-                      className="text-xs bg-[#F5F5DC]/10 px-3 py-1.5 rounded hover:bg-[#F5F5DC]/20 transition"
+                      className="w-full text-xs bg-[#F5F5DC]/10 px-3 py-2 rounded hover:bg-[#F5F5DC]/20 transition sm:w-auto"
                     >
                       Agregar más
                     </button>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {variantAttributes.map((label, index) => (
-                      <div key={`${label}-${index}`} className="flex gap-2">
+                      <div key={`${label}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 min-w-0">
                         <input
                           type="text"
                           value={label}
                           onChange={(e) => renameVariantAttribute(index, e.target.value)}
-                          className="flex-1 p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
+                          className="w-full min-w-0 p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
                           placeholder={`Atributo ${index + 1}`}
                         />
                         <button
                           type="button"
                           onClick={() => removeVariantAttribute(index)}
-                          className="px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
+                          className="min-h-[42px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
                         >
                           Quitar
                         </button>
@@ -1283,19 +1297,22 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3 text-sm">
+                <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="text-[#F5F5DC]/70">Cantidad total</div>
                     <div className="font-bold text-[#F5F5DC]">{aggregateQuantity}</div>
                   </div>
-                  <div className="text-right text-xs text-[#F5F5DC]/55">
+                  <div className="text-left text-xs text-[#F5F5DC]/55 sm:text-right">
                     La cantidad final se calcula como la suma de las variantes.
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   {variantRows.map((row, rowIndex) => (
-                    <div key={row.id} className="rounded-xl border border-[#F5F5DC]/15 bg-[#121212] p-3 space-y-3">
+                    <div
+                      key={row.id}
+                      className="rounded-xl border border-[#F5F5DC]/15 bg-[#121212] p-3 space-y-3 min-w-0"
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#F5F5DC]/45">
                           Variante {rowIndex + 1}
@@ -1309,12 +1326,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
                         {variantAttributes.map((label) => (
-                          <div key={`${row.id}-${label}`}>
+                          <div key={`${row.id}-${label}`} className="min-w-0">
                             <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">{label}</label>
                             {isColorAttribute(label) && (
-                              <div className="flex flex-wrap gap-1.5 mb-2">
+                              <div className="flex flex-wrap gap-1.5 mb-2 max-w-full">
                                 {PRESET_COLORS.map((preset) => {
                                   const selected = row.attributes?.[label] === preset.name;
                                   return (
@@ -1338,7 +1355,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                               </div>
                             )}
                             {isMeasureAttribute(label) && (
-                              <div className="flex flex-wrap gap-1.5 mb-2">
+                              <div className="flex flex-wrap gap-1.5 mb-2 max-w-full">
                                 {inventoryConfig.measureOptions.map((suggestion) => {
                                   const selected = (row.attributes?.[label] || '').toUpperCase() === suggestion;
                                   return (
@@ -1364,21 +1381,21 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                               type="text"
                               value={row.attributes?.[label] || ''}
                               onChange={(e) => updateVariantAttributeValue(rowIndex, label, e.target.value)}
-                              className="w-full p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded-md text-sm"
+                              className="w-full min-w-0 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded-md text-sm"
                               placeholder={`Valor de ${label.toLowerCase()}`}
                             />
                           </div>
                         ))}
-                        <div>
+                        <div className="min-w-0">
                           <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">SKU variante</label>
                           <input
                             type="text"
                             value={row.sku}
                             onChange={(e) => updateVariantRow(rowIndex, 'sku', e.target.value)}
-                            className="w-full p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded-md text-sm"
+                            className="w-full min-w-0 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded-md text-sm"
                           />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">Cantidad</label>
                           <input
                             type="number"
@@ -1389,12 +1406,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                             onFocus={(e) => {
                               if (e.currentTarget.value === '0') e.currentTarget.select();
                             }}
-                            className={`w-full p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
+                            className={`w-full min-w-0 p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
                               errors[`variant_${rowIndex}_quantity`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
                             }`}
                           />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">Precio</label>
                           <input
                             type="number"
@@ -1405,12 +1422,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                             onFocus={(e) => {
                               if (e.currentTarget.value === '0') e.currentTarget.select();
                             }}
-                            className={`w-full p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
+                            className={`w-full min-w-0 p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
                               errors[`variant_${rowIndex}_price`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
                             }`}
                           />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">Costo</label>
                           <input
                             type="number"
@@ -1421,7 +1438,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                             onFocus={(e) => {
                               if (e.currentTarget.value === '0') e.currentTarget.select();
                             }}
-                            className={`w-full p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
+                            className={`w-full min-w-0 p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
                               errors[`variant_${rowIndex}_cost`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
                             }`}
                           />
@@ -1567,6 +1584,40 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
             )}
           </div>
         </div>
+
+        {productHistory.length > 0 && (
+          <div className="mt-5 rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 min-w-0">
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#F5F5DC]">
+              <History className="h-4 w-4 text-[#F5F5DC]/70" aria-hidden="true" />
+              Historial de cambios
+            </div>
+            <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+              {productHistory.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="grid grid-cols-1 gap-3 rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold text-[#F5F5DC]">{entry.snapshot.name}</div>
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#F5F5DC]/55">
+                      <span>{new Date(entry.updatedAt).toLocaleString()}</span>
+                      <span>Cant. {entry.snapshot.quantity}</span>
+                      <span>Precio {entry.snapshot.price}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => restoreProductVersion(entry.id)}
+                    className="inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-md border border-[#F5F5DC]/20 px-3 py-2 text-xs font-semibold text-[#F5F5DC] hover:bg-white/5 sm:w-auto"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                    Restaurar
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
           <button

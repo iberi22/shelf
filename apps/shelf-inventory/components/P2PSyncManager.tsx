@@ -1,4 +1,4 @@
-import { Download, Info, Link2, QrCode, RadioTower, Settings, X } from 'lucide-react';
+import { Download, Info, Link2, MessageCircle, QrCode, RadioTower, Settings, X } from 'lucide-react';
 import { dbSync, type P2PRole, type PeerPermissions, p2pManager, type SyncMessage } from 'p2p-mesh-core';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
@@ -172,6 +172,8 @@ const P2PSyncManager: React.FC = () => {
             ocrResults: current.ocrResults,
             teamMembers: current.teamMembers,
             inventoryConfig: current.inventoryConfig,
+            pendingEdits: current.pendingEdits,
+            productChangeHistory: current.productChangeHistory,
             role: current.role,
             permissions: current.permissions,
             peers: current.peers,
@@ -429,6 +431,7 @@ const P2PSyncManager: React.FC = () => {
       suppliers: state.suppliers,
       purchaseOrders: state.purchaseOrders,
       auditLogs: state.auditLogs,
+      productChangeHistory: state.productChangeHistory,
     };
     let sizeStr = '0 KB';
     try {
@@ -581,9 +584,7 @@ const P2PSyncManager: React.FC = () => {
                     }}
                     className="text-xs bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5"
                   >
-                    <svg aria-hidden="true" className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.115.545 4.183 1.583 6.002L0 24l6.126-1.55c1.761.968 3.738 1.48 5.905 1.48 6.646 0 12.031-5.385 12.031-12.031S18.677 0 12.031 0zm6.545 17.37c-.266.75-1.55 1.442-2.155 1.503-.538.053-1.226.113-3.618-.878-2.887-1.196-4.737-4.14-4.88-4.327-.143-.188-1.164-1.553-1.164-2.96 0-1.408.73-2.106 1-2.394.27-.287.587-.36.782-.36.195 0 .39 0 .563.008.188.007.442-.075.69.525.263.638.85 2.086.925 2.235.075.15.128.323.03.51-.098.188-.15.308-.3.458-.15.15-.315.33-.45.465-.15.15-.315.315-.143.608.173.293.765 1.26 1.642 2.036 1.127.994 2.08 1.3 2.378 1.444.298.143.473.12.65-.083.178-.203.758-.885.968-1.19.21-.305.42-.255.698-.15.278.105 1.76.828 2.06.978.3.15.42.225.548.33.848.105.3.105 1.725-.16 2.475z" />
-                    </svg>
+                    <MessageCircle size={14} aria-hidden="true" />
                     WhatsApp
                   </button>
                   <a

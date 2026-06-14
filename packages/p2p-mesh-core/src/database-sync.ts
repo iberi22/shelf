@@ -10,6 +10,7 @@ import type {
 	PeerInfo,
 	PeerPermissions,
 	Product,
+	ProductChangeHistoryEntry,
 	PurchaseOrder,
 	TeamMember,
 	Sale,
@@ -51,6 +52,7 @@ class DatabaseSyncManager {
 	private metadata: Y.Map<string>;
 	private linkedNodes: Y.Map<LinkedNodeRecord>;
 	private pendingEdits: Y.Map<EntityEditProposal>;
+	private productChangeHistory: Y.Map<ProductChangeHistoryEntry>;
 	private ephemeralNodes: Map<string, Partial<LinkedNodeRecord>> = new Map();
 	public localPeerId: string | null = null;
 	/**
@@ -157,6 +159,7 @@ class DatabaseSyncManager {
 		this.metadata = this.doc.getMap("metadata");
 		this.linkedNodes = this.doc.getMap("linkedNodes");
 		this.pendingEdits = this.doc.getMap("pendingEdits");
+		this.productChangeHistory = this.doc.getMap("productChangeHistory");
 	}
 
 	private checkPermissions(
@@ -192,6 +195,8 @@ class DatabaseSyncManager {
 		const perms: Partial<PeerPermissions> = effectiveSelf.permissions || {};
 		switch (collectionName) {
 			case "products":
+				return !!perms.canEditProducts;
+			case "productChangeHistory":
 				return !!perms.canEditProducts;
 			case "sales":
 				return !!perms.canEditSales;
@@ -252,8 +257,11 @@ class DatabaseSyncManager {
 		if (collectionName === "products" && this.localPeerId && this.isReady) {
 			const effectiveSelf = this.getEffectivePeerConfig(this.localPeerId);
 			const isAdmin = effectiveSelf.role === "admin" || effectiveSelf.isMaster;
+			const autoApplyProductUpdates = Boolean(
+				this.getInventoryConfig()?.autoApplyProductUpdates,
+			);
 			
-			if (!isAdmin) {
+			if (!isAdmin && !autoApplyProductUpdates) {
 				const originalData = yMap.get(item.id);
 				// If it's an update to an existing item, propose an edit
 				if (originalData) {
@@ -355,6 +363,10 @@ class DatabaseSyncManager {
 				return this.ocrResults as unknown as Y.Map<EntityRecord>;
 			case "teamMembers":
 				return this.teamMembers as unknown as Y.Map<EntityRecord>;
+			case "pendingEdits":
+				return this.pendingEdits as unknown as Y.Map<EntityRecord>;
+			case "productChangeHistory":
+				return this.productChangeHistory as unknown as Y.Map<EntityRecord>;
 			case "peers":
 				return this.linkedNodes as unknown as Y.Map<EntityRecord>;
 			default:
@@ -387,6 +399,7 @@ class DatabaseSyncManager {
 			mergeAndSync("purchaseOrders", state.purchaseOrders);
 			mergeAndSync("auditLogs", state.auditLogs);
 			mergeAndSync("teamMembers", state.teamMembers);
+			mergeAndSync("productChangeHistory", state.productChangeHistory);
 			
 			if (state.pendingEdits) {
 				for (const edit of state.pendingEdits) {
@@ -451,6 +464,9 @@ class DatabaseSyncManager {
 			permissions: resolvedPermissions,
 			peers: peers,
 			pendingEdits: Array.from(this.pendingEdits.values()) as EntityEditProposal[],
+			productChangeHistory: Array.from(
+				this.productChangeHistory.values(),
+			) as ProductChangeHistoryEntry[],
 		};
 	}
 
@@ -806,6 +822,7 @@ class DatabaseSyncManager {
 			"ocrResults",
 			"teamMembers",
 			"pendingEdits",
+			"productChangeHistory",
 		];
 
 		const observers = collections.map((col) => {

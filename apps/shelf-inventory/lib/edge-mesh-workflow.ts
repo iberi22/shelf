@@ -14,6 +14,7 @@ export const SHELF_EDGE_COLLECTIONS = [
   'ocrResults',
   'auditLogs',
   'teamMembers',
+  'productChangeHistory',
 ] as const satisfies readonly (keyof AppState)[];
 
 export type ShelfEdgeCollection = (typeof SHELF_EDGE_COLLECTIONS)[number];

@@ -10,6 +10,7 @@ import type {
   P2PRole,
   PeerInfo,
   Product,
+  ProductChangeHistoryEntry,
   PurchaseOrder,
   RestoreStatePayload,
   Sale,
@@ -46,6 +47,7 @@ const initialState: AppState = {
   arqueoSessions: [],
   ocrResults: [],
   pendingEdits: [],
+  productChangeHistory: [],
 };
 
 type Action =
@@ -84,6 +86,7 @@ type Action =
   | { type: 'UPDATE_PEER_PERMISSIONS'; payload: { targetPeerId: string; permissions: any } }
   | { type: 'UPDATE_PEER_CONFIG'; payload: { targetPeerId: string; role: P2PRole; permissions?: any } }
   | { type: 'UPDATE_INVENTORY_CONFIG'; payload: InventoryConfig }
+  | { type: 'RESTORE_PRODUCT_VERSION'; payload: { productId: string; historyId: string } }
   | { type: 'CLEAR_AUDIT_LOGS'; payload?: { beforeDate: string } }
   | { type: 'RESET_DATA' };
 
@@ -119,6 +122,48 @@ const getTimestamp = (item: any): number => {
 
 const normalizeProductsCollection = (products: Product[] | undefined): Product[] =>
   (products || []).map((product) => normalizeProduct(product));
+
+const createProductHistoryEntry = (
+  state: AppState,
+  product: Product,
+  sourceAction: string,
+): ProductChangeHistoryEntry => {
+  const snapshot = normalizeProduct(product);
+  const snapshotStamp = snapshot.updatedAt || new Date().toISOString();
+  const stableStamp = snapshotStamp.replace(/[^a-zA-Z0-9]/g, '');
+
+  return {
+    id: `history_${snapshot.id}_${sourceAction}_${stableStamp}`,
+    productId: snapshot.id,
+    snapshot,
+    sourceAction,
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+    updatedBy: state.localPeerId || 'local',
+    updatedByRole: state.role || 'collaborator',
+  };
+};
+
+const pushProductHistory = (
+  state: AppState,
+  history: ProductChangeHistoryEntry[] | undefined,
+  entry: ProductChangeHistoryEntry,
+): ProductChangeHistoryEntry[] => {
+  const limit = normalizeInventoryConfig(state.inventoryConfig || DEFAULT_INVENTORY_CONFIG).productHistoryLimit;
+  const existing = history || [];
+  const nextForProduct = [
+    entry,
+    ...existing.filter((item) => item.productId === entry.productId && item.id !== entry.id),
+  ]
+    .sort((a, b) => getTimestamp(b) - getTimestamp(a))
+    .slice(0, limit);
+  const nextForProductIds = new Set(nextForProduct.map((item) => item.id));
+  const otherProducts = existing.filter(
+    (item) => item.productId !== entry.productId && !nextForProductIds.has(item.id),
+  );
+
+  return [...nextForProduct, ...otherProducts];
+};
 
 const updateInventoryQuantity = (
   state: AppState,
@@ -215,16 +260,25 @@ const appReducer = (state: AppState, action: Action): AppState => {
       break;
     }
     case 'UPDATE_PRODUCT': {
+      const previousProduct = state.products.find((p) => p.id === action.payload.id);
       const enriched = enrich(state, normalizeProduct(action.payload));
       newState = {
         ...state,
         products: state.products.map((p) => (p.id === action.payload.id ? enriched : p)),
+        productChangeHistory: previousProduct
+          ? pushProductHistory(
+              state,
+              state.productChangeHistory,
+              createProductHistoryEntry(state, previousProduct, 'UPDATE_PRODUCT'),
+            )
+          : state.productChangeHistory,
       };
       break;
     }
     case 'DELETE_PRODUCT': {
+      const previousProduct = state.products.find((p) => p.id === action.payload);
       const deletedItem = {
-        ...state.products.find((p) => p.id === action.payload),
+        ...previousProduct,
         isActive: false,
         updatedAt: new Date().toISOString(),
         updatedBy: state.localPeerId || 'local',
@@ -232,6 +286,13 @@ const appReducer = (state: AppState, action: Action): AppState => {
       newState = {
         ...state,
         products: state.products.map((p) => (p.id === action.payload ? (deletedItem as Product) : p)),
+        productChangeHistory: previousProduct
+          ? pushProductHistory(
+              state,
+              state.productChangeHistory,
+              createProductHistoryEntry(state, previousProduct, 'DELETE_PRODUCT'),
+            )
+          : state.productChangeHistory,
       };
       break;
     }
@@ -247,7 +308,17 @@ const appReducer = (state: AppState, action: Action): AppState => {
         }
         return p;
       });
-      newState = { ...state, products: [...updatedProducts, ...enrichedToAdd] };
+      const nextHistory = toUpdate.reduce((history, product) => {
+        const previousProduct = state.products.find((p) => p.id === product.id);
+        return previousProduct
+          ? pushProductHistory(
+              state,
+              history,
+              createProductHistoryEntry(state, previousProduct, 'BATCH_UPDATE_PRODUCTS'),
+            )
+          : history;
+      }, state.productChangeHistory);
+      newState = { ...state, products: [...updatedProducts, ...enrichedToAdd], productChangeHistory: nextHistory };
       break;
     }
 
@@ -288,15 +359,17 @@ const appReducer = (state: AppState, action: Action): AppState => {
         }
       });
 
+      let nextHistory = state.productChangeHistory;
       const updatedProductList = state.products.map((p) => {
         if (productsToUpdate.has(p.id)) {
           const updated = productsToUpdate.get(p.id);
+          nextHistory = pushProductHistory(state, nextHistory, createProductHistoryEntry(state, p, 'IMPORT_PRODUCTS'));
           return updated || p;
         }
         return p;
       });
 
-      newState = { ...state, products: [...updatedProductList, ...productsToAdd] };
+      newState = { ...state, products: [...updatedProductList, ...productsToAdd], productChangeHistory: nextHistory };
       break;
     }
 
@@ -589,6 +662,34 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
     }
 
+    case 'RESTORE_PRODUCT_VERSION': {
+      const historyEntry = state.productChangeHistory.find((entry) => entry.id === action.payload.historyId);
+      if (!historyEntry || historyEntry.productId !== action.payload.productId) return state;
+
+      const currentProduct = state.products.find((product) => product.id === action.payload.productId);
+      const restoredProduct: Product = {
+        ...normalizeProduct(historyEntry.snapshot),
+        isActive: true,
+        updatedAt: new Date().toISOString(),
+        updatedBy: state.localPeerId || 'local',
+        updatedByRole: state.role || 'collaborator',
+      };
+
+      return {
+        ...state,
+        products: state.products.map((product) =>
+          product.id === action.payload.productId ? restoredProduct : product,
+        ),
+        productChangeHistory: currentProduct
+          ? pushProductHistory(
+              state,
+              state.productChangeHistory,
+              createProductHistoryEntry(state, currentProduct, 'RESTORE_PRODUCT_VERSION'),
+            )
+          : state.productChangeHistory,
+      };
+    }
+
     case 'SYNC_STATE': {
       const p = action.payload;
       return {
@@ -605,6 +706,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
         arqueoSessions: mergeCollections(state.arqueoSessions, p.arqueoSessions),
         ocrResults: mergeCollections(state.ocrResults, p.ocrResults),
         teamMembers: mergeCollections(state.teamMembers, p.teamMembers),
+        productChangeHistory: mergeCollections(state.productChangeHistory, p.productChangeHistory),
         inventoryConfig: normalizeInventoryConfig(p.inventoryConfig || state.inventoryConfig),
         peers: mergeCollections(state.peers, p.peers),
         role: p.role || state.role,
@@ -659,6 +761,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
         ...initialState,
         ...action.payload,
         products: normalizeProductsCollection(action.payload.products),
+        productChangeHistory: action.payload.productChangeHistory || [],
         inventoryConfig: normalizeInventoryConfig(action.payload.inventoryConfig || initialState.inventoryConfig),
       };
 
@@ -681,7 +784,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
   }
 
   // Audit Logging for state-mutating actions
-  const mutationActions = ['ADD', 'UPDATE', 'DELETE', 'IMPORT', 'BATCH', 'RECOVER'];
+  const mutationActions = ['ADD', 'UPDATE', 'DELETE', 'IMPORT', 'BATCH', 'RECOVER', 'RESTORE_PRODUCT'];
   if (mutationActions.some((prefix) => action.type.startsWith(prefix))) {
     let details: any;
 
@@ -815,6 +918,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             peers: remoteState.peers,
             auditLogs: remoteState.auditLogs,
             pendingEdits: remoteState.pendingEdits,
+            productChangeHistory: remoteState.productChangeHistory,
           },
         });
       }
@@ -897,6 +1001,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const typeStr = action.type;
       const payload = (action as any).payload;
       const currentState = stateRef.current;
+      const syncProductHistoryEntry = (product: Product | undefined, sourceAction: string) => {
+        if (!product) return;
+        dbSync.upsertEntity('productChangeHistory', createProductHistoryEntry(currentState, product, sourceAction));
+      };
 
       if (typeStr === 'BATCH_UPDATE_PRODUCTS') {
         const { toAdd, toUpdate } = payload;
@@ -904,6 +1012,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           dbSync.upsertEntity('products', enrich(currentState, p));
         });
         toUpdate.forEach((p: any) => {
+          syncProductHistoryEntry(
+            currentState.products.find((product) => product.id === p.id),
+            'BATCH_UPDATE_PRODUCTS',
+          );
           dbSync.upsertEntity('products', enrich(currentState, p));
         });
       } else if (typeStr === 'IMPORT_PRODUCTS') {
@@ -919,6 +1031,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (strategy === 'update') {
               const existingProduct = existingSkus.get(sku);
               if (existingProduct) {
+                syncProductHistoryEntry(existingProduct, 'IMPORT_PRODUCTS');
                 dbSync.upsertEntity('products', enrich(currentState, { ...existingProduct, ...newProductData }));
               }
             }
@@ -932,6 +1045,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             );
           }
         });
+      } else if (typeStr === 'RESTORE_PRODUCT_VERSION') {
+        const historyEntry = currentState.productChangeHistory.find((entry) => entry.id === payload.historyId);
+        const currentProduct = currentState.products.find((product) => product.id === payload.productId);
+        if (historyEntry && currentProduct) {
+          syncProductHistoryEntry(currentProduct, 'RESTORE_PRODUCT_VERSION');
+          dbSync.upsertEntity('products', {
+            ...normalizeProduct(historyEntry.snapshot),
+            isActive: true,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentState.localPeerId || 'local',
+            updatedByRole: currentState.role || 'collaborator',
+          });
+        }
       } else if (typeStr === 'ADD_SALE') {
         const salePayload = enrich(currentState, payload);
         dbSync.upsertEntity('sales', salePayload);
@@ -1018,7 +1144,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           };
           for (const [key, collection] of Object.entries(collectionMap)) {
             if (typeStr.includes(key)) {
-              dbSync.upsertEntity(collection, payload);
+              if (collection === 'products' && typeStr === 'UPDATE_PRODUCT') {
+                syncProductHistoryEntry(
+                  currentState.products.find((product) => product.id === payload.id),
+                  'UPDATE_PRODUCT',
+                );
+              }
+              const syncPayload =
+                collection === 'products'
+                  ? enrich(currentState, normalizeProduct(payload as Product))
+                  : enrich(currentState, payload);
+              dbSync.upsertEntity(collection, syncPayload);
               break;
             }
           }
@@ -1041,6 +1177,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (typeStr.includes(key)) {
               const item = (currentState[collection] as any[]).find((i) => i.id === id);
               if (item) {
+                if (collection === 'products' && typeStr === 'DELETE_PRODUCT') {
+                  syncProductHistoryEntry(item as Product, 'DELETE_PRODUCT');
+                }
                 dbSync.upsertEntity(collection, {
                   ...item,
                   isActive: false,

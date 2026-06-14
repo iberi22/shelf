@@ -139,43 +139,59 @@ const AuditLogViewer: React.FC = () => {
         </div>
       </div>
 
-      <div className="w-full pb-2 flex-1 overflow-y-auto max-h-[400px] custom-scrollbar">
+      <div className="w-full min-w-0 flex-1 overflow-hidden rounded-md border border-[#F5F5DC]/10 bg-black/10">
         {filteredLogs.length === 0 ? (
           <div className="text-center p-4 text-[#F5F5DC]/50 italic">No logs available.</div>
         ) : (
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-[#1a1a1a] z-10 shadow-sm">
-              <tr>
-                <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Timestamp</th>
-                <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Peer ID</th>
-                <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Action</th>
-                <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Entity ID</th>
-                <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10 w-1/3">Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLogs.map((log, index) => (
-                <tr
-                  key={log.id || index}
-                  className="border-b border-[#F5F5DC]/5 hover:bg-[#F5F5DC]/5 transition-colors"
-                >
-                  <td className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/70 whitespace-nowrap">
-                    {new Date(log.timestamp).toLocaleString()}
-                  </td>
-                  <td className="p-2 font-mono text-[10px] md:text-xs text-yellow-400/80">{log.peerId}</td>
-                  <td className="p-2">
-                    <span className="px-2 py-0.5 rounded-full bg-foreground/10 text-[10px] md:text-xs font-semibold">
-                      {log.action}
-                    </span>
-                  </td>
-                  <td className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/60">{log.entityId || '-'}</td>
-                  <td className="p-2 align-top">
-                    <LogDetails details={log.details} action={log.action} />
-                  </td>
+          <div className="max-h-[400px] overflow-auto custom-scrollbar">
+            <table className="min-w-[760px] w-full table-fixed text-left border-collapse">
+              <colgroup>
+                <col className="w-[150px]" />
+                <col className="w-[180px]" />
+                <col className="w-[150px]" />
+                <col className="w-[170px]" />
+                <col className="w-[280px]" />
+              </colgroup>
+              <thead className="sticky top-0 bg-[#1a1a1a] z-10 shadow-sm">
+                <tr>
+                  <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Timestamp</th>
+                  <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Peer ID</th>
+                  <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Action</th>
+                  <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Entity ID</th>
+                  <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Details</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredLogs.map((log, index) => (
+                  <tr
+                    key={log.id || index}
+                    className="border-b border-[#F5F5DC]/5 hover:bg-[#F5F5DC]/5 transition-colors"
+                  >
+                    <td className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/70 whitespace-nowrap">
+                      {new Date(log.timestamp).toLocaleString()}
+                    </td>
+                    <td className="p-2 font-mono text-[10px] md:text-xs text-yellow-400/80 truncate" title={log.peerId}>
+                      {log.peerId}
+                    </td>
+                    <td className="p-2">
+                      <span className="inline-block max-w-full truncate px-2 py-0.5 rounded-full bg-foreground/10 text-[10px] md:text-xs font-semibold">
+                        {log.action}
+                      </span>
+                    </td>
+                    <td
+                      className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/60 truncate"
+                      title={log.entityId || '-'}
+                    >
+                      {log.entityId || '-'}
+                    </td>
+                    <td className="p-2 align-top">
+                      <LogDetails details={log.details} action={log.action} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -17,6 +17,8 @@ export const DEFAULT_INVENTORY_CONFIG: InventoryConfig = {
     { id: 'field-material', key: 'material', label: 'Material', type: 'text' },
   ],
   measureOptions: ['30CM', '40CM', '50CM', '60CM'],
+  autoApplyProductUpdates: false,
+  productHistoryLimit: 5,
 };
 
 export const normalizeInventoryConfig = (config?: Partial<InventoryConfig> | null): InventoryConfig => {
@@ -45,6 +47,8 @@ export const normalizeInventoryConfig = (config?: Partial<InventoryConfig> | nul
     variantAttributes: variantAttributes.length > 0 ? variantAttributes : DEFAULT_INVENTORY_CONFIG.variantAttributes,
     fields: fields.length > 0 ? fields : DEFAULT_INVENTORY_CONFIG.fields,
     measureOptions: measureOptions.length > 0 ? measureOptions : DEFAULT_INVENTORY_CONFIG.measureOptions,
+    autoApplyProductUpdates: Boolean(config?.autoApplyProductUpdates),
+    productHistoryLimit: Math.min(5, Math.max(1, Number(config?.productHistoryLimit) || 5)),
   };
 };
 

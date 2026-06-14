@@ -1,4 +1,5 @@
-import { Check, Copy, Layers, Sparkles, Wifi, WifiOff } from 'lucide-react';
+import { BellRing, Check, Copy, Layers, Sparkles, Wifi, WifiOff } from 'lucide-react';
+import { dbSync } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
@@ -21,6 +22,7 @@ const P2PSyncStatusHeader: React.FC = () => {
   }, [state.peers]);
 
   const pendingEditsCount = (state.pendingEdits || []).length;
+  const canReviewPendingEdits = (state.role === 'admin' || dbSync.isLocalAuthority()) && pendingEditsCount > 0;
 
   // Compute product conflicts
   const conflicts = useMemo(() => detectProductConflicts(state.products), [state.products]);
@@ -78,51 +80,74 @@ const P2PSyncStatusHeader: React.FC = () => {
 
   return (
     <div className="w-full mb-6 flex flex-col items-end gap-3">
-      {/* Compact Status Indicator Button */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 shadow-md border focus:outline-none active:scale-95 cursor-pointer ${
-          syncStatus === 'synced'
-            ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20 shadow-[0_0_12px_rgba(34,197,94,0.15)]'
-            : syncStatus === 'syncing'
-              ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 shadow-[0_0_12px_rgba(234,179,8,0.15)] animate-pulse'
-              : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 shadow-[0_0_12px_rgba(239,68,68,0.15)]'
-        }`}
-        title={`${t('p2pSync.topBar.status') || 'Estado'}: ${
-          syncStatus === 'synced' ? 'Synced' : syncStatus === 'syncing' ? 'Syncing...' : 'Disconnected'
-        }`}
-      >
-        {syncStatus === 'disconnected' ? (
-          <WifiOff size={18} />
-        ) : (
-          <Wifi size={18} className={syncStatus === 'syncing' ? 'animate-pulse' : ''} />
+      <div className="flex w-full flex-wrap items-center justify-end gap-2">
+        {canReviewPendingEdits && (
+          <button
+            type="button"
+            onClick={() => setIsMergeModalOpen(true)}
+            className="flex min-h-[40px] max-w-full items-center gap-2 rounded-full border border-blue-500/40 bg-blue-500/15 px-3 py-2 text-xs font-bold text-blue-300 shadow-[0_0_16px_rgba(59,130,246,0.14)] transition-colors hover:bg-blue-500/25 active:scale-95 sm:px-4"
+            title={`${pendingEditsCount} producto(s) pendiente(s) por actualizar`}
+          >
+            <span className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white">
+              <BellRing size={12} aria-hidden="true" />
+              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-white animate-pulse" />
+            </span>
+            <span className="truncate">
+              {pendingEditsCount} producto{pendingEditsCount === 1 ? '' : 's'} pendiente
+              {pendingEditsCount === 1 ? '' : 's'}
+            </span>
+            <span className="hidden rounded-full bg-blue-400/20 px-2 py-0.5 text-[10px] text-blue-100 sm:inline">
+              Revisar
+            </span>
+          </button>
         )}
 
-        {/* Pulsing indicator dot */}
-        <span
-          className={`absolute top-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-[#1a1a1a] ${
+        {/* Compact Status Indicator Button */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 shadow-md border focus:outline-none active:scale-95 cursor-pointer ${
             syncStatus === 'synced'
-              ? 'bg-green-500 animate-pulse'
+              ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20 shadow-[0_0_12px_rgba(34,197,94,0.15)]'
               : syncStatus === 'syncing'
-                ? 'bg-blue-400 animate-ping'
-                : 'bg-red-400'
+                ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 shadow-[0_0_12px_rgba(234,179,8,0.15)] animate-pulse'
+                : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 shadow-[0_0_12px_rgba(239,68,68,0.15)]'
           }`}
-        />
+          title={`${t('p2pSync.topBar.status') || 'Estado'}: ${
+            syncStatus === 'synced' ? 'Synced' : syncStatus === 'syncing' ? 'Syncing...' : 'Disconnected'
+          }`}
+        >
+          {syncStatus === 'disconnected' ? (
+            <WifiOff size={18} />
+          ) : (
+            <Wifi size={18} className={syncStatus === 'syncing' ? 'animate-pulse' : ''} />
+          )}
 
-        {/* Conflict Badge for Admin */}
-        {state.role === 'admin' && conflicts.length > 0 && (
-          <span className="absolute -bottom-1 -left-1 flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-[9px] font-bold text-black ring-1 ring-black animate-bounce">
-            {conflicts.length}
-          </span>
-        )}
+          {/* Pulsing indicator dot */}
+          <span
+            className={`absolute top-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-[#1a1a1a] ${
+              syncStatus === 'synced'
+                ? 'bg-green-500 animate-pulse'
+                : syncStatus === 'syncing'
+                  ? 'bg-blue-400 animate-ping'
+                  : 'bg-red-400'
+            }`}
+          />
 
-        {/* Pending Edits Badge for Admin */}
-        {state.role === 'admin' && pendingEditsCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[9px] font-bold text-white ring-1 ring-black animate-pulse">
-            {pendingEditsCount}
-          </span>
-        )}
-      </button>
+          {/* Conflict Badge for Admin */}
+          {state.role === 'admin' && conflicts.length > 0 && (
+            <span className="absolute -bottom-1 -left-1 flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-[9px] font-bold text-black ring-1 ring-black animate-bounce">
+              {conflicts.length}
+            </span>
+          )}
+
+          {/* Pending Edits Badge for Admin */}
+          {canReviewPendingEdits && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[9px] font-bold text-white ring-1 ring-black animate-pulse">
+              {pendingEditsCount}
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* Expanded Stats & Details Panel */}
       {isExpanded && (
@@ -240,7 +265,7 @@ const P2PSyncStatusHeader: React.FC = () => {
           )}
 
           {/* Admin Pending Edits Alert */}
-          {state.role === 'admin' && pendingEditsCount > 0 && (
+          {canReviewPendingEdits && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 bg-blue-500/10 border border-blue-500/35 rounded-xl text-blue-400 shadow-md mt-2">
               <div className="flex items-center gap-2.5 text-center sm:text-left">
                 <Layers className="animate-pulse shrink-0" size={18} />

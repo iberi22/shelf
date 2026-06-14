@@ -52,6 +52,12 @@ export interface ProductVariant extends BaseEntity {
   attributes: Record<string, string>;
 }
 
+export interface ProductChangeHistoryEntry extends BaseEntity {
+  productId: string;
+  snapshot: Product;
+  sourceAction: string;
+}
+
 export interface SaleItem {
   productId: string;
   productVariantId?: string;
@@ -181,6 +187,7 @@ export interface AppState {
   ocrResults: InvoiceOCRResult[];
   isExpelled?: boolean;
   pendingEdits: EntityEditProposal[];
+  productChangeHistory: ProductChangeHistoryEntry[];
 }
 
 export type ImportStrategy = 'skip' | 'update';
@@ -253,4 +260,6 @@ export interface InventoryConfig {
   variantAttributes: string[];
   fields: InventoryFieldDefinition[];
   measureOptions: string[];
+  autoApplyProductUpdates: boolean;
+  productHistoryLimit: number;
 }

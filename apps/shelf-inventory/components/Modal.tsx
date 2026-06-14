@@ -6,11 +6,14 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  size?: 'default' | 'wide';
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'default' }) => {
   const { t } = useI18n();
   if (!isOpen) return null;
+
+  const widthClass = size === 'wide' ? 'sm:max-w-2xl lg:max-w-4xl' : 'sm:max-w-lg';
 
   return (
     <div
@@ -18,7 +21,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
       onClick={onClose}
     >
       <div
-        className="animate-modal-enter flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full flex-col overflow-hidden rounded-t-2xl border border-[#F5F5DC]/30 bg-[#1e1e1e] shadow-xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:max-w-lg sm:rounded-lg"
+        className={`animate-modal-enter flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full min-w-0 flex-col overflow-hidden rounded-t-2xl border border-[#F5F5DC]/30 bg-[#1e1e1e] shadow-xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg ${widthClass}`}
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
       >
         <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-6">
