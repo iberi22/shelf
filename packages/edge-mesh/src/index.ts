@@ -1,3 +1,4 @@
+export * from './edge-mesh';
 export * from './types';
 export * from './core/node';
 export * from './transport';

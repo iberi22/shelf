@@ -1,5 +1,5 @@
 {
-  "name": "@shelf/edge-mesh",
+  "name": "edge-mesh",
   "version": "1.0.0",
   "type": "module",
   "private": true,
@@ -22,7 +22,11 @@
   },
   "dependencies": {
     "events": "^3.3.0",
-    "peerjs": "^1.5.5"
+    "peerjs": "^1.5.5",
+    "yjs": "^13.6.31",
+    "y-protocols": "^1.0.7",
+    "idb": "^8.0.0",
+    "@noble/post-quantum": "^0.6.1"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

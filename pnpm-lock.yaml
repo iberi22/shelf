@@ -41,6 +41,15 @@ importers:
       cypress-downloadfile:
         specifier: ^1.2.4
         version: 1.2.4
+      edge-mesh:
+        specifier: workspace:*
+        version: link:../../packages/edge-mesh
+      edge-mesh-react:
+        specifier: workspace:*
+        version: link:../../packages/edge-mesh-react
+      gpu-agent:
+        specifier: workspace:*
+        version: link:../../packages/gpu-agent
       html5-qrcode:
         specifier: ^2.3.8
         version: 2.3.8
@@ -144,12 +153,24 @@ importers:
 
   packages/edge-mesh:
     dependencies:
+      '@noble/post-quantum':
+        specifier: ^0.6.1
+        version: 0.6.1
       events:
         specifier: ^3.3.0
         version: 3.3.0
+      idb:
+        specifier: ^8.0.0
+        version: 8.0.3
       peerjs:
         specifier: ^1.5.5
         version: 1.5.5
+      y-protocols:
+        specifier: ^1.0.7
+        version: 1.0.7(yjs@13.6.31)
+      yjs:
+        specifier: ^13.6.31
+        version: 13.6.31
     devDependencies:
       '@biomejs/biome':
         specifier: 1.9.4
@@ -163,6 +184,41 @@ importers:
       vitest:
         specifier: ^2.1.4
         version: 2.1.9(@edge-runtime/vm@3.2.0)(@types/node@25.9.3)(lightningcss@1.32.0)(terser@5.48.0)
+
+  packages/edge-mesh-react:
+    dependencies:
+      edge-mesh:
+        specifier: workspace:*
+        version: link:../edge-mesh
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+      yjs:
+        specifier: ^13.6.31
+        version: 13.6.31
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.7
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.17)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
+  packages/gpu-agent:
+    dependencies:
+      edge-mesh:
+        specifier: workspace:*
+        version: link:../edge-mesh
+    devDependencies:
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/p2p-mesh-core:
     dependencies:
@@ -3391,6 +3447,9 @@ packages:
 
   idb@7.1.1:
     resolution: {integrity: sha512-gchesWBzyvGHRO9W8tzUWFDycow5gwjvFKfyV9FF32Y7F50yZMp7mP+T2mJIWFx49zicqyC4uefHM17o6xKIVQ==}
+
+  idb@8.0.3:
+    resolution: {integrity: sha512-LtwtVyVYO5BqRvcsKuB2iUMnHwPVByPCXFXOpuU96IZPPoPN6xjOGxZQ74pgSVVLQWtUOYgyeL4GE98BY5D3wg==}
 
   ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
@@ -8613,6 +8672,8 @@ snapshots:
   idb-keyval@6.2.5: {}
 
   idb@7.1.1: {}
+
+  idb@8.0.3: {}
 
   ieee754@1.2.1: {}
 
