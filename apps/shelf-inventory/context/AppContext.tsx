@@ -657,19 +657,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return {
       localPeerId: state.localPeerId,
       transport: {
-        send: (to: string, data: Uint8Array) => p2pManager.send(to, { type: 'EDGE_MESH_SYNC', payload: data } as any),
+        send: (to: string, data: Uint8Array) => p2pManager.sendTo(to, { type: 'EDGE_MESH_SYNC', payload: data } as any),
         broadcast: (data: Uint8Array) => p2pManager.broadcast({ type: 'EDGE_MESH_SYNC', payload: data } as any),
         onMessage: (callback: (from: string, data: Uint8Array) => void) => {
-          p2pManager.onMessage((from, msg: any) => {
+          p2pManager.onMessage((msg: any, from: string) => {
             if (msg.type === 'EDGE_MESH_SYNC') {
               callback(from, msg.payload);
             }
           });
         },
-        onPeerConnect: (callback: (peerId: string) => void) => {
+        onPeerConnect: (_callback: (peerId: string) => void) => {
           // Simplified, ideally p2pManager should expose this cleanly
         },
-        onPeerDisconnect: (callback: (peerId: string) => void) => {
+        onPeerDisconnect: (_callback: (peerId: string) => void) => {
           // Simplified
         },
       }
