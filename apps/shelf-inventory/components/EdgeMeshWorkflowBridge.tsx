@@ -1,4 +1,4 @@
-import { isEdgeMeshRemoteOrigin } from 'edge-mesh';
+import { createNamespaceAuthorizer, isEdgeMeshRemoteOrigin } from 'edge-mesh';
 import { useEdgeMesh } from 'edge-mesh-react';
 import type { AppState, PeerInfo, PeerPermissions } from 'p2p-mesh-core';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -136,7 +136,30 @@ const canPeerMutateCollection = (
   if (!peer) return false;
 
   const permissions = peer.permissions || state.permissions;
-  return permissions?.[permissionKey] === true;
+  const authorizer = createNamespaceAuthorizer({ authorityPeerId: masterPeerId || undefined });
+  for (const candidate of state.peers) {
+    const candidatePermissions =
+      candidate.permissions || (candidate.id === state.localPeerId ? state.permissions : undefined);
+    for (const [candidateCollection, candidatePermissionKey] of Object.entries(collectionPermissionMap)) {
+      if (candidatePermissions?.[candidatePermissionKey]) {
+        authorizer.grant({
+          subject: candidate.id,
+          namespace: `${SHELF_EDGE_NAMESPACE}:${candidateCollection}`,
+          action: 'write',
+        });
+      }
+    }
+  }
+
+  if (permissions?.[permissionKey] === true) {
+    authorizer.grant({
+      subject: peerId,
+      namespace: `${SHELF_EDGE_NAMESPACE}:${collection}`,
+      action: 'write',
+    });
+  }
+
+  return authorizer.can(peerId, `${SHELF_EDGE_NAMESPACE}:${collection}`, 'write');
 };
 
 const getStateCollection = (state: AppState, collection: ShelfEdgeCollection) => {

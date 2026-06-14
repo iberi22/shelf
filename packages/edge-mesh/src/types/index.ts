@@ -13,6 +13,8 @@ export interface MeshMessageEnvelope {
 	timestamp: number;
 	type: string;
 	payload: any;
+	signature?: Uint8Array;
+	capability?: string;
 }
 
 export interface MeshTransportEvents {
@@ -90,6 +92,8 @@ export interface Transport {
 export interface CrdtAdapter {
 	applyUpdate(update: Uint8Array, origin?: any): void;
 	getUpdate(): Uint8Array;
+	getStateVector?(): Uint8Array;
+	getDiff?(remoteStateVector: Uint8Array): Uint8Array;
 	onChange(callback: (update: Uint8Array, origin: any) => void): void;
 	doc: import('yjs').Doc;
 }
@@ -113,4 +117,86 @@ export const isEdgeMeshRemoteOrigin = (
 export interface EdgeMeshConfig {
 	transport: Transport;
 	localPeerId: string;
+}
+
+export type NamespaceAction = 'read' | 'write' | 'admin' | 'gc' | string;
+
+export interface NamespaceCapabilityGrant {
+	subject: string;
+	namespace: string;
+	action: NamespaceAction | '*';
+	expiresAt?: number;
+}
+
+export interface NamespaceAuthorizer {
+	grant(grant: NamespaceCapabilityGrant): void;
+	can(subject: string, namespace: string, action: NamespaceAction): boolean;
+	require(subject: string, namespace: string, action: NamespaceAction): void;
+}
+
+export type PeerPresenceStatus =
+	| 'connected'
+	| 'verified'
+	| 'offline'
+	| 'disconnected'
+	| 'reconnected'
+	| 'stale';
+
+export interface PeerPresenceEvent {
+	id: string;
+	peerId: string;
+	status: PeerPresenceStatus;
+	timestamp: number;
+	metadata?: Record<string, unknown>;
+}
+
+export interface FailoverCandidate {
+	peerId: string;
+	score: number;
+	reason: string;
+}
+
+export type GovernanceVoteValue = 'approve' | 'reject';
+export type GovernanceStatus = 'active' | 'approved' | 'rejected' | 'expired';
+
+export interface GovernanceVote {
+	peerId: string;
+	value: GovernanceVoteValue;
+	reason?: string;
+	timestamp: number;
+}
+
+export interface GovernanceProposal {
+	id: string;
+	targetPeerId: string;
+	proposedRole: string;
+	createdBy: string;
+	createdAt: number;
+	expiresAt: number;
+	status: GovernanceStatus;
+	votes: Record<string, GovernanceVote>;
+	metadata?: Record<string, unknown>;
+}
+
+export interface CrdtSyncEnvelope {
+	id: string;
+	opId: string;
+	type: 'sync:request' | 'sync:update' | 'sync:snapshot';
+	namespace: string;
+	sourcePeerId: string;
+	targetPeerId?: string;
+	timestamp: number;
+	stateVector?: Uint8Array;
+	update?: Uint8Array;
+	capability?: string;
+	signature?: Uint8Array;
+}
+
+export interface NamespacePartition {
+	id: string;
+	namespace: string;
+	label: string;
+	parentId?: string;
+	kind?: string;
+	metadata?: Record<string, unknown>;
 }

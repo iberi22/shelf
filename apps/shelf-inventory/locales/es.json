@@ -420,6 +420,18 @@
     "feature4": {
       "title": "Sincronización (Pro)",
       "description": "Actualiza a Pro para sincronizar tus datos en todos tus dispositivos, manteniéndolos seguros y actualizados."
+    },
+    "governance": {
+      "title": "Gobernanza de datos distribuida",
+      "highlight": "Control total.",
+      "description": "Shelf funciona con una arquitectura peer-to-peer offline-first. Tus datos permanecen locales y se sincronizan directamente entre dispositivos confiables, sin que un servidor central decida qui?n controla tu inventario.",
+      "learnMore": "Saber m?s",
+      "points": [
+        "Gesti?n unificada de m?ltiples sucursales y bodegas.",
+        "Datos particionados local-first, coordinados por el host autorizado.",
+        "Reportes consolidados que pueden unir inventarios remotos.",
+        "Seguridad criptogr?fica post-cu?ntica con permisos verificables por nodo."
+      ]
     }
   },
   "welcome": {

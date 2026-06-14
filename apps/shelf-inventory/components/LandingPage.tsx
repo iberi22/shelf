@@ -149,24 +149,27 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 </div>
 
                 <h3 className="text-4xl md:text-5xl font-extrabold text-white leading-tight">
-                  Gobernanza Distribuida <br />
+                  {t('landing.governance.title')} <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">
-                    Control Total.
+                    {t('landing.governance.highlight')}
                   </span>
                 </h3>
 
                 <p className="text-lg text-neutral-400 font-light leading-relaxed">
-                  Shelf opera con una arquitectura <strong>P2P (Peer-to-Peer)</strong> offline-first. Tus datos residen
-                  localmente y se sincronizan directamente entre tus dispositivos, sin intermediarios.
+                  {t('landing.governance.description')}
                 </p>
 
+                <a
+                  href="https://github.com/iberi22/shelf/tree/main/apps/docs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-sm font-semibold text-yellow-300 transition-colors hover:bg-yellow-500/15 hover:text-yellow-200"
+                >
+                  {t('landing.governance.learnMore')}
+                </a>
+
                 <ul className="space-y-4">
-                  {[
-                    'Gestión unificada de múltiples Sucursales y Bodegas.',
-                    'El Host (Admin) centraliza la base de datos particionada.',
-                    'Informes consolidados uniendo inventarios remotos.',
-                    'Seguridad criptográfica Post-Cuántica (ML-KEM-768).',
-                  ].map((item, i) => (
+                  {(t('landing.governance.points', { returnObjects: true }) as string[]).map((item, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <div className="mt-1 flex-shrink-0 w-5 h-5 rounded-full bg-yellow-500/20 flex items-center justify-center border border-yellow-500/50">
                         <svg

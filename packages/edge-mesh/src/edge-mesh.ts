@@ -21,6 +21,14 @@ export class YjsAdapter implements CrdtAdapter {
 		return Y.encodeStateAsUpdate(this.doc);
 	}
 
+	getStateVector(): Uint8Array {
+		return Y.encodeStateVector(this.doc);
+	}
+
+	getDiff(remoteStateVector: Uint8Array): Uint8Array {
+		return Y.encodeStateAsUpdate(this.doc, remoteStateVector);
+	}
+
 	onChange(callback: (update: Uint8Array, origin: any) => void): void {
 		this.doc.on('update', callback);
 	}
