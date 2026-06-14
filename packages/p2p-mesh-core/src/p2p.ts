@@ -40,6 +40,7 @@ export type SyncMessage =
 			payload: { cipherText: string; signature: string; dsaPubKey: string };
 	  }
 	| { type: "YJS_UPDATE"; payload: { update: string } }
+	| { type: "YJS_SYNC_REQUEST"; payload: { stateVector: string } }
 	| {
 			type: "UPDATE_PEER_PERMISSIONS";
 			payload: {
@@ -172,34 +173,12 @@ class P2PManager {
 			if (!dbSync.isReady) return;
 			// Only broadcast if the update originated locally to prevent infinite loops
 			if (origin === "local") {
-				const currentState = dbSync.getState(dbSync.localPeerId);
 				const message: SyncMessage = {
 					type: "YJS_UPDATE",
 					payload: { update: toHex(update) },
 				};
-				const stateSnapshot: SyncMessage = {
-					type: "STATE_UPDATE",
-					payload: {
-						products: currentState.products,
-						sales: currentState.sales,
-						clients: currentState.clients,
-						suppliers: currentState.suppliers,
-						purchaseOrders: currentState.purchaseOrders,
-						auditLogs: currentState.auditLogs,
-						arqueoSessions: currentState.arqueoSessions,
-						ocrResults: currentState.ocrResults,
-						teamMembers: currentState.teamMembers,
-						inventoryConfig: currentState.inventoryConfig,
-						pendingEdits: currentState.pendingEdits,
-						productChangeHistory: currentState.productChangeHistory,
-						peers: currentState.peers,
-						role: currentState.role,
-						permissions: currentState.permissions,
-					},
-				};
 
 				this.broadcast(message);
-				this.broadcast(stateSnapshot);
 
 				// Retry the same patch a couple of times to recover from transient
 				// data-channel drops. Yjs updates are idempotent, so this is safe.
@@ -207,9 +186,14 @@ class P2PManager {
 					setTimeout(() => {
 						if (!this.connections.size) return;
 						this.broadcast(message);
-						this.broadcast(stateSnapshot);
 					}, delay);
 				}
+			}
+		});
+
+		dbSync.onReady(() => {
+			for (const peerId of this.connections.keys()) {
+				this.requestYjsSync(peerId);
 			}
 		});
 	}
@@ -224,6 +208,22 @@ class P2PManager {
 		for (const cb of this.onConnectionErrorCallbacks) {
 			cb(issue);
 		}
+	}
+
+	private requestYjsSync(peerId: string) {
+		if (!dbSync.isReady) return;
+		this.sendTo(peerId, {
+			type: "YJS_SYNC_REQUEST",
+			payload: { stateVector: toHex(dbSync.getStateVector()) },
+		});
+	}
+
+	private sendYjsDiff(peerId: string, stateVectorHex: string) {
+		if (!dbSync.isReady) return;
+		this.sendTo(peerId, {
+			type: "YJS_UPDATE",
+			payload: { update: toHex(dbSync.getDiff(fromHex(stateVectorHex))) },
+		});
 	}
 
 	public init(peerId?: string) {
@@ -449,11 +449,7 @@ class P2PManager {
 						this.updatePeerList(conn.peer, "collaborator");
 						this.notifyConnectionChange();
 
-						// Perform initial Yjs state sync to the newly connected peer
-						this.sendTo(conn.peer, {
-							type: "YJS_UPDATE",
-							payload: { update: toHex(dbSync.getLocalUpdate()) },
-						});
+						this.requestYjsSync(conn.peer);
 					});
 
 					conn.send({
@@ -479,11 +475,7 @@ class P2PManager {
 						this.updatePeerList(conn.peer, "collaborator");
 						this.notifyConnectionChange();
 
-						// Perform initial Yjs state sync to the newly connected peer
-						this.sendTo(conn.peer, {
-							type: "YJS_UPDATE",
-							payload: { update: toHex(dbSync.getLocalUpdate()) },
-						});
+						this.requestYjsSync(conn.peer);
 					});
 					return;
 				}
@@ -524,6 +516,11 @@ class P2PManager {
 					dbSync.applyUpdate(fromHex(message.payload.update), conn.peer);
 					this.emitMessageCallbacks(message, conn.peer);
 					return; // Already handled; prevent fallthrough to callbacks
+				}
+
+				if (message.type === "YJS_SYNC_REQUEST") {
+					this.sendYjsDiff(conn.peer, message.payload.stateVector);
+					return;
 				}
 
 				if (message.type === "PQC_HANDSHAKE_REQUEST") {
@@ -729,6 +726,11 @@ class P2PManager {
 				dbSync.applyUpdate(fromHex(message.payload.update), fromPeerId);
 				this.emitMessageCallbacks(message, fromPeerId);
 				return; // Already applied; prevent double-handling via callbacks
+			}
+
+			if (message.type === "YJS_SYNC_REQUEST") {
+				this.sendYjsDiff(fromPeerId, message.payload.stateVector);
+				return;
 			}
 
 			this.emitMessageCallbacks(message, fromPeerId);

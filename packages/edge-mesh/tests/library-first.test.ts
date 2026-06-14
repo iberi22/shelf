@@ -5,7 +5,9 @@ import {
 	createGovernanceManager,
 	createNamespaceAuthorizer,
 	createNamespacePartitionManager,
+	createPeerHealthMonitor,
 	createPresenceTimeline,
+	getReconnectDelay,
 } from '../src';
 
 const identity = (peerId: string) => ({
@@ -147,5 +149,56 @@ describe('library-first edge mesh APIs', () => {
 		expect(partitions.resolveScopedNamespace('shelf', 'branch-north')).toBe(
 			'shelf/branch-north',
 		);
+	});
+
+	it('computes capped reconnect backoff and emits generic peer health events', () => {
+		expect(getReconnectDelay(0)).toBe(1000);
+		expect(getReconnectDelay(3)).toBe(8000);
+		expect(getReconnectDelay(20)).toBe(30000);
+
+		let now = 1000;
+		const health = createPeerHealthMonitor({
+			now: () => now,
+			staleAfterMs: 5000,
+			offlineAfterMs: 10000,
+		});
+		const events: string[] = [];
+		health.on('peer:healthy', ({ peerId }) => events.push(`healthy:${peerId}`));
+		health.on('peer:stale', ({ peerId }) => events.push(`stale:${peerId}`));
+		health.on('peer:offline', ({ peerId }) => events.push(`offline:${peerId}`));
+
+		health.markConnected('node-b');
+		now = 7000;
+		health.sweep();
+		now = 12000;
+		health.sweep();
+
+		expect(events).toEqual([
+			'healthy:node-b',
+			'stale:node-b',
+			'offline:node-b',
+		]);
+		expect(health.get('node-b')?.status).toBe('offline');
+	});
+
+	it('requires namespace gc capability for generic cleanup authority', () => {
+		const authorizer = createNamespaceAuthorizer({
+			authorityPeerId: 'host',
+			grants: [
+				{ subject: 'node-b', namespace: 'shelf/auditLogs', action: 'read' },
+			],
+		});
+
+		expect(authorizer.can('node-b', 'shelf/auditLogs', 'gc')).toBe(false);
+		expect(() => authorizer.require('node-b', 'shelf/auditLogs', 'gc')).toThrow(
+			/Missing capability/,
+		);
+
+		authorizer.grant({
+			subject: 'node-b',
+			namespace: 'shelf/auditLogs',
+			action: 'gc',
+		});
+		expect(authorizer.can('node-b', 'shelf/auditLogs', 'gc')).toBe(true);
 	});
 });

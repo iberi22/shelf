@@ -38,7 +38,7 @@ type LinkedNodeRecord = Omit<PeerInfo, "lastSeen"> & {
  * Distributed Database Manager using Yjs (CRDT)
  * Optimized to use Y.Map for better entity management and eventual consistency merging.
  */
-class DatabaseSyncManager {
+export class DatabaseSyncManager {
 	public doc: Y.Doc;
 	private products: Y.Map<Product>;
 	private sales: Y.Map<Sale>;
@@ -55,6 +55,7 @@ class DatabaseSyncManager {
 	private productChangeHistory: Y.Map<ProductChangeHistoryEntry>;
 	private ephemeralNodes: Map<string, Partial<LinkedNodeRecord>> = new Map();
 	public localPeerId: string | null = null;
+	private readyCallbacks: (() => void)[] = [];
 	/**
 	 * Guards against premature YJS_UPDATE broadcasts.
 	 * Set to true only after initWithState() completes.
@@ -420,6 +421,19 @@ class DatabaseSyncManager {
 		// This prevents the on('update') handler in p2p.ts from broadcasting
 		// empty state before the CRDT has been populated.
 		this.isReady = true;
+		for (const callback of this.readyCallbacks) {
+			callback();
+		}
+	}
+
+	public onReady(callback: () => void) {
+		this.readyCallbacks.push(callback);
+		if (this.isReady) {
+			callback();
+		}
+		return () => {
+			this.readyCallbacks = this.readyCallbacks.filter((cb) => cb !== callback);
+		};
 	}
 
 	/**
@@ -788,6 +802,14 @@ class DatabaseSyncManager {
 	 */
 	public getLocalUpdate(): Uint8Array {
 		return Y.encodeStateAsUpdate(this.doc);
+	}
+
+	public getStateVector(): Uint8Array {
+		return Y.encodeStateVector(this.doc);
+	}
+
+	public getDiff(remoteStateVector: Uint8Array): Uint8Array {
+		return Y.encodeStateAsUpdate(this.doc, remoteStateVector);
 	}
 
 	/**
