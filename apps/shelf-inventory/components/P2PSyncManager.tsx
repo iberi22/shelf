@@ -1,4 +1,4 @@
-import { Download, Info, Link2, QrCode, Settings, X } from 'lucide-react';
+import { Download, Info, Link2, QrCode, RadioTower, Settings, X } from 'lucide-react';
 import { dbSync, type P2PRole, type PeerPermissions, p2pManager, type SyncMessage } from 'p2p-mesh-core';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
@@ -6,6 +6,7 @@ import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import { buildPeerInviteLink, buildPeerInviteMessage, buildPwaInstallLink } from '../lib/share-links';
 import { isBiometricsSupported } from '../lib/webauthn';
+import { useEdgeMeshWorkflowStatus } from './EdgeMeshWorkflowBridge';
 import QRScannerModal from './QRScannerModal';
 
 const permissionPresets: Record<'admin' | 'collaborator' | 'vendedor', PeerPermissions> = {
@@ -91,6 +92,7 @@ const P2PSyncManager: React.FC = () => {
   const [pendingConfigs, setPendingConfigs] = useState<Record<string, { role: P2PRole; permissions: PeerPermissions }>>(
     {},
   );
+  const edgeMeshStatus = useEdgeMeshWorkflowStatus();
   const { t } = useI18n();
 
   const stateRef = useRef(state);
@@ -407,6 +409,8 @@ const P2PSyncManager: React.FC = () => {
   };
 
   const { counts, sizeStr } = getDbStats();
+  const edgeMeshLastSync = edgeMeshStatus.lastRemoteSyncAt || edgeMeshStatus.lastLocalSyncAt;
+  const edgeMeshLastSyncLabel = edgeMeshLastSync ? new Date(edgeMeshLastSync).toLocaleTimeString() : 'pendiente';
 
   const handleChangePeerRole = (peerId: string, newRole: string) => {
     if (isLocalHostAuthority) {
@@ -501,6 +505,22 @@ const P2PSyncManager: React.FC = () => {
             <span className="text-[10px] text-[#F5F5DC]/50 mt-1">
               {t('p2pSync.encryptedTunnelActive') || 'Encrypted Tunnel: ACTIVE (ML-KEM-768 via P2PManager)'}
             </span>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-[#F5F5DC]/65">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded border px-2 py-1 ${
+                  edgeMeshStatus.enabled
+                    ? 'border-cyan-400/30 bg-cyan-400/10 text-cyan-200'
+                    : 'border-[#F5F5DC]/15 bg-[#F5F5DC]/5'
+                }`}
+                title="Runtime CRDT de colecciones Shelf sobre edge-mesh"
+              >
+                <RadioTower size={12} />
+                Edge Mesh {edgeMeshStatus.enabled ? 'activo' : 'esperando'}
+              </span>
+              <span className="font-mono">
+                {edgeMeshStatus.totalItems} entidades / sync {edgeMeshLastSyncLabel}
+              </span>
+            </div>
             {copyStatus !== 'idle' && state.localPeerId && (
               <span className={`mt-1 text-[10px] ${copyStatus === 'copied' ? 'text-green-400' : 'text-red-400'}`}>
                 {copyStatus === 'copied' ? 'Peer ID copiado al portapapeles' : 'No se pudo copiar el Peer ID'}
