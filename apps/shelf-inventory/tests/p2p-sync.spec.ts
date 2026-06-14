@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { expectProductSync } from './p2p-helpers';
 import { dismissModals, setupPage } from './helpers';
+import { expectProductSync, getLocalPeerId } from './p2p-helpers';
 
 const collaboratorPermissions = {
   canViewProducts: true,
@@ -36,11 +36,7 @@ test.describe('P2P Synchronization and Conflict Resolution', () => {
     await dismissModals(adminPage);
     await dismissModals(collabPage);
 
-    const collabPeerIdLocator = collabPage.locator('span.font-mono.text-yellow-400').first();
-    await collabPeerIdLocator.waitFor({ state: 'visible' });
-    await expect(collabPeerIdLocator).not.toHaveText('Initializing...', { timeout: 15000 });
-    const collabId = await collabPeerIdLocator.innerText();
-    expect(collabId).toBeTruthy();
+    const collabId = await getLocalPeerId(collabPage);
 
     await adminPage.evaluate((targetPeerId) => {
       (window as any)._p2pManagerForTest?.connect(targetPeerId);
