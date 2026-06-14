@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import * as Y from 'yjs';
 import { AuthzManager } from '../src/authz';
 import { IdentityManager } from '../src/identity';
 import { SyncEngine } from '../src/sync/engine';
@@ -9,7 +8,7 @@ describe('Edge Mesh Integrated Sync', () => {
 		// Node A setup
 		const nodeA_sync = new SyncEngine();
 		const nodeA_id = new IdentityManager();
-		const nodeA_authz = new AuthzManager();
+		const _nodeA_authz = new AuthzManager();
 
 		// Node B setup
 		const nodeB_sync = new SyncEngine();

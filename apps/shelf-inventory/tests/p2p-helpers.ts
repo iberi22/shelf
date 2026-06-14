@@ -30,7 +30,7 @@ async function getDbStateProductNames(page: Page): Promise<string[]> {
       const dbSync = (window as any)._dbSyncForTest;
       if (!dbSync) return [];
       const state = dbSync.getState(dbSync.localPeerId);
-      if (!state || !state.products) return [];
+      if (!state?.products) return [];
       return (state.products as any[]).map((p: any) => p.name);
     } catch {
       return [];
@@ -107,7 +107,7 @@ export async function expectProductPriceSync(
         const dbSync = (window as any)._dbSyncForTest;
         if (!dbSync) return undefined;
         const state = dbSync.getState(dbSync.localPeerId);
-        if (!state || !state.products) return undefined;
+        if (!state?.products) return undefined;
         const products: any[] = state.products;
         const p = products.find((x: any) => x.name === name);
         return p?.price;
@@ -130,7 +130,7 @@ export async function expectProductPriceSync(
         const dbSync = (window as any)._dbSyncForTest;
         if (!dbSync) return undefined;
         const state = dbSync.getState(dbSync.localPeerId);
-        if (!state || !state.products) return undefined;
+        if (!state?.products) return undefined;
         const products: any[] = state.products;
         const p = products.find((x: any) => x.name === name);
         return p?.price;

@@ -9,15 +9,9 @@ interface QRScannerModalProps {
 export default function QRScannerModal({ onScan, onClose }: QRScannerModalProps) {
   useEffect(() => {
     const boxSize =
-      typeof window !== 'undefined'
-        ? Math.max(180, Math.min(250, Math.floor(window.innerWidth - 96)))
-        : 250;
+      typeof window !== 'undefined' ? Math.max(180, Math.min(250, Math.floor(window.innerWidth - 96))) : 250;
 
-    const scanner = new Html5QrcodeScanner(
-      'qr-reader',
-      { fps: 10, qrbox: { width: boxSize, height: boxSize } },
-      false,
-    );
+    const scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: { width: boxSize, height: boxSize } }, false);
 
     scanner.render(
       (text) => {

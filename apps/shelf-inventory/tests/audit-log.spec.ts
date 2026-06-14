@@ -113,7 +113,9 @@ test.describe('Audit Log Tracing', () => {
               if (!dbSync) return 0;
               const state = dbSync.getState(dbSync.localPeerId);
               return (state.auditLogs || []).length;
-            } catch { return 0; }
+            } catch {
+              return 0;
+            }
           });
         },
         { timeout: 20000, intervals: [1000, 1000, 2000, 3000, 5000] },
@@ -126,7 +128,9 @@ test.describe('Audit Log Tracing', () => {
         if (!dbSync) return [];
         const state = dbSync.getState(dbSync.localPeerId);
         return state.auditLogs || [];
-      } catch { return []; }
+      } catch {
+        return [];
+      }
     });
 
     const addedLog = adminAuditLog.find(
@@ -143,7 +147,9 @@ test.describe('Audit Log Tracing', () => {
         if (!dbSync) return [];
         const state = dbSync.getState(dbSync.localPeerId);
         return state.products || [];
-      } catch { return []; }
+      } catch {
+        return [];
+      }
     });
     const product = adminProducts.find((p: any) => p.name === 'Audit Product X');
     expect(product).toBeDefined();

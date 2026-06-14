@@ -1,9 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { expectProductSync } from './p2p-helpers';
 import { addOverlayBlocker, dismissModals } from './helpers';
+import { expectProductSync } from './p2p-helpers';
 
 test.describe('P2P Advanced Synchronization', () => {
-
   async function connectAndSync(adminPage: any, collabPage: any, role: 'collaborator' | 'admin' = 'collaborator') {
     await dismissModals(adminPage);
     await dismissModals(collabPage);
@@ -44,9 +43,12 @@ test.describe('P2P Advanced Synchronization', () => {
     // Select role in the modal if admin
     if (role === 'admin') {
       await adminPage.waitForTimeout(300);
-      await adminPage.getByRole('button', { name: /^Admin$/i }).click({ timeout: 5000 }).catch(async () => {
-        await adminPage.getByRole('button', { name: /^Admin$/i }).click({ force: true, timeout: 3000 });
-      });
+      await adminPage
+        .getByRole('button', { name: /^Admin$/i })
+        .click({ timeout: 5000 })
+        .catch(async () => {
+          await adminPage.getByRole('button', { name: /^Admin$/i }).click({ force: true, timeout: 3000 });
+        });
     }
     // Default role is 'Vendedor' which maps to 'collaborator'
 
@@ -133,9 +135,11 @@ test.describe('P2P Advanced Synchronization', () => {
           const dbSync = (window as any)._dbSyncForTest;
           if (!dbSync) return -1;
           const state = dbSync.getState(dbSync.localPeerId);
-          if (!state || !state.products) return 0;
+          if (!state?.products) return 0;
           return (state.products as any[]).filter((p: any) => p.name === 'Concurrent Duplicate Risk').length;
-        } catch { return -1; }
+        } catch {
+          return -1;
+        }
       });
       expect(productCount).toBe(2);
     }).toPass({ timeout: 30000, intervals: [1000, 1000, 2000, 3000, 5000] });
@@ -157,7 +161,7 @@ test.describe('P2P Advanced Synchronization', () => {
     await adminPage.waitForTimeout(1000);
     await collabPage.waitForTimeout(1000);
 
-    const collabId = await connectAndSync(adminPage, collabPage, 'collaborator');
+    const _collabId = await connectAndSync(adminPage, collabPage, 'collaborator');
 
     // Add a product while connected
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
@@ -181,9 +185,11 @@ test.describe('P2P Advanced Synchronization', () => {
         const dbSync = (window as any)._dbSyncForTest;
         if (!dbSync) return [];
         const state = dbSync.getState(dbSync.localPeerId);
-        if (!state || !state.products) return [];
+        if (!state?.products) return [];
         return (state.products as any[]).map((p: any) => p.name);
-      } catch { return []; }
+      } catch {
+        return [];
+      }
     });
 
     expect(productsAfterDisconnect).toContain('Persistent Product');
@@ -194,7 +200,9 @@ test.describe('P2P Advanced Synchronization', () => {
         if (!dbSync) return false;
         const state = dbSync.getState(dbSync.localPeerId);
         return !!(state as any)?.isExpelled;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     });
     expect(isExpelled).toBe(false);
   });
@@ -215,7 +223,7 @@ test.describe('P2P Advanced Synchronization', () => {
     await adminPage.waitForTimeout(1000);
     await collabPage.waitForTimeout(1000);
 
-    const collabId = await connectAndSync(adminPage, collabPage, 'collaborator');
+    const _collabId = await connectAndSync(adminPage, collabPage, 'collaborator');
 
     // Admin adds a product
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
@@ -274,7 +282,9 @@ test.describe('P2P Advanced Synchronization', () => {
           if (!dbSync) return false;
           const state = dbSync.getState(dbSync.localPeerId);
           return state.pendingEdits && state.pendingEdits.length > 0;
-        } catch { return false; }
+        } catch {
+          return false;
+        }
       });
       expect(hasPendingEdit).toBe(true);
     }).toPass({ timeout: 30000, intervals: [1000, 1000, 2000, 3000, 5000] });
@@ -290,11 +300,13 @@ test.describe('P2P Advanced Synchronization', () => {
         const dbSync = (window as any)._dbSyncForTest;
         if (!dbSync) return undefined;
         const state = dbSync.getState(dbSync.localPeerId);
-        if (!state || !state.products) return undefined;
+        if (!state?.products) return undefined;
         const products: any[] = state.products;
         const p = products.find((x: any) => x.name === 'Merge Target Product');
         return p?.price;
-      } catch { return undefined; }
+      } catch {
+        return undefined;
+      }
     });
 
     expect(adminFinalPrice).toEqual(expect.any(Number));
@@ -308,9 +320,11 @@ test.describe('P2P Advanced Synchronization', () => {
         const dbSync = (window as any)._dbSyncForTest;
         if (!dbSync) return -1;
         const state = dbSync.getState(dbSync.localPeerId);
-        if (!state || !state.products) return 0;
+        if (!state?.products) return 0;
         return (state.products as any[]).filter((p: any) => p.name === 'Merge Target Product').length;
-      } catch { return -1; }
+      } catch {
+        return -1;
+      }
     });
     expect(productCount).toBe(1);
   });

@@ -272,10 +272,7 @@ export default function InvoiceScannerModal({
                   className="w-full rounded border-2 border-gray-600 overflow-hidden bg-black"
                   style={{ aspectRatio: '1' }}
                 />
-                <canvas
-                  id={CAPTURE_CANVAS_ID}
-                  style={{ display: 'none' }}
-                />
+                <canvas id={CAPTURE_CANVAS_ID} style={{ display: 'none' }} />
                 <button
                   onClick={capturePhoto}
                   disabled={isLoading || isProcessing}

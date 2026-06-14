@@ -13,17 +13,20 @@ export function useEdgeMeshShelfAdapter() {
   const ocrResults = useCollection<any>('shelf', 'ocrResults');
   const auditLogs = useCollection<any>('shelf', 'auditLogs');
 
-  return useMemo(() => ({
-    isEnabled,
-    collections: {
-      products,
-      sales,
-      clients,
-      suppliers,
-      purchaseOrders,
-      arqueoSessions,
-      ocrResults,
-      auditLogs,
-    }
-  }), [isEnabled, products, sales, clients, suppliers, purchaseOrders, arqueoSessions, ocrResults, auditLogs]);
+  return useMemo(
+    () => ({
+      isEnabled,
+      collections: {
+        products,
+        sales,
+        clients,
+        suppliers,
+        purchaseOrders,
+        arqueoSessions,
+        ocrResults,
+        auditLogs,
+      },
+    }),
+    [isEnabled, products, sales, clients, suppliers, purchaseOrders, arqueoSessions, ocrResults, auditLogs],
+  );
 }

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import * as Y from 'yjs';
 import { SyncEngine } from '../src/sync/engine';
 
 describe('SyncEngine', () => {

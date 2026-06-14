@@ -5,7 +5,7 @@ import { BaseTransport } from '../transport';
 import type { MeshMessageEnvelope } from '../types';
 
 class MockTransport extends BaseTransport {
-	async start(peerId: string): Promise<void> {
+	async start(_peerId: string): Promise<void> {
 		return;
 	}
 	async stop(): Promise<void> {
@@ -18,12 +18,12 @@ class MockTransport extends BaseTransport {
 		this.emit('peer:disconnected', peerId);
 	}
 	async send(
-		targetPeerId: string,
-		envelope: MeshMessageEnvelope,
+		_targetPeerId: string,
+		_envelope: MeshMessageEnvelope,
 	): Promise<void> {
 		return;
 	}
-	async broadcast(envelope: MeshMessageEnvelope): Promise<void> {
+	async broadcast(_envelope: MeshMessageEnvelope): Promise<void> {
 		return;
 	}
 

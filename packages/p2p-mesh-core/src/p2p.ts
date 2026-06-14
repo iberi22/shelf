@@ -1,5 +1,5 @@
 import { type DataConnection, Peer } from "peerjs";
-import { decryptData, encryptData } from "./crypto";
+import { decryptData, encryptData, importPQCSharedSecret } from "./crypto";
 import {
 	decapsulate,
 	encapsulate,
@@ -700,7 +700,6 @@ class P2PManager {
 	}
 
 	private async setupEncryption(peerId: string, sharedSecret: Uint8Array) {
-		const { importPQCSharedSecret } = await import("./crypto");
 		const key = await importPQCSharedSecret(toHex(sharedSecret));
 		this.encryptionKeys.set(peerId, key);
 	}

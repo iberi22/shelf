@@ -63,7 +63,16 @@ const Dashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-8">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{t('dashboard.title')}</h2>
-          <p className="text-neutral-500 text-sm mt-1 font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
+          <p className="text-neutral-500 text-sm mt-1 font-medium">
+            {new Date().toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+            })}
+          </p>
         </div>
         <button
           data-testid="dashboard-customize-button"

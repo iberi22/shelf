@@ -1,4 +1,4 @@
-import { p2pManager } from 'p2p-mesh-core';
+import { encryptDataLegacy, p2pManager } from 'p2p-mesh-core';
 import { useState } from 'react';
 import { localAuthManager } from '../lib/localAuth';
 
@@ -37,7 +37,6 @@ const RecoveryApprovalModal: React.FC<RecoveryApprovalModalProps> = ({ request, 
       // receiving device can decrypt it after the user sets a new password.
       // The seed is already encrypted in localAuth; here we send the raw seed
       // string encrypted with the master password as the shared secret.
-      const { encryptDataLegacy } = await import('p2p-mesh-core');
       const encryptedSeed = await encryptDataLegacy(seedString, password, request.email);
 
       p2pManager.approveRecovery(request.fromPeerId, request.requestId, encryptedSeed, password);

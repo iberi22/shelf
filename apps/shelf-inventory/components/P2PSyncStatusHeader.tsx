@@ -3,8 +3,8 @@ import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
-import ProductConflictResolver, { detectProductConflicts } from './ProductConflictResolver';
 import MergeResolutionModal from './MergeResolutionModal';
+import ProductConflictResolver, { detectProductConflicts } from './ProductConflictResolver';
 
 const P2PSyncStatusHeader: React.FC = () => {
   const { state, dispatch } = useAppContext();

@@ -28,7 +28,7 @@ test.describe('P2P Multi-Branch Architecture', () => {
     await dismissModals(b2Page);
 
     // 3. Host sets up branches in Settings
-    // NOTE: Jules is implementing this UI logic. 
+    // NOTE: Jules is implementing this UI logic.
     // We expect a branch management section in settings.
     await hostPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
     await dismissModals(hostPage);
@@ -65,15 +65,18 @@ test.describe('P2P Multi-Branch Architecture', () => {
     await dismissModals(hostPage);
     const manualInput = hostPage.getByPlaceholder(/ingresa el Peer ID|enter Peer ID/i);
     await expect(manualInput).toBeVisible();
-    
+
     // Connect Branch 1
     await manualInput.fill(b1Id);
     await hostPage.getByRole('button', { name: /^Conectar$|^Connect$/i }).click();
     await hostPage.waitForTimeout(500);
     // Assume Jules added a branch selector in the collaborator config modal
     // await hostPage.getByTestId('assign-branch-select').selectOption('Sucursal Norte');
-    await hostPage.getByRole('button', { name: /Continuar|Proceed|Confirmar|Confirm/i }).last().click();
-    
+    await hostPage
+      .getByRole('button', { name: /Continuar|Proceed|Confirmar|Confirm/i })
+      .last()
+      .click();
+
     await hostPage.waitForTimeout(1000);
 
     // Connect Branch 2
@@ -81,15 +84,18 @@ test.describe('P2P Multi-Branch Architecture', () => {
     await hostPage.getByRole('button', { name: /^Conectar$|^Connect$/i }).click();
     await hostPage.waitForTimeout(500);
     // await hostPage.getByTestId('assign-branch-select').selectOption('Bodega Sur');
-    await hostPage.getByRole('button', { name: /Continuar|Proceed|Confirmar|Confirm/i }).last().click();
+    await hostPage
+      .getByRole('button', { name: /Continuar|Proceed|Confirmar|Confirm/i })
+      .last()
+      .click();
 
     await hostPage.waitForTimeout(2000);
 
     // 6. Test Branch Selector UI for Host
     // Host should see a branch selector under the logo
-    const hostBranchSelector = hostPage.getByTestId('host-branch-selector');
+    const _hostBranchSelector = hostPage.getByTestId('host-branch-selector');
     // await expect(hostBranchSelector).toBeVisible();
-    
+
     // Switch to Sucursal Norte and add a product
     // await hostBranchSelector.selectOption('Sucursal Norte');
     await hostPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
@@ -116,7 +122,7 @@ test.describe('P2P Multi-Branch Architecture', () => {
     await b2Page.locator('[data-testid="nav-item-nav.inventory"]').last().click();
     // await expect(b2Page.locator('text=Producto Host (Sur)').first()).toBeVisible();
     // await expect(b2Page.locator('text=Producto Host (Norte)').first()).not.toBeVisible();
-    
+
     // 9. Host consolidates reports
     await hostPage.locator('[data-testid="nav-item-nav.reports"]').last().click();
     // Verify Host sees unified data in Reports

@@ -45,6 +45,7 @@ const initialState: AppState = {
   role: 'admin',
   arqueoSessions: [],
   ocrResults: [],
+  pendingEdits: [],
 };
 
 type Action =

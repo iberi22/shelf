@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test';
 import { dismissModals, setupPage } from './helpers';
 
 test.describe('CRUD Operations — Inventory, Sales, Clients, Suppliers', () => {
-
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
   });
@@ -56,18 +55,17 @@ test.describe('CRUD Operations — Inventory, Sales, Clients, Suppliers', () => 
     await dismissModals(page);
     await page.waitForTimeout(500);
 
-    const deleteBtn = page.locator('button[aria-label*="Eliminar"]').or(
-      page.locator('button:has-text("Eliminar")')
-    ).or(
-      page.getByRole('button', { name: /eliminar/i })
-    );
+    const deleteBtn = page
+      .locator('button[aria-label*="Eliminar"]')
+      .or(page.locator('button:has-text("Eliminar")'))
+      .or(page.getByRole('button', { name: /eliminar/i }));
 
     if (await deleteBtn.isVisible()) {
       await deleteBtn.click();
       // Confirm delete if modal appears
-      const confirmBtn = page.locator('button:has-text("Confirmar")').or(
-        page.getByRole('button', { name: /confirmar/i })
-      );
+      const confirmBtn = page
+        .locator('button:has-text("Confirmar")')
+        .or(page.getByRole('button', { name: /confirmar/i }));
       if (await confirmBtn.isVisible().catch(() => false)) {
         await confirmBtn.click();
       }
@@ -103,9 +101,9 @@ test.describe('CRUD Operations — Inventory, Sales, Clients, Suppliers', () => 
     await page.waitForTimeout(500);
 
     // Create a new sale
-    const addSaleBtn = page.getByRole('button', { name: /nueva venta|new sale|agregar venta/i }).or(
-      page.getByTestId('add-sale-button')
-    );
+    const addSaleBtn = page
+      .getByRole('button', { name: /nueva venta|new sale|agregar venta/i })
+      .or(page.getByTestId('add-sale-button'));
     if (await addSaleBtn.isVisible().catch(() => false)) {
       await addSaleBtn.click();
     }
@@ -118,9 +116,9 @@ test.describe('CRUD Operations — Inventory, Sales, Clients, Suppliers', () => 
     }
 
     // Save the sale
-    const saveSaleBtn = page.getByTestId('save-sale-button').or(
-      page.getByRole('button', { name: /guardar venta|save sale|completar venta/i })
-    );
+    const saveSaleBtn = page
+      .getByTestId('save-sale-button')
+      .or(page.getByRole('button', { name: /guardar venta|save sale|completar venta/i }));
     if (await saveSaleBtn.isVisible().catch(() => false)) {
       await saveSaleBtn.click();
       await page.waitForTimeout(1000);

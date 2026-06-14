@@ -1,4 +1,4 @@
-import type { Page, BrowserContext } from '@playwright/test';
+import type { BrowserContext, Page } from '@playwright/test';
 
 /**
  * The init script that sets localStorage flags and periodically removes overlays.
@@ -46,8 +46,12 @@ export async function setupPage(page: Page): Promise<void> {
  * Dismiss all overlay modals on the page immediately.
  */
 export async function dismissModals(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    document.querySelectorAll('.fixed.inset-0').forEach(el => el.remove());
-  }).catch(() => {});
+  await page
+    .evaluate(() => {
+      document.querySelectorAll('.fixed.inset-0').forEach((el) => {
+        el.remove();
+      });
+    })
+    .catch(() => {});
   await page.waitForTimeout(200);
 }

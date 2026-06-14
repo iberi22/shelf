@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { setupPage, dismissModals } from './helpers';
+import { expect, test } from '@playwright/test';
+import { dismissModals, setupPage } from './helpers';
 
 const MOCK_PRODUCTS = [
   { name: 'MacBook Pro M3 Max 16"', qty: '15', price: '3499', cost: '2800' },
@@ -9,7 +9,7 @@ const MOCK_PRODUCTS = [
   { name: 'Sony A7IV Camera Body', qty: '8', price: '2498', cost: '2100' },
   { name: 'Logitech MX Master 3S', qty: '200', price: '99', cost: '45' },
   { name: 'Dell UltraSharp 27" 4K', qty: '35', price: '599', cost: '420' },
-  { name: 'Keychron Q1 Pro Keyboard', qty: '50', price: '199', cost: '120' }
+  { name: 'Keychron Q1 Pro Keyboard', qty: '50', price: '199', cost: '120' },
 ];
 
 test.describe('Mock Data Seeder', () => {
@@ -38,16 +38,16 @@ test.describe('Mock Data Seeder', () => {
     await dismissModals(page);
     await page.waitForTimeout(500);
 
-    const addSaleBtn = page.getByRole('button', { name: /nueva venta|new sale|agregar venta/i }).or(
-      page.getByTestId('add-sale-button')
-    );
+    const addSaleBtn = page
+      .getByRole('button', { name: /nueva venta|new sale|agregar venta/i })
+      .or(page.getByTestId('add-sale-button'));
     if (await addSaleBtn.isVisible().catch(() => false)) {
       await addSaleBtn.click();
     }
 
     // Sell an iPhone
     await page.getByTestId('add-sale-item-button').click();
-    
+
     // Playwright cannot easily select dynamically loaded dropdown by text without value if structure varies,
     // so we'll just check if it's there or try to use the first product.
     const selects = await page.locator('[data-testid^="sale-item-product-"]').all();
@@ -55,25 +55,25 @@ test.describe('Mock Data Seeder', () => {
       const selectHandle = selects[0];
       const options = await selectHandle.locator('option').allTextContents();
       if (options.length > 1) {
-        const indexToSelect = options.findIndex(opt => opt.includes('iPhone 15'));
+        const indexToSelect = options.findIndex((opt) => opt.includes('iPhone 15'));
         if (indexToSelect > 0) {
-           const val = await selectHandle.locator(`option:nth-child(${indexToSelect + 1})`).getAttribute('value');
-           if (val) {
-             await selectHandle.selectOption(val);
-             await page.getByTestId('sale-item-quantity-0').fill('2');
-           }
+          const val = await selectHandle.locator(`option:nth-child(${indexToSelect + 1})`).getAttribute('value');
+          if (val) {
+            await selectHandle.selectOption(val);
+            await page.getByTestId('sale-item-quantity-0').fill('2');
+          }
         }
       }
     }
-    
-    const saveSaleBtn = page.getByTestId('save-sale-button').or(
-      page.getByRole('button', { name: /guardar venta|save sale|completar venta/i })
-    );
+
+    const saveSaleBtn = page
+      .getByTestId('save-sale-button')
+      .or(page.getByRole('button', { name: /guardar venta|save sale|completar venta/i }));
     if (await saveSaleBtn.isVisible().catch(() => false)) {
       await saveSaleBtn.click();
       await page.waitForTimeout(1000);
     }
-    
+
     // Verify everything is populated
     await expect(page.locator('table').first()).toBeVisible({ timeout: 5000 });
   });

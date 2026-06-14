@@ -68,7 +68,11 @@ export class PresenceManager {
 		type,
 		payload,
 		sourcePeerId,
-	}: { type: string; payload: any; sourcePeerId: string }) {
+	}: {
+		type: string;
+		payload: any;
+		sourcePeerId: string;
+	}) {
 		if (type === 'mesh:heartbeat') {
 			this.peers.set(sourcePeerId, {
 				id: sourcePeerId,

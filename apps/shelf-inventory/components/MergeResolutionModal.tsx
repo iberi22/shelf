@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { AlertCircle, Check, X } from 'lucide-react';
+import { dbSync } from 'p2p-mesh-core';
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { dbSync, type EntityEditProposal } from 'p2p-mesh-core';
-import { X, Check, AlertCircle } from 'lucide-react';
 import Modal from './Modal';
 
 interface MergeResolutionModalProps {
@@ -38,9 +38,9 @@ export default function MergeResolutionModal({ isOpen, onClose }: MergeResolutio
 
     // Merge selected fields
     const mergedData = { ...original };
-    
+
     // Default to proposed if not explicitly selected, or respect selection
-    diffFields.forEach(field => {
+    diffFields.forEach((field) => {
       const choice = selectedFields[field] || 'proposed';
       if (choice === 'proposed') {
         mergedData[field] = proposed[field];
@@ -52,17 +52,17 @@ export default function MergeResolutionModal({ isOpen, onClose }: MergeResolutio
     mergedData.updatedBy = state.localPeerId || 'local';
 
     dbSync.resolvePendingEdit(currentEdit.id, 'approve', mergedData);
-    
+
     // Clear selections for next edit
     setSelectedFields({});
-    
+
     if (pendingEdits.length <= 1) {
       onClose();
     }
   };
 
   const toggleFieldSelection = (field: string, choice: 'original' | 'proposed') => {
-    setSelectedFields(prev => ({ ...prev, [field]: choice }));
+    setSelectedFields((prev) => ({ ...prev, [field]: choice }));
   };
 
   return (
@@ -72,8 +72,8 @@ export default function MergeResolutionModal({ isOpen, onClose }: MergeResolutio
         <div>
           <h3 className="font-medium text-yellow-100">Edición Pendiente</h3>
           <p className="text-sm text-yellow-200/70">
-            Un colaborador (Peer: {currentEdit.peerId.slice(0, 6)}...) ha modificado este artículo.
-            Por favor, selecciona qué datos deseas conservar.
+            Un colaborador (Peer: {currentEdit.peerId.slice(0, 6)}...) ha modificado este artículo. Por favor,
+            selecciona qué datos deseas conservar.
           </p>
         </div>
       </div>
@@ -120,9 +120,7 @@ export default function MergeResolutionModal({ isOpen, onClose }: MergeResolutio
       </div>
 
       <div className="mt-6 flex justify-between items-center pt-4 border-t border-white/10">
-        <div className="text-sm text-zinc-400">
-          Quedan {pendingEdits.length} pendientes
-        </div>
+        <div className="text-sm text-zinc-400">Quedan {pendingEdits.length} pendientes</div>
         <div className="flex gap-2">
           <button
             onClick={() => handleResolve('reject')}

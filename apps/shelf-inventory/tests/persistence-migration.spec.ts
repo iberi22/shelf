@@ -14,7 +14,8 @@ test.describe('Persistence migration', () => {
           quantity: 12,
           price: 99,
           cost: 55,
-          imageUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X6n0AAAAASUVORK5CYII=',
+          imageUrl:
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X6n0AAAAASUVORK5CYII=',
           isActive: true,
           updatedAt: new Date().toISOString(),
           updatedBy: 'legacy-peer',

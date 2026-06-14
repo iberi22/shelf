@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test';
 import { dismissModals, setupPage } from './helpers';
 
 test.describe('Arqueo (Cash Count), Catalog, Reports', () => {
-
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
   });
@@ -13,26 +12,24 @@ test.describe('Arqueo (Cash Count), Catalog, Reports', () => {
     await page.waitForTimeout(500);
 
     // Try to create a new arqueo
-    const addBtn = page.getByTestId('add-arqueo-button').or(
-      page.getByRole('button', { name: /nuevo arqueo|new cash count|iniciar arqueo/i })
-    );
+    const addBtn = page
+      .getByTestId('add-arqueo-button')
+      .or(page.getByRole('button', { name: /nuevo arqueo|new cash count|iniciar arqueo/i }));
 
     if (await addBtn.isVisible().catch(() => false)) {
       await addBtn.click();
     }
 
     // Fill cash details if form is visible
-    const cashInput = page.getByTestId('arqueo-cash-input').or(
-      page.locator('input[type="number"]').first()
-    );
+    const cashInput = page.getByTestId('arqueo-cash-input').or(page.locator('input[type="number"]').first());
 
     if (await cashInput.isVisible().catch(() => false)) {
       await cashInput.fill('500000');
     }
 
-    const saveBtn = page.getByRole('button', { name: /guardar arqueo|save|completar/i }).or(
-      page.getByTestId('save-arqueo-button')
-    );
+    const saveBtn = page
+      .getByRole('button', { name: /guardar arqueo|save|completar/i })
+      .or(page.getByTestId('save-arqueo-button'));
 
     if (await saveBtn.isVisible().catch(() => false)) {
       await saveBtn.click();
@@ -71,7 +68,10 @@ test.describe('Arqueo (Cash Count), Catalog, Reports', () => {
     await expect(page.locator('body').first()).toBeVisible();
 
     // If the product we added is visible in catalog, great
-    const catalogHasItems = await page.locator('text=Catalog Test Item').isVisible().catch(() => false);
+    const catalogHasItems = await page
+      .locator('text=Catalog Test Item')
+      .isVisible()
+      .catch(() => false);
     expect(catalogHasItems || true).toBe(true);
   });
 
@@ -81,7 +81,11 @@ test.describe('Arqueo (Cash Count), Catalog, Reports', () => {
     await page.waitForTimeout(1000);
 
     // Verify the page rendered without error
-    const errorVisible = await page.locator('text=Error').or(page.locator('text=error')).isVisible().catch(() => false);
+    const errorVisible = await page
+      .locator('text=Error')
+      .or(page.locator('text=error'))
+      .isVisible()
+      .catch(() => false);
     expect(errorVisible).toBe(false);
 
     // Page should have content
@@ -97,8 +101,7 @@ test.describe('Arqueo (Cash Count), Catalog, Reports', () => {
     const sidebar = page.locator('[data-testid^="nav-item"]').first();
     const mainContent = page.locator('main, .main-content, [class*="container"]').first();
 
-    const hasUI = await sidebar.isVisible().catch(() => false) ||
-                  await mainContent.isVisible().catch(() => false);
+    const hasUI = (await sidebar.isVisible().catch(() => false)) || (await mainContent.isVisible().catch(() => false));
     expect(hasUI).toBe(true);
   });
 });

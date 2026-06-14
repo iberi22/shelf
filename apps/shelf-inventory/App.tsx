@@ -99,7 +99,7 @@ const AppContainer = () => {
   };
 
   if (!hasVisited) {
-      return <LandingPage onNavigate={showMainApp} />;
+    return <LandingPage onNavigate={showMainApp} />;
   }
 
   if (isLocked) {

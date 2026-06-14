@@ -40,12 +40,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const openSubscriptionModal = useCallback(() => setSubscriptionModalOpen(true), []);
   const closeSubscriptionModal = useCallback(() => setSubscriptionModalOpen(false), []);
 
-  const showNotification = useCallback(
-    (message: string, type: NotificationState['type'], durationMs?: number) => {
-      setNotification({ message, type, durationMs });
-    },
-    [],
-  );
+  const showNotification = useCallback((message: string, type: NotificationState['type'], durationMs?: number) => {
+    setNotification({ message, type, durationMs });
+  }, []);
 
   const hideNotification = useCallback(() => {
     setNotification(null);

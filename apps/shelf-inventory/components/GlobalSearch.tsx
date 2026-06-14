@@ -64,7 +64,7 @@ const GlobalSearch: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
       // Search products
       for (const p of state.products) {
         if (!p.isActive) continue;
-        if (p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))) {
+        if (p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q)) {
           newResults.push({
             category: 'products',
             label: p.name,
@@ -78,7 +78,7 @@ const GlobalSearch: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
       // Search clients
       for (const c of state.clients) {
         if (!c.isActive) continue;
-        if (c.name.toLowerCase().includes(q) || (c.phone && c.phone.includes(q))) {
+        if (c.name.toLowerCase().includes(q) || c.phone?.includes(q)) {
           newResults.push({
             category: 'clients',
             label: c.name,
@@ -92,7 +92,7 @@ const GlobalSearch: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
       // Search suppliers
       for (const s of state.suppliers) {
         if (!s.isActive) continue;
-        if (s.name.toLowerCase().includes(q) || (s.phone && s.phone.includes(q))) {
+        if (s.name.toLowerCase().includes(q) || s.phone?.includes(q)) {
           newResults.push({
             category: 'suppliers',
             label: s.name,
@@ -192,8 +192,20 @@ const GlobalSearch: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
       >
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-700">
-          <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg
+            className="w-5 h-5 text-gray-400 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
           <input
             ref={inputRef}
@@ -213,8 +225,20 @@ const GlobalSearch: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
         <div className="max-h-[50vh] overflow-y-auto">
           {query.trim() && results.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-              <svg className="w-10 h-10 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
+              <svg
+                className="w-10 h-10 mb-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
+                />
               </svg>
               <p className="text-sm">Sin resultados</p>
             </div>
@@ -222,51 +246,60 @@ const GlobalSearch: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
 
           {!query.trim() && results.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-              <svg className="w-10 h-10 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                className="w-10 h-10 mb-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
               <p className="text-sm">Escribe para buscar...</p>
             </div>
           )}
 
-          {results.length > 0 && (
-            <>
-              {CATEGORY_ORDER.map((cat) => {
-                const group = groupedResults.get(cat);
-                if (!group || group.length === 0) return null;
+          {results.length > 0 &&
+            CATEGORY_ORDER.map((cat) => {
+              const group = groupedResults.get(cat);
+              if (!group || group.length === 0) return null;
 
-                return (
-                  <div key={cat}>
-                    <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-850">
-                      {CATEGORY_LABELS[cat] || cat}
-                    </div>
-                    {group.map((result) => {
-                      flatIndex++;
-                      const index = flatIndex;
-                      return (
-                        <button
-                          key={`${cat}-${result.id}`}
-                          onClick={() => handleResultClick(result)}
-                          onMouseEnter={() => setSelectedIndex(index)}
-                          className={`w-full text-left flex items-center gap-3 px-4 py-3 transition-colors ${
-                            selectedIndex === index
-                              ? 'bg-blue-600/20 border-l-2 border-blue-500'
-                              : 'hover:bg-gray-700/50 border-l-2 border-transparent'
-                          }`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{result.label}</p>
-                            <p className="text-xs text-gray-400 truncate">{result.sublabel}</p>
-                          </div>
-                          <span className="text-xs text-gray-500 flex-shrink-0">{CATEGORY_LABELS[result.category]}</span>
-                        </button>
-                      );
-                    })}
+              return (
+                <div key={cat}>
+                  <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-850">
+                    {CATEGORY_LABELS[cat] || cat}
                   </div>
-                );
-              })}
-            </>
-          )}
+                  {group.map((result) => {
+                    flatIndex++;
+                    const index = flatIndex;
+                    return (
+                      <button
+                        key={`${cat}-${result.id}`}
+                        onClick={() => handleResultClick(result)}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                        className={`w-full text-left flex items-center gap-3 px-4 py-3 transition-colors ${
+                          selectedIndex === index
+                            ? 'bg-blue-600/20 border-l-2 border-blue-500'
+                            : 'hover:bg-gray-700/50 border-l-2 border-transparent'
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white truncate">{result.label}</p>
+                          <p className="text-xs text-gray-400 truncate">{result.sublabel}</p>
+                        </div>
+                        <span className="text-xs text-gray-500 flex-shrink-0">{CATEGORY_LABELS[result.category]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
         </div>
 
         {/* Footer hint */}

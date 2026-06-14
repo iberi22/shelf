@@ -59,7 +59,7 @@ export const useGoogleDrive = () => {
       });
       client.requestAccessToken();
     });
-  }, [clientId]);
+  }, []);
 
   const uploadBackup = async (data: any) => {
     setIsLoading(true);

@@ -21,7 +21,11 @@ export const DEFAULT_INVENTORY_CONFIG: InventoryConfig = {
 
 export const normalizeInventoryConfig = (config?: Partial<InventoryConfig> | null): InventoryConfig => {
   const variantAttributes = Array.from(
-    new Set((config?.variantAttributes || DEFAULT_INVENTORY_CONFIG.variantAttributes).map((label) => label.trim()).filter(Boolean)),
+    new Set(
+      (config?.variantAttributes || DEFAULT_INVENTORY_CONFIG.variantAttributes)
+        .map((label) => label.trim())
+        .filter(Boolean),
+    ),
   );
 
   const fields = (config?.fields?.length ? config.fields : DEFAULT_INVENTORY_CONFIG.fields).map((field, index) => ({
@@ -32,7 +36,9 @@ export const normalizeInventoryConfig = (config?: Partial<InventoryConfig> | nul
   }));
 
   const measureOptions = Array.from(
-    new Set((config?.measureOptions || DEFAULT_INVENTORY_CONFIG.measureOptions).map((value) => value.trim()).filter(Boolean)),
+    new Set(
+      (config?.measureOptions || DEFAULT_INVENTORY_CONFIG.measureOptions).map((value) => value.trim()).filter(Boolean),
+    ),
   );
 
   return {
@@ -57,11 +63,7 @@ export const getInventoryFieldValue = (product: Partial<Product>, field: Invento
     material: product.material,
   };
 
-  return (
-    legacyValues[field.key] ||
-    product.customFields?.[field.key] ||
-    ''
-  );
+  return legacyValues[field.key] || product.customFields?.[field.key] || '';
 };
 
 export const setInventoryFieldValue = (

@@ -16,14 +16,10 @@ type PersistedEnvelope<T> = {
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const unwrapPersistedState = <T,>(stored: unknown): T | null => {
+const unwrapPersistedState = <T>(stored: unknown): T | null => {
   if (!isPlainObject(stored)) return stored as T | null;
 
-  if (
-    typeof stored.__shelfStorageVersion === 'number' &&
-    'state' in stored &&
-    stored.state !== undefined
-  ) {
+  if (typeof stored.__shelfStorageVersion === 'number' && 'state' in stored && stored.state !== undefined) {
     return stored.state as T;
   }
 
@@ -158,7 +154,7 @@ function usePersistedReducer<T extends Record<string, any>, A extends { type: st
       }
     };
     loadState();
-  }, [localStorageKey]);
+  }, [localStorageKey, initialState]);
 
   // Save asynchronously
   useEffect(() => {

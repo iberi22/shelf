@@ -7,13 +7,16 @@ test('debug nav-items', async ({ page }) => {
 
   const html = await page.evaluate(() => {
     // Check localStorage
-    const ls = { hasVisited: localStorage.getItem('hasVisited'), shelfWelcomeSeen: localStorage.getItem('shelfWelcomeSeen') };
-    
+    const ls = {
+      hasVisited: localStorage.getItem('hasVisited'),
+      shelfWelcomeSeen: localStorage.getItem('shelfWelcomeSeen'),
+    };
+
     // Check all data-testid attributes
-    const testIds = Array.from(document.querySelectorAll('[data-testid]')).map(el => el.getAttribute('data-testid'));
-    
+    const testIds = Array.from(document.querySelectorAll('[data-testid]')).map((el) => el.getAttribute('data-testid'));
+
     // Check for nav items
-    const navItems = Array.from(document.querySelectorAll('[data-testid^="nav-item"]')).map(el => ({
+    const navItems = Array.from(document.querySelectorAll('[data-testid^="nav-item"]')).map((el) => ({
       testid: el.getAttribute('data-testid'),
       visible: (el as HTMLElement).offsetParent !== null,
       rect: el.getBoundingClientRect(),

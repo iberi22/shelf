@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test';
 import { addOverlayBlocker, dismissModals, setupPage } from './helpers';
 
 test.describe('Recovery Flow & Offline Resilience', () => {
-
   test.beforeEach(async ({ page, context }) => {
     addOverlayBlocker(context);
     await setupPage(page);
@@ -30,13 +29,16 @@ test.describe('Recovery Flow & Offline Resilience', () => {
           // Dispatch through Yjs
           dbSync.resetState?.(corruptState);
         }
-        localStorage.setItem('shelfState', JSON.stringify({
-          role: 'sadmin',
-          peers: [],
-          products: [],
-          auditLogs: [],
-          settings: {},
-        }));
+        localStorage.setItem(
+          'shelfState',
+          JSON.stringify({
+            role: 'sadmin',
+            peers: [],
+            products: [],
+            auditLogs: [],
+            settings: {},
+          }),
+        );
       } catch (_) {
         // Test may run in env without full setup
       }
@@ -47,9 +49,11 @@ test.describe('Recovery Flow & Offline Resilience', () => {
     await dismissModals(page);
 
     // Check if recovery modal or data recovery page is shown
-    const recoveryVisible = await page.locator('[data-testid="recovery-modal"]').or(
-      page.locator('text=Recuperación').or(page.locator('text=Recovery'))
-    ).isVisible().catch(() => false);
+    const _recoveryVisible = await page
+      .locator('[data-testid="recovery-modal"]')
+      .or(page.locator('text=Recuperación').or(page.locator('text=Recovery')))
+      .isVisible()
+      .catch(() => false);
 
     // Just verify the app didn't crash entirely
     const bodyText = await page.locator('body').innerText();
@@ -70,29 +74,26 @@ test.describe('Recovery Flow & Offline Resilience', () => {
     await page.waitForTimeout(500);
 
     // Look for recovery section or button
-    const recoveryBtn = page.locator('text=Recuperar Datos').or(
-      page.locator('text=Data Recovery').or(
-        page.locator('[data-testid="recovery-request-button"]')
-      )
-    );
+    const recoveryBtn = page
+      .locator('text=Recuperar Datos')
+      .or(page.locator('text=Data Recovery').or(page.locator('[data-testid="recovery-request-button"]')));
 
     if (await recoveryBtn.isVisible().catch(() => false)) {
       await recoveryBtn.click();
       await page.waitForTimeout(1000);
 
       // Fill peer ID or email if form appears
-      const input = page.locator('input[type="text"]').or(
-        page.locator('input[type="email"]')
-      ).first();
+      const input = page.locator('input[type="text"]').or(page.locator('input[type="email"]')).first();
 
       if (await input.isVisible().catch(() => false)) {
         await input.fill('test-peer-id-for-recovery');
       }
 
       // Avoid the feedback submit button (which is disabled when empty) by targeting data-testid
-      const submitBtn = page.locator('[data-testid="recovery-submit-button"]').or(
-        page.getByRole('button', { name: /enviar solicitud|request recovery|solicitar recuperacion|recuperar/i })
-      ).first();
+      const submitBtn = page
+        .locator('[data-testid="recovery-submit-button"]')
+        .or(page.getByRole('button', { name: /enviar solicitud|request recovery|solicitar recuperacion|recuperar/i }))
+        .first();
       if (await submitBtn.isVisible().catch(() => false)) {
         await submitBtn.click();
         await page.waitForTimeout(1000);
@@ -118,11 +119,9 @@ test.describe('Recovery Flow & Offline Resilience', () => {
     await page.waitForTimeout(500);
 
     // Look for approval section
-    const approvalSection = page.locator('text=Aprobaciones').or(
-      page.locator('text=Approvals').or(
-        page.locator('[data-testid="recovery-approval-section"]')
-      )
-    );
+    const approvalSection = page
+      .locator('text=Aprobaciones')
+      .or(page.locator('text=Approvals').or(page.locator('[data-testid="recovery-approval-section"]')));
 
     if (await approvalSection.isVisible().catch(() => false)) {
       await approvalSection.click();
@@ -140,9 +139,9 @@ test.describe('Recovery Flow & Offline Resilience', () => {
     await page.waitForTimeout(500);
 
     // Create a purchase order if possible
-    const addBtn = page.getByRole('button', { name: /nueva orden|new order|crear orden/i }).or(
-      page.getByTestId('add-purchase-order-button')
-    );
+    const addBtn = page
+      .getByRole('button', { name: /nueva orden|new order|crear orden/i })
+      .or(page.getByTestId('add-purchase-order-button'));
 
     if (await addBtn.isVisible().catch(() => false)) {
       await addBtn.click();
