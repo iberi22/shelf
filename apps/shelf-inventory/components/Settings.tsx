@@ -1,7 +1,7 @@
-import type { RestoreStatePayload } from 'p2p-mesh-core';
-import { decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
+import type { InventoryConfig, InventoryFieldDefinition, RestoreStatePayload } from 'p2p-mesh-core';
+import { dbSync, decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
 import type React from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -9,6 +9,7 @@ import { useI18n } from '../context/I18nContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useUI } from '../context/UIContext';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { createInventoryField, DEFAULT_INVENTORY_CONFIG, normalizeInventoryConfig } from '../lib/inventoryConfig';
 import AuditLogViewer from './AuditLogViewer';
 import DataRecovery from './DataRecovery';
 import DeviceManagementPanel from './DeviceManagementPanel';
@@ -33,6 +34,7 @@ const Settings: React.FC = () => {
   const { showNotification, openSubscriptionModal } = useUI();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [lowStockThreshold, setLowStockThreshold] = useLocalStorage('lowStockThreshold', 5);
+  const [tablePageSize, setTablePageSize] = useLocalStorage('tablePageSize', 50);
   const [geminiApiKey, setGeminiApiKey] = useLocalStorage('geminiApiKey', '');
   const [openCodeGoKey, setOpenCodeGoKey] = useLocalStorage('openCodeGoKey', '');
   const [showGeminiKey, setShowGeminiKey] = useState(false);
@@ -43,10 +45,17 @@ const Settings: React.FC = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isInviteModalOpen, setInviteModalOpen] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [inventoryConfigDraft, setInventoryConfigDraft] = useState<InventoryConfig>(
+    normalizeInventoryConfig(state.inventoryConfig || DEFAULT_INVENTORY_CONFIG),
+  );
 
   const { isPyme } = useSubscription();
   const { user, hasAppLock, setAppLock } = useAuth();
   const [newPin, setNewPin] = useState('');
+
+  useEffect(() => {
+    setInventoryConfigDraft(normalizeInventoryConfig(state.inventoryConfig || DEFAULT_INVENTORY_CONFIG));
+  }, [state.inventoryConfig]);
 
   const team = [
     { id: 'owner', email: user?.email ?? 'owner@example.com', role: 'owner' as const },
@@ -147,6 +156,79 @@ const Settings: React.FC = () => {
     }
   };
 
+  const updateInventoryField = (index: number, patch: Partial<InventoryFieldDefinition>) => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      fields: current.fields.map((field, fieldIndex) => (fieldIndex === index ? { ...field, ...patch } : field)),
+    }));
+  };
+
+  const addInventoryField = () => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      fields: [...current.fields, createInventoryField(current.fields.length)],
+    }));
+  };
+
+  const removeInventoryField = (index: number) => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      fields: current.fields.filter((_, fieldIndex) => fieldIndex !== index),
+    }));
+  };
+
+  const updateVariantAttribute = (index: number, value: string) => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      variantAttributes: current.variantAttributes.map((attribute, attributeIndex) =>
+        attributeIndex === index ? value : attribute,
+      ),
+    }));
+  };
+
+  const addVariantAttribute = () => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      variantAttributes: [...current.variantAttributes, `Atributo ${current.variantAttributes.length + 1}`],
+    }));
+  };
+
+  const removeVariantAttribute = (index: number) => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      variantAttributes: current.variantAttributes.filter((_, attributeIndex) => attributeIndex !== index),
+    }));
+  };
+
+  const updateMeasureOption = (index: number, value: string) => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      measureOptions: current.measureOptions.map((option, optionIndex) => (optionIndex === index ? value : option)),
+    }));
+  };
+
+  const addMeasureOption = () => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      measureOptions: [...current.measureOptions, `Medida ${current.measureOptions.length + 1}`],
+    }));
+  };
+
+  const removeMeasureOption = (index: number) => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      measureOptions: current.measureOptions.filter((_, optionIndex) => optionIndex !== index),
+    }));
+  };
+
+  const saveInventoryConfig = () => {
+    const nextConfig = normalizeInventoryConfig(inventoryConfigDraft);
+    setInventoryConfigDraft(nextConfig);
+    dispatch({ type: 'UPDATE_INVENTORY_CONFIG', payload: nextConfig });
+    dbSync.setInventoryConfig(nextConfig);
+    showNotification('Configuración de inventario guardada', 'success');
+  };
+
   const handleInviteSent = () => {
     setInviteModalOpen(false);
     showNotification('Invitation sent successfully!', 'success');
@@ -189,6 +271,169 @@ const Settings: React.FC = () => {
                 min="0"
                 className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
               />
+            </div>
+            <div className="mt-4">
+              <label htmlFor="tablePageSize" className="block text-sm font-medium text-[#F5F5DC]/90">
+                Tamaño de página de tablas
+              </label>
+              <p className="text-xs text-[#F5F5DC]/70 mb-2">
+                Define cuántos registros se muestran por página en inventario, ventas, compras y contactos.
+              </p>
+              <input
+                id="tablePageSize"
+                data-testid="table-page-size-input"
+                type="number"
+                value={tablePageSize}
+                onChange={(e) => setTablePageSize(Math.max(1, Number(e.target.value) || 50))}
+                min="1"
+                step="1"
+                className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+              />
+            </div>
+          </div>
+
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-[#F5F5DC]">Configuración de inventario</h3>
+                <p className="text-xs text-[#F5F5DC]/70 mt-1">
+                  Ajusta los campos del producto, los atributos de variante y las medidas sugeridas desde aquí.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={saveInventoryConfig}
+                className="w-full md:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 text-sm active:scale-95"
+              >
+                Guardar configuración
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-6">
+              <div className="rounded-lg border border-white/5 bg-[#121212] p-4">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <h4 className="font-semibold text-[#F5F5DC]">Atributos de variante</h4>
+                    <p className="text-xs text-[#F5F5DC]/55">Ejemplo: Color, Medida, Material.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addVariantAttribute}
+                    className="bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-1.5 rounded-md text-xs hover:bg-white/5"
+                  >
+                    + Agregar más
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {inventoryConfigDraft.variantAttributes.map((attribute, index) => (
+                    <div key={`${attribute}-${index}`} className="flex gap-2">
+                      <input
+                        value={attribute}
+                        onChange={(e) => updateVariantAttribute(index, e.target.value)}
+                        className="flex-1 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
+                        placeholder={`Atributo ${index + 1}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeVariantAttribute(index)}
+                        className="px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-white/5 bg-[#121212] p-4">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <h4 className="font-semibold text-[#F5F5DC]">Medidas sugeridas</h4>
+                    <p className="text-xs text-[#F5F5DC]/55">Se muestran como botones rápidos al editar productos.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addMeasureOption}
+                    className="bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-1.5 rounded-md text-xs hover:bg-white/5"
+                  >
+                    + Agregar más
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {inventoryConfigDraft.measureOptions.map((option, index) => (
+                    <div key={`${option}-${index}`} className="flex gap-2">
+                      <input
+                        value={option}
+                        onChange={(e) => updateMeasureOption(index, e.target.value)}
+                        className="flex-1 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
+                        placeholder={`Medida ${index + 1}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeMeasureOption(index)}
+                        className="px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-white/5 bg-[#121212] p-4">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <h4 className="font-semibold text-[#F5F5DC]">Campos del producto</h4>
+                    <p className="text-xs text-[#F5F5DC]/55">Puedes cambiar nombre, tipo y agregar nuevos campos.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addInventoryField}
+                    className="bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-1.5 rounded-md text-xs hover:bg-white/5"
+                  >
+                    + Agregar campo
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {inventoryConfigDraft.fields.map((field, index) => (
+                    <div
+                      key={field.id}
+                      className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center rounded-md border border-[#F5F5DC]/10 p-3 bg-[#0f0f0f]"
+                    >
+                      <input
+                        value={field.key}
+                        onChange={(e) => updateInventoryField(index, { key: e.target.value })}
+                        className="w-full p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
+                        placeholder="Clave"
+                      />
+                      <input
+                        value={field.label}
+                        onChange={(e) => updateInventoryField(index, { label: e.target.value })}
+                        className="w-full p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
+                        placeholder="Etiqueta"
+                      />
+                      <select
+                        value={field.type}
+                        onChange={(e) =>
+                          updateInventoryField(index, { type: e.target.value as InventoryFieldDefinition['type'] })
+                        }
+                        className="w-full p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
+                      >
+                        <option value="text">Texto</option>
+                        <option value="color">Color</option>
+                        <option value="measure">Medida</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => removeInventoryField(index)}
+                        className="px-3 py-2.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs min-h-[44px]"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 

@@ -55,6 +55,25 @@ const AppContainer = () => {
     }
   }, [showNotification]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const setAppHeight = () => {
+      root.style.setProperty('--app-height', `${window.innerHeight}px`);
+    };
+
+    setAppHeight();
+
+    window.addEventListener('resize', setAppHeight);
+    window.addEventListener('orientationchange', setAppHeight);
+    window.visualViewport?.addEventListener('resize', setAppHeight);
+
+    return () => {
+      window.removeEventListener('resize', setAppHeight);
+      window.removeEventListener('orientationchange', setAppHeight);
+      window.visualViewport?.removeEventListener('resize', setAppHeight);
+    };
+  }, []);
+
   // Listen for incoming P2P recovery requests (master device)
   useEffect(() => {
     if (!isLocalAccount || !user) return;

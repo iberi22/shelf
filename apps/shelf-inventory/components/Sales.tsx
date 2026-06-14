@@ -1,12 +1,14 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { Sale, SaleItem } from 'p2p-mesh-core';
+import { Image as ImageIcon, X } from 'lucide-react';
+import type { Product, Sale, SaleItem } from 'p2p-mesh-core';
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
 import { useSortableTable } from '../hooks/useSortableTable';
+import { getProductVariantDisplay, getProductVariants, normalizeProduct } from '../lib/productVariants';
 import { InfiniteTable } from './InfiniteTable';
 import Modal from './Modal';
 
@@ -208,7 +210,7 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
           sortedSales.map((sale) => (
             <div
               key={sale.id}
-              className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
+              className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
             >
               <div className="flex justify-between items-start mb-2">
                 <div>
@@ -275,7 +277,11 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
       </div>
 
       {isModalOpen && (
-        <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingSale ? (t('sales.editSale') || 'Edit Sale') : t('sales.addSale')}>
+        <Modal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          title={editingSale ? t('sales.editSale') || 'Edit Sale' : t('sales.addSale')}
+        >
           <SaleForm onSave={handleSaveSale} onCancel={handleCloseModal} editingSale={editingSale} />
         </Modal>
       )}
@@ -287,7 +293,10 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
           title={t('sales.deleteConfirmTitle') || 'Delete Sale'}
         >
           <div className="space-y-4">
-            <p className="text-[#F5F5DC]/80">{t('sales.deleteConfirmMessage') || 'Are you sure you want to delete this sale? This will restore product quantities.'}</p>
+            <p className="text-[#F5F5DC]/80">
+              {t('sales.deleteConfirmMessage') ||
+                'Are you sure you want to delete this sale? This will restore product quantities.'}
+            </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDeletingSaleId(null)}
@@ -319,8 +328,16 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
   const { t } = useI18n();
   const { state } = useAppContext();
   const { formatCurrency } = useCurrency();
+  const [previewImage, setPreviewImage] = useState<{ url: string; label: string } | null>(null);
   const [items, setItems] = useState<Omit<SaleItem, 'productName' | 'cost'>[]>(
-    () => editingSale?.items.map((item) => ({ productId: item.productId, quantity: item.quantity, price: item.price })) || [],
+    () =>
+      editingSale?.items.map((item) => ({
+        productId: item.productId,
+        productVariantId: item.productVariantId,
+        quantity: item.quantity,
+        price: item.price,
+        variantLabel: item.variantLabel,
+      })) || [],
   );
   const [clientId, setClientId] = useState<string | undefined>(editingSale?.clientId);
   const [errors, setErrors] = useState<{ general?: string; items?: { [key: number]: string } }>({});
@@ -329,15 +346,50 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
     return state.products.filter((p) => p.quantity > 0 && p.isActive !== false);
   }, [state.products]);
 
+  const getSelectedProduct = (productId: string): Product | null => {
+    const product = state.products.find((p) => p.id === productId);
+    return product ? normalizeProduct(product) : null;
+  };
+
+  const getSelectedVariant = (product: Product | null, variantId?: string) => {
+    if (!product) return null;
+    const variants = getProductVariants(product);
+    if (variants.length === 0) return null;
+    if (variantId) {
+      return variants.find((variant) => variant.id === variantId) || variants[0];
+    }
+    return variants[0];
+  };
+
+  const openImagePreview = (product: Product | null, variant?: ReturnType<typeof getSelectedVariant>) => {
+    const imageUrl = variant?.imageUrl || product?.imageUrl;
+    if (!imageUrl) return;
+
+    setPreviewImage({
+      url: imageUrl,
+      label: variant
+        ? `${product?.name || ''} - ${product ? getProductVariantDisplay(product, variant) || variant.label : variant.label}`.trim()
+        : product?.name || '',
+    });
+  };
+
   const handleItemChange = (index: number, field: 'productId' | 'quantity' | 'price', value: string) => {
     const newItems = [...items];
     const currentItem = { ...newItems[index] };
 
     if (field === 'productId') {
-      const product = state.products.find((p) => p.id === value);
+      const product = getSelectedProduct(value);
+      const variants = product ? getProductVariants(product) : [];
+      const selectedVariant = variants[0] || null;
       currentItem.productId = value;
-      currentItem.price = product?.price ?? 0;
+      currentItem.productVariantId = selectedVariant?.id;
+      currentItem.price = selectedVariant?.price ?? product?.price ?? 0;
       currentItem.quantity = 1;
+      if (selectedVariant) {
+        (currentItem as any).variantLabel = product ? getProductVariantDisplay(product, selectedVariant) : undefined;
+      } else {
+        delete (currentItem as any).variantLabel;
+      }
     } else if (field === 'quantity') {
       currentItem.quantity = Number(value) || 1;
     } else if (field === 'price') {
@@ -356,6 +408,22 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
     setItems(items.filter((_, i) => i !== index));
   };
 
+  const handleVariantChange = (index: number, variantId: string) => {
+    const newItems = [...items];
+    const currentItem = { ...newItems[index] };
+    const product = getSelectedProduct(currentItem.productId);
+    const variant = getSelectedVariant(product, variantId);
+
+    currentItem.productVariantId = variant?.id;
+    currentItem.price = variant?.price ?? product?.price ?? 0;
+    if (variant) {
+      (currentItem as any).variantLabel = product ? getProductVariantDisplay(product, variant) : undefined;
+    }
+
+    newItems[index] = currentItem;
+    setItems(newItems);
+  };
+
   const validate = () => {
     const newErrors: { general?: string; items?: { [key: number]: string } } = { items: {} };
     let isValid = true;
@@ -365,12 +433,17 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
     }
 
     items.forEach((item, index) => {
-      const product = state.products.find((p) => p.id === item.productId);
+      const product = getSelectedProduct(item.productId);
+      const variant = getSelectedVariant(product, item.productVariantId);
       if (!product) {
         if (!newErrors.items) newErrors.items = {};
         newErrors.items[index] = t('validation.selectProduct');
         isValid = false;
-      } else if (item.quantity > product.quantity) {
+      } else if (item.productVariantId && variant && item.quantity > variant.quantity) {
+        if (!newErrors.items) newErrors.items = {};
+        newErrors.items[index] = t('validation.insufficientStock', { stock: variant.quantity });
+        isValid = false;
+      } else if (!item.productVariantId && item.quantity > product.quantity) {
         if (!newErrors.items) newErrors.items = {};
         newErrors.items[index] = t('validation.insufficientStock', { stock: product.quantity });
         isValid = false;
@@ -385,32 +458,35 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
     return isValid;
   };
 
-  const { totalPrice, totalProfit } = useMemo(() => {
-    return items.reduce(
-      (acc, item) => {
-        const product = state.products.find((p) => p.id === item.productId);
-        if (product) {
-          acc.totalPrice += item.price * item.quantity;
-          acc.totalProfit += (item.price - product.cost) * item.quantity;
-        }
-        return acc;
-      },
-      { totalPrice: 0, totalProfit: 0 },
-    );
-  }, [items, state.products]);
+  const { totalPrice, totalProfit } = items.reduce(
+    (acc, item) => {
+      const product = getSelectedProduct(item.productId);
+      const variant = getSelectedVariant(product, item.productVariantId);
+      if (product) {
+        acc.totalPrice += item.price * item.quantity;
+        acc.totalProfit += (item.price - (variant?.cost ?? product.cost)) * item.quantity;
+      }
+      return acc;
+    },
+    { totalPrice: 0, totalProfit: 0 },
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
       const saleItems: SaleItem[] = items.map((item) => {
-        const product = state.products.find((p) => p.id === item.productId);
+        const product = getSelectedProduct(item.productId);
+        const variant = getSelectedVariant(product, item.productVariantId);
         if (!product) {
           throw new Error('Product not found');
         }
         return {
           ...item,
-          productName: product.name,
-          cost: product.cost,
+          productVariantId: variant?.id,
+          variantLabel: product && variant ? getProductVariantDisplay(product, variant) : undefined,
+          productName:
+            product && variant ? `${product.name} - ${getProductVariantDisplay(product, variant)}` : product.name,
+          cost: variant?.cost ?? product.cost,
           supplierId: product.supplierId,
         };
       });
@@ -428,7 +504,9 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
     <form onSubmit={handleSubmit} data-testid="sale-form">
       <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
         {items.map((item, index) => {
-          const product = state.products.find((p) => p.id === item.productId);
+          const product = getSelectedProduct(item.productId);
+          const variants = product ? getProductVariants(product) : [];
+          const selectedVariant = getSelectedVariant(product, item.productVariantId);
           return (
             <div key={index} className="flex flex-col gap-2 p-3 rounded-md bg-[#121212]">
               <div className="flex items-center gap-2">
@@ -454,6 +532,51 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
                   🗑️
                 </button>
               </div>
+              {(product?.imageUrl || selectedVariant?.imageUrl) && (
+                <button
+                  type="button"
+                  onClick={() => openImagePreview(product, selectedVariant)}
+                  className="flex w-full items-center gap-3 rounded-md border border-[#F5F5DC]/15 bg-[#1a1a1a] p-2 text-left transition-colors hover:border-[#F5F5DC]/30 active:scale-[0.99]"
+                  aria-label={t('common.product')}
+                >
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/10 bg-black/20">
+                    <img
+                      src={selectedVariant?.imageUrl || product?.imageUrl || ''}
+                      alt={selectedVariant ? selectedVariant.label || product?.name || '' : product?.name || ''}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-[#F5F5DC]">{product?.name || ''}</p>
+                    <p className="truncate text-xs text-[#F5F5DC]/60">
+                      {selectedVariant
+                        ? product
+                          ? getProductVariantDisplay(product, selectedVariant) || selectedVariant.label
+                          : selectedVariant.label
+                        : t('common.product')}
+                    </p>
+                    <p className="text-[11px] text-[#F5F5DC]/45">
+                      {t('inventory.form.clickImageToPreview') || 'Toca la imagen para verla grande'}
+                    </p>
+                  </div>
+                  <ImageIcon className="h-4 w-4 shrink-0 text-[#F5F5DC]/50" aria-hidden="true" />
+                </button>
+              )}
+              {variants.length > 1 && (
+                <select
+                  value={item.productVariantId || variants[0]?.id || ''}
+                  onChange={(e) => handleVariantChange(index, e.target.value)}
+                  className="w-full p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md text-sm min-h-[44px]"
+                  data-testid={`sale-item-variant-${index}`}
+                >
+                  {variants.map((variant) => (
+                    <option key={variant.id} value={variant.id}>
+                      {product ? getProductVariantDisplay(product, variant) : variant.label || 'Default'} (
+                      {t('common.stock')}: {variant.quantity})
+                    </option>
+                  ))}
+                </select>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <input
                   data-testid={`sale-item-quantity-${index}`}
@@ -476,6 +599,14 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
                   className="w-full p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md text-sm min-h-[44px]"
                 />
               </div>
+              {selectedVariant && (
+                <p className="text-[11px] text-[#F5F5DC]/50">
+                  {product?.name || ''} -{' '}
+                  {product
+                    ? getProductVariantDisplay(product, selectedVariant) || selectedVariant.label
+                    : selectedVariant.label}
+                </p>
+              )}
               {errors.items?.[index] && <p className="text-red-400 text-xs">{errors.items[index]}</p>}
             </div>
           );
@@ -536,6 +667,43 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
           </button>
         </div>
       </div>
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#111111] p-3 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-[#F5F5DC]">{previewImage.label}</p>
+                <p className="text-xs text-[#F5F5DC]/50">
+                  {t('inventory.form.previewImage') || 'Vista previa de la imagen'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="rounded-full border border-white/10 bg-white/5 p-2 text-[#F5F5DC]/80 hover:bg-white/10"
+                aria-label={t('modal.close')}
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPreviewImage(null)}
+              className="block w-full overflow-hidden rounded-xl border border-white/10 bg-black/30"
+              aria-label={previewImage.label}
+            >
+              <img src={previewImage.url} alt={previewImage.label} className="max-h-[72vh] w-full object-contain" />
+            </button>
+          </div>
+        </div>
+      )}
     </form>
   );
 };

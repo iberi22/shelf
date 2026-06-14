@@ -80,11 +80,12 @@ const Reports: React.FC = () => {
     const products: { [key: string]: { id: string; name: string; revenue: number; profit: number } } = {};
     filteredSales.forEach((sale) => {
       sale.items.forEach((item) => {
-        if (!products[item.productId]) {
-          products[item.productId] = { id: item.productId, name: item.productName, revenue: 0, profit: 0 };
+        const itemKey = item.productVariantId ? `${item.productId}::${item.productVariantId}` : item.productId;
+        if (!products[itemKey]) {
+          products[itemKey] = { id: itemKey, name: item.productName, revenue: 0, profit: 0 };
         }
-        products[item.productId].revenue += item.price * item.quantity;
-        products[item.productId].profit += (item.price - item.cost) * item.quantity;
+        products[itemKey].revenue += item.price * item.quantity;
+        products[itemKey].profit += (item.price - item.cost) * item.quantity;
       });
     });
     const productList = Object.values(products);

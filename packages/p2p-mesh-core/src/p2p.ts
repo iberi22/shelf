@@ -70,6 +70,13 @@ export type SyncMessage =
 			payload: { deviceId: string; deviceName: string; authorizedAt: string };
 	  };
 
+export type ConnectionErrorInfo = {
+	peerId?: string;
+	type?: string;
+	message: string;
+	source: "peerjs" | "connection";
+};
+
 type HandshakeRequestPayload = {
 	kemPubKey: string;
 	dsaPubKey: string;
@@ -117,12 +124,15 @@ class P2PManager {
 		deviceName: string,
 		fromPeerId: string,
 	) => void)[] = [];
+	private onConnectionErrorCallbacks: ((issue: ConnectionErrorInfo) => void)[] =
+		[];
 
 	public localPeerId: string | null = null;
 	public role: P2PRole = "collaborator";
 	private peers: PeerInfo[] = [];
 	private lastMessageTime = new Map<string, number>();
 	private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+	private pendingConnectionRequests = new Set<string>();
 
 	// PQC Keypairs
 	private kemKeyPair = generateKEMKeyPair();
@@ -196,6 +206,12 @@ class P2PManager {
 	private emitMessageCallbacks(message: SyncMessage, fromPeerId: string) {
 		for (const cb of this.onMessageCallbacks) {
 			cb(message, fromPeerId);
+		}
+	}
+
+	private emitConnectionError(issue: ConnectionErrorInfo) {
+		for (const cb of this.onConnectionErrorCallbacks) {
+			cb(issue);
 		}
 	}
 
@@ -282,6 +298,8 @@ class P2PManager {
 				this.notifyConnectionChange();
 			}
 
+			this.flushPendingConnections();
+
 			// Start heartbeat/GC loop
 			this.heartbeatInterval = setInterval(() => {
 				this.runHeartbeat();
@@ -340,7 +358,17 @@ class P2PManager {
 					this.reconnectionAttempts++;
 					this.init(finalPeerId);
 				}, delay);
+				return;
 			}
+
+			this.emitConnectionError({
+				source: "peerjs",
+				type: typedErr.type,
+				message:
+					err instanceof Error
+						? err.message
+						: "No se pudo inicializar la conexión P2P.",
+			});
 		});
 
 		if (typeof window !== "undefined") {
@@ -523,13 +551,47 @@ class P2PManager {
 					status: "offline",
 				});
 			});
+
+			conn.on("error", (err: unknown) => {
+				logger.error(`Connection error with peer ${conn.peer}:`, err);
+				this.emitConnectionError({
+					peerId: conn.peer,
+					source: "connection",
+					type: (err as { type?: string } | undefined)?.type,
+					message:
+						err instanceof Error
+							? err.message
+							: `No se pudo conectar al peer ${conn.peer}.`,
+				});
+
+				// Force cleanup so the UI and presence state can recover immediately.
+				if (conn.open) {
+					conn.close();
+				}
+			});
 		});
 	}
 
 	public connect(peerId: string) {
-		if (!this.peer || this.connections.has(peerId)) return;
+		if (this.connections.has(peerId)) return;
+		if (!this.peer || !this.localPeerId || this.peer.destroyed || !this.peer.open) {
+			this.pendingConnectionRequests.add(peerId);
+			return;
+		}
 		const conn = this.peer.connect(peerId);
 		this.handleConnection(conn);
+	}
+
+	private flushPendingConnections() {
+		if (!this.peer || !this.localPeerId || this.peer.destroyed || !this.peer.open) return;
+
+		for (const peerId of Array.from(this.pendingConnectionRequests)) {
+			this.pendingConnectionRequests.delete(peerId);
+			if (!this.connections.has(peerId)) {
+				const conn = this.peer.connect(peerId);
+				this.handleConnection(conn);
+			}
+		}
 	}
 
 	private runHeartbeat() {
@@ -708,6 +770,10 @@ class P2PManager {
 		this.onRecoveryRequestCallbacks.push(cb);
 	}
 
+	public onConnectionError(cb: (issue: ConnectionErrorInfo) => void) {
+		this.onConnectionErrorCallbacks.push(cb);
+	}
+
 	/**
 	 * Send an account recovery request to a peer (master device).
 	 */
@@ -769,6 +835,7 @@ class P2PManager {
 		}
 		this.connections.clear();
 		this.sharedSecrets.clear();
+		this.pendingConnectionRequests.clear();
 		this.peer?.destroy();
 		this.peer = null;
 	}

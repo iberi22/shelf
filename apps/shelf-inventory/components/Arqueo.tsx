@@ -21,7 +21,7 @@ export default function Arqueo() {
   if (!isPro && !isPyme) {
     return (
       <div className="p-4 text-center">
-        <div className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-6">
+        <div className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-6">
           <h2 className="text-xl font-semibold text-[#F5F5DC] mb-2">Arqueo - Pro Feature</h2>
           <p className="text-[#F5F5DC]/70 mb-4">
             Invoice scanning and accounting is only available for Pro and Pyme users.
@@ -328,7 +328,7 @@ export default function Arqueo() {
             {state.arqueoSessions.map((session) => (
               <div
                 key={session.id}
-                className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 md:p-4 active:scale-[0.98] transition-transform"
+                className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 md:p-4 active:scale-[0.98] transition-transform"
               >
                 <div className="flex justify-between items-start">
                   <div>

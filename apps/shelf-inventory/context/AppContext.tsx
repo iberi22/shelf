@@ -4,6 +4,7 @@ import type {
   AuditEntry,
   Client,
   ImportProductsPayload,
+  InventoryConfig,
   InvoiceOCRResult,
   P2PRole,
   PeerInfo,
@@ -17,6 +18,8 @@ import type {
 import { dbSync, p2pManager } from 'p2p-mesh-core';
 import React, { createContext, type Dispatch, type ReactNode, useCallback, useContext, useEffect } from 'react';
 import usePersistedReducer from '../hooks/usePersistedReducer';
+import { DEFAULT_INVENTORY_CONFIG, normalizeInventoryConfig } from '../lib/inventoryConfig';
+import { getProductVariants, normalizeProduct } from '../lib/productVariants';
 
 const initialState: AppState = {
   products: [],
@@ -27,6 +30,7 @@ const initialState: AppState = {
   auditLogs: [],
   peers: [],
   teamMembers: [],
+  inventoryConfig: DEFAULT_INVENTORY_CONFIG,
   localPeerId: null,
   role: 'admin',
   arqueoSessions: [],
@@ -68,6 +72,7 @@ type Action =
   | { type: 'UPDATE_OCR_RESULT'; payload: InvoiceOCRResult }
   | { type: 'UPDATE_PEER_PERMISSIONS'; payload: { targetPeerId: string; permissions: any } }
   | { type: 'UPDATE_PEER_CONFIG'; payload: { targetPeerId: string; role: P2PRole; permissions?: any } }
+  | { type: 'UPDATE_INVENTORY_CONFIG'; payload: InventoryConfig }
   | { type: 'CLEAR_AUDIT_LOGS'; payload?: { beforeDate: string } }
   | { type: 'RESET_DATA' };
 
@@ -101,6 +106,75 @@ const getTimestamp = (item: any): number => {
   return ts ? new Date(ts).getTime() : 0;
 };
 
+const normalizeProductsCollection = (products: Product[] | undefined): Product[] =>
+  (products || []).map((product) => normalizeProduct(product));
+
+const updateInventoryQuantity = (
+  state: AppState,
+  products: Product[],
+  productId: string,
+  productVariantId: string | undefined,
+  delta: number,
+): Product[] => {
+  const index = products.findIndex((product) => product.id === productId);
+  if (index === -1) return products;
+
+  const currentProduct = normalizeProduct(products[index]);
+  const variants = getProductVariants(currentProduct);
+  const targetVariantId =
+    productVariantId && variants.some((variant) => variant.id === productVariantId)
+      ? productVariantId
+      : variants[0]?.id;
+
+  const nextVariants = variants.map((variant) =>
+    variant.id === targetVariantId
+      ? {
+          ...variant,
+          quantity: Math.max(0, variant.quantity + delta),
+          updatedAt: new Date().toISOString(),
+          updatedBy: state.localPeerId || 'local',
+        }
+      : variant,
+  );
+
+  const nextProduct = normalizeProduct({
+    ...currentProduct,
+    variants: nextVariants,
+  });
+
+  return [...products.slice(0, index), enrich(state, nextProduct), ...products.slice(index + 1)];
+};
+
+const syncInventoryStockChanges = (
+  state: AppState,
+  baseProducts: Product[],
+  items: Array<{ productId: string; productVariantId?: string; quantity: number }>,
+  direction: 1 | -1,
+) => {
+  let nextProducts = [...baseProducts];
+  const touchedProductIds = new Set<string>();
+
+  for (const item of items) {
+    nextProducts = updateInventoryQuantity(
+      state,
+      nextProducts,
+      item.productId,
+      item.productVariantId,
+      direction * item.quantity,
+    );
+    touchedProductIds.add(item.productId);
+  }
+
+  for (const productId of touchedProductIds) {
+    const nextProduct = nextProducts.find((product) => product.id === productId);
+    if (nextProduct) {
+      dbSync.upsertEntity('products', nextProduct);
+    }
+  }
+
+  return nextProducts;
+};
+
 const mergeCollections = <T extends { id: string }>(local: T[], remote: T[] | undefined): T[] => {
   if (!remote || remote.length === 0) return local;
   if (local.length === 0) return remote;
@@ -125,12 +199,12 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
   switch (action.type) {
     case 'ADD_PRODUCT': {
-      const enriched = enrich(state, action.payload);
+      const enriched = enrich(state, normalizeProduct(action.payload));
       newState = { ...state, products: [...state.products, enriched] };
       break;
     }
     case 'UPDATE_PRODUCT': {
-      const enriched = enrich(state, action.payload);
+      const enriched = enrich(state, normalizeProduct(action.payload));
       newState = {
         ...state,
         products: state.products.map((p) => (p.id === action.payload.id ? enriched : p)),
@@ -153,8 +227,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
     case 'BATCH_UPDATE_PRODUCTS': {
       const { toAdd, toUpdate } = action.payload;
-      const enrichedToAdd = toAdd.map((p) => enrich(state, p));
-      const enrichedToUpdate = toUpdate.map((p) => enrich(state, p));
+      const enrichedToAdd = toAdd.map((p) => enrich(state, normalizeProduct(p)));
+      const enrichedToUpdate = toUpdate.map((p) => enrich(state, normalizeProduct(p)));
       const updatedIds = new Set(enrichedToUpdate.map((p) => p.id));
       const updatedProducts = state.products.map((p) => {
         if (updatedIds.has(p.id)) {
@@ -182,16 +256,23 @@ const appReducer = (state: AppState, action: Action): AppState => {
           if (strategy === 'update') {
             const existingProduct = existingSkus.get(sku);
             if (existingProduct) {
-              const updatedProduct = enrich(state, { ...existingProduct, ...newProductData });
+              const updatedProduct = enrich(state, normalizeProduct({ ...existingProduct, ...newProductData }));
               productsToUpdate.set(updatedProduct.id, updatedProduct);
             }
           }
         } else {
+          const productId = `${new Date().toISOString()}_${Math.random()}`;
           productsToAdd.push(
-            enrich(state, {
-              id: `${new Date().toISOString()}_${Math.random()}`,
-              ...newProductData,
-            }) as Product,
+            enrich(
+              state,
+              normalizeProduct({
+                id: productId,
+                isActive: true,
+                updatedBy: state.localPeerId || 'local',
+                updatedAt: new Date().toISOString(),
+                ...newProductData,
+              } as Product),
+            ) as Product,
           );
         }
       });
@@ -217,32 +298,24 @@ const appReducer = (state: AppState, action: Action): AppState => {
       // Restore quantities from old sale items
       let updatedProducts = state.products;
       for (const oldItem of oldSale.items) {
-        const productIndex = updatedProducts.findIndex((p) => p.id === oldItem.productId);
-        if (productIndex !== -1) {
-          updatedProducts = [
-            ...updatedProducts.slice(0, productIndex),
-            enrich(state, {
-              ...updatedProducts[productIndex],
-              quantity: updatedProducts[productIndex].quantity + oldItem.quantity,
-            }),
-            ...updatedProducts.slice(productIndex + 1),
-          ];
-        }
+        updatedProducts = updateInventoryQuantity(
+          state,
+          updatedProducts,
+          oldItem.productId,
+          oldItem.productVariantId,
+          oldItem.quantity,
+        );
       }
 
       // Deduct quantities from new sale items
       for (const newItem of action.payload.items) {
-        const productIndex = updatedProducts.findIndex((p) => p.id === newItem.productId);
-        if (productIndex !== -1) {
-          updatedProducts = [
-            ...updatedProducts.slice(0, productIndex),
-            enrich(state, {
-              ...updatedProducts[productIndex],
-              quantity: updatedProducts[productIndex].quantity - newItem.quantity,
-            }),
-            ...updatedProducts.slice(productIndex + 1),
-          ];
-        }
+        updatedProducts = updateInventoryQuantity(
+          state,
+          updatedProducts,
+          newItem.productId,
+          newItem.productVariantId,
+          -newItem.quantity,
+        );
       }
 
       const salePayload = enrich(state, action.payload);
@@ -268,17 +341,13 @@ const appReducer = (state: AppState, action: Action): AppState => {
       // Restore quantities when soft-deleting a sale
       if (deletedSale) {
         for (const item of deletedSale.items) {
-          const productIndex = productsAfterDelete.findIndex((p) => p.id === item.productId);
-          if (productIndex !== -1) {
-            productsAfterDelete = [
-              ...productsAfterDelete.slice(0, productIndex),
-              enrich(state, {
-                ...productsAfterDelete[productIndex],
-                quantity: productsAfterDelete[productIndex].quantity + item.quantity,
-              }),
-              ...productsAfterDelete.slice(productIndex + 1),
-            ];
-          }
+          productsAfterDelete = updateInventoryQuantity(
+            state,
+            productsAfterDelete,
+            item.productId,
+            item.productVariantId,
+            item.quantity,
+          );
         }
       }
 
@@ -295,15 +364,15 @@ const appReducer = (state: AppState, action: Action): AppState => {
     }
 
     case 'ADD_SALE': {
-      const newProducts = [...state.products];
+      let newProducts = [...state.products];
       for (const item of action.payload.items) {
-        const productIndex = newProducts.findIndex((p) => p.id === item.productId);
-        if (productIndex !== -1) {
-          newProducts[productIndex] = enrich(state, {
-            ...newProducts[productIndex],
-            quantity: Math.max(0, newProducts[productIndex].quantity - item.quantity),
-          });
-        }
+        newProducts = updateInventoryQuantity(
+          state,
+          newProducts,
+          item.productId,
+          item.productVariantId,
+          -item.quantity,
+        );
       }
 
       const salePayload = enrich(state, action.payload);
@@ -371,13 +440,16 @@ const appReducer = (state: AppState, action: Action): AppState => {
       let products = state.products;
 
       if (oldPO?.status === 'pending' && newPO.status === 'received') {
-        products = state.products.map((p) => {
-          const poItem = newPO.items.find((item) => item.productId === p.id);
-          if (poItem) {
-            return enrich(state, { ...p, quantity: p.quantity + poItem.quantity });
-          }
-          return p;
-        });
+        products = [...state.products];
+        for (const poItem of newPO.items) {
+          products = updateInventoryQuantity(
+            state,
+            products,
+            poItem.productId,
+            poItem.productVariantId,
+            poItem.quantity,
+          );
+        }
       }
 
       newState = {
@@ -480,7 +552,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
       const peerExists = state.peers.some((p) => p.id === targetPeerId);
       const peers = peerExists
-        ? state.peers.map((p) => (p.id === targetPeerId ? { ...p, role, permissions: permissions || p.permissions } : p))
+        ? state.peers.map((p) =>
+            p.id === targetPeerId ? { ...p, role, permissions: permissions || p.permissions } : p,
+          )
         : [
             ...state.peers,
             {
@@ -494,11 +568,21 @@ const appReducer = (state: AppState, action: Action): AppState => {
       return { ...state, peers };
     }
 
+    case 'UPDATE_INVENTORY_CONFIG': {
+      return {
+        ...state,
+        inventoryConfig: normalizeInventoryConfig(action.payload),
+      };
+    }
+
     case 'SYNC_STATE': {
       const p = action.payload;
       return {
         ...state,
-        products: mergeCollections(state.products, p.products),
+        products: mergeCollections(
+          normalizeProductsCollection(state.products),
+          normalizeProductsCollection(p.products),
+        ),
         sales: mergeCollections(state.sales, p.sales),
         clients: mergeCollections(state.clients, p.clients),
         suppliers: mergeCollections(state.suppliers, p.suppliers),
@@ -506,6 +590,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
         auditLogs: mergeCollections(state.auditLogs, p.auditLogs),
         arqueoSessions: mergeCollections(state.arqueoSessions, p.arqueoSessions),
         ocrResults: mergeCollections(state.ocrResults, p.ocrResults),
+        teamMembers: mergeCollections(state.teamMembers, p.teamMembers),
+        inventoryConfig: normalizeInventoryConfig(p.inventoryConfig || state.inventoryConfig),
         peers: mergeCollections(state.peers, p.peers),
         role: p.role || state.role,
         permissions: p.permissions || state.permissions,
@@ -520,9 +606,11 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
       const filteredExisting = existingItems.filter((i) => !updatedIds.has(i.id) && !deletedIdsSet.has(i.id));
 
+      const nextItems = collection === 'products' ? normalizeProductsCollection(items as Product[]) : items;
+
       return {
         ...state,
-        [collection]: [...filteredExisting, ...items],
+        [collection]: [...filteredExisting, ...nextItems],
       };
     }
 
@@ -552,7 +640,12 @@ const appReducer = (state: AppState, action: Action): AppState => {
     }
 
     case 'RESTORE_STATE':
-      return { ...initialState, ...action.payload };
+      return {
+        ...initialState,
+        ...action.payload,
+        products: normalizeProductsCollection(action.payload.products),
+        inventoryConfig: normalizeInventoryConfig(action.payload.inventoryConfig || initialState.inventoryConfig),
+      };
 
     case 'CLEAR_AUDIT_LOGS': {
       if (action.payload?.beforeDate) {
@@ -673,6 +766,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             purchaseOrders: remoteState.purchaseOrders,
             arqueoSessions: remoteState.arqueoSessions,
             ocrResults: remoteState.ocrResults,
+            teamMembers: remoteState.teamMembers,
+            inventoryConfig: remoteState.inventoryConfig,
             role: remoteState.role,
             permissions: remoteState.permissions,
             peers: remoteState.peers,
@@ -709,27 +804,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Setup P2P Handlers
     p2pManager.onConnectionChange((_peers) => {
       const remoteState = dbSync.getState(dbSync.localPeerId);
-      const currentLocal = stateRef.current;
-      const filterNew = <T extends { id: string }>(remote: T[] | undefined, local: T[]): T[] => {
-        if (!remote || remote.length === 0) return [];
-        const localIds = new Set(local.map((l) => l.id));
-        return remote.filter((r) => !localIds.has(r.id));
-      };
       rawDispatch({
         type: 'SYNC_STATE',
-        payload: {
-          products: filterNew(remoteState.products, currentLocal.products),
-          sales: filterNew(remoteState.sales, currentLocal.sales),
-          clients: filterNew(remoteState.clients, currentLocal.clients),
-          suppliers: filterNew(remoteState.suppliers, currentLocal.suppliers),
-          purchaseOrders: filterNew(remoteState.purchaseOrders, currentLocal.purchaseOrders),
-          arqueoSessions: filterNew(remoteState.arqueoSessions, currentLocal.arqueoSessions),
-          ocrResults: filterNew(remoteState.ocrResults, currentLocal.ocrResults),
-          role: remoteState.role,
-          permissions: remoteState.permissions,
-          peers: remoteState.peers,
-          auditLogs: remoteState.auditLogs,
-        },
+        payload: remoteState,
       });
     });
 
@@ -815,20 +892,75 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } else if (typeStr === 'ADD_SALE') {
         const salePayload = enrich(currentState, payload);
         dbSync.upsertEntity('sales', salePayload);
-
-        // Decrement product quantities in CRDT
-        for (const item of payload.items) {
-          const product = currentState.products.find((p) => p.id === item.productId);
-          if (product) {
-            dbSync.upsertEntity(
-              'products',
-              enrich(currentState, {
-                ...product,
-                quantity: Math.max(0, product.quantity - item.quantity),
-              }),
-            );
-          }
+        syncInventoryStockChanges(currentState, currentState.products, payload.items || [], -1);
+      } else if (typeStr === 'UPDATE_SALE') {
+        const oldSale = currentState.sales.find((sale) => sale.id === payload.id);
+        if (oldSale) {
+          const adjustedProducts = syncInventoryStockChanges(
+            currentState,
+            currentState.products,
+            oldSale.items || [],
+            1,
+          );
+          syncInventoryStockChanges(currentState, adjustedProducts, payload.items || [], -1);
         }
+        dbSync.upsertEntity('sales', enrich(currentState, payload));
+      } else if (typeStr === 'DELETE_SALE') {
+        const deletedSale = currentState.sales.find((sale) => sale.id === payload);
+        if (deletedSale) {
+          syncInventoryStockChanges(currentState, currentState.products, deletedSale.items || [], 1);
+        }
+        const sale = currentState.sales.find((s) => s.id === payload);
+        if (sale) {
+          dbSync.upsertEntity('sales', {
+            ...sale,
+            isActive: false,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentState.localPeerId || 'local',
+          });
+        }
+      } else if (typeStr === 'UPDATE_PURCHASE_ORDER') {
+        const oldPO = currentState.purchaseOrders.find((po) => po.id === payload.id);
+        if (oldPO?.status === 'pending' && payload.status === 'received') {
+          syncInventoryStockChanges(currentState, currentState.products, payload.items || [], 1);
+        }
+        dbSync.upsertEntity('purchaseOrders', enrich(currentState, payload));
+      } else if (typeStr === 'ADD_TEAM_MEMBER' || typeStr === 'UPDATE_TEAM_MEMBER') {
+        if (payload?.id) {
+          dbSync.upsertEntity('teamMembers', payload);
+        }
+      } else if (typeStr === 'DELETE_TEAM_MEMBER') {
+        if (payload) {
+          dbSync.deleteEntity('teamMembers', payload);
+        }
+      } else if (typeStr === 'RECOVER_ITEM') {
+        const { type, id } = payload || {};
+        const collectionMap: Record<NonNullable<AuditEntry['entityType']>, keyof AppState> = {
+          product: 'products',
+          sale: 'sales',
+          client: 'clients',
+          supplier: 'suppliers',
+          purchaseOrder: 'purchaseOrders',
+        };
+        const collection = type ? collectionMap[type as NonNullable<AuditEntry['entityType']>] : undefined;
+        const item = collection ? (currentState[collection] as any[])?.find((entry) => entry.id === id) : null;
+        if (collection && item) {
+          dbSync.upsertEntity(collection, {
+            ...item,
+            isActive: true,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentState.localPeerId || 'local',
+          });
+        }
+      } else if (typeStr === 'CLEAR_AUDIT_LOGS') {
+        const beforeDate = payload?.beforeDate ? new Date(payload.beforeDate).getTime() : null;
+        const logsToDelete = currentState.auditLogs.filter((log) => {
+          if (beforeDate === null) return true;
+          return new Date(log.timestamp).getTime() < beforeDate;
+        });
+        logsToDelete.forEach((log: AuditEntry) => {
+          dbSync.deleteEntity('auditLogs', log.id);
+        });
       } else if (typeStr.startsWith('ADD_') || typeStr.startsWith('UPDATE_')) {
         if (payload?.id) {
           const collectionMap: Record<string, keyof AppState> = {
@@ -839,6 +971,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             PURCHASE_ORDER: 'purchaseOrders',
             ARQUEO_SESSION: 'arqueoSessions',
             OCR_RESULT: 'ocrResults',
+            TEAM_MEMBER: 'teamMembers',
           };
           for (const [key, collection] of Object.entries(collectionMap)) {
             if (typeStr.includes(key)) {
@@ -858,6 +991,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             PURCHASE_ORDER: 'purchaseOrders',
             ARQUEO_SESSION: 'arqueoSessions',
             OCR_RESULT: 'ocrResults',
+            TEAM_MEMBER: 'teamMembers',
           };
 
           for (const [key, collection] of Object.entries(collectionMap)) {

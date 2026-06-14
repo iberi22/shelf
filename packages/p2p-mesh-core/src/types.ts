@@ -25,16 +25,31 @@ export interface Product extends BaseEntity {
   dimensions?: string;
   capacity?: string;
   material?: string;
+  customFields?: Record<string, string>;
   supplierId?: string;
+  variantAttributes?: string[];
+  variants?: ProductVariant[];
+}
+
+export interface ProductVariant extends BaseEntity {
+  label?: string;
+  sku?: string;
+  quantity: number;
+  price: number;
+  cost: number;
+  imageUrl?: string;
+  attributes: Record<string, string>;
 }
 
 export interface SaleItem {
   productId: string;
+  productVariantId?: string;
   productName: string;
   quantity: number;
   price: number; // price per unit at the time of sale
   cost: number; // cost per unit at the time of sale
   supplierId?: string;
+  variantLabel?: string;
 }
 
 export interface Sale extends BaseEntity {
@@ -60,9 +75,11 @@ export interface Supplier extends BaseEntity {
 
 export interface PurchaseOrderItem {
   productId: string;
+  productVariantId?: string;
   productName: string;
   quantity: number;
   cost: number;
+  variantLabel?: string;
 }
 
 export interface PurchaseOrder extends BaseEntity {
@@ -145,6 +162,7 @@ export interface AppState {
   auditLogs: AuditEntry[];
   peers: PeerInfo[];
   teamMembers: TeamMember[];
+  inventoryConfig: InventoryConfig;
   localPeerId: string | null;
   role: P2PRole;
   permissions?: PeerPermissions;
@@ -208,4 +226,19 @@ export interface ArqueoSession extends BaseEntity {
   invoices: ScannedInvoice[];
   createdProducts: string[]; // Product IDs created from invoices
   status: 'open' | 'closed';
+}
+
+export type InventoryFieldType = 'text' | 'color' | 'measure';
+
+export interface InventoryFieldDefinition {
+  id: string;
+  key: string;
+  label: string;
+  type: InventoryFieldType;
+}
+
+export interface InventoryConfig {
+  variantAttributes: string[];
+  fields: InventoryFieldDefinition[];
+  measureOptions: string[];
 }

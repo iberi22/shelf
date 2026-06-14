@@ -1,10 +1,11 @@
-import type { PurchaseOrder, PurchaseOrderItem } from 'p2p-mesh-core';
+import type { Product, PurchaseOrder, PurchaseOrderItem } from 'p2p-mesh-core';
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
 import { useSortableTable } from '../hooks/useSortableTable';
+import { getProductVariantDisplay, getProductVariants, normalizeProduct } from '../lib/productVariants';
 import { InfiniteTable } from './InfiniteTable';
 import Modal from './Modal';
 
@@ -162,7 +163,7 @@ const PurchaseOrders: React.FC = () => {
           sortedPOs.map((po) => (
             <div
               key={po.id}
-              className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
+              className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1 min-w-0">
@@ -237,11 +238,33 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
   const { state } = useAppContext();
   const [supplierId, setSupplierId] = useState(purchaseOrder?.supplierId || '');
   const [items, setItems] = useState<Omit<PurchaseOrderItem, 'productName'>[]>(
-    purchaseOrder?.items || [{ productId: '', quantity: 1, cost: 0 }],
+    () =>
+      purchaseOrder?.items.map((item) => ({
+        productId: item.productId,
+        productVariantId: item.productVariantId,
+        quantity: item.quantity,
+        cost: item.cost,
+        variantLabel: item.variantLabel,
+      })) || [{ productId: '', quantity: 1, cost: 0 }],
   );
   const [errors, setErrors] = useState<{ [key: string]: any }>({});
 
   const isEditingReceived = purchaseOrder?.status === 'received';
+
+  const getSelectedProduct = (productId: string): Product | null => {
+    const product = state.products.find((p) => p.id === productId);
+    return product ? normalizeProduct(product) : null;
+  };
+
+  const getSelectedVariant = (product: Product | null, variantId?: string) => {
+    if (!product) return null;
+    const variants = getProductVariants(product);
+    if (variants.length === 0) return null;
+    if (variantId) {
+      return variants.find((variant) => variant.id === variantId) || variants[0];
+    }
+    return variants[0];
+  };
 
   const validate = () => {
     const newErrors: { [key: string]: any } = { items: [] };
@@ -280,10 +303,27 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
     value: string | number,
   ) => {
     const newItems = [...items];
-    const product = state.products.find((p) => p.id === value);
+    const product =
+      field === 'productId' ? getSelectedProduct(String(value)) : getSelectedProduct(newItems[index].productId);
 
-    if (field === 'productId' && product) {
-      newItems[index] = { ...newItems[index], productId: String(value), cost: product.cost };
+    if (field === 'productId') {
+      const variants = product ? getProductVariants(product) : [];
+      const selectedVariant = variants[0] || null;
+      newItems[index] = {
+        ...newItems[index],
+        productId: String(value),
+        productVariantId: selectedVariant?.id,
+        cost: selectedVariant?.cost ?? product?.cost ?? 0,
+        variantLabel: product && selectedVariant ? getProductVariantDisplay(product, selectedVariant) : undefined,
+      };
+    } else if (field === 'productVariantId') {
+      const selectedVariant = getSelectedVariant(product, String(value));
+      newItems[index] = {
+        ...newItems[index],
+        productVariantId: selectedVariant?.id,
+        cost: selectedVariant?.cost ?? product?.cost ?? 0,
+        variantLabel: product && selectedVariant ? getProductVariantDisplay(product, selectedVariant) : undefined,
+      };
     } else {
       newItems[index] = { ...newItems[index], [field]: value };
     }
@@ -305,12 +345,18 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
       if (!supplier) return;
 
       const enrichedItems: PurchaseOrderItem[] = items.map((item) => {
-        const product = state.products.find((p) => p.id === item.productId);
+        const product = getSelectedProduct(item.productId);
+        const variant = getSelectedVariant(product, item.productVariantId);
         return {
           ...item,
           quantity: Number(item.quantity),
+          productVariantId: variant?.id,
+          variantLabel: product && variant ? getProductVariantDisplay(product, variant) : undefined,
           cost: Number(item.cost),
-          productName: product?.name || 'Unknown',
+          productName:
+            variant && product
+              ? `${product.name} - ${getProductVariantDisplay(product, variant)}`
+              : product?.name || 'Unknown',
         };
       });
 
@@ -369,6 +415,26 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
                     </option>
                   ))}
               </select>
+              {(() => {
+                const product = getSelectedProduct(item.productId);
+                const variants = product ? getProductVariants(product) : [];
+                return variants.length > 1 ? (
+                  <select
+                    value={item.productVariantId || variants[0]?.id || ''}
+                    onChange={(e) => handleItemChange(index, 'productVariantId', e.target.value)}
+                    className="w-full sm:flex-1 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md min-h-[44px]"
+                    disabled={isEditingReceived}
+                    data-testid={`purchase-order-item-variant-${index}`}
+                  >
+                    {variants.map((variant) => (
+                      <option key={variant.id} value={variant.id}>
+                        {product ? getProductVariantDisplay(product, variant) : variant.label || 'Default'} (
+                        {t('common.stock')}: {variant.quantity})
+                      </option>
+                    ))}
+                  </select>
+                ) : null;
+              })()}
               <div className="grid grid-cols-2 sm:flex gap-2">
                 <input
                   type="number"

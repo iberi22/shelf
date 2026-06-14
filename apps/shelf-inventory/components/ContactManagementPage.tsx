@@ -162,7 +162,7 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
             <div
               key={contact.id}
               data-testid={`${contactType}-card-${contact.id}`}
-              className="bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
+              className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex-1 min-w-0">

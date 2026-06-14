@@ -4,6 +4,7 @@ import { createContext, type ReactNode, useCallback, useContext, useState } from
 interface NotificationState {
   message: string;
   type: 'error' | 'success' | 'info';
+  durationMs?: number;
 }
 
 interface UIContextProps {
@@ -15,7 +16,7 @@ interface UIContextProps {
   openSubscriptionModal: () => void;
   closeSubscriptionModal: () => void;
   notification: NotificationState | null;
-  showNotification: (message: string, type: NotificationState['type']) => void;
+  showNotification: (message: string, type: NotificationState['type'], durationMs?: number) => void;
   hideNotification: () => void;
 }
 
@@ -39,9 +40,12 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const openSubscriptionModal = useCallback(() => setSubscriptionModalOpen(true), []);
   const closeSubscriptionModal = useCallback(() => setSubscriptionModalOpen(false), []);
 
-  const showNotification = useCallback((message: string, type: NotificationState['type']) => {
-    setNotification({ message, type });
-  }, []);
+  const showNotification = useCallback(
+    (message: string, type: NotificationState['type'], durationMs?: number) => {
+      setNotification({ message, type, durationMs });
+    },
+    [],
+  );
 
   const hideNotification = useCallback(() => {
     setNotification(null);

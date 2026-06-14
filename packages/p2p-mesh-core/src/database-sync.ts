@@ -5,11 +5,13 @@ import type {
 	AuditEntry,
 	Client,
 	InvoiceOCRResult,
+	InventoryConfig,
 	P2PRole,
 	PeerInfo,
 	PeerPermissions,
 	Product,
 	PurchaseOrder,
+	TeamMember,
 	Sale,
 	Supplier,
 } from "./types";
@@ -44,6 +46,7 @@ class DatabaseSyncManager {
 	private auditLogs: Y.Map<AuditEntry>;
 	private arqueoSessions: Y.Map<ArqueoSession>;
 	private ocrResults: Y.Map<InvoiceOCRResult>;
+	private teamMembers: Y.Map<TeamMember>;
 	private metadata: Y.Map<string>;
 	private linkedNodes: Y.Map<LinkedNodeRecord>;
 	private ephemeralNodes: Map<string, Partial<LinkedNodeRecord>> = new Map();
@@ -148,6 +151,7 @@ class DatabaseSyncManager {
 		this.auditLogs = this.doc.getMap("auditLogs");
 		this.arqueoSessions = this.doc.getMap("arqueoSessions");
 		this.ocrResults = this.doc.getMap("ocrResults");
+		this.teamMembers = this.doc.getMap("teamMembers");
 		this.metadata = this.doc.getMap("metadata");
 		this.linkedNodes = this.doc.getMap("linkedNodes");
 	}
@@ -194,6 +198,8 @@ class DatabaseSyncManager {
 				return !!perms.canEditSuppliers;
 			case "purchaseOrders":
 				return !!perms.canEditPurchaseOrders;
+			case "teamMembers":
+				return false;
 			case "arqueoSessions":
 				return !!perms.canViewArqueo;
 			case "ocrResults":
@@ -238,16 +244,8 @@ class DatabaseSyncManager {
 		const yMap = this.getMapForCollection(collectionName);
 		if (!yMap) return;
 
-		const getTs = (obj: Partial<EntityRecord>) => {
-			const ts = obj.updatedAt || obj.timestamp || obj.lastSeen || 0;
-			return ts ? new Date(ts).getTime() : 0;
-		};
-
 		this.doc.transact(() => {
-			const existing = yMap.get(item.id);
-			if (!existing || getTs(item) > getTs(existing)) {
-				yMap.set(item.id, item);
-			}
+			yMap.set(item.id, item);
 		}, "local");
 	}
 
@@ -288,6 +286,8 @@ class DatabaseSyncManager {
 				return this.arqueoSessions as unknown as Y.Map<EntityRecord>;
 			case "ocrResults":
 				return this.ocrResults as unknown as Y.Map<EntityRecord>;
+			case "teamMembers":
+				return this.teamMembers as unknown as Y.Map<EntityRecord>;
 			case "peers":
 				return this.linkedNodes as unknown as Y.Map<EntityRecord>;
 			default:
@@ -319,6 +319,8 @@ class DatabaseSyncManager {
 			mergeAndSync("suppliers", state.suppliers);
 			mergeAndSync("purchaseOrders", state.purchaseOrders);
 			mergeAndSync("auditLogs", state.auditLogs);
+			mergeAndSync("teamMembers", state.teamMembers);
+			this.metadata.set("inventoryConfig", JSON.stringify(state.inventoryConfig));
 
 			if (state.peers && state.peers.length > 0) {
 				for (const peer of state.peers) {
@@ -369,10 +371,29 @@ class DatabaseSyncManager {
 			auditLogs: Array.from(this.auditLogs.values()),
 			arqueoSessions: Array.from(this.arqueoSessions.values()),
 			ocrResults: Array.from(this.ocrResults.values()),
+			teamMembers: Array.from(this.teamMembers.values()),
+			inventoryConfig: this.getInventoryConfig(),
 			role: resolvedRole,
 			permissions: resolvedPermissions,
 			peers: peers,
 		};
+	}
+
+	public getInventoryConfig(): InventoryConfig | undefined {
+		const raw = this.metadata.get("inventoryConfig");
+		if (!raw) return undefined;
+		try {
+			return JSON.parse(raw) as InventoryConfig;
+		} catch (error) {
+			logger.warn("[SYNC] Failed to parse inventoryConfig metadata", error);
+			return undefined;
+		}
+	}
+
+	public setInventoryConfig(config: InventoryConfig) {
+		this.doc.transact(() => {
+			this.metadata.set("inventoryConfig", JSON.stringify(config));
+		}, "local");
 	}
 
 	public getMasterPeerId(): string | null {
@@ -708,6 +729,7 @@ class DatabaseSyncManager {
 			"auditLogs",
 			"arqueoSessions",
 			"ocrResults",
+			"teamMembers",
 		];
 
 		const observers = collections.map((col) => {

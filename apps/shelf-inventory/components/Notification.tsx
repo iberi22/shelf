@@ -3,10 +3,11 @@ import React from 'react';
 interface NotificationProps {
   message: string;
   type: 'error' | 'success' | 'info';
+  durationMs?: number;
   onClose: () => void;
 }
 
-const Notification: React.FC<NotificationProps> = ({ message, type, onClose }) => {
+const Notification: React.FC<NotificationProps> = ({ message, type, durationMs = 5000, onClose }) => {
   const baseClasses =
     'fixed top-5 left-1/2 -translate-x-1/2 w-full max-w-md p-4 rounded-lg text-center shadow-lg z-[150] animate-fade-in-down';
   const typeClasses = {
@@ -18,11 +19,11 @@ const Notification: React.FC<NotificationProps> = ({ message, type, onClose }) =
   React.useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
-    }, 5000); // Auto-dismiss after 5 seconds
+    }, durationMs); // Auto-dismiss after the configured duration
     return () => clearTimeout(timer);
-  }, [onClose]);
+  }, [durationMs, onClose]);
 
-  return <div className={`${baseClasses} ${typeClasses[type]}`}>{message}</div>;
+  return <div className={`${baseClasses} whitespace-pre-line ${typeClasses[type]}`}>{message}</div>;
 };
 
 export default Notification;

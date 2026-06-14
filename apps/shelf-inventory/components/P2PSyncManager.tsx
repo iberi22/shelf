@@ -4,6 +4,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
+import { useUI } from '../context/UIContext';
 import { buildPeerInviteLink, buildPeerInviteMessage, buildPwaInstallLink } from '../lib/share-links';
 import { isBiometricsSupported } from '../lib/webauthn';
 import QRScannerModal from './QRScannerModal';
@@ -72,8 +73,15 @@ const permissionOptions: { key: keyof PeerPermissions; label: string }[] = [
   { key: 'canViewDashboard', label: 'Ver Dashboard' },
 ];
 
+const modalOverlayClass =
+  'fixed inset-0 z-50 flex h-[var(--app-height,100vh)] items-start justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm sm:items-center sm:p-4';
+const modalPanelClass =
+  'flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full flex-col overflow-hidden rounded-t-2xl border border-[#F5F5DC]/30 bg-[#1a1a1a] shadow-2xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg';
+const modalBodyClass = 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 text-sm text-[#F5F5DC]/80 sm:p-5';
+
 const P2PSyncManager: React.FC = () => {
   const { state, dispatch } = useAppContext();
+  const { showNotification } = useUI();
   const [manualPeerId, setManualPeerId] = useState('');
   const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
   const [syncProgress, setSyncProgress] = useState<number>(0);
@@ -160,7 +168,11 @@ const P2PSyncManager: React.FC = () => {
             auditLogs: current.auditLogs,
             arqueoSessions: current.arqueoSessions,
             ocrResults: current.ocrResults,
+            teamMembers: current.teamMembers,
+            inventoryConfig: current.inventoryConfig,
+            role: current.role,
             permissions: current.permissions,
+            peers: current.peers,
           };
           p2pManager.sendTo(fromPeerId, {
             type: 'STATE_UPDATE',
@@ -208,6 +220,29 @@ const P2PSyncManager: React.FC = () => {
       if (peers.length > 0) setSyncProgress(100);
     });
 
+    p2pManager.onConnectionError((issue) => {
+      const peerLabel = issue.peerId ? ` (${issue.peerId})` : '';
+      const unavailablePeer =
+        issue.type === 'peer-unavailable' ||
+        issue.type === 'unavailable' ||
+        issue.message.toLowerCase().includes('could not connect to peer');
+
+      if (unavailablePeer) {
+        showNotification(
+          `No se pudo conectar al peer${peerLabel}. Mantén la app abierta en ambos dispositivos y verifica que el otro nodo siga en línea.`,
+          'error',
+          12000,
+        );
+        return;
+      }
+
+      showNotification(
+        `Error de conexión P2P${peerLabel}. Mantén la app abierta para conservar el enlace y vuelve a intentar.`,
+        'error',
+        12000,
+      );
+    });
+
     const interval = setInterval(() => {
       if (p2pManager.localPeerId) {
         dispatch({ type: 'SET_LOCAL_PEER_ID', payload: p2pManager.localPeerId });
@@ -223,7 +258,7 @@ const P2PSyncManager: React.FC = () => {
       }
       // NOTE: For a full fix, p2pManager should expose offMessage
     };
-  }, [dispatch]);
+  }, [dispatch, showNotification]);
 
   // The manual STATE_UPDATE broadcast has been removed to allow the CRDT (Yjs) to handle
   // state synchronization properly without overwriting the state naively.
@@ -477,8 +512,10 @@ const P2PSyncManager: React.FC = () => {
                 className="group min-w-0 flex-1 text-left disabled:cursor-default"
                 title={state.localPeerId ? 'Tocar o hacer click para copiar el Peer ID' : 'Inicializando Peer ID...'}
               >
-                <span className="font-mono text-yellow-400 break-all min-w-0 inline-flex items-center gap-2">
-                  <span className={state.localPeerId ? 'group-hover:underline group-active:opacity-80' : 'opacity-60'}>
+                <span className="flex min-w-0 items-center gap-2">
+                  <span
+                    className={`font-mono text-yellow-400 break-all min-w-0 ${state.localPeerId ? 'group-hover:underline group-active:opacity-80' : 'opacity-60'}`}
+                  >
                     {state.localPeerId || 'Initializing...'}
                   </span>
                   {state.localPeerId && (
@@ -771,10 +808,12 @@ const P2PSyncManager: React.FC = () => {
 
       {/* Confirm Connection Modal */}
       {showConfirmConnectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg max-w-xl w-full shadow-2xl overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b border-[#F5F5DC]/10">
-              <h3 className="font-bold text-[#F5F5DC]">{t('p2pSync.confirmTitle') || 'Confirmar Conexion P2P'}</h3>
+        <div className={modalOverlayClass}>
+          <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-xl sm:h-auto`}>
+            <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
+              <h3 className="min-w-0 flex-1 font-bold text-[#F5F5DC]">
+                {t('p2pSync.confirmTitle') || 'Confirmar conexión P2P'}
+              </h3>
               <button
                 type="button"
                 onClick={() => setShowConfirmConnectModal(false)}
@@ -783,7 +822,7 @@ const P2PSyncManager: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-4 space-y-4 text-sm text-[#F5F5DC]/80">
+            <div className={`${modalBodyClass} space-y-4`}>
               <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10">
                 <p className="text-xs text-[#F5F5DC]/60 mb-1">Peer ID destino</p>
                 <code className="font-mono text-yellow-400 break-all">{pendingPeerId}</code>
@@ -793,7 +832,7 @@ const P2PSyncManager: React.FC = () => {
                 <p className="mb-2 font-semibold text-[#F5F5DC]">
                   {t('p2pSync.configCollaboratorTitle') || 'Configuracion del Colaborador'}
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-4">
                   {[
                     { role: 'admin' as P2PRole, label: t('p2pSync.roleAdmin') || 'Admin' },
                     { role: 'collaborator' as P2PRole, label: 'Usuario normal' },
@@ -804,7 +843,7 @@ const P2PSyncManager: React.FC = () => {
                       key={option.role}
                       type="button"
                       onClick={() => handleRoleChange(option.role)}
-                      className={`px-3 py-2 rounded border text-xs font-bold transition-colors ${
+                      className={`min-h-11 rounded border px-3 py-2 text-xs font-bold transition-colors ${
                         selectedRole === option.role
                           ? 'bg-yellow-400 text-[#121212] border-yellow-300'
                           : 'bg-[#121212] text-[#F5F5DC] border-[#F5F5DC]/20 hover:border-[#F5F5DC]/50'
@@ -816,9 +855,9 @@ const P2PSyncManager: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
                 {permissionOptions.map((perm) => (
-                  <label key={perm.key} className="flex items-center gap-2 p-2 rounded bg-[#121212]">
+                  <label key={perm.key} className="flex min-h-11 items-start gap-2 rounded bg-[#121212] p-2">
                     <input
                       type="checkbox"
                       checked={selectedPermissions[perm.key]}
@@ -833,7 +872,7 @@ const P2PSyncManager: React.FC = () => {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+              <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 md:grid-cols-3">
                 {Object.entries(counts).map(([key, value]) => (
                   <div key={key} className="p-2 rounded bg-[#121212] border border-[#F5F5DC]/10">
                     <span className="block text-[#F5F5DC]/50">{t(`p2pSync.${key}`) || key}</span>
@@ -846,18 +885,18 @@ const P2PSyncManager: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="p-4 border-t border-[#F5F5DC]/10 flex justify-end gap-2">
+            <div className="flex shrink-0 flex-col gap-2 border-t border-[#F5F5DC]/10 p-4 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={() => setShowConfirmConnectModal(false)}
-                className="px-4 py-2 bg-[#333] hover:bg-[#444] rounded text-white text-sm font-medium transition-colors"
+                className="w-full rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444] sm:w-auto"
               >
                 {t('p2pSync.close') || 'Cerrar'}
               </button>
               <button
                 type="button"
                 onClick={confirmAndConnect}
-                className="px-4 py-2 bg-[#F5F5DC] hover:bg-white rounded text-[#121212] text-sm font-bold transition-colors"
+                className="w-full rounded bg-[#F5F5DC] px-4 py-2 text-sm font-bold text-[#121212] transition-colors hover:bg-white sm:w-auto"
               >
                 {t('p2pSync.confirmProceed') || 'Sincronizar y Conectar'}
               </button>
@@ -868,10 +907,10 @@ const P2PSyncManager: React.FC = () => {
 
       {/* Info Modal */}
       {showInfoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg max-w-lg w-full shadow-2xl overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b border-[#F5F5DC]/10">
-              <h3 className="font-bold text-[#F5F5DC] flex items-center gap-2">
+        <div className={modalOverlayClass}>
+          <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-lg sm:h-auto`}>
+            <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
+              <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
                 <Info size={18} className="text-yellow-400" />
                 {t('p2pSync.infoTitle')}
               </h3>
@@ -879,7 +918,7 @@ const P2PSyncManager: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-4 space-y-4 text-sm text-[#F5F5DC]/80 max-h-[70vh] overflow-y-auto">
+            <div className={`${modalBodyClass} space-y-4`}>
               <p>
                 <strong>{t('p2pSync.infoDistributedDb').split(':')[0]}:</strong>{' '}
                 {t('p2pSync.infoDistributedDb').split(':')[1]}
@@ -902,10 +941,10 @@ const P2PSyncManager: React.FC = () => {
                 {t('p2pSync.infoProtection').split(':')[1]}
               </p>
             </div>
-            <div className="p-4 border-t border-[#F5F5DC]/10 flex justify-end">
+            <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
               <button
                 onClick={() => setShowInfoModal(false)}
-                className="px-4 py-2 bg-[#333] hover:bg-[#444] rounded text-white text-sm font-medium transition-colors"
+                className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
               >
                 {t('p2pSync.close')}
               </button>
@@ -916,10 +955,10 @@ const P2PSyncManager: React.FC = () => {
 
       {/* Config Modal */}
       {showConfigModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg max-w-md w-full shadow-2xl overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b border-[#F5F5DC]/10">
-              <h3 className="font-bold text-[#F5F5DC] flex items-center gap-2">
+        <div className={modalOverlayClass}>
+          <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-md sm:h-auto`}>
+            <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
+              <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
                 <Settings size={18} className="text-yellow-400" />
                 {t('p2pSync.configTitle')}
               </h3>
@@ -927,7 +966,7 @@ const P2PSyncManager: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-4 space-y-4 text-sm text-[#F5F5DC]/80">
+            <div className={`${modalBodyClass} space-y-4`}>
               <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10">
                 <p className="mb-2 text-xs opacity-70">{t('p2pSync.localPeerIdLabel') || 'Peer ID local'}</p>
                 <code className="font-mono text-yellow-400 break-all select-all">{state.localPeerId}</code>
@@ -943,10 +982,10 @@ const P2PSyncManager: React.FC = () => {
                 </p>
               </div>
             </div>
-            <div className="p-4 border-t border-[#F5F5DC]/10 flex justify-end">
+            <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
               <button
                 onClick={() => setShowConfigModal(false)}
-                className="px-4 py-2 bg-[#333] hover:bg-[#444] rounded text-white text-sm font-medium transition-colors"
+                className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
               >
                 {t('p2pSync.close')}
               </button>
@@ -957,10 +996,10 @@ const P2PSyncManager: React.FC = () => {
 
       {/* My QR Modal */}
       {showMyQrModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg max-w-sm w-full shadow-2xl overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b border-[#F5F5DC]/10">
-              <h3 className="font-bold text-[#F5F5DC] flex items-center gap-2">
+        <div className={modalOverlayClass}>
+          <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-sm sm:h-auto`}>
+            <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
+              <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
                 <QrCode size={18} className="text-yellow-400" />
                 {t('p2pSync.myQrTitle')}
               </h3>
@@ -968,22 +1007,22 @@ const P2PSyncManager: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6 flex flex-col items-center gap-4 text-center">
-              <div className="bg-white p-4 rounded-xl">
+            <div className={`${modalBodyClass} flex flex-col items-center gap-4 text-center`}>
+              <div className="rounded-xl bg-white p-4">
                 {state.localPeerId ? (
-                  <QRCodeCanvas value={state.localPeerId} size={200} level="H" includeMargin={false} />
+                  <QRCodeCanvas value={state.localPeerId} size={180} level="H" includeMargin={false} />
                 ) : (
-                  <div className="w-[200px] h-[200px] flex items-center justify-center bg-gray-200 animate-pulse text-gray-500">
+                  <div className="flex h-[180px] w-[180px] items-center justify-center bg-gray-200 text-gray-500 animate-pulse">
                     Loading...
                   </div>
                 )}
               </div>
               <p className="text-sm text-[#F5F5DC]/80 mt-2">{t('p2pSync.qrInstructions')}</p>
             </div>
-            <div className="p-4 border-t border-[#F5F5DC]/10 flex justify-end">
+            <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
               <button
                 onClick={() => setShowMyQrModal(false)}
-                className="px-4 py-2 bg-[#333] hover:bg-[#444] rounded text-white text-sm font-medium transition-colors"
+                className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
               >
                 {t('p2pSync.close')}
               </button>
@@ -997,8 +1036,8 @@ const P2PSyncManager: React.FC = () => {
 
       {/* Sync Progress Modal */}
       {syncProgress > 0 && syncProgress < 100 && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity duration-300">
-          <div className="bg-[#1a1a1a] border border-green-500/30 rounded-lg max-w-sm w-full shadow-[0_0_30px_rgba(34,197,94,0.15)] overflow-hidden p-6 text-center flex flex-col items-center gap-4">
+        <div className="fixed inset-0 z-[100] flex h-[var(--app-height,100vh)] items-end justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm transition-opacity duration-300 sm:items-center sm:p-4">
+          <div className="flex w-full max-w-[calc(100vw-1.5rem)] flex-col items-center gap-4 overflow-hidden rounded-t-2xl border border-green-500/30 bg-[#1a1a1a] p-5 text-center shadow-[0_0_30px_rgba(34,197,94,0.15)] sm:max-w-sm sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg sm:p-6">
             <h3 className="font-bold text-green-400 text-lg animate-pulse">Sincronizando Datos...</h3>
             <div className="w-full bg-[#121212] rounded-full h-3 border border-[#F5F5DC]/10 overflow-hidden relative">
               <div
@@ -1013,15 +1052,17 @@ const P2PSyncManager: React.FC = () => {
 
       {/* Activity Log Modal */}
       {showLogsForPeer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="flex justify-between items-center p-4 border-b border-[#F5F5DC]/10">
-              <h3 className="font-bold text-[#F5F5DC] flex items-center gap-2">📋 Registro de Actividad</h3>
+        <div className={modalOverlayClass}>
+          <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-2xl sm:h-auto`}>
+            <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
+              <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
+                📋 Registro de Actividad
+              </h3>
               <button onClick={() => setShowLogsForPeer(null)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
                 <X size={20} />
               </button>
             </div>
-            <div className="p-4 overflow-y-auto flex-1 space-y-2">
+            <div className={`${modalBodyClass} space-y-2`}>
               <div className="mb-4">
                 <span className="text-sm opacity-70">Peer ID:</span>{' '}
                 <code className="text-yellow-400 text-sm font-mono break-all">{showLogsForPeer}</code>
@@ -1048,10 +1089,10 @@ const P2PSyncManager: React.FC = () => {
                 <div className="text-center text-sm opacity-50 p-6">No hay actividad registrada para este nodo.</div>
               )}
             </div>
-            <div className="p-4 border-t border-[#F5F5DC]/10 flex justify-end">
+            <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
               <button
                 onClick={() => setShowLogsForPeer(null)}
-                className="px-4 py-2 bg-[#333] hover:bg-[#444] rounded text-white text-sm font-medium transition-colors"
+                className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
               >
                 {t('p2pSync.close') || 'Cerrar'}
               </button>
