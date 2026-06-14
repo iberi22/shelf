@@ -1,3 +1,4 @@
+import { EdgeMeshProvider } from 'edge-mesh-react';
 import type {
   AppState,
   ArqueoSession,
@@ -15,8 +16,16 @@ import type {
   TeamMember,
 } from 'p2p-mesh-core';
 import { dbSync, p2pManager } from 'p2p-mesh-core';
-import { EdgeMeshProvider } from 'edge-mesh-react';
-import React, { createContext, type Dispatch, type ReactNode, useCallback, useContext, useEffect, useMemo } from 'react';
+import React, {
+  createContext,
+  type Dispatch,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+} from 'react';
+import EdgeMeshWorkflowBridge from '../components/EdgeMeshWorkflowBridge';
 import usePersistedReducer from '../hooks/usePersistedReducer';
 
 const initialState: AppState = {
@@ -481,7 +490,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
       const peerExists = state.peers.some((p) => p.id === targetPeerId);
       const peers = peerExists
-        ? state.peers.map((p) => (p.id === targetPeerId ? { ...p, role, permissions: permissions || p.permissions } : p))
+        ? state.peers.map((p) =>
+            p.id === targetPeerId ? { ...p, role, permissions: permissions || p.permissions } : p,
+          )
         : [
             ...state.peers,
             {
@@ -672,7 +683,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         onPeerDisconnect: (_callback: (peerId: string) => void) => {
           // Simplified
         },
-      }
+      },
     };
   }, [state.localPeerId]);
 
@@ -920,6 +931,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
       <EdgeMeshProvider config={edgeMeshConfig}>
+        <EdgeMeshWorkflowBridge state={state} dispatch={rawDispatch} isLoaded={isLoaded} />
         {children}
       </EdgeMeshProvider>
     </AppContext.Provider>
