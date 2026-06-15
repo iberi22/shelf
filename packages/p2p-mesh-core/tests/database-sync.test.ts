@@ -36,7 +36,7 @@ const baseState = (overrides: Partial<AppState> = {}): AppState => ({
 		lowStockThreshold: 5,
 		tablePageSize: 50,
 		variantAttributes: ['Color', 'Medida'],
-		measureOptions: ['30CM', '40CM', '50CM', '60CM'],
+		measureOptions: ['5CM', '7CM', '10CM', '12CM', '14CM', '15CM', '17CM', '20CM', '28CM'],
 		inventoryFields: [],
 	},
 	role: 'admin',

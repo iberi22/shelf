@@ -1,7 +1,8 @@
+import { Plus, Save, SlidersHorizontal, Trash2 } from 'lucide-react';
 import type { InventoryConfig, InventoryFieldDefinition, RestoreStatePayload } from 'p2p-mesh-core';
 import { dbSync, decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -9,7 +10,12 @@ import { useI18n } from '../context/I18nContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useUI } from '../context/UIContext';
 import useLocalStorage from '../hooks/useLocalStorage';
-import { createInventoryField, DEFAULT_INVENTORY_CONFIG, normalizeInventoryConfig } from '../lib/inventoryConfig';
+import {
+  createInventoryField,
+  DEFAULT_INVENTORY_CONFIG,
+  normalizeInventoryConfig,
+  normalizeInventoryFieldKey,
+} from '../lib/inventoryConfig';
 import AuditLogViewer from './AuditLogViewer';
 import DataRecovery from './DataRecovery';
 import DeviceManagementPanel from './DeviceManagementPanel';
@@ -48,6 +54,7 @@ const Settings: React.FC = () => {
   const [inventoryConfigDraft, setInventoryConfigDraft] = useState<InventoryConfig>(
     normalizeInventoryConfig(state.inventoryConfig || DEFAULT_INVENTORY_CONFIG),
   );
+  const [inventoryConfigErrors, setInventoryConfigErrors] = useState<string[]>([]);
 
   const { isPyme } = useSubscription();
   const { user, hasAppLock, setAppLock } = useAuth();
@@ -163,6 +170,17 @@ const Settings: React.FC = () => {
     }));
   };
 
+  const normalizeInventoryFieldAt = (index: number) => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      fields: current.fields.map((field, fieldIndex) =>
+        fieldIndex === index
+          ? { ...field, key: normalizeInventoryFieldKey(field.key, `field_${fieldIndex + 1}`) }
+          : field,
+      ),
+    }));
+  };
+
   const addInventoryField = () => {
     setInventoryConfigDraft((current) => ({
       ...current,
@@ -225,7 +243,44 @@ const Settings: React.FC = () => {
     setInventoryConfigDraft((current) => normalizeInventoryConfig({ ...current, ...patch }));
   };
 
+  const inventoryConfigSummary = useMemo(
+    () => [
+      { label: 'Campos visibles', value: inventoryConfigDraft.fields.length },
+      { label: 'Atributos de variante', value: inventoryConfigDraft.variantAttributes.filter(Boolean).length },
+      { label: 'Medidas sugeridas', value: inventoryConfigDraft.measureOptions.filter(Boolean).length },
+    ],
+    [inventoryConfigDraft.fields.length, inventoryConfigDraft.measureOptions, inventoryConfigDraft.variantAttributes],
+  );
+
+  const validateInventoryConfigDraft = () => {
+    const errors: string[] = [];
+    const normalizedFields = inventoryConfigDraft.fields.map((field, index) => ({
+      ...field,
+      key: normalizeInventoryFieldKey(field.key, `field_${index + 1}`),
+      label: field.label.trim(),
+    }));
+    const keys = normalizedFields.map((field) => field.key);
+    const duplicateKeys = keys.filter((key, index) => keys.indexOf(key) !== index);
+    const variantAttributes = inventoryConfigDraft.variantAttributes
+      .map((attribute) => attribute.trim())
+      .filter(Boolean);
+    const duplicateVariantAttributes = variantAttributes.filter(
+      (attribute, index) =>
+        variantAttributes.findIndex((candidate) => candidate.toLowerCase() === attribute.toLowerCase()) !== index,
+    );
+
+    if (normalizedFields.length === 0) errors.push('Agrega al menos un campo de producto.');
+    if (normalizedFields.some((field) => !field.label)) errors.push('Cada campo necesita una etiqueta visible.');
+    if (duplicateKeys.length > 0) errors.push('Hay claves de campos duplicadas. Usa una clave unica por parametro.');
+    if (variantAttributes.length === 0) errors.push('Agrega al menos un atributo para variantes.');
+    if (duplicateVariantAttributes.length > 0) errors.push('Hay atributos de variante repetidos.');
+
+    setInventoryConfigErrors(errors);
+    return errors.length === 0;
+  };
+
   const saveInventoryConfig = () => {
+    if (!validateInventoryConfigDraft()) return;
     const nextConfig = normalizeInventoryConfig(inventoryConfigDraft);
     setInventoryConfigDraft(nextConfig);
     dispatch({ type: 'UPDATE_INVENTORY_CONFIG', payload: nextConfig });
@@ -244,7 +299,7 @@ const Settings: React.FC = () => {
     const subject = encodeURIComponent('Soporte / Sugerencia - Shelf Inventory');
     const body = encodeURIComponent(feedback);
     // Reemplaza esto con tu correo real
-    window.location.href = `mailto:soporte@tudominio.com?subject=${subject}&body=${body}`;
+    window.open(`mailto:soporte@tudominio.com?subject=${subject}&body=${body}`, '_blank', 'noopener,noreferrer');
 
     showNotification(t('settings.feedback.success'), 'success');
     setFeedback('');
@@ -297,9 +352,12 @@ const Settings: React.FC = () => {
           </div>
 
           <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
-                <h3 className="text-xl font-bold text-[#F5F5DC]">Configuración de inventario</h3>
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal className="h-5 w-5 text-[#4ADE80]" aria-hidden="true" />
+                  <h3 className="text-xl font-bold text-[#F5F5DC]">Configuracion de articulos</h3>
+                </div>
                 <p className="text-xs text-[#F5F5DC]/70 mt-1">
                   Ajusta los campos del producto, los atributos de variante y las medidas sugeridas desde aquí.
                 </p>
@@ -307,17 +365,35 @@ const Settings: React.FC = () => {
               <button
                 type="button"
                 onClick={saveInventoryConfig}
-                className="w-full md:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 text-sm active:scale-95"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#F5F5DC] px-4 py-2.5 text-sm font-bold text-[#121212] min-h-[44px] hover:bg-opacity-80 active:scale-95 md:w-auto"
               >
-                Guardar configuración
+                <Save className="h-4 w-4" aria-hidden="true" />
+                Guardar configuracion
               </button>
             </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+              {inventoryConfigSummary.map((item) => (
+                <div key={item.label} className="rounded-md border border-white/10 bg-[#121212] p-3">
+                  <div className="text-[11px] uppercase tracking-[0.12em] text-[#F5F5DC]/45">{item.label}</div>
+                  <div className="mt-1 text-2xl font-bold text-[#F5F5DC]">{item.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {inventoryConfigErrors.length > 0 && (
+              <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                {inventoryConfigErrors.map((error) => (
+                  <div key={error}>{error}</div>
+                ))}
+              </div>
+            )}
 
             <div className="mt-5 space-y-6">
               <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <h4 className="font-semibold text-[#F5F5DC]">Sincronización de productos</h4>
+                    <h4 className="font-semibold text-[#F5F5DC]">Gobierno y sincronizacion</h4>
                     <p className="text-xs text-[#F5F5DC]/55">
                       Controla cómo el host aplica cambios de productos enviados por otros nodos.
                     </p>
@@ -348,15 +424,20 @@ const Settings: React.FC = () => {
               <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
                 <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <h4 className="font-semibold text-[#F5F5DC]">Atributos de variante</h4>
-                    <p className="text-xs text-[#F5F5DC]/55">Ejemplo: Color, Medida, Material.</p>
+                    <h4 className="font-semibold text-[#F5F5DC]">Estructura de variantes</h4>
+                    <p className="text-xs text-[#F5F5DC]/55">
+                      Define que diferencia una variante vendible: Color, Medida o Material.
+                    </p>
                   </div>
                   <button
                     type="button"
                     onClick={addVariantAttribute}
                     className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto"
                   >
-                    + Agregar más
+                    <span className="inline-flex items-center gap-2">
+                      <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                      Atributo
+                    </span>
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -373,7 +454,7 @@ const Settings: React.FC = () => {
                         onClick={() => removeVariantAttribute(index)}
                         className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
                       >
-                        Quitar
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </button>
                     </div>
                   ))}
@@ -383,15 +464,18 @@ const Settings: React.FC = () => {
               <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
                 <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <h4 className="font-semibold text-[#F5F5DC]">Medidas sugeridas</h4>
-                    <p className="text-xs text-[#F5F5DC]/55">Se muestran como botones rápidos al editar productos.</p>
+                    <h4 className="font-semibold text-[#F5F5DC]">Listas sugeridas</h4>
+                    <p className="text-xs text-[#F5F5DC]/55">Valores rapidos para los campos de tipo medida.</p>
                   </div>
                   <button
                     type="button"
                     onClick={addMeasureOption}
                     className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto"
                   >
-                    + Agregar más
+                    <span className="inline-flex items-center gap-2">
+                      <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                      Medida
+                    </span>
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -408,7 +492,7 @@ const Settings: React.FC = () => {
                         onClick={() => removeMeasureOption(index)}
                         className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
                       >
-                        Quitar
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </button>
                     </div>
                   ))}
@@ -418,15 +502,20 @@ const Settings: React.FC = () => {
               <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
                 <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <h4 className="font-semibold text-[#F5F5DC]">Campos del producto</h4>
-                    <p className="text-xs text-[#F5F5DC]/55">Puedes cambiar nombre, tipo y agregar nuevos campos.</p>
+                    <h4 className="font-semibold text-[#F5F5DC]">Ficha maestra del producto</h4>
+                    <p className="text-xs text-[#F5F5DC]/55">
+                      Campos que describen el articulo completo y aparecen al agregar inventario.
+                    </p>
                   </div>
                   <button
                     type="button"
                     onClick={addInventoryField}
                     className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto"
                   >
-                    + Agregar campo
+                    <span className="inline-flex items-center gap-2">
+                      <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                      Agregar campo
+                    </span>
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -437,6 +526,7 @@ const Settings: React.FC = () => {
                     >
                       <input
                         value={field.key}
+                        onBlur={() => normalizeInventoryFieldAt(index)}
                         onChange={(e) => updateInventoryField(index, { key: e.target.value })}
                         className="w-full min-w-0 p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
                         placeholder="Clave"
@@ -463,7 +553,7 @@ const Settings: React.FC = () => {
                         onClick={() => removeInventoryField(index)}
                         className="w-full px-3 py-2.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs min-h-[44px] md:w-auto"
                       >
-                        Quitar
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </button>
                     </div>
                   ))}

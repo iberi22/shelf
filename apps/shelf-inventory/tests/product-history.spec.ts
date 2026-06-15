@@ -36,7 +36,7 @@ test.describe('Product history', () => {
         .isVisible()
         .catch(() => false))
     ) {
-      await page.getByRole('checkbox', { name: /Usar variantes configurables/i }).uncheck();
+      await page.getByRole('button', { name: 'Articulo simple' }).click();
     }
     await page.getByTestId('product-quantity-input').fill('25');
     await page.getByTestId('save-product-button').click();

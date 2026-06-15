@@ -751,7 +751,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     () => normalizeInventoryConfig(state.inventoryConfig || DEFAULT_INVENTORY_CONFIG),
     [state.inventoryConfig],
   );
-  const initialUseVariants = Boolean(product?.variants?.length || product?.variantAttributes?.length);
+  const initialUseVariants = Boolean(product?.variantAttributes?.length);
   const initialLabels = getInitialVariantAttributes(product, initialUseVariants, inventoryConfig.variantAttributes);
   const defaultLabels = initialLabels.length > 0 ? initialLabels : inventoryConfig.variantAttributes;
 
@@ -871,9 +871,20 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   };
 
   const renameVariantAttribute = (index: number, value: string) => {
+    const previousLabel = variantAttributes[index];
     const nextLabels = normalizeLabels(variantAttributes.map((label, i) => (i === index ? value : label)));
     setVariantAttributes(nextLabels);
-    setVariantRows(remapRows(nextLabels));
+    setVariantRows(
+      variantRows.map((row) =>
+        createVariantDraft(nextLabels, {
+          ...row,
+          attributes: nextLabels.reduce<Record<string, string>>((acc, label) => {
+            acc[label] = label === value.trim() ? row.attributes?.[previousLabel] || '' : row.attributes?.[label] || '';
+            return acc;
+          }, {}),
+        }),
+      ),
+    );
   };
 
   const removeVariantAttribute = (index: number) => {
@@ -917,23 +928,27 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   };
 
   const buildConfiguredFieldPayload = () => {
-    const basePayload: Partial<Product> = {};
+    const basePayload: Partial<Product> = {
+      color: undefined,
+      dimensions: undefined,
+      capacity: undefined,
+      material: undefined,
+    };
     const customFields: Record<string, string> = {};
 
     for (const field of inventoryConfig.fields) {
       const value = getFieldValue(field.key).trim();
-      if (!value) continue;
 
       if (field.key === 'color') {
-        basePayload.color = value;
+        basePayload.color = value || undefined;
       } else if (field.key === 'dimensions') {
-        basePayload.dimensions = value;
+        basePayload.dimensions = value || undefined;
       } else if (field.key === 'capacity') {
-        basePayload.capacity = value;
+        basePayload.capacity = value || undefined;
       } else if (field.key === 'material') {
-        basePayload.material = value;
+        basePayload.material = value || undefined;
       } else {
-        customFields[field.key] = value;
+        if (value) customFields[field.key] = value;
       }
     }
 
@@ -956,7 +971,21 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
 
     if (useVariants) {
       if (variantRows.length === 0) newErrors.variants = 'Agrega al menos una variante.';
+      const labels = normalizeLabels(variantAttributes);
+      if (labels.length === 0) newErrors.variants = 'Define al menos un atributo de variante.';
+      const variantKeys = new Set<string>();
       variantRows.forEach((row, index) => {
+        const variantKey = labels
+          .map((label) =>
+            String(row.attributes?.[label] || '')
+              .trim()
+              .toLowerCase(),
+          )
+          .join('|');
+        if (variantKey && variantKeys.has(variantKey)) {
+          newErrors.variants = 'Hay variantes repetidas con la misma combinacion de atributos.';
+        }
+        if (variantKey) variantKeys.add(variantKey);
         if (Number(row.quantity) < 0 || !Number.isInteger(Number(row.quantity))) {
           newErrors[`variant_${index}_quantity`] = t('validation.quantityNonNegative');
         }
@@ -1244,23 +1273,37 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
           )}
 
           <div className="rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 space-y-4 min-w-0">
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={useVariants}
-                onChange={(e) => {
-                  const next = e.target.checked;
-                  setUseVariants(next);
-                  if (next && variantAttributes.length === 0) {
-                    const labels = getInitialVariantAttributes(product, true, inventoryConfig.variantAttributes);
-                    setVariantAttributes(labels);
-                    setVariantRows(getInitialVariantRows(product, labels));
-                  }
-                }}
-                className="accent-[#4f9d69]"
-              />
-              Usar variantes configurables
-            </label>
+            <div className="grid grid-cols-2 gap-2 rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-1">
+              {[
+                { enabled: false, label: 'Articulo simple', icon: Box },
+                { enabled: true, label: 'Con variantes', icon: Layers3 },
+              ].map((mode) => {
+                const Icon = mode.icon;
+                const selected = useVariants === mode.enabled;
+                return (
+                  <button
+                    key={mode.label}
+                    type="button"
+                    onClick={() => {
+                      setUseVariants(mode.enabled);
+                      if (mode.enabled && variantAttributes.length === 0) {
+                        const labels = getInitialVariantAttributes(product, true, inventoryConfig.variantAttributes);
+                        setVariantAttributes(labels);
+                        setVariantRows(getInitialVariantRows(product, labels));
+                      }
+                    }}
+                    className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${
+                      selected
+                        ? 'bg-[#F5F5DC] text-[#121212]'
+                        : 'bg-transparent text-[#F5F5DC]/70 hover:bg-white/5 hover:text-[#F5F5DC]'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    <span className="truncate">{mode.label}</span>
+                  </button>
+                );
+              })}
+            </div>
 
             {useVariants ? (
               <div className="space-y-4">

@@ -1,9 +1,11 @@
 describe('Inventory', () => {
   beforeEach(() => {
-    cy.visit('/');
-    cy.contains('[', { timeout: 10000 }).should('exist');
-    cy.contains(/Empieza Gratis|Start for Free/).click();
-    cy.get('[data-testid="welcome-modal-get-started-button"]').click();
+    cy.visit('/', {
+      onBeforeLoad(win) {
+        win.localStorage.setItem('hasVisited', 'true');
+        win.localStorage.setItem('shelfWelcomeSeen', 'true');
+      },
+    });
     cy.addProduct({
       name: 'Test Product',
       sku: 'TEST-SKU',

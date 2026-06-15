@@ -13,27 +13,34 @@ test.describe('CRUD Operations — Inventory, Sales, Clients, Suppliers', () => 
 
     // --- CREATE ---
     await page.getByTestId('add-product-button').click();
-    await dismissModals(page);
+    await expect(page.getByTestId('product-form')).toBeVisible();
     await page.getByTestId('product-name-input').fill('Test CRUD Product');
     await page.getByTestId('product-quantity-input').fill('20');
     await page.getByTestId('product-price-input').fill('150');
     await page.getByTestId('product-cost-input').fill('75');
     await page.getByTestId('save-product-button').click();
     await expect(page.locator('text=Test CRUD Product').first()).toBeVisible({ timeout: 5000 });
+    const productId = await page.evaluate(() => {
+      const state = (window as any).__shelfAppStateForTest;
+      return state?.products?.find((item: any) => item.name === 'Test CRUD Product')?.id;
+    });
+    expect(productId).toBeTruthy();
 
     // --- READ ---
-    const productCard = page.locator('text=Test CRUD Product').first();
-    await expect(productCard).toBeVisible();
-    // Verify quantity and price are shown
-    const cardText = await productCard.locator('..').innerText();
-    expect(cardText).toMatch(/20/);
-    expect(cardText).toMatch(/150/);
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const state = (window as any).__shelfAppStateForTest;
+          const product = state?.products?.find((item: any) => item.name === 'Test CRUD Product');
+          return product ? { quantity: product.quantity, price: product.price } : null;
+        }),
+      )
+      .toEqual({ quantity: 20, price: 150 });
 
     // --- UPDATE ---
     // Click the edit button (pencil icon) for the product
-    const editBtn = page.locator('[data-testid^="edit-product-"]').first();
-    await editBtn.click();
-    await dismissModals(page);
+    await page.locator(`[data-testid="edit-product-${productId}"]:visible`).click();
+    await expect(page.getByTestId('product-form')).toBeVisible();
 
     // Change quantity to 25
     await page.getByTestId('product-quantity-input').fill('25');
@@ -44,39 +51,30 @@ test.describe('CRUD Operations — Inventory, Sales, Clients, Suppliers', () => 
     await dismissModals(page);
     await page.locator('[data-testid="nav-item-nav.inventory"]').last().click();
     await dismissModals(page);
-    await page.waitForTimeout(500);
-    const updatedCardText = await page.locator('text=Test CRUD Product').first().locator('..').innerText();
-    expect(updatedCardText).toMatch(/25/);
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const state = (window as any).__shelfAppStateForTest;
+          return state?.products?.find((item: any) => item.name === 'Test CRUD Product')?.quantity;
+        }),
+      )
+      .toBe(25);
 
     // --- DELETE ---
-    // Click edit button to open product form, look for delete button
-    const editBtn2 = page.locator('[data-testid^="edit-product-"]').first();
-    await editBtn2.click();
-    await dismissModals(page);
-    await page.waitForTimeout(500);
-
-    const deleteBtn = page
-      .locator('button[aria-label*="Eliminar"]')
-      .or(page.locator('button:has-text("Eliminar")'))
-      .or(page.getByRole('button', { name: /eliminar/i }));
-
-    if (await deleteBtn.isVisible()) {
-      await deleteBtn.click();
-      // Confirm delete if modal appears
-      const confirmBtn = page
-        .locator('button:has-text("Confirmar")')
-        .or(page.getByRole('button', { name: /confirmar/i }));
-      if (await confirmBtn.isVisible().catch(() => false)) {
-        await confirmBtn.click();
-      }
-      await page.waitForTimeout(1000);
-    }
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.locator(`[data-testid="delete-product-${productId}"]:visible`).click();
 
     await dismissModals(page);
     await page.locator('[data-testid="nav-item-nav.inventory"]').last().click();
     await dismissModals(page);
-    await page.waitForTimeout(500);
-    await expect(page.locator('text=Test CRUD Product').first()).not.toBeVisible({ timeout: 5000 });
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const state = (window as any).__shelfAppStateForTest;
+          return state?.products?.find((item: any) => item.name === 'Test CRUD Product')?.isActive;
+        }),
+      )
+      .toBe(false);
   });
 
   test('Sales flow: create sale and verify stock decrements', async ({ page }) => {
@@ -84,13 +82,21 @@ test.describe('CRUD Operations — Inventory, Sales, Clients, Suppliers', () => 
     await page.locator('[data-testid="nav-item-nav.inventory"]').last().click();
     await dismissModals(page);
     await page.getByTestId('add-product-button').click();
-    await dismissModals(page);
+    await expect(page.getByTestId('product-form')).toBeVisible();
     await page.getByTestId('product-name-input').fill('Sale Test Product');
     await page.getByTestId('product-quantity-input').fill('50');
     await page.getByTestId('product-price-input').fill('200');
     await page.getByTestId('product-cost-input').fill('100');
     await page.getByTestId('save-product-button').click();
     await expect(page.locator('text=Sale Test Product').first()).toBeVisible({ timeout: 5000 });
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const state = (window as any).__shelfAppStateForTest;
+          return state?.products?.find((item: any) => item.name === 'Sale Test Product')?.quantity;
+        }),
+      )
+      .toBe(50);
 
     await page.waitForTimeout(1000);
 
@@ -107,13 +113,17 @@ test.describe('CRUD Operations — Inventory, Sales, Clients, Suppliers', () => 
     if (await addSaleBtn.isVisible().catch(() => false)) {
       await addSaleBtn.click();
     }
+    await expect(page.getByTestId('sale-form')).toBeVisible();
+    await page.getByTestId('add-sale-item-button').click();
+    await expect(page.getByTestId('sale-item-product-0')).toBeVisible();
 
-    // Search and add product to sale
-    const productSearch = page.getByPlaceholder(/buscar producto|search product|producto/i).first();
-    if (await productSearch.isVisible().catch(() => false)) {
-      await productSearch.fill('Sale Test Product');
-      await page.waitForTimeout(500);
-    }
+    const saleProductId = await page.evaluate(() => {
+      const state = (window as any).__shelfAppStateForTest;
+      return state?.products?.find((item: any) => item.name === 'Sale Test Product')?.id;
+    });
+    expect(saleProductId).toBeTruthy();
+    await page.getByTestId('sale-item-product-0').selectOption(String(saleProductId));
+    await page.getByTestId('sale-item-quantity-0').fill('1');
 
     // Save the sale
     const saveSaleBtn = page
@@ -128,9 +138,14 @@ test.describe('CRUD Operations — Inventory, Sales, Clients, Suppliers', () => 
     await dismissModals(page);
     await page.locator('[data-testid="nav-item-nav.inventory"]').last().click();
     await dismissModals(page);
-    await page.waitForTimeout(500);
-    const stockCardText = await page.locator('text=Sale Test Product').first().locator('..').innerText();
-    expect(stockCardText).toMatch(/49/);
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const state = (window as any).__shelfAppStateForTest;
+          return state?.products?.find((item: any) => item.name === 'Sale Test Product')?.quantity;
+        }),
+      )
+      .toBe(49);
   });
 
   test('Client CRUD: create and list clients', async ({ page }) => {

@@ -1,8 +1,11 @@
 describe('Settings', () => {
   beforeEach(() => {
-    cy.visit('/');
-    cy.contains('Empieza Gratis').click();
-    cy.get('[data-testid="welcome-modal-get-started-button"]').click();
+    cy.visit('/', {
+      onBeforeLoad(win) {
+        win.localStorage.setItem('hasVisited', 'true');
+        win.localStorage.setItem('shelfWelcomeSeen', 'true');
+      },
+    });
     cy.get('[data-testid="nav-item-nav.settings"]').last().click();
   });
 
