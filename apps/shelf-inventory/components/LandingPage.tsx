@@ -1,7 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
 import { useI18n } from '../context/I18nContext';
-import LanguageSelector from './LanguageSelector';
 import WelcomeModal from './WelcomeModal';
 
 interface LandingPageProps {
@@ -48,7 +47,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
           [ {t('appName')} ]
         </h1>
         <div className="flex items-center gap-4 md:gap-6">
-          <LanguageSelector direction="down" />
           <button
             onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
             className="text-sm md:text-base font-semibold text-white/70 hover:text-white transition-colors"
@@ -169,7 +167,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 </a>
 
                 <ul className="space-y-4">
-                  {(t('landing.governance.points', { returnObjects: true }) as string[]).map((item, i) => (
+                  {(Array.isArray(t('landing.governance.points', { returnObjects: true })) 
+                    ? (t('landing.governance.points', { returnObjects: true }) as string[]) 
+                    : []).map((item, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <div className="mt-1 flex-shrink-0 w-5 h-5 rounded-full bg-yellow-500/20 flex items-center justify-center border border-yellow-500/50">
                         <svg

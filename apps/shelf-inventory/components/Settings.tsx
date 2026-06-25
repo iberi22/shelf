@@ -1,4 +1,4 @@
-import { Plus, Save, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Fingerprint, Languages, Lock, Plus, Save, SlidersHorizontal, Trash2 } from 'lucide-react';
 import type { InventoryConfig, InventoryFieldDefinition, RestoreStatePayload } from 'p2p-mesh-core';
 import { dbSync, decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
 import type React from 'react';
@@ -16,11 +16,13 @@ import {
   normalizeInventoryConfig,
   normalizeInventoryFieldKey,
 } from '../lib/inventoryConfig';
+import { isBiometricsSupported } from '../lib/webauthn';
 import AuditLogViewer from './AuditLogViewer';
 import DataRecovery from './DataRecovery';
 import DeviceManagementPanel from './DeviceManagementPanel';
 import ImportCSVModal from './ImportCSVModal';
 import InviteMemberModal from './InviteMemberModal';
+import LanguageSelector from './LanguageSelector';
 import P2PSyncManager from './P2PSyncManager';
 
 const CURRENCIES = [
@@ -57,12 +59,17 @@ const Settings: React.FC = () => {
   const [inventoryConfigErrors, setInventoryConfigErrors] = useState<string[]>([]);
 
   const { isPyme } = useSubscription();
-  const { user, hasAppLock, setAppLock } = useAuth();
+  const { user, hasAppLock, hasBiometricLock, setAppLock, setBiometricLock } = useAuth();
   const [newPin, setNewPin] = useState('');
+  const [biometricsSupported, setBiometricsSupported] = useState(false);
 
   useEffect(() => {
     setInventoryConfigDraft(normalizeInventoryConfig(state.inventoryConfig || DEFAULT_INVENTORY_CONFIG));
   }, [state.inventoryConfig]);
+
+  useEffect(() => {
+    isBiometricsSupported().then(setBiometricsSupported).catch(() => setBiometricsSupported(false));
+  }, []);
 
   const team = [
     { id: 'owner', email: user?.email ?? 'owner@example.com', role: 'owner' as const },
@@ -316,6 +323,18 @@ const Settings: React.FC = () => {
           {/* General Settings */}
           <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.general.title')}</h3>
+            <div className="mt-4 flex flex-col gap-3 rounded-md border border-[#F5F5DC]/10 bg-[#121212] p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#F5F5DC]/90">
+                  <Languages className="h-4 w-4 text-[#4ADE80]" aria-hidden="true" />
+                  Idioma
+                </div>
+                <p className="mt-1 text-xs text-[#F5F5DC]/60">Cambia el idioma de la interfaz desde configuracion.</p>
+              </div>
+              <div className="self-start sm:self-center" data-testid="settings-language-selector">
+                <LanguageSelector direction="down" />
+              </div>
+            </div>
             <div className="mt-4">
               <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-[#F5F5DC]/90">
                 {t('settings.lowStockThreshold')}
@@ -771,62 +790,102 @@ const Settings: React.FC = () => {
 
           {/* App Lock Settings */}
           <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-            <h3 className="text-xl font-bold text-[#F5F5DC]">🔒 {t('settings.security.title') || 'Seguridad'}</h3>
+            <div className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-[#4ADE80]" aria-hidden="true" />
+              <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.security.title') || 'Seguridad'}</h3>
+            </div>
             <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">
-              {t('settings.security.description') || 'Configura un PIN para proteger el acceso a la aplicación.'}
+              Configura una contraseña, PIN o huella digital para proteger el acceso al inventario.
             </p>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="block text-sm font-medium text-[#F5F5DC]/90">
-                    {t('settings.security.appLock') || 'Bloqueo de Aplicación'}
-                  </label>
-                  <p className="text-xs text-[#F5F5DC]/60">{hasAppLock ? 'Protegido con PIN' : 'Sin protección'}</p>
+              <div className="rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <label className="block text-sm font-medium text-[#F5F5DC]/90">
+                      Contraseña o PIN de la aplicación
+                    </label>
+                    <p className="text-xs text-[#F5F5DC]/60">
+                      {hasAppLock ? 'Protegido con contraseña/PIN' : 'Sin contraseña local'}
+                    </p>
+                  </div>
+                  {hasAppLock && (
+                    <button
+                      data-testid="disable-app-lock-button"
+                      onClick={() => setAppLock(null)}
+                      className="text-sm font-bold text-red-400 hover:text-red-300 transition-colors"
+                    >
+                      {t('settings.security.disable') || 'Desactivar'}
+                    </button>
+                  )}
                 </div>
-                {hasAppLock && (
-                  <button
-                    onClick={() => setAppLock(null)}
-                    className="text-sm font-bold text-red-400 hover:text-red-300 transition-colors"
-                  >
-                    {t('settings.security.disable') || 'Desactivar'}
-                  </button>
+
+                {!hasAppLock ? (
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                    <input
+                      data-testid="new-app-lock-input"
+                      type="password"
+                      value={newPin}
+                      onChange={(e) => setNewPin(e.target.value)}
+                      placeholder="Nueva contraseña o PIN"
+                      className="min-w-0 flex-1 p-2.5 bg-[#0f0f0f] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                    />
+                    <button
+                      data-testid="enable-app-lock-button"
+                      onClick={async () => {
+                        if (newPin.length >= 4) {
+                          await setAppLock(newPin);
+                          setNewPin('');
+                          showNotification('Contraseña de acceso configurada correctamente', 'success');
+                        } else {
+                          showNotification('La contraseña o PIN debe tener al menos 4 caracteres', 'error');
+                        }
+                      }}
+                      className="bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 transition-all text-sm"
+                    >
+                      {t('settings.security.enable') || 'Activar'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-4 p-3 bg-[#F5F5DC]/5 rounded-lg border border-[#F5F5DC]/10">
+                    <p className="text-xs text-[#F5F5DC]/60 italic">
+                      {t('settings.security.lockedNote') || 'La aplicación se bloqueará automáticamente al recargar.'}
+                    </p>
+                  </div>
                 )}
               </div>
 
-              {!hasAppLock ? (
-                <div className="flex gap-3">
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    maxLength={8}
-                    value={newPin}
-                    onChange={(e) => setNewPin(e.target.value)}
-                    placeholder="Nuevo PIN (ej. 1234)"
-                    className="flex-1 p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
-                  />
+              <div className="rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Fingerprint className="h-4 w-4 text-[#4ADE80]" aria-hidden="true" />
+                      <label className="block text-sm font-medium text-[#F5F5DC]/90">Huella digital</label>
+                    </div>
+                    <p className="mt-1 text-xs text-[#F5F5DC]/60">
+                      {biometricsSupported
+                        ? hasBiometricLock
+                          ? 'Huella habilitada para desbloquear la aplicación.'
+                          : 'Usa el autenticador biométrico del dispositivo.'
+                        : 'Este navegador o dispositivo no reporta biometría disponible.'}
+                    </p>
+                  </div>
                   <button
+                    data-testid="toggle-biometric-lock-button"
+                    disabled={!biometricsSupported}
                     onClick={async () => {
-                      if (newPin.length >= 4) {
-                        await setAppLock(newPin);
-                        setNewPin('');
-                        showNotification('PIN configurado correctamente', 'success');
-                      } else {
-                        showNotification('El PIN debe tener al menos 4 dígitos', 'error');
-                      }
+                      await setBiometricLock(!hasBiometricLock);
+                      showNotification(
+                        !hasBiometricLock ? 'Huella digital activada' : 'Huella digital desactivada',
+                        'success',
+                      );
                     }}
-                    className="bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 transition-all text-sm"
+                    className="bg-transparent border border-[#F5F5DC]/30 text-[#F5F5DC] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-[#F5F5DC]/10 transition-all text-sm disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {t('settings.security.enable') || 'Activar'}
+                    {hasBiometricLock ? 'Desactivar huella' : 'Activar huella'}
                   </button>
                 </div>
-              ) : (
-                <div className="p-3 bg-[#F5F5DC]/5 rounded-lg border border-[#F5F5DC]/10">
-                  <p className="text-xs text-[#F5F5DC]/60 italic">
-                    {t('settings.security.lockedNote') || 'La aplicación se bloqueará automáticamente al recargar.'}
-                  </p>
-                </div>
-              )}
+              </div>
             </div>
           </div>
 

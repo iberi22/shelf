@@ -3,7 +3,8 @@
 - **ID:** SRC-EDGE-001
 - **Name:** Edge Mesh Runtime
 - **Priority:** P0 (Core)
-- **Status:** Implemented
+- **Status:** Partial
+- **Implementation:** 70%
 - **Category:** EDGE (Local-first edge mesh)
 - **SDLC:** Production
 
@@ -39,6 +40,10 @@ Store operator using multiple browsers, devices, or team members in an offline-f
 7. Reverts unauthorized remote mutations inside the CRDT document.
 8. Exposes localhost-only E2E harnesses for deterministic browser-to-browser tests.
 9. Keeps WebGPU agent execution as an extension point for future edge-local AI tasks.
+
+## Open Work
+
+The reusable runtime primitives exist, but app-level adoption is still partial. #139 remains open until Shelf uses the library-first sync layer as the main path, ack/retry is formalized, and multi-node browser convergence is covered without manual test rebroadcast helpers.
 
 ## Technical Stack
 

@@ -433,6 +433,17 @@
     "feature4": {
       "title": "Sincronización (Pro)",
       "description": "Actualiza a Pro para sincronizar tus datos en todos tus dispositivos, manteniéndolos seguros y actualizados."
+    },
+    "governance": {
+      "title": "Red Multibodega",
+      "highlight": "Descentralizada",
+      "description": "Conecta múltiples tiendas y bodegas de forma segura sin un servidor central. Sincroniza datos en tiempo real o sin conexión.",
+      "learnMore": "Conoce cómo funciona",
+      "points": [
+        "Cifrado de extremo a extremo para todos los datos",
+        "Permisos basados en roles por sucursal",
+        "Resolución automática de conflictos"
+      ]
     }
   },
   "welcome": {

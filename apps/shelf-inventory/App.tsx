@@ -1,12 +1,8 @@
 import { p2pManager } from 'p2p-mesh-core';
 import { useEffect, useState } from 'react';
-import AccountRecoveryModal from './components/AccountRecoveryModal';
 import LandingPage from './components/LandingPage';
-import LocalLoginModal from './components/LocalLoginModal';
-import LocalSignupModal from './components/LocalSignupModal';
 import LockScreen from './components/LockScreen';
 import Notification from './components/Notification';
-import P2PRecoveryModal from './components/P2PRecoveryModal';
 import RecoveryApprovalModal from './components/RecoveryApprovalModal';
 import SubscriptionModal from './components/SubscriptionModal';
 import UpdateNotification from './components/UpdateNotification';
@@ -20,8 +16,6 @@ import useErrorMonitoring from './hooks/useErrorMonitoring';
 import useLocalStorage from './hooks/useLocalStorage';
 import MainApp from './MainApp';
 
-type ModalType = 'local-login' | 'local-signup' | 'recovery-seed' | 'recovery-p2p' | null;
-
 interface PendingRecoveryRequest {
   requestId: string;
   email: string;
@@ -32,7 +26,6 @@ interface PendingRecoveryRequest {
 const AppContainer = () => {
   useErrorMonitoring();
   const [hasVisited, setHasVisited] = useLocalStorage('hasVisited', false);
-  const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [pendingRecoveryRequest, setPendingRecoveryRequest] = useState<PendingRecoveryRequest | null>(null);
   const { isLoading, loadingMessage, notification, hideNotification, showNotification } = useUI();
   const { isLocked, isLocalAccount, user } = useAuth();
@@ -85,19 +78,6 @@ const AppContainer = () => {
 
   const showMainApp = () => setHasVisited(true);
 
-  const closeModal = () => setActiveModal(null);
-  const openLoginModal = () => setActiveModal('local-login');
-
-  const switchToLocalSignup = () => setActiveModal('local-signup');
-  const switchToLocalLogin = () => setActiveModal('local-login');
-  const switchToSeedRecovery = () => setActiveModal('recovery-seed');
-
-  const handleRecovered = () => {
-    closeModal();
-    // Reload to pick up the new local account
-    window.location.reload();
-  };
-
   if (!hasVisited) {
     return <LandingPage onNavigate={showMainApp} />;
   }
@@ -108,29 +88,7 @@ const AppContainer = () => {
 
   return (
     <>
-      <MainApp onLoginClick={openLoginModal} />
-
-      {/* Local auth modals */}
-      {activeModal === 'local-login' && (
-        <LocalLoginModal
-          onClose={closeModal}
-          onSwitchToSignup={switchToLocalSignup}
-          onSwitchToRecovery={switchToSeedRecovery}
-        />
-      )}
-      {activeModal === 'local-signup' && <LocalSignupModal onClose={closeModal} onSwitchToLogin={switchToLocalLogin} />}
-
-      {/* Recovery modals */}
-      {activeModal === 'recovery-seed' && (
-        <AccountRecoveryModal onClose={closeModal} onRecovered={handleRecovered} onSwitchToLogin={switchToLocalLogin} />
-      )}
-      {activeModal === 'recovery-p2p' && (
-        <P2PRecoveryModal
-          onClose={closeModal}
-          onRecovered={handleRecovered}
-          onSwitchToSeedRecovery={switchToSeedRecovery}
-        />
-      )}
+      <MainApp />
 
       {/* P2P recovery approval (shown on master device when a request arrives) */}
       {pendingRecoveryRequest && (

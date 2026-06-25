@@ -5,7 +5,7 @@ import { useI18n } from '../context/I18nContext';
 
 const LockScreen: React.FC = () => {
   const { t } = useI18n();
-  const { unlockApp } = useAuth();
+  const { hasBiometricLock, unlockApp, unlockWithBiometrics } = useAuth();
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
@@ -32,6 +32,14 @@ const LockScreen: React.FC = () => {
     setPin((prev) => prev.slice(0, -1));
   };
 
+  const handleBiometricUnlock = async () => {
+    const success = await unlockWithBiometrics();
+    if (!success) {
+      setError(true);
+      setTimeout(() => setError(false), 500);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[300] bg-[#0a0a0a] flex flex-col items-center justify-center p-6">
       <div className={`w-full max-w-sm transition-transform duration-200 ${error ? 'animate-shake' : ''}`}>
@@ -46,6 +54,23 @@ const LockScreen: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit}>
+          <label htmlFor="app-lock-password" className="sr-only">
+            ContraseÃ±a o PIN
+          </label>
+          <input
+            id="app-lock-password"
+            data-testid="app-lock-password-input"
+            type="password"
+            autoComplete="current-password"
+            value={pin}
+            onChange={(event) => {
+              setPin(event.target.value);
+              setError(false);
+            }}
+            placeholder="ContraseÃ±a o PIN"
+            className="mb-6 w-full rounded-xl border border-[#F5F5DC]/20 bg-[#1a1a1a] px-4 py-3 text-center text-[#F5F5DC] placeholder:text-[#F5F5DC]/35 focus:border-[#F5F5DC]/50 focus:outline-none"
+          />
+
           <div className="flex justify-center gap-3 mb-10 flex-wrap">
             {[...Array(Math.max(6, pin.length))].map((_, i) => (
               <div
@@ -98,6 +123,16 @@ const LockScreen: React.FC = () => {
           >
             {t('auth.unlock') || 'Desbloquear'}
           </button>
+          {hasBiometricLock && (
+            <button
+              type="button"
+              data-testid="biometric-unlock-button"
+              onClick={handleBiometricUnlock}
+              className="mt-3 w-full rounded-xl border border-[#F5F5DC]/20 py-3 font-bold text-[#F5F5DC] transition-colors hover:bg-[#F5F5DC]/10 active:scale-[0.98]"
+            >
+              Usar huella digital
+            </button>
+          )}
         </form>
       </div>
 

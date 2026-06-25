@@ -1,113 +1,142 @@
 # Shelf - Non-Functional Requirements
 
+Last updated: 2026-06-14
+
+## Status Summary
+
+| SRC ID | Requirement | Priority | Status | Implementation |
+| --- | --- | --- | --- | ---: |
+| SRC-PQC-001 | Post-Quantum Cryptography | P0 | Implemented | 90% |
+| SRC-P2P-001 | P2P Mesh Network | P0 | Partial | 80% |
+| SRC-CRDT-001 | CRDT Sync (Yjs) | P0 | Partial | 70% |
+| SRC-EDGE-001 | Edge Mesh Runtime | P0 | Partial | 70% |
+| SRC-PWA-001 | PWA & Offline Support | P0 | Partial | 75% |
+| SRC-QA-001 | Testing Infrastructure | P1 | Partial | 80% |
+| SRC-SEC-001 | Firebase Security Rules | P0 | Partial | 75% |
+| SRC-SEC-002 | Environment Security | P1 | Partial | 75% |
+
 ## SRC-PQC-001: Post-Quantum Cryptography
 
-**Priority:** P0 | **Status:** Implemented
+**Priority:** P0 | **Status:** Implemented | **Implementation:** 90%
 
-**User Story:** Como usuario, quiero que mis datos esten protegidos incluso contra computacion cuantica.
-
-**Technical Stack:** `@noble/post-quantum` (ML-KEM-768, ML-DSA-65)
+**Technical Stack:** `@noble/post-quantum` (ML-KEM-768, ML-DSA-65), AES-GCM, `p2p-mesh-core`
 
 **Acceptance Criteria:**
 
-1. Intercambio de llaves con ML-KEM-768.
-2. Firmas digitales ML-DSA-65.
-3. Cifrado en reposo con AES-GCM y derivacion de llave segura.
-4. Cifrado en transito sobre WebRTC.
-5. Integracion con `p2p-mesh-core` y futura firma de capacidades Edge Mesh.
+1. Key exchange with ML-KEM-768.
+2. Digital signatures with ML-DSA-65.
+3. AES-GCM encryption at rest with secure key derivation.
+4. Encryption in transit over WebRTC.
+5. Integration with `p2p-mesh-core`.
+
+**Open Work:** Signed Edge Mesh capability envelopes and broader app-level authorization hardening remain part of #139.
 
 ## SRC-P2P-001: P2P Mesh Network
 
-**Priority:** P0 | **Status:** Implemented
+**Priority:** P0 | **Status:** Partial | **Implementation:** 80%
 
 **Technical Stack:** PeerJS, WebRTC, `p2p-mesh-core`, `@shelf/edge-mesh`
 
 **Acceptance Criteria:**
 
-1. Descubrimiento de peers via WebRTC.
-2. Topologia mesh descentralizada.
-3. Admin/master node para coordinacion y permisos.
-4. Reconexion automatica ante caidas de conexion.
-5. PeerJS local en `localhost`, `127.0.0.1`, y `::1` para desarrollo y E2E.
-6. Integracion con Edge Mesh para propagar actualizaciones CRDT entre navegadores.
+1. Peer discovery via WebRTC.
+2. Decentralized mesh topology.
+3. Admin/master node coordination and permissions.
+4. Automatic reconnection after connection loss.
+5. Local PeerJS support for `localhost`, `127.0.0.1`, and `::1`.
+6. Edge Mesh integration for CRDT update propagation.
+
+**Open Work:** Branch/warehouse partitioning (#134), persistent node history/failover (#135), admin consensus (#136), and advanced multi-node E2E remain open.
 
 ## SRC-CRDT-001: CRDT Sync (Yjs)
 
-**Priority:** P0 | **Status:** Implemented
+**Priority:** P0 | **Status:** Partial | **Implementation:** 70%
 
 **Technical Stack:** Yjs, `@shelf/edge-mesh`, Playwright
 
 **Acceptance Criteria:**
 
-1. Integracion con Yjs para tipos de datos compartidos.
-2. Resolucion automatica de conflictos y consistencia eventual.
-3. Sincronizacion eficiente por updates delta.
-4. Namespaces independientes por workflow.
-5. Remote origins con `peerId` para autorizar mutaciones antes de aplicarlas a app state.
+1. Yjs shared data integration.
+2. Eventual consistency and conflict resolution.
+3. Efficient delta update synchronization.
+4. Independent namespaces per workflow.
+5. Remote origins with `peerId` for app-state authorization.
+
+**Open Work:** Complete Shelf migration to `createCrdtSyncLayer`, formal ack/retry, capability enforcement, and 2/3-node E2E without manual rebroadcast helpers remain open under #139.
 
 ## SRC-EDGE-001: Edge Mesh Runtime
 
-**Priority:** P0 | **Status:** Implemented
+**Priority:** P0 | **Status:** Partial | **Implementation:** 70%
 
 **Technical Stack:** `@shelf/edge-mesh`, `edge-mesh-react`, Yjs, PeerJS/WebRTC, WebGPU extension point
 
 **Acceptance Criteria:**
 
-1. Package reutilizable para nodos, transporte, storage, protocolo, presencia, autorizacion y CRDT namespaces.
-2. `EdgeMesh#getNamespace(name)` para documentos Yjs por workflow.
-3. Remote origin `{ type: 'remote', peerId }` en updates entrantes.
-4. Prevencion de loops al no re-broadcast de updates remotos.
-5. Puente Shelf que sincroniza `products`, `sales`, `clients`, `suppliers`, `purchaseOrders`, `arqueoSessions`, `ocrResults`, `auditLogs`, y `teamMembers`.
-6. Reversion de mutaciones remotas no autorizadas con origen `shelf-edge-security-revert`.
-7. Harness E2E solo en localhost para pruebas deterministicas de sync y seguridad.
-8. Extension WebGPU para futuros agentes locales sobre contexto CRDT.
+1. Reusable package for nodes, transport, storage, protocol, presence, authorization, and CRDT namespaces.
+2. `EdgeMesh#getNamespace(name)` for Yjs documents by workflow.
+3. Remote origin `{ type: 'remote', peerId }` for incoming updates.
+4. Loop prevention for remote updates.
+5. Shelf bridge for product, sales, contacts, purchase orders, sessions, OCR results, audit logs, and team members.
+6. Rejection/reversion of unauthorized remote mutations.
+7. Localhost-only deterministic E2E harness.
+8. WebGPU extension point for future local agents.
+
+**Open Work:** The reusable primitives exist, but app-level adoption is incomplete. Shelf still needs deeper migration to the library-first sync layer before this can be considered complete.
 
 ## SRC-PWA-001: PWA & Offline Support
 
-**Priority:** P0 | **Status:** Implemented
+**Priority:** P0 | **Status:** Partial | **Implementation:** 75%
 
-**Technical Stack:** `vite-plugin-pwa`, `workbox-window`, local storage, IndexedDB roadmap
+**Technical Stack:** `vite-plugin-pwa`, Workbox, local storage, IndexedDB roadmap
 
 **Acceptance Criteria:**
 
-1. Instalable como Progressive Web App.
-2. Funciona sin conexion a internet.
-3. Service worker configurado para caching offline.
-4. Persistencia local de estado operacional.
-5. Sincronizacion cuando vuelve la conectividad P2P.
+1. Installable Progressive Web App.
+2. Works without internet for base workflows.
+3. Service worker configured for offline caching.
+4. Local persistence of operational state.
+5. Synchronization when P2P connectivity returns.
+
+**Open Work:** The base offline app works, but #87 requires a broader 100% local-only architecture with local OCR, local AI, local-only profile/auth, and cloud dependency reduction.
 
 ## SRC-QA-001: Testing Infrastructure
 
-**Priority:** P1 | **Status:** Implemented
+**Priority:** P1 | **Status:** Partial | **Implementation:** 80%
 
 **Technical Stack:** Playwright, Vitest, Biome, GitHub Actions, Vercel
 
 **Acceptance Criteria:**
 
-1. Tests unitarios del paquete `@shelf/edge-mesh`.
-2. Tests E2E de sincronizacion Edge Mesh entre navegadores.
-3. Tests E2E de bloqueo/reversion de mutaciones remotas no autorizadas.
-4. Tests E2E de seguridad local y compatibilidad P2P existente.
-5. Biome configurado para lint/format.
-6. CI/CD con GitHub Actions y despliegue Vercel.
+1. Unit tests for `@shelf/edge-mesh`.
+2. E2E tests for Edge Mesh sync between browsers.
+3. E2E tests for unauthorized remote mutation rejection.
+4. E2E tests for local security and existing P2P compatibility.
+5. Biome lint/format configuration.
+6. CI/CD with GitHub Actions and Vercel.
+
+**Open Work:** `p2p-sync-advanced.spec.ts` is blocked by overlay helper behavior, manual browser verification is blocked by the landing translation bug, and Dependabot vulnerabilities must be audited before a broad release.
 
 ## SRC-SEC-001: Firebase Security Rules
 
-**Priority:** P0 | **Status:** Implemented
+**Priority:** P0 | **Status:** Partial | **Implementation:** 75%
 
 **Acceptance Criteria:**
 
-1. Firestore rules publicadas y configuradas.
-2. Segregacion de datos por usuario.
-3. Cloud Functions con secrets configurados.
+1. Firestore rules published and configured.
+2. Data segregation by user.
+3. Cloud Functions secrets configured.
+
+**Open Work:** Firebase/cloud dependencies should be re-evaluated against #87 before expanding this as the long-term architecture.
 
 ## SRC-SEC-002: Environment Security
 
-**Priority:** P1 | **Status:** Implemented
+**Priority:** P1 | **Status:** Partial | **Implementation:** 75%
 
 **Acceptance Criteria:**
 
-1. IDs y secrets en environment variables.
-2. `.env.example` con variables documentadas.
-3. Secrets de produccion separados de desarrollo.
-4. Stripe webhook secret verificado en produccion.
+1. IDs and secrets stored in environment variables.
+2. `.env.example` documents required values.
+3. Production and development secrets are separated.
+4. Stripe webhook secret is verified in production.
+
+**Open Work:** Production environment verification and Dependabot vulnerability audit remain required.

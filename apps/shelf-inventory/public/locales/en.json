@@ -423,6 +423,17 @@
     "feature4": {
       "title": "Cloud Sync (Pro)",
       "description": "Upgrade to Pro to sync your data across all your devices, keeping them safe and up-to-date."
+    },
+    "governance": {
+      "title": "Decentralized",
+      "highlight": "Multi-Branch Network",
+      "description": "Connect multiple stores and warehouses securely without a central server. Sync data in real-time or offline.",
+      "learnMore": "Learn how it works",
+      "points": [
+        "End-to-end encryption for all synced data",
+        "Role-based permissions per branch",
+        "Automated conflict resolution"
+      ]
     }
   },
   "welcome": {

@@ -3,7 +3,8 @@
 - **ID:** SRC-P2P-001
 - **Name:** P2P Mesh Network
 - **Priority:** P0 (Core)
-- **Status:** Implemented
+- **Status:** Partial
+- **Implementation:** 80%
 - **Category:** P2P (P2P Mesh Sync)
 - **SDLC:** Production
 
@@ -33,6 +34,10 @@ Store operator or team member using Shelf from multiple devices.
 4. Local development and E2E use the local PeerServer on localhost.
 5. Edge Mesh can broadcast encoded namespace updates to connected peers.
 6. Existing P2P app sync remains compatible while Edge Mesh is adopted incrementally.
+
+## Open Work
+
+This SRC is not fully closed while issues #134, #135, and #136 remain open. Shelf still needs branch/warehouse context isolation, persistent node history, failover integration, admin consensus UI, and advanced multi-node validation.
 
 ## Technical Stack
 

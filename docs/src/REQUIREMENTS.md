@@ -1,190 +1,220 @@
-# Shelf — Functional Requirements (SRC-FUN)
+# Shelf - Functional Requirements (SRC-FUN)
 
-> All 14 functional features are **implemented** ✅
-> Source of truth: `.gitcore/features.json`
+> Base CRUD and operational features are implemented, but the full strategic roadmap is not 100% complete.
+> Current percentages are tracked in `apps/shelf-inventory/FEATURES_STATUS.md`.
+> Source of truth for generated feature definitions: `.gitcore/features.json`.
 
----
+## Status Summary
+
+| SRC ID | Feature | Priority | Status | Implementation |
+| --- | --- | --- | --- | ---: |
+| SRC-FUN-001 | Inventory Management | P0 | Implemented | 100% |
+| SRC-FUN-002 | Sales Tracking | P0 | Implemented | 100% |
+| SRC-FUN-003 | Dashboard | P0 | Implemented | 100% |
+| SRC-FUN-004 | Contact Management | P0 | Implemented | 100% |
+| SRC-FUN-005 | Purchase Orders | P1 | Implemented | 100% |
+| SRC-FUN-006 | Barcode/QR Scanner | P1 | Implemented | 100% |
+| SRC-FUN-007 | AI Assistant | P2 | Partial | 80% |
+| SRC-FUN-008 | Authentication & Cloud Sync | P0 | Partial | 65% |
+| SRC-FUN-009 | Monetization (Ads + Subscriptions) | P0 | Partial | 75% |
+| SRC-FUN-010 | Multi-language Support | P1 | Implemented | 100% |
+| SRC-FUN-011 | Settings & Data Management | P1 | Implemented | 95% |
+| SRC-FUN-012 | Reports & Analytics | P1 | Implemented | 100% |
+| SRC-FUN-013 | Multi-user Access (Pyme Plan) | P2 | Partial | 70% |
+| SRC-FUN-014 | Data Import (CSV) | P2 | Implemented | 100% |
 
 ## SRC-FUN-001: Inventory Management
-**Priority:** P0 | **Status:** ✅ Implemented
 
-**User Story:** Como dueño de negocio, quiero gestionar mi inventario digitalmente para saber exactamente qué tengo en stock.
+**Priority:** P0 | **Status:** Implemented | **Implementation:** 100%
+
+**User Story:** Como dueno de negocio, quiero gestionar mi inventario digitalmente para saber exactamente que tengo en stock.
 
 **Acceptance Criteria:**
-1. CRUD completo de productos (crear, leer, actualizar, eliminar)
-2. Campos: nombre, SKU, cantidad, precio, costo, imagen
-3. Búsqueda y filtros en listado de productos
-4. Stock se actualiza automáticamente al registrar venta
 
----
+1. CRUD completo de productos.
+2. Campos: nombre, SKU, cantidad, precio, costo e imagen.
+3. Busqueda y filtros en listado de productos.
+4. Stock se actualiza automaticamente al registrar venta.
 
 ## SRC-FUN-002: Sales Tracking
-**Priority:** P0 | **Status:** ✅ Implemented
 
-**User Story:** Como vendedor, quiero registrar ventas para que el stock se actualice automáticamente.
+**Priority:** P0 | **Status:** Implemented | **Implementation:** 100%
+
+**User Story:** Como vendedor, quiero registrar ventas para que el stock se actualice automaticamente.
 
 **Acceptance Criteria:**
-1. Registrar venta seleccionando productos del inventario
-2. Decremento automático de stock al confirmar venta
-3. Historial de ventas con fecha, productos y total
-4. Cálculo automático de revenue y profit por venta
 
----
+1. Registrar venta seleccionando productos del inventario.
+2. Decremento automatico de stock al confirmar venta.
+3. Historial de ventas con fecha, productos y total.
+4. Calculo automatico de revenue y profit por venta.
 
 ## SRC-FUN-003: Dashboard
-**Priority:** P0 | **Status:** ✅ Implemented
 
-**User Story:** Como dueño, quiero ver un dashboard con mis métricas clave de un vistazo.
+**Priority:** P0 | **Status:** Implemented | **Implementation:** 100%
+
+**User Story:** Como dueno, quiero ver un dashboard con mis metricas clave de un vistazo.
 
 **Acceptance Criteria:**
-1. Tarjetas con Revenue, Profit, Ventas totales, Productos totales
-2. Dashboard personalizable (elegir qué stats mostrar)
-3. Gráficos de ventas en el tiempo (chart.js)
-4. Top productos más vendidos
 
----
+1. Tarjetas con revenue, profit, ventas totales y productos totales.
+2. Dashboard personalizable.
+3. Graficos de ventas en el tiempo.
+4. Top productos mas vendidos.
 
 ## SRC-FUN-004: Contact Management
-**Priority:** P0 | **Status:** ✅ Implemented
+
+**Priority:** P0 | **Status:** Implemented | **Implementation:** 100%
 
 **User Story:** Como usuario, quiero gestionar clientes y proveedores desde un mismo lugar.
 
 **Acceptance Criteria:**
-1. CRUD de clientes (nombre, teléfono, email)
-2. CRUD de proveedores (nombre, teléfono, email)
-3. Componente genérico `ContactManagementPage` (sin duplicación de código)
-4. Refactorizado: ahorro de 300+ líneas de código duplicado
 
----
+1. CRUD de clientes.
+2. CRUD de proveedores.
+3. Componente generico `ContactManagementPage`.
+4. Reduccion de duplicacion entre clientes y proveedores.
 
 ## SRC-FUN-005: Purchase Orders
-**Priority:** P1 | **Status:** ✅ Implemented
 
-**User Story:** Como dueño, quiero crear órdenes de compra a proveedores y que el stock se actualice al recibirlas.
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 100%
+
+**User Story:** Como dueno, quiero crear ordenes de compra a proveedores y que el stock se actualice al recibirlas.
 
 **Acceptance Criteria:**
-1. Crear orden de compra seleccionando proveedor y productos
-2. Marcar orden como "recibida" → stock se incrementa automáticamente
-3. Listar órdenes activas e históricas
-4. Estado de orden (pendiente, recibida, cancelada)
 
----
+1. Crear orden de compra seleccionando proveedor y productos.
+2. Marcar orden como recibida incrementa el stock.
+3. Listar ordenes activas e historicas.
+4. Estado de orden: pendiente, recibida o cancelada.
 
 ## SRC-FUN-006: Barcode/QR Scanner
-**Priority:** P1 | **Status:** ✅ Implemented
 
-**User Story:** Como usuario de bodega, quiero escanear códigos de barras para no escribir SKUs manualmente.
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 100%
+
+**User Story:** Como usuario de bodega, quiero escanear codigos de barras para no escribir SKUs manualmente.
 
 **Acceptance Criteria:**
-1. Escaneo usando cámara del dispositivo (`html5-qrcode`)
-2. Parseo automático de código de barras a campo SKU
-3. Soporte para QR y códigos de barras estándar (EAN, UPC, Code128)
-4. Feedback visual de escaneo exitoso
 
----
+1. Escaneo usando camara del dispositivo con `html5-qrcode`.
+2. Parseo automatico de codigo a campo SKU.
+3. Soporte para QR y codigos estandar.
+4. Feedback visual de escaneo exitoso.
 
 ## SRC-FUN-007: AI Assistant
-**Priority:** P2 | **Status:** ✅ Implemented (Pro)
+
+**Priority:** P2 | **Status:** Partial | **Implementation:** 80%
 
 **User Story:** Como usuario Pro, quiero preguntarle a un AI sobre mi inventario en lenguaje natural.
 
 **Acceptance Criteria:**
-1. Interfaz de chat integrada en reports page
-2. Gemini API conectada vía Firebase Cloud Function (proxy)
-3. Gated: solo visible para usuarios Pro
-4. Capacidad de responder preguntas sobre datos de inventario, ventas, tendencias
 
----
+1. Interfaz de chat integrada en reports.
+2. Gemini API conectada via Firebase Cloud Function proxy.
+3. Gated para usuarios Pro.
+4. Respuestas sobre inventario, ventas y tendencias.
+
+**Open Work:** Cloud-backed AI is not the final #87 target. Local WebLLM/StockBot, local OCR, and fully offline AI behavior remain pending.
 
 ## SRC-FUN-008: Authentication & Cloud Sync
-**Priority:** P0 | **Status:** ✅ Implemented
 
-**User Story:** Como usuario, quiero crear una cuenta para sincronizar mis datos en la nube.
+**Priority:** P0 | **Status:** Partial | **Implementation:** 65%
+
+**User Story:** Como usuario, quiero crear una cuenta para sincronizar mis datos.
 
 **Acceptance Criteria:**
-1. Registro y login con email y contraseña (Firebase Auth)
-2. Sync de estado local (localStorage) a Firestore
-3. Restauración de datos al iniciar sesión en otro dispositivo
-4. Segregación completa de datos por usuario
 
----
+1. Registro y login con email y password.
+2. Sync de estado local a Firestore.
+3. Restauracion de datos en otro dispositivo.
+4. Segregacion de datos por usuario.
+
+**Open Work:** Full cloud sync is not fully verified as the strategic direction. The #87 local-only pivot may require reducing or degrading cloud dependencies.
 
 ## SRC-FUN-009: Monetization (Ads + Subscriptions)
-**Priority:** P0 | **Status:** ✅ Implemented
 
-**User Story:** Como negocio, quiero que la app genere ingresos vía anuncios y suscripciones.
+**Priority:** P0 | **Status:** Partial | **Implementation:** 75%
+
+**User Story:** Como negocio, quiero que la app genere ingresos via anuncios y suscripciones.
 
 **Acceptance Criteria:**
-1. Anuncios para usuarios free (`DesktopAdColumn`, `MobileAdBars`)
-2. Modal de suscripción con planes (Basic, Pro, Pyme)
-3. Stripe integrado con webhooks en producción (verificación de firma)
-4. Anuncios ocultos automáticamente para usuarios con suscripción activa
-5. AdSense IDs configurados vía environment variables
 
----
+1. Anuncios para usuarios free.
+2. Modal de suscripcion con planes.
+3. Stripe integrado con webhooks en produccion.
+4. Anuncios ocultos para usuarios con suscripcion activa.
+5. AdSense IDs configurados via environment variables.
+
+**Open Work:** Environment variables, backend deployment, and production webhook verification remain required before this should be counted as complete.
 
 ## SRC-FUN-010: Multi-language Support
-**Priority:** P1 | **Status:** ✅ Implemented
+
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 100%
 
 **User Story:** Como usuario, quiero usar la app en mi idioma.
 
 **Acceptance Criteria:**
-1. Toggle de idioma en settings: English, Español, Português
-2. Traducción completa de toda la UI
-3. Persistencia de preferencia de idioma (localStorage)
-4. Sistema de traducción vía archivos de locales
 
----
+1. Toggle de idioma en settings.
+2. Traduccion completa de UI principal.
+3. Persistencia de preferencia.
+4. Sistema de traduccion via archivos locales.
 
 ## SRC-FUN-011: Settings & Data Management
-**Priority:** P1 | **Status:** ✅ Implemented
+
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 95%
 
 **User Story:** Como usuario, quiero configurar la app y gestionar mis datos.
 
 **Acceptance Criteria:**
-1. Respaldo y restauración completa en JSON
-2. Reset de datos con confirmación
-3. Selección de moneda y formato numérico
-4. Configuración de umbral de stock bajo (alertas)
-5. Persistencia de todas las configuraciones
 
----
+1. Backup y restore JSON.
+2. Reset de datos con confirmacion.
+3. Seleccion de moneda y formato numerico.
+4. Configuracion de umbral de stock bajo.
+5. Persistencia de configuraciones.
+
+**Open Work:** Recent inventory configuration UX changes are local and must be validated before counting as deployed.
 
 ## SRC-FUN-012: Reports & Analytics
-**Priority:** P1 | **Status:** ✅ Implemented
 
-**User Story:** Como dueño, quiero ver reportes detallados de mi negocio para tomar decisiones.
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 100%
+
+**User Story:** Como dueno, quiero ver reportes detallados de mi negocio para tomar decisiones.
 
 **Acceptance Criteria:**
-1. Gráficos de ventas en el tiempo (chart.js + react-chartjs-2)
-2. Top productos más vendidos (lista rankeada)
-3. Filtros avanzados por fecha, producto y cliente
-4. Análisis de márgenes de ganancia
-5. Valor total de inventario
 
----
+1. Graficos de ventas en el tiempo.
+2. Top productos mas vendidos.
+3. Filtros avanzados.
+4. Analisis de margenes.
+5. Valor total de inventario.
 
 ## SRC-FUN-013: Multi-user Access (Pyme Plan)
-**Priority:** P2 | **Status:** ✅ Implemented
 
-**User Story:** Como dueño de negocio, quiero invitar a mi equipo con roles y permisos específicos.
+**Priority:** P2 | **Status:** Partial | **Implementation:** 70%
+
+**User Story:** Como dueno de negocio, quiero invitar a mi equipo con roles y permisos especificos.
 
 **Acceptance Criteria:**
-1. Invitación de miembros del equipo por email
-2. Roles con permisos específicos (admin, editor, viewer)
-3. Separación de datos por usuario dentro de la misma organización
-4. UI de gestión de equipo en settings
 
----
+1. Invitacion de miembros.
+2. Roles con permisos.
+3. Separacion de datos por usuario/organizacion.
+4. UI de gestion de equipo.
+
+**Open Work:** Backend enforcement, branch/warehouse context permissions (#134), admin consensus (#136), and authority metadata behavior remain incomplete.
 
 ## SRC-FUN-014: Data Import (CSV)
-**Priority:** P2 | **Status:** ✅ Implemented
 
-**User Story:** Como usuario con inventario existente, quiero importarlo desde un archivo CSV.
+**Priority:** P2 | **Status:** Implemented | **Implementation:** 100%
+
+**User Story:** Como usuario con inventario existente, quiero importarlo desde CSV.
 
 **Acceptance Criteria:**
-1. Upload de archivo CSV
-2. Parseo y mapeo de columnas automático
-3. Validación de datos importados (errores visibles)
-4. Feedback visual del progreso de importación
-5. Rollback si hay errores críticos
+
+1. Upload de archivo CSV.
+2. Parseo y mapeo de columnas.
+3. Validacion de datos importados.
+4. Feedback de progreso.
+5. Rollback en errores criticos.

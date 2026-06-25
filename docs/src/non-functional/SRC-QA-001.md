@@ -3,7 +3,8 @@
 - **ID:** SRC-QA-001
 - **Name:** Testing Infrastructure
 - **Priority:** P1 (Important)
-- **Status:** Implemented
+- **Status:** Partial
+- **Implementation:** 80%
 - **Category:** QA (Quality Assurance)
 - **SDLC:** Production
 
@@ -54,6 +55,10 @@ Developer maintaining synchronization, security, and offline-first workflows.
 | `apps/shelf-inventory/tests/edge-mesh-sync.spec.ts` | Edge Mesh CRDT update import/export and remote mutation rejection |
 | `apps/shelf-inventory/tests/security-sync.spec.ts` | Local unauthorized mutation blocking |
 | `apps/shelf-inventory/tests/p2p-sync.spec.ts` | Existing P2P sync compatibility |
+
+## Open Work
+
+QA is partial because `apps/shelf-inventory/tests/p2p-sync-advanced.spec.ts` is blocked by overlay helper behavior, manual in-app browser verification can hit `LandingPage: t(...).map is not a function`, and Dependabot vulnerabilities remain to be audited.
 
 ## Canonical Commands
 

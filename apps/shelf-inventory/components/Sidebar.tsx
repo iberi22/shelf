@@ -2,11 +2,9 @@ import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { NAV_ITEMS } from '../constants';
 import { useAppContext } from '../context/AppContext';
-import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import GlobalSearch from './GlobalSearch';
-import LanguageSelector from './LanguageSelector';
 
 const NavIcon = ({ nameKey, className = 'w-5 h-5' }: { nameKey: string; className?: string }) => {
   switch (nameKey) {
@@ -215,12 +213,10 @@ const NavIcon = ({ nameKey, className = 'w-5 h-5' }: { nameKey: string; classNam
 interface SidebarProps {
   activeComponent: string;
   setActiveComponent: (component: string) => void;
-  onLoginClick: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, onLoginClick }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }) => {
   const { t } = useI18n();
-  const { user, logout } = useAuth();
   const { isPro } = useSubscription();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -352,37 +348,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, 
           </ul>
         </nav>
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-foreground/20 space-y-3 bg-primary">
-          <div className="flex justify-center">
-            <LanguageSelector />
+          <div className="flex items-center justify-center gap-2">
+            <div
+              className={`w-2 h-2 rounded-full ${isPro ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500'}`}
+            />
+            <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">
+              {isPro ? t('sync.cloudSynced') : t('sync.localOnly')}
+            </p>
           </div>
-          {user ? (
-            <div className="text-center px-2">
-              <p className="text-sm text-foreground/70 truncate">{user.email}</p>
-              <div className="flex items-center justify-center gap-2 mt-1">
-                <div
-                  className={`w-2 h-2 rounded-full ${isPro ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500'}`}
-                />
-                <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">
-                  {isPro ? t('sync.cloudSynced') : t('sync.localOnly')}
-                </p>
-              </div>
-              <button
-                data-testid="logout-button"
-                onClick={logout}
-                className="w-full mt-2 bg-transparent border border-red-500/50 text-red-400 text-sm font-bold py-2.5 px-4 rounded-lg hover:bg-red-500/10 transition-colors active:scale-95 min-h-[44px]"
-              >
-                {t('auth.logout')}
-              </button>
-            </div>
-          ) : (
-            <button
-              data-testid="login-button"
-              onClick={onLoginClick}
-              className="w-full bg-foreground text-background font-bold py-2.5 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95 min-h-[44px]"
-            >
-              {t('auth.login')}
-            </button>
-          )}
           <div className="text-center text-[10px] text-foreground/40 font-mono mt-2">
             v{__APP_VERSION__} • {__COMMIT_HASH__}
           </div>
@@ -437,37 +410,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent, 
           </ul>
         </nav>
         <div className="p-4 border-t border-foreground/20 space-y-4">
-          <div className="flex justify-center">
-            <LanguageSelector />
+          <div className="flex items-center justify-center gap-2">
+            <div
+              className={`w-2 h-2 rounded-full ${isPro ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500'}`}
+            />
+            <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">
+              {isPro ? t('sync.cloudSynced') : t('sync.localOnly')}
+            </p>
           </div>
-          {user ? (
-            <div className="text-center px-2">
-              <p className="text-sm text-foreground/70 truncate">{user.email}</p>
-              <div className="flex items-center justify-center gap-2 mt-1">
-                <div
-                  className={`w-2 h-2 rounded-full ${isPro ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500'}`}
-                />
-                <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">
-                  {isPro ? t('sync.cloudSynced') : t('sync.localOnly')}
-                </p>
-              </div>
-              <button
-                data-testid="logout-button"
-                onClick={logout}
-                className="w-full mt-2 bg-transparent border border-red-500/50 text-red-400 text-sm font-bold py-2 px-4 rounded-lg hover:bg-red-500/10 transition-colors active:scale-95"
-              >
-                {t('auth.logout')}
-              </button>
-            </div>
-          ) : (
-            <button
-              data-testid="login-button"
-              onClick={onLoginClick}
-              className="w-full bg-foreground text-background font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95"
-            >
-              {t('auth.login')}
-            </button>
-          )}
           <div className="text-center text-[10px] text-foreground/40 font-mono mt-2">
             v{__APP_VERSION__} • {__COMMIT_HASH__}
           </div>

@@ -3,7 +3,8 @@
 - **ID:** SRC-CRDT-001
 - **Name:** CRDT Sync (Yjs)
 - **Priority:** P0 (Core)
-- **Status:** Implemented
+- **Status:** Partial
+- **Implementation:** 70%
 - **Category:** CRDT (Conflict-free Replicated Data Types)
 - **SDLC:** Production
 
@@ -34,6 +35,10 @@ Store operator working across multiple browsers or devices.
 5. Shelf app state receives only authorized remote mutations.
 6. Unauthorized remote mutations are reverted before they reach app state.
 7. The sync path works offline-first and reconciles when peers reconnect.
+
+## Open Work
+
+This SRC remains partial under #139. Shelf still needs full migration to `createCrdtSyncLayer`, formal ack/retry behavior, broader capability enforcement, and 2/3-node E2E without manual rebroadcast helpers.
 
 ## Technical Stack
 

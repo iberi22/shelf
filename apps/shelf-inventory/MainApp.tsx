@@ -24,11 +24,7 @@ const AccessDenied = () => (
   </div>
 );
 
-interface MainAppProps {
-  onLoginClick: () => void;
-}
-
-const MainApp: React.FC<MainAppProps> = ({ onLoginClick }) => {
+const MainApp: React.FC = () => {
   const [activeComponent, setActiveComponent] = useState('nav.summary');
   const { isFree } = useSubscription();
   const { state, dispatch } = useAppContext();
@@ -95,11 +91,7 @@ const MainApp: React.FC<MainAppProps> = ({ onLoginClick }) => {
       <div className={`flex flex-col flex-1 ${showAds ? 'md:ml-40' : ''}`}>
         {showAds && <MobileAdBars />}
         <div className="flex flex-1 overflow-hidden relative">
-          <Sidebar
-            activeComponent={activeComponent}
-            setActiveComponent={setActiveComponent}
-            onLoginClick={onLoginClick}
-          />
+          <Sidebar activeComponent={activeComponent} setActiveComponent={setActiveComponent} />
           {/* Add pt-16 on mobile to push content below the fixed hamburger menu */}
           <main className="flex-1 min-w-0 p-4 pt-16 sm:p-6 md:p-8 overflow-y-auto pb-20 md:pb-8">
             <P2PSyncStatusHeader />

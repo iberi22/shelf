@@ -2,6 +2,7 @@ import type { User } from 'p2p-mesh-core';
 import type React from 'react';
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import { type DeviceInfo, localAuthManager } from '../lib/localAuth';
+import { authenticateWithPasskey } from '../lib/webauthn';
 import { useI18n } from './I18nContext';
 import { useUI } from './UIContext';
 
@@ -15,8 +16,11 @@ interface AuthContextType {
   getIdToken: () => Promise<string | null>;
   isLocked: boolean;
   hasAppLock: boolean;
+  hasBiometricLock: boolean;
   unlockApp: (pin: string) => Promise<boolean>;
+  unlockWithBiometrics: () => Promise<boolean>;
   setAppLock: (pin: string | null) => Promise<void>;
+  setBiometricLock: (enabled: boolean) => Promise<void>;
   isLocalAccount: boolean;
   getAuthorizedDevices: () => DeviceInfo[];
   revokeDevice: (deviceId: string) => void;
@@ -41,6 +45,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { t } = useI18n();
   const [isLocked, setIsLocked] = useState(false);
   const [appLockPin, setAppLockPin] = useState<string | null>(localStorage.getItem('appLockPin'));
+  const [hasBiometricLock, setHasBiometricLock] = useState(localStorage.getItem('appBiometricLock') === 'true');
 
   useEffect(() => {
     const initAuth = async () => {
@@ -50,7 +55,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const guestUser = localStorage.getItem('guest_user');
       if (guestUser) {
         setUser(JSON.parse(guestUser));
-        if (appLockPin) setIsLocked(true);
+        if (appLockPin || hasBiometricLock) setIsLocked(true);
         setIsLoading(false);
         return;
       }
@@ -62,12 +67,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(null);
       }
 
-      if (appLockPin) setIsLocked(true);
+      if (appLockPin || hasBiometricLock) setIsLocked(true);
       setIsLoading(false);
     };
 
     initAuth();
-  }, [appLockPin]);
+  }, [appLockPin, hasBiometricLock]);
 
   const login = async (email: string, password: string) => {
     const loggedUser = await localAuthManager.login(email, password);
@@ -109,7 +114,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const unlockApp = async (pin: string): Promise<boolean> => {
-    if (!appLockPin) return true;
+    if (!appLockPin) return !hasBiometricLock;
     const hashedInput = await hashPin(pin);
 
     // Support legacy plain-text pins for one-time migration
@@ -123,6 +128,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return false;
   };
 
+  const unlockWithBiometrics = async (): Promise<boolean> => {
+    if (!hasBiometricLock) return false;
+    const success = await authenticateWithPasskey();
+    if (success) {
+      setIsLocked(false);
+    }
+    return success;
+  };
+
   const setAppLock = async (pin: string | null) => {
     if (pin) {
       const hashedPin = pin.length === 64 ? pin : await hashPin(pin);
@@ -133,6 +147,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.removeItem('appLockPin');
       setAppLockPin(null);
       setIsLocked(false);
+    }
+  };
+
+  const setBiometricLock = async (enabled: boolean) => {
+    if (enabled) {
+      localStorage.setItem('appBiometricLock', 'true');
+      setHasBiometricLock(true);
+      setIsLocked(true);
+    } else {
+      localStorage.removeItem('appBiometricLock');
+      setHasBiometricLock(false);
+      if (!appLockPin) setIsLocked(false);
     }
   };
 
@@ -164,8 +190,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     getIdToken,
     isLocked,
     hasAppLock: !!appLockPin,
+    hasBiometricLock,
     unlockApp,
+    unlockWithBiometrics,
     setAppLock,
+    setBiometricLock,
     isLocalAccount,
     getAuthorizedDevices,
     revokeDevice,
