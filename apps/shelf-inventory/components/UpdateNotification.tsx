@@ -69,9 +69,6 @@ const UpdateNotification: React.FC = () => {
 
         // Ask the browser to fetch the newest service worker immediately.
         void navigator.serviceWorker?.getRegistration?.().then((registration) => registration?.update());
-        window.setTimeout(() => {
-          updateServiceWorker(true);
-        }, 250);
       } catch (error) {
         console.warn('No se pudo verificar la version runtime', error);
       }

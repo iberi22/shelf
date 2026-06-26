@@ -159,18 +159,12 @@ const P2PSyncManager: React.FC = () => {
     const handleMessage = async (message: SyncMessage, fromPeerId: string) => {
       switch (message.type) {
         case 'STATE_UPDATE':
-          setShowSyncModal(true);
-          setSyncProgress((prev) => Math.min(prev + 50, 100));
           dispatch({ type: 'SYNC_STATE', payload: message.payload as Partial<typeof state> });
-          setTimeout(() => setSyncProgress(100), 500);
           break;
         case 'YJS_UPDATE': {
           // Update local React state when a Yjs update arrives
-          setShowSyncModal(true);
-          setSyncProgress((prev) => Math.min(prev + 10, 100));
           const latestState = dbSync.getState();
           dispatch({ type: 'SYNC_STATE', payload: latestState });
-          setTimeout(() => setSyncProgress(100), 1000);
           break;
         }
         case 'REQUEST_FULL_STATE': {
