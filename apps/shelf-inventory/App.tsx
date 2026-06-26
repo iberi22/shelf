@@ -33,11 +33,11 @@ const AppContainer = () => {
   // Handle invitation links
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const isInvite = params.get('invite') === 'true';
     const inviterPeerId = params.get('peerId');
     const invitedEmail = params.get('email');
 
-    if (isInvite && inviterPeerId) {
+    // Support backwards compatibility for old links that only had peerId without invite=true
+    if (inviterPeerId) {
       console.log('Detected invitation from peer:', inviterPeerId);
       p2pManager.connect(inviterPeerId);
       showNotification(`Conectando con el equipo de ${invitedEmail || 'invitación'}...`, 'info');

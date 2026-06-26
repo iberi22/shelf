@@ -93,6 +93,7 @@ const P2PSyncManager: React.FC = () => {
   const [manualPeerId, setManualPeerId] = useState('');
   const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
   const [syncProgress, setSyncProgress] = useState<number>(0);
+  const [showSyncModal, setShowSyncModal] = useState(false);
   const [showPermissions, setShowPermissions] = useState<string | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -158,12 +159,14 @@ const P2PSyncManager: React.FC = () => {
     const handleMessage = async (message: SyncMessage, fromPeerId: string) => {
       switch (message.type) {
         case 'STATE_UPDATE':
+          setShowSyncModal(true);
           setSyncProgress((prev) => Math.min(prev + 50, 100));
           dispatch({ type: 'SYNC_STATE', payload: message.payload as Partial<typeof state> });
           setTimeout(() => setSyncProgress(100), 500);
           break;
         case 'YJS_UPDATE': {
           // Update local React state when a Yjs update arrives
+          setShowSyncModal(true);
           setSyncProgress((prev) => Math.min(prev + 10, 100));
           const latestState = dbSync.getState();
           dispatch({ type: 'SYNC_STATE', payload: latestState });
@@ -232,7 +235,10 @@ const P2PSyncManager: React.FC = () => {
     p2pManager.onMessage(handleMessage);
 
     p2pManager.onConnectionChange((peers) => {
-      if (peers.length > 0) setSyncProgress(100);
+      if (peers.length > 0) {
+        setShowSyncModal(true);
+        setSyncProgress(100);
+      }
     });
 
     const unsubscribePeerHealth = p2pManager.onPeerHealthChange((health) => {
@@ -279,6 +285,16 @@ const P2PSyncManager: React.FC = () => {
       // NOTE: For a full fix, p2pManager should expose offMessage
     };
   }, [dispatch, showNotification]);
+
+  useEffect(() => {
+    if (syncProgress >= 100) {
+      const timer = setTimeout(() => {
+        setShowSyncModal(false);
+        setTimeout(() => setSyncProgress(0), 400); // Reset after modal transition
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [syncProgress]);
 
   // The manual STATE_UPDATE broadcast has been removed to allow the CRDT (Yjs) to handle
   // state synchronization properly without overwriting the state naively.
@@ -516,6 +532,7 @@ const P2PSyncManager: React.FC = () => {
     }
 
     setIsForcingSync(true);
+    setShowSyncModal(true);
     setSyncProgress((prev) => Math.max(prev, 15));
     showNotification(`Sincronizacion solicitada a ${requestedPeers} nodo(s).`, 'success', 5000);
 
@@ -1122,20 +1139,33 @@ const P2PSyncManager: React.FC = () => {
       {showScannerModal && <QRScannerModal onScan={handleScanConnect} onClose={() => setShowScannerModal(false)} />}
 
       {/* Sync Progress Modal */}
-      {syncProgress > 0 && syncProgress < 100 && (
-        <div className="fixed inset-0 z-[100] flex h-[var(--app-height,100vh)] items-end justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm transition-opacity duration-300 sm:items-center sm:p-4">
-          <div className="flex w-full max-w-[calc(100vw-1.5rem)] flex-col items-center gap-4 overflow-hidden rounded-t-2xl border border-green-500/30 bg-[#1a1a1a] p-5 text-center shadow-[0_0_30px_rgba(34,197,94,0.15)] sm:max-w-sm sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg sm:p-6">
-            <h3 className="font-bold text-green-400 text-lg animate-pulse">Sincronizando Datos...</h3>
-            <div className="w-full bg-[#121212] rounded-full h-3 border border-[#F5F5DC]/10 overflow-hidden relative">
-              <div
-                className="bg-green-500 h-full rounded-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(34,197,94,0.8)]"
-                style={{ width: `${syncProgress}%` }}
-              />
-            </div>
-            <p className="text-[#F5F5DC]/70 text-sm font-mono font-bold">{Math.round(syncProgress)}% Completado</p>
+      <div
+        key="sync-modal"
+        className={`fixed inset-0 z-[100] flex h-[var(--app-height,100vh)] items-end justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm transition-all duration-300 sm:items-center sm:p-4 pointer-events-none ${
+          showSyncModal ? 'opacity-100 visible' : 'opacity-0 invisible'
+        }`}
+      >
+        <div
+          className={`flex w-full max-w-[calc(100vw-1.5rem)] flex-col items-center gap-4 overflow-hidden rounded-t-2xl border border-green-500/30 bg-[#1a1a1a] p-5 text-center shadow-[0_0_30px_rgba(34,197,94,0.15)] sm:max-w-sm sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg sm:p-6 transition-transform duration-300 ${
+            showSyncModal ? 'translate-y-0 scale-100' : 'translate-y-4 scale-95'
+          }`}
+        >
+          <h3 className={`font-bold text-green-400 text-lg ${syncProgress < 100 ? 'animate-pulse' : ''}`}>
+            {syncProgress < 100 ? 'Sincronizando Paridad...' : '¡Empalme Completado!'}
+          </h3>
+          
+          <div className="w-full bg-[#121212] rounded-full h-3 border border-[#F5F5DC]/10 overflow-hidden relative">
+            <div
+              className="bg-green-500 h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(34,197,94,0.8)]"
+              style={{ width: `${Math.min(syncProgress, 100)}%` }}
+            />
           </div>
+          
+          <p className="text-[#F5F5DC]/70 text-sm font-mono font-bold">
+            {syncProgress < 100 ? `${Math.round(syncProgress)}% Paridad` : '100% Paridad Lograda'}
+          </p>
         </div>
-      )}
+      </div>
 
       {/* Activity Log Modal */}
       {showLogsForPeer && (
