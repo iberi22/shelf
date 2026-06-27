@@ -83,8 +83,8 @@ type Action =
   | { type: 'UPDATE_ARQUEO_SESSION'; payload: ArqueoSession }
   | { type: 'ADD_OCR_RESULT'; payload: InvoiceOCRResult }
   | { type: 'UPDATE_OCR_RESULT'; payload: InvoiceOCRResult }
-  | { type: 'UPDATE_PEER_PERMISSIONS'; payload: { targetPeerId: string; permissions: any } }
-  | { type: 'UPDATE_PEER_CONFIG'; payload: { targetPeerId: string; role: P2PRole; permissions?: any } }
+  | { type: 'UPDATE_PEER_PERMISSIONS'; payload: { targetPeerId: string; permissions: PeerPermissions } }
+  | { type: 'UPDATE_PEER_CONFIG'; payload: { targetPeerId: string; role: P2PRole; permissions?: PeerPermissions } }
   | { type: 'UPDATE_INVENTORY_CONFIG'; payload: InventoryConfig }
   | { type: 'RESTORE_PRODUCT_VERSION'; payload: { productId: string; historyId: string } }
   | { type: 'CLEAR_AUDIT_LOGS'; payload?: { beforeDate: string } }
@@ -900,25 +900,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     dbSync.onChange((_update, origin) => {
       if (origin !== 'local') {
         const remoteState = dbSync.getState(dbSync.localPeerId);
-        // Dispatch full entity sync to ensure UI stays updated with remote changes
+        // Only dispatch metadata updates here; entities are handled granularly by onObserve
         rawDispatch({
           type: 'SYNC_STATE',
           payload: {
-            products: remoteState.products,
-            sales: remoteState.sales,
-            clients: remoteState.clients,
-            suppliers: remoteState.suppliers,
-            purchaseOrders: remoteState.purchaseOrders,
-            arqueoSessions: remoteState.arqueoSessions,
-            ocrResults: remoteState.ocrResults,
-            teamMembers: remoteState.teamMembers,
             inventoryConfig: remoteState.inventoryConfig,
             role: remoteState.role,
             permissions: remoteState.permissions,
-            peers: remoteState.peers,
-            auditLogs: remoteState.auditLogs,
-            pendingEdits: remoteState.pendingEdits,
-            productChangeHistory: remoteState.productChangeHistory,
           },
         });
       }

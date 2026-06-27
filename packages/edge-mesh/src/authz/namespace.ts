@@ -51,7 +51,7 @@ export class DefaultNamespaceAuthorizer implements NamespaceAuthorizer {
 		return this.authz.hasCapability(
 			subject,
 			namespaceCapability(namespace, action),
-			this.verifyCapability,
+			this.verifyCapability || null,
 		);
 	}
 

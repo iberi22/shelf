@@ -1,5 +1,5 @@
 import { Box, History, Images, Layers3, Package2, PencilLine, RotateCcw, Ruler, Trash2 } from 'lucide-react';
-import type { Product } from 'p2p-mesh-core';
+import type { InventoryConfig, Product } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
@@ -38,8 +38,15 @@ const PRESET_COLORS = [
   { name: 'Plateado', hex: '#C0C0C0' },
 ];
 
-const isColorAttribute = (label: string): boolean => label.trim().toLowerCase() === 'color';
-const isMeasureAttribute = (label: string): boolean => label.trim().toLowerCase() === 'medida';
+const isColorAttribute = (label: string, config: InventoryConfig): boolean => {
+  const normalizedLabel = label.trim().toLowerCase();
+  return config.fields.some((f) => f.type === 'color' && (f.label.toLowerCase() === normalizedLabel || f.key === normalizedLabel));
+};
+
+const isMeasureAttribute = (label: string, config: InventoryConfig): boolean => {
+  const normalizedLabel = label.trim().toLowerCase();
+  return config.fields.some((f) => f.type === 'measure' && (f.label.toLowerCase() === normalizedLabel || f.key === normalizedLabel));
+};
 
 const csvEscape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
@@ -61,7 +68,7 @@ const getInitialVariantAttributes = (
   return useVariants ? [...defaultLabels] : [];
 };
 
-const getInitialVariantRows = (product: Product | null, labels: string[]): VariantDraft[] => {
+const getInitialVariantRows = (product: Product | null, labels: string[], config: InventoryConfig): VariantDraft[] => {
   const variants = product?.variants ?? [];
   if (variants.length > 0) {
     return variants.map((variant) =>
@@ -78,12 +85,11 @@ const getInitialVariantRows = (product: Product | null, labels: string[]): Varia
   }
 
   const defaultAttributes = labels.reduce<Record<string, string>>((acc, label) => {
-    const normalized = label.trim().toLowerCase();
-    if (normalized === 'color') acc[label] = product?.color || '';
-    else if (normalized === 'medida' || normalized === 'dimensions' || normalized === 'size')
-      acc[label] = product?.dimensions || '';
-    else if (normalized === 'capacity' || normalized === 'capacidad') acc[label] = product?.capacity || '';
-    else if (normalized === 'material') acc[label] = product?.material || '';
+    if (isColorAttribute(label, config)) acc[label] = product?.color || '';
+    else if (isMeasureAttribute(label, config)) acc[label] = product?.dimensions || '';
+    else if (label.toLowerCase() === 'capacity' || label.toLowerCase() === 'capacidad')
+      acc[label] = product?.capacity || '';
+    else if (label.toLowerCase() === 'material') acc[label] = product?.material || '';
     else acc[label] = product?.customFields?.[label] || '';
     return acc;
   }, {});
@@ -122,7 +128,7 @@ const Inventory: React.FC = () => {
   const materialField = inventoryFieldDefinitions.find((field) => field.key === 'material');
 
   const activeProducts = useMemo(
-    () => state.products.filter((product) => product.isActive !== false).map((product) => normalizeProduct(product)),
+    () => state.products.filter((product) => product.isActive !== false),
     [state.products],
   );
 
@@ -155,7 +161,7 @@ const Inventory: React.FC = () => {
   }, [sortedProducts, filter, inventoryFieldDefinitions]);
 
   const getVariantSummary = (product: Product) => {
-    const variants = getProductVariants(product);
+    const variants = product.variants || [];
     if (variants.length <= 1) return '';
     return summarizeVariantValues(product, 3).join(' | ');
   };
@@ -774,7 +780,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [useVariants, setUseVariants] = useState(initialUseVariants);
   const [variantAttributes, setVariantAttributes] = useState<string[]>(defaultLabels);
-  const [variantRows, setVariantRows] = useState<VariantDraft[]>(() => getInitialVariantRows(product, defaultLabels));
+  const [variantRows, setVariantRows] = useState<VariantDraft[]>(() =>
+    getInitialVariantRows(product, defaultLabels, inventoryConfig),
+  );
   const productHistory = useMemo(() => {
     if (!product) return [];
     return (state.productChangeHistory || [])
@@ -816,8 +824,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     if (!useVariants) return;
     if (variantAttributes.length > 0) return;
     setVariantAttributes(inventoryConfig.variantAttributes);
-    setVariantRows(getInitialVariantRows(product, inventoryConfig.variantAttributes));
-  }, [product, useVariants, variantAttributes.length, inventoryConfig.variantAttributes]);
+    setVariantRows(getInitialVariantRows(product, inventoryConfig.variantAttributes, inventoryConfig));
+  }, [product, useVariants, variantAttributes.length, inventoryConfig]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1289,7 +1297,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       if (mode.enabled && variantAttributes.length === 0) {
                         const labels = getInitialVariantAttributes(product, true, inventoryConfig.variantAttributes);
                         setVariantAttributes(labels);
-                        setVariantRows(getInitialVariantRows(product, labels));
+                        setVariantRows(getInitialVariantRows(product, labels, inventoryConfig));
                       }
                     }}
                     className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${
@@ -1373,7 +1381,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                         {variantAttributes.map((label) => (
                           <div key={`${row.id}-${label}`} className="min-w-0">
                             <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">{label}</label>
-                            {isColorAttribute(label) && (
+                        {isColorAttribute(label, inventoryConfig) && (
                               <div className="flex flex-wrap gap-1.5 mb-2 max-w-full">
                                 {PRESET_COLORS.map((preset) => {
                                   const selected = row.attributes?.[label] === preset.name;
@@ -1397,7 +1405,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                 })}
                               </div>
                             )}
-                            {isMeasureAttribute(label) && (
+                        {isMeasureAttribute(label, inventoryConfig) && (
                               <div className="flex flex-wrap gap-1.5 mb-2 max-w-full">
                                 {inventoryConfig.measureOptions.map((suggestion) => {
                                   const selected = (row.attributes?.[label] || '').toUpperCase() === suggestion;

@@ -240,6 +240,46 @@ export const splitVariantLabel = (label: string): string[] =>
     .map((part) => normalizeLabel(part))
     .filter(Boolean);
 
+/**
+ * Generates all possible variant combinations from a set of selected attribute values.
+ * This is the "native" way to create multi-color/multi-measure products.
+ */
+export const generateVariantsFromSelections = (
+  attributeSelections: Record<string, string[]>,
+  baseProduct?: Partial<Product>,
+): VariantDraft[] => {
+  const labels = Object.keys(attributeSelections).filter((label) => attributeSelections[label].length > 0);
+  if (labels.length === 0) return [];
+
+  const combinations: Record<string, string>[] = [];
+
+  const cartesian = (index: number, current: Record<string, string>) => {
+    if (index === labels.length) {
+      combinations.push({ ...current });
+      return;
+    }
+
+    const label = labels[index];
+    const values = attributeSelections[label];
+    for (const value of values) {
+      current[label] = value;
+      cartesian(index + 1, current);
+    }
+  };
+
+  cartesian(0, {});
+
+  return combinations.map((attrs) =>
+    createVariantDraft(labels, {
+      sku: baseProduct?.sku || '',
+      quantity: 0,
+      price: baseProduct?.price || 0,
+      cost: baseProduct?.cost || 0,
+      attributes: attrs,
+    }),
+  );
+};
+
 export const mergeProductVariants = (products: Product[]): ProductVariant[] => {
   const labels = products.flatMap((product) => getProductVariantAttributes(product));
   const normalizedLabels = Array.from(new Set(labels));

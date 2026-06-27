@@ -20,11 +20,9 @@ export class AuthzManager {
 	public hasCapability(
 		subject: string,
 		requiredCap: Capability,
-		verifyFn?: (
-			signature: Uint8Array,
-			message: Uint8Array,
-			issuer: string,
-		) => boolean,
+		verifyFn?:
+			| ((signature: Uint8Array, message: Uint8Array, issuer: string) => boolean)
+			| null,
 	): boolean {
 		const userCaps = this.capabilities.get(subject);
 		if (!userCaps) return false;
@@ -33,8 +31,15 @@ export class AuthzManager {
 		return userCaps.some((cap) => {
 			if (cap.expiresAt && cap.expiresAt < now) return false;
 
-			// If a verification function is provided, verify the signature
-			if (verifyFn) {
+			// Verification is REQUIRED unless explicitly waived by passing null
+			if (verifyFn !== null) {
+				if (!verifyFn) {
+					console.warn(
+						`[SECURITY] hasCapability called without verifyFn for ${subject}. Rejecting by default.`,
+					);
+					return false;
+				}
+
 				const message = new TextEncoder().encode(
 					`${cap.capability}:${cap.issuer}:${cap.subject}`,
 				);
