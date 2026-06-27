@@ -33,7 +33,9 @@ export interface Product extends BaseEntity {
   cost: number;
   imageUrl?: string;
   color?: string;
+  colors?: string[];
   dimensions?: string;
+  sizes?: string[];
   capacity?: string;
   material?: string;
   customFields?: Record<string, string>;
@@ -247,7 +249,7 @@ export interface ArqueoSession extends BaseEntity {
   status: 'open' | 'closed';
 }
 
-export type InventoryFieldType = 'text' | 'color' | 'measure';
+export type InventoryFieldType = 'text' | 'color' | 'measure' | 'multiColor' | 'multiMeasure';
 
 export interface InventoryFieldDefinition {
   id: string;

@@ -11,8 +11,8 @@ const createId = (prefix: string) => {
 export const DEFAULT_INVENTORY_CONFIG: InventoryConfig = {
   variantAttributes: ['Color', 'Medida'],
   fields: [
-    { id: 'field-color', key: 'color', label: 'Color', type: 'color' },
-    { id: 'field-dimensions', key: 'dimensions', label: 'Medida', type: 'measure' },
+    { id: 'field-color', key: 'color', label: 'Color', type: 'multiColor' },
+    { id: 'field-dimensions', key: 'dimensions', label: 'Medida', type: 'multiMeasure' },
     { id: 'field-capacity', key: 'capacity', label: 'Capacidad', type: 'text' },
     { id: 'field-material', key: 'material', label: 'Material', type: 'text' },
   ],
@@ -58,7 +58,7 @@ export const normalizeInventoryConfig = (config?: Partial<InventoryConfig> | nul
     }
     usedFieldKeys.add(key);
 
-    const type = ['text', 'color', 'measure'].includes(field.type) ? field.type : 'text';
+    const type = ['text', 'color', 'measure', 'multiColor', 'multiMeasure'].includes(field.type) ? field.type : 'text';
 
     return {
       id: field.id || createId(`field_${index}`),
@@ -94,14 +94,18 @@ export const createInventoryField = (index: number): InventoryFieldDefinition =>
 });
 
 export const getInventoryFieldValue = (product: Partial<Product>, field: InventoryFieldDefinition): string => {
-  const legacyValues: Record<string, string | undefined> = {
-    color: product.color,
-    dimensions: product.dimensions,
+  const legacyValues: Record<string, string | string[] | undefined> = {
+    color: product.color || product.colors,
+    dimensions: product.dimensions || product.sizes,
     capacity: product.capacity,
     material: product.material,
   };
 
-  return legacyValues[field.key] || product.customFields?.[field.key] || '';
+  const value = legacyValues[field.key] || product.customFields?.[field.key] || '';
+  if (Array.isArray(value)) {
+    return value.join(', ');
+  }
+  return value;
 };
 
 export const setInventoryFieldValue = (

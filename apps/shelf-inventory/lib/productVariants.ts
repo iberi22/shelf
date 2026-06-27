@@ -172,6 +172,19 @@ export const normalizeProduct = (product: Product): Product => {
   const quantity = variants.reduce((sum, variant) => sum + Number(variant.quantity || 0), 0);
   const primaryVariant = variants[0] || createDefaultVariant(product, variantAttributes);
 
+  const color =
+    product.color ||
+    (product.colors && product.colors.length > 0 ? product.colors[0] : undefined) ||
+    primaryVariant.attributes.Color ||
+    primaryVariant.attributes.color;
+
+  const dimensions =
+    product.dimensions ||
+    (product.sizes && product.sizes.length > 0 ? product.sizes[0] : undefined) ||
+    primaryVariant.attributes.Medida ||
+    primaryVariant.attributes.Measure ||
+    primaryVariant.attributes.dimensions;
+
   return {
     ...product,
     variantAttributes,
@@ -181,15 +194,30 @@ export const normalizeProduct = (product: Product): Product => {
     price: Number.isFinite(Number(product.price)) ? Number(product.price) : primaryVariant.price,
     cost: Number.isFinite(Number(product.cost)) ? Number(product.cost) : primaryVariant.cost,
     imageUrl: product.imageUrl || primaryVariant.imageUrl,
-    color: product.color || primaryVariant.attributes.Color || primaryVariant.attributes.color,
-    dimensions:
-      product.dimensions ||
-      primaryVariant.attributes.Medida ||
-      primaryVariant.attributes.Measure ||
-      primaryVariant.attributes.dimensions,
+    color,
+    colors: product.colors || (product.color ? [product.color] : []),
+    dimensions,
+    sizes: product.sizes || (product.dimensions ? [product.dimensions] : []),
     capacity: product.capacity || primaryVariant.attributes.Capacity || primaryVariant.attributes.capacity,
     material: product.material || primaryVariant.attributes.Material || primaryVariant.attributes.material,
   };
+};
+
+export const generateCombinations = (colors: string[], sizes: string[]) => {
+  const combinations: { color?: string; size?: string }[] = [];
+
+  const effectiveColors = colors.length > 0 ? colors : [undefined];
+  const effectiveSizes = sizes.length > 0 ? sizes : [undefined];
+
+  for (const color of effectiveColors) {
+    for (const size of effectiveSizes) {
+      if (color !== undefined || size !== undefined) {
+        combinations.push({ color, size });
+      }
+    }
+  }
+
+  return combinations;
 };
 
 export const productVariantCount = (product: Product): number => getProductVariants(product).length;

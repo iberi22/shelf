@@ -13,7 +13,9 @@ Cypress.Commands.add('addProduct', (product) => {
       cy.wait(300);
       cy.get('[data-testid="product-name-input"]').type(product.name, { force: true });
       cy.get('[data-testid="product-sku-input"]').type(product.sku, { force: true });
-      cy.get('[data-testid="product-quantity-input"]').type(product.quantity, { force: true });
+      if (product.quantity !== undefined) {
+        cy.get('[data-testid="product-quantity-input"]').type(product.quantity, { force: true });
+      }
       cy.get('[data-testid="product-price-input"]').type(product.price, { force: true });
       cy.get('[data-testid="product-cost-input"]').type(product.cost, { force: true });
       cy.get('[data-testid="save-product-button"]').click({ force: true });

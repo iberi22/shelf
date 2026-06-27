@@ -12,6 +12,7 @@ import { compressImage } from '../lib/imageCompression';
 import { DEFAULT_INVENTORY_CONFIG, getInventoryFieldValue, normalizeInventoryConfig } from '../lib/inventoryConfig';
 import {
   createVariantDraft,
+  generateCombinations,
   getProductVariants,
   normalizeProduct,
   summarizeVariantValues,
@@ -38,8 +39,6 @@ const PRESET_COLORS = [
   { name: 'Plateado', hex: '#C0C0C0' },
 ];
 
-const isColorAttribute = (label: string): boolean => label.trim().toLowerCase() === 'color';
-const isMeasureAttribute = (label: string): boolean => label.trim().toLowerCase() === 'medida';
 
 const csvEscape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
@@ -142,7 +141,9 @@ const Inventory: React.FC = () => {
         product.name.toLowerCase().includes(q) ||
         product.sku?.toLowerCase().includes(q) ||
         product.color?.toLowerCase().includes(q) ||
+        product.colors?.some((c) => c.toLowerCase().includes(q)) ||
         product.dimensions?.toLowerCase().includes(q) ||
+        product.sizes?.some((s) => s.toLowerCase().includes(q)) ||
         product.capacity?.toLowerCase().includes(q) ||
         product.material?.toLowerCase().includes(q) ||
         Object.values(product.customFields || {}).some((value) => String(value).toLowerCase().includes(q)) ||
@@ -191,6 +192,7 @@ const Inventory: React.FC = () => {
           ...editingProduct,
           ...productData,
           updatedAt: timestamp,
+          updatedBy: state.localPeerId || 'local',
         } as Product,
       });
     } else {
@@ -201,6 +203,7 @@ const Inventory: React.FC = () => {
           ...productData,
           isActive: true,
           updatedAt: timestamp,
+          updatedBy: state.localPeerId || 'local',
         } as Product,
       });
     }
@@ -751,14 +754,19 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     () => normalizeInventoryConfig(state.inventoryConfig || DEFAULT_INVENTORY_CONFIG),
     [state.inventoryConfig],
   );
-  const initialUseVariants = Boolean(product?.variantAttributes?.length);
-  const initialLabels = getInitialVariantAttributes(product, initialUseVariants, inventoryConfig.variantAttributes);
+  const initialLabels = getInitialVariantAttributes(product, false, inventoryConfig.variantAttributes);
   const defaultLabels = initialLabels.length > 0 ? initialLabels : inventoryConfig.variantAttributes;
 
   const [name, setName] = useState(product?.name || '');
   const [sku, setSku] = useState(product?.sku || '');
-  const [color, setColor] = useState(product?.color || '');
-  const [dimensions, setDimensions] = useState(product?.dimensions || '');
+
+  const [selectedColors, setSelectedColors] = useState<string[]>(
+    product?.colors || (product?.color ? [product.color] : []),
+  );
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(
+    product?.sizes || (product?.dimensions ? [product.dimensions] : []),
+  );
+
   const [capacity, setCapacity] = useState(product?.capacity || '');
   const [material, setMaterial] = useState(product?.material || '');
   const [extraFieldValues, setExtraFieldValues] = useState<Record<string, string>>(() =>
@@ -772,9 +780,43 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [useVariants, setUseVariants] = useState(initialUseVariants);
-  const [variantAttributes, setVariantAttributes] = useState<string[]>(defaultLabels);
-  const [variantRows, setVariantRows] = useState<VariantDraft[]>(() => getInitialVariantRows(product, defaultLabels));
+
+  const [variantRows, setVariantRows] = useState<VariantDraft[]>(() => {
+    const variants = getInitialVariantRows(product, defaultLabels);
+    if (variants.length > 0) return variants;
+    return [createVariantDraft(defaultLabels)];
+  });
+
+  const combinations = useMemo(
+    () => generateCombinations(selectedColors, selectedSizes),
+    [selectedColors, selectedSizes],
+  );
+  const isMultiVariant = combinations.length > 1;
+
+  useEffect(() => {
+    if (!isMultiVariant) return;
+
+    setVariantRows((currentRows) => {
+      return combinations.map((combo) => {
+        const existing = currentRows.find(
+          (r) => r.attributes.Color === combo.color && r.attributes.Medida === combo.size,
+        );
+        if (existing) return existing;
+
+        const attributes: Record<string, string> = {};
+        if (combo.color) attributes.Color = combo.color;
+        if (combo.size) attributes.Medida = combo.size;
+
+        return createVariantDraft(['Color', 'Medida'], {
+          sku: '',
+          quantity: 0,
+          price: price || 0,
+          cost: cost || 0,
+          attributes,
+        });
+      });
+    });
+  }, [combinations, isMultiVariant, price, cost]);
   const productHistory = useMemo(() => {
     if (!product) return [];
     return (state.productChangeHistory || [])
@@ -790,16 +832,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
 
   const handleScannerClose = () => setIsScannerOpen(false);
   const getFieldValue = (fieldKey: string) => {
-    if (fieldKey === 'color') return color;
-    if (fieldKey === 'dimensions') return dimensions;
+    if (fieldKey === 'color') return selectedColors.join(', ');
+    if (fieldKey === 'dimensions') return selectedSizes.join(', ');
     if (fieldKey === 'capacity') return capacity;
     if (fieldKey === 'material') return material;
     return extraFieldValues[fieldKey] || '';
   };
 
   const setFieldValue = (fieldKey: string, value: string) => {
-    if (fieldKey === 'color') setColor(value);
-    else if (fieldKey === 'dimensions') setDimensions(value);
+    if (fieldKey === 'color') setSelectedColors(value ? [value] : []);
+    else if (fieldKey === 'dimensions') setSelectedSizes(value ? [value] : []);
     else if (fieldKey === 'capacity') setCapacity(value);
     else if (fieldKey === 'material') setMaterial(value);
     else setExtraFieldValues((current) => ({ ...current, [fieldKey]: value }));
@@ -811,13 +853,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     }
   };
   const handleCloseImagePreview = () => setImagePreviewUrl(null);
-
-  useEffect(() => {
-    if (!useVariants) return;
-    if (variantAttributes.length > 0) return;
-    setVariantAttributes(inventoryConfig.variantAttributes);
-    setVariantRows(getInitialVariantRows(product, inventoryConfig.variantAttributes));
-  }, [product, useVariants, variantAttributes.length, inventoryConfig.variantAttributes]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -850,53 +885,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     }
   };
 
-  const normalizeLabels = (labels: string[]) =>
-    Array.from(new Set(labels.map((label) => label.trim()).filter(Boolean)));
-
-  const remapRows = (nextLabels: string[]) =>
-    variantRows.map((row) =>
-      createVariantDraft(nextLabels, {
-        ...row,
-        attributes: nextLabels.reduce<Record<string, string>>((acc, label) => {
-          acc[label] = row.attributes?.[label] || '';
-          return acc;
-        }, {}),
-      }),
-    );
-
-  const addVariantAttribute = () => {
-    const nextLabels = [...variantAttributes, `Atributo ${variantAttributes.length + 1}`];
-    setVariantAttributes(nextLabels);
-    setVariantRows(remapRows(nextLabels));
-  };
-
-  const renameVariantAttribute = (index: number, value: string) => {
-    const previousLabel = variantAttributes[index];
-    const nextLabels = normalizeLabels(variantAttributes.map((label, i) => (i === index ? value : label)));
-    setVariantAttributes(nextLabels);
-    setVariantRows(
-      variantRows.map((row) =>
-        createVariantDraft(nextLabels, {
-          ...row,
-          attributes: nextLabels.reduce<Record<string, string>>((acc, label) => {
-            acc[label] = label === value.trim() ? row.attributes?.[previousLabel] || '' : row.attributes?.[label] || '';
-            return acc;
-          }, {}),
-        }),
-      ),
-    );
-  };
-
-  const removeVariantAttribute = (index: number) => {
-    const nextLabels = variantAttributes.filter((_, i) => i !== index);
-    setVariantAttributes(nextLabels);
-    setVariantRows(remapRows(nextLabels));
-  };
-
-  const addVariantRow = () => {
-    setVariantRows((rows) => [...rows, createVariantDraft(variantAttributes)]);
-  };
-
   const updateVariantRow = (
     index: number,
     field: keyof Omit<VariantDraft, 'id' | 'attributes'>,
@@ -909,22 +897,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     if (field === 'imageUrl') row.imageUrl = String(value) || undefined;
     nextRows[index] = row;
     setVariantRows(nextRows);
-  };
-
-  const updateVariantAttributeValue = (rowIndex: number, label: string, value: string) => {
-    const nextRows = [...variantRows];
-    nextRows[rowIndex] = {
-      ...nextRows[rowIndex],
-      attributes: {
-        ...nextRows[rowIndex].attributes,
-        [label]: value,
-      },
-    };
-    setVariantRows(nextRows);
-  };
-
-  const removeVariantRow = (index: number) => {
-    setVariantRows(variantRows.filter((_, i) => i !== index));
   };
 
   const buildConfiguredFieldPayload = () => {
@@ -969,23 +941,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
       newErrors.name = t('validation.nameRequired');
     }
 
-    if (useVariants) {
-      if (variantRows.length === 0) newErrors.variants = 'Agrega al menos una variante.';
-      const labels = normalizeLabels(variantAttributes);
-      if (labels.length === 0) newErrors.variants = 'Define al menos un atributo de variante.';
-      const variantKeys = new Set<string>();
+    if (isMultiVariant) {
       variantRows.forEach((row, index) => {
-        const variantKey = labels
-          .map((label) =>
-            String(row.attributes?.[label] || '')
-              .trim()
-              .toLowerCase(),
-          )
-          .join('|');
-        if (variantKey && variantKeys.has(variantKey)) {
-          newErrors.variants = 'Hay variantes repetidas con la misma combinacion de atributos.';
-        }
-        if (variantKey) variantKeys.add(variantKey);
         if (Number(row.quantity) < 0 || !Number.isInteger(Number(row.quantity))) {
           newErrors[`variant_${index}_quantity`] = t('validation.quantityNonNegative');
         }
@@ -1017,8 +974,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     if (!validate()) return;
     const configuredFields = buildConfiguredFieldPayload();
 
-    if (useVariants) {
-      const labels = normalizeLabels(variantAttributes);
+    if (isMultiVariant) {
+      const labels = ['Color', 'Medida'];
       const variants = variantRows.map((row) =>
         createVariantDraft(labels, {
           ...row,
@@ -1034,6 +991,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
         name,
         sku: sku || primaryVariant?.sku || undefined,
         ...configuredFields,
+        colors: selectedColors,
+        sizes: selectedSizes,
         supplierId: supplierId || undefined,
         quantity: aggregateQuantity,
         price: Number(primaryVariant?.price ?? price ?? 0),
@@ -1054,6 +1013,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
       name,
       sku,
       ...configuredFields,
+      color: selectedColors[0] || undefined,
+      colors: selectedColors,
+      dimensions: selectedSizes[0] || undefined,
+      sizes: selectedSizes,
       supplierId: supplierId || undefined,
       quantity: Number(quantity),
       price: Number(price),
@@ -1205,374 +1168,171 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
             </select>
           </div>
 
-          {useVariants && (
-            <div className="rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 space-y-4 min-w-0">
-              {inventoryConfig.fields.map((field) => {
-                const fieldValue = getFieldValue(field.key);
-                const isColorField = field.type === 'color';
-                const isMeasureField = field.type === 'measure';
-                const testId = LEGACY_FIELD_KEYS.has(field.key)
-                  ? `product-${field.key}-input`
-                  : `product-custom-${field.key}-input`;
 
-                return (
+          <div className="rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 space-y-4 min-w-0">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="block text-xs text-[#F5F5DC]/60">{t('common.color')}</label>
+                <div className="flex flex-wrap gap-2">
+                  {PRESET_COLORS.map((preset) => {
+                    const selected = selectedColors.includes(preset.name);
+                    return (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() =>
+                          setSelectedColors((prev) =>
+                            selected ? prev.filter((c) => c !== preset.name) : [...prev, preset.name],
+                          )
+                        }
+                        className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 ${
+                          selected
+                            ? 'border-white scale-110 ring-2 ring-white/30'
+                            : 'border-[#F5F5DC]/20 hover:scale-105'
+                        }`}
+                        style={{ backgroundColor: preset.hex }}
+                        title={preset.name}
+                        aria-label={preset.name}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs text-[#F5F5DC]/60">{t('common.dimensions')}</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {inventoryConfig.measureOptions.map((suggestion) => {
+                    const selected = selectedSizes.includes(suggestion);
+                    return (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onClick={() =>
+                          setSelectedSizes((prev) =>
+                            selected ? prev.filter((s) => s !== suggestion) : [...prev, suggestion],
+                          )
+                        }
+                        className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
+                          selected
+                            ? 'border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308]'
+                            : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
+                        }`}
+                      >
+                        {suggestion}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {inventoryConfig.fields
+                .filter((f) => f.type === 'text')
+                .map((field) => (
                   <div key={field.id} className="space-y-2">
                     <label className="block text-xs text-[#F5F5DC]/60">{field.label}</label>
-                    {isColorField && (
-                      <div className="flex flex-wrap gap-2">
-                        {PRESET_COLORS.map((preset) => (
-                          <button
-                            key={`${field.key}-${preset.name}`}
-                            type="button"
-                            onClick={() => setFieldValue(field.key, fieldValue === preset.name ? '' : preset.name)}
-                            className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 ${
-                              fieldValue === preset.name
-                                ? 'border-white scale-110 ring-2 ring-white/30'
-                                : 'border-[#F5F5DC]/20 hover:scale-105'
-                            }`}
-                            style={{ backgroundColor: preset.hex }}
-                            title={preset.name}
-                            aria-label={preset.name}
-                          />
-                        ))}
-                      </div>
-                    )}
-                    {isMeasureField && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {inventoryConfig.measureOptions.map((suggestion) => {
-                          const selected = fieldValue.toUpperCase() === suggestion;
-                          return (
-                            <button
-                              key={`${field.key}-${suggestion}`}
-                              type="button"
-                              onClick={() => setFieldValue(field.key, selected ? '' : suggestion)}
-                              className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
-                                selected
-                                  ? 'border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308]'
-                                  : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
-                              }`}
-                            >
-                              {suggestion}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
                     <input
-                      data-testid={testId}
                       type="text"
                       placeholder={field.label}
-                      value={fieldValue}
+                      value={getFieldValue(field.key)}
                       onChange={(e) => setFieldValue(field.key, e.target.value)}
                       className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-sm"
                     />
                   </div>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 space-y-4 min-w-0">
-            <div className="grid grid-cols-2 gap-2 rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-1">
-              {[
-                { enabled: false, label: 'Articulo simple', icon: Box },
-                { enabled: true, label: 'Con variantes', icon: Layers3 },
-              ].map((mode) => {
-                const Icon = mode.icon;
-                const selected = useVariants === mode.enabled;
-                return (
-                  <button
-                    key={mode.label}
-                    type="button"
-                    onClick={() => {
-                      setUseVariants(mode.enabled);
-                      if (mode.enabled && variantAttributes.length === 0) {
-                        const labels = getInitialVariantAttributes(product, true, inventoryConfig.variantAttributes);
-                        setVariantAttributes(labels);
-                        setVariantRows(getInitialVariantRows(product, labels));
-                      }
-                    }}
-                    className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${
-                      selected
-                        ? 'bg-[#F5F5DC] text-[#121212]'
-                        : 'bg-transparent text-[#F5F5DC]/70 hover:bg-white/5 hover:text-[#F5F5DC]'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" aria-hidden="true" />
-                    <span className="truncate">{mode.label}</span>
-                  </button>
-                );
-              })}
+                ))}
             </div>
 
-            {useVariants ? (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <h3 className="text-sm font-semibold text-[#F5F5DC]">Atributos de variante</h3>
-                    <button
-                      type="button"
-                      onClick={addVariantAttribute}
-                      className="w-full text-xs bg-[#F5F5DC]/10 px-3 py-2 rounded hover:bg-[#F5F5DC]/20 transition sm:w-auto"
-                    >
-                      Agregar más
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {variantAttributes.map((label, index) => (
-                      <div key={`${label}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 min-w-0">
-                        <input
-                          type="text"
-                          value={label}
-                          onChange={(e) => renameVariantAttribute(index, e.target.value)}
-                          className="w-full min-w-0 p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
-                          placeholder={`Atributo ${index + 1}`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeVariantAttribute(index)}
-                          className="min-h-[42px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
+            {isMultiVariant ? (
+              <div className="space-y-3">
                 <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <div className="text-[#F5F5DC]/70">Cantidad total</div>
+                    <div className="text-[#F5F5DC]/70">{t('inventory.form.totalQuantity')}</div>
                     <div className="font-bold text-[#F5F5DC]">{aggregateQuantity}</div>
                   </div>
                   <div className="text-left text-xs text-[#F5F5DC]/55 sm:text-right">
-                    La cantidad final se calcula como la suma de las variantes.
+                    {t('inventory.form.totalQuantityHelp')}
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  {variantRows.map((row, rowIndex) => (
-                    <div
-                      key={row.id}
-                      className="rounded-xl border border-[#F5F5DC]/15 bg-[#121212] p-3 space-y-3 min-w-0"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#F5F5DC]/45">
-                          Variante {rowIndex + 1}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeVariantRow(rowIndex)}
-                          className="text-xs text-red-300 hover:text-red-200 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20"
-                        >
-                          Quitar
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-                        {variantAttributes.map((label) => (
-                          <div key={`${row.id}-${label}`} className="min-w-0">
-                            <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">{label}</label>
-                            {isColorAttribute(label) && (
-                              <div className="flex flex-wrap gap-1.5 mb-2 max-w-full">
-                                {PRESET_COLORS.map((preset) => {
-                                  const selected = row.attributes?.[label] === preset.name;
-                                  return (
-                                    <button
-                                      key={`${row.id}-${label}-${preset.name}`}
-                                      type="button"
-                                      onClick={() =>
-                                        updateVariantAttributeValue(rowIndex, label, selected ? '' : preset.name)
-                                      }
-                                      className={`w-7 h-7 rounded-full border-2 transition-all active:scale-90 ${
-                                        selected
-                                          ? 'border-white scale-110 ring-2 ring-white/30'
-                                          : 'border-[#F5F5DC]/20 hover:scale-105'
-                                      }`}
-                                      style={{ backgroundColor: preset.hex }}
-                                      title={preset.name}
-                                      aria-label={preset.name}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            )}
-                            {isMeasureAttribute(label) && (
-                              <div className="flex flex-wrap gap-1.5 mb-2 max-w-full">
-                                {inventoryConfig.measureOptions.map((suggestion) => {
-                                  const selected = (row.attributes?.[label] || '').toUpperCase() === suggestion;
-                                  return (
-                                    <button
-                                      key={`${row.id}-${label}-${suggestion}`}
-                                      type="button"
-                                      onClick={() =>
-                                        updateVariantAttributeValue(rowIndex, label, selected ? '' : suggestion)
-                                      }
-                                      className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
-                                        selected
-                                          ? 'border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308]'
-                                          : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
-                                      }`}
-                                    >
-                                      {suggestion}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
-                            <input
-                              type="text"
-                              value={row.attributes?.[label] || ''}
-                              onChange={(e) => updateVariantAttributeValue(rowIndex, label, e.target.value)}
-                              className="w-full min-w-0 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded-md text-sm"
-                              placeholder={`Valor de ${label.toLowerCase()}`}
-                            />
-                          </div>
-                        ))}
-                        <div className="min-w-0">
-                          <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">SKU variante</label>
-                          <input
-                            type="text"
-                            value={row.sku}
-                            onChange={(e) => updateVariantRow(rowIndex, 'sku', e.target.value)}
-                            className="w-full min-w-0 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded-md text-sm"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">Cantidad</label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={row.quantity}
-                            onChange={(e) => updateVariantRow(rowIndex, 'quantity', e.target.value)}
-                            onFocus={(e) => {
-                              if (e.currentTarget.value === '0') e.currentTarget.select();
-                            }}
-                            className={`w-full min-w-0 p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
-                              errors[`variant_${rowIndex}_quantity`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
-                            }`}
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">Precio</label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={row.price}
-                            onChange={(e) => updateVariantRow(rowIndex, 'price', e.target.value)}
-                            onFocus={(e) => {
-                              if (e.currentTarget.value === '0') e.currentTarget.select();
-                            }}
-                            className={`w-full min-w-0 p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
-                              errors[`variant_${rowIndex}_price`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
-                            }`}
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">Costo</label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={row.cost}
-                            onChange={(e) => updateVariantRow(rowIndex, 'cost', e.target.value)}
-                            onFocus={(e) => {
-                              if (e.currentTarget.value === '0') e.currentTarget.select();
-                            }}
-                            className={`w-full min-w-0 p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
-                              errors[`variant_${rowIndex}_cost`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
-                            }`}
-                          />
-                        </div>
-                      </div>
-
-                      {Object.values(row.attributes || {}).some(Boolean) && (
-                        <div className="text-xs text-[#F5F5DC]/45">
-                          {Object.entries(row.attributes)
-                            .filter(([, value]) => value)
-                            .map(([key, value]) => `${key}: ${value}`)
-                            .join(' | ')}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={addVariantRow}
-                    className="w-full bg-transparent border border-yellow-500/50 text-yellow-400 font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
+                {variantRows.map((row, rowIndex) => (
+                  <div
+                    key={row.id}
+                    className="rounded-xl border border-[#F5F5DC]/15 bg-[#121212] p-3 space-y-3 min-w-0"
                   >
-                    + Agregar variante
-                  </button>
-                  {errors.variants && <p className="text-red-400 text-xs">{errors.variants}</p>}
-                </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#F5F5DC]/45">
+                        {Object.entries(row.attributes)
+                          .map(([key, value]) => `${key}: ${value}`)
+                          .join(' | ')}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                      <div className="min-w-0">
+                        <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">
+                          {t('inventory.form.variantSku')}
+                        </label>
+                        <input
+                          type="text"
+                          value={row.sku}
+                          onChange={(e) => updateVariantRow(rowIndex, 'sku', e.target.value)}
+                          className="w-full min-w-0 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded-md text-sm"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">Cantidad</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={row.quantity}
+                          onChange={(e) => updateVariantRow(rowIndex, 'quantity', e.target.value)}
+                          onFocus={(e) => {
+                            if (e.currentTarget.value === '0') e.currentTarget.select();
+                          }}
+                          className={`w-full min-w-0 p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
+                            errors[`variant_${rowIndex}_quantity`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
+                          }`}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">Precio</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={row.price}
+                          onChange={(e) => updateVariantRow(rowIndex, 'price', e.target.value)}
+                          onFocus={(e) => {
+                            if (e.currentTarget.value === '0') e.currentTarget.select();
+                          }}
+                          className={`w-full min-w-0 p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
+                            errors[`variant_${rowIndex}_price`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
+                          }`}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">Costo</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={row.cost}
+                          onChange={(e) => updateVariantRow(rowIndex, 'cost', e.target.value)}
+                          onFocus={(e) => {
+                            if (e.currentTarget.value === '0') e.currentTarget.select();
+                          }}
+                          className={`w-full min-w-0 p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
+                            errors[`variant_${rowIndex}_cost`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <>
-                {inventoryConfig.fields.map((field) => {
-                  const fieldValue = getFieldValue(field.key);
-                  const isColorField = field.type === 'color';
-                  const isMeasureField = field.type === 'measure';
-                  const testId = LEGACY_FIELD_KEYS.has(field.key)
-                    ? `product-${field.key}-input`
-                    : `product-custom-${field.key}-input`;
-
-                  return (
-                    <div key={field.id} className="space-y-2">
-                      <label className="block text-xs text-[#F5F5DC]/60">{field.label}</label>
-                      {isColorField && (
-                        <div className="flex flex-wrap gap-2">
-                          {PRESET_COLORS.map((preset) => (
-                            <button
-                              key={`${field.key}-${preset.name}`}
-                              type="button"
-                              onClick={() => setFieldValue(field.key, fieldValue === preset.name ? '' : preset.name)}
-                              className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 ${
-                                fieldValue === preset.name
-                                  ? 'border-white scale-110 ring-2 ring-white/30'
-                                  : 'border-[#F5F5DC]/20 hover:scale-105'
-                              }`}
-                              style={{ backgroundColor: preset.hex }}
-                              title={preset.name}
-                              aria-label={preset.name}
-                            />
-                          ))}
-                        </div>
-                      )}
-                      {isMeasureField && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {inventoryConfig.measureOptions.map((suggestion) => {
-                            const selected = fieldValue.toUpperCase() === suggestion;
-                            return (
-                              <button
-                                key={`${field.key}-${suggestion}`}
-                                type="button"
-                                onClick={() => setFieldValue(field.key, selected ? '' : suggestion)}
-                                className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
-                                  selected
-                                    ? 'border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308]'
-                                    : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
-                                }`}
-                              >
-                                {suggestion}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                      <input
-                        data-testid={testId}
-                        type="text"
-                        placeholder={field.label}
-                        value={fieldValue}
-                        onChange={(e) => setFieldValue(field.key, e.target.value)}
-                        className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-sm"
-                      />
-                    </div>
-                  );
-                })}
                 <div>
                   <input
                     data-testid="product-quantity-input"

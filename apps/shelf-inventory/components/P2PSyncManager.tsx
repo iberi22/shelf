@@ -1147,14 +1147,14 @@ const P2PSyncManager: React.FC = () => {
           <h3 className={`font-bold text-green-400 text-lg ${syncProgress < 100 ? 'animate-pulse' : ''}`}>
             {syncProgress < 100 ? 'Sincronizando Paridad...' : '¡Empalme Completado!'}
           </h3>
-          
+
           <div className="w-full bg-[#121212] rounded-full h-3 border border-[#F5F5DC]/10 overflow-hidden relative">
             <div
               className="bg-green-500 h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(34,197,94,0.8)]"
               style={{ width: `${Math.min(syncProgress, 100)}%` }}
             />
           </div>
-          
+
           <p className="text-[#F5F5DC]/70 text-sm font-mono font-bold">
             {syncProgress < 100 ? `${Math.round(syncProgress)}% Paridad` : '100% Paridad Lograda'}
           </p>

@@ -108,7 +108,10 @@
       "noVariantGroup": "Sin grupo de variantes",
       "newVariantGroup": "Crear nuevo grupo de variantes",
       "variantSiblings": "Productos en el mismo grupo:",
-      "noSiblings": "Sin otros productos en este grupo"
+      "noSiblings": "Sin otros productos en este grupo",
+      "totalQuantity": "Cantidad total",
+      "totalQuantityHelp": "La cantidad final se calcula como la suma de las variantes.",
+      "variantSku": "SKU variante"
     },
     "batchProcessing": "Procesando imágenes...",
     "batchCompiling": "Comprimiendo y preparando lote de productos:"
