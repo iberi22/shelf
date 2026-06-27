@@ -266,3 +266,66 @@ export const mergeProductVariants = (products: Product[]): ProductVariant[] => {
 
   return Array.from(merged.values());
 };
+
+/**
+ * Generate variant drafts from multi-color and multi-measure selections.
+ * Returns one VariantDraft per color if only colors selected,
+ * one per measure if only measures selected,
+ * or one per color x measure combination if both are selected.
+ */
+export const generateVariantsFromSelections = (
+  colors: string[],
+  sizes: string[],
+  baseProduct: { sku?: string; price?: number; cost?: number; quantity?: number; imageUrl?: string },
+): VariantDraft[] => {
+  const variants: VariantDraft[] = [];
+
+  // Case 1: Only colors selected (no sizes)
+  if (colors.length > 0 && sizes.length === 0) {
+    for (const color of colors) {
+      variants.push({
+        id: createId('variant'),
+        sku: `${baseProduct.sku || ''}-${color.toLowerCase().replace(/\s+/g, '-')}`,
+        quantity: Number(baseProduct.quantity || 0),
+        price: Number(baseProduct.price || 0),
+        cost: Number(baseProduct.cost || 0),
+        imageUrl: baseProduct.imageUrl || undefined,
+        attributes: { Color: normalizeLabel(color) },
+      });
+    }
+    return variants;
+  }
+
+  // Case 2: Only sizes selected (no colors)
+  if (sizes.length > 0 && colors.length === 0) {
+    for (const size of sizes) {
+      variants.push({
+        id: createId('variant'),
+        sku: `${baseProduct.sku || ''}-${size.toLowerCase().replace(/\s+/g, '-')}`,
+        quantity: Number(baseProduct.quantity || 0),
+        price: Number(baseProduct.price || 0),
+        cost: Number(baseProduct.cost || 0),
+        imageUrl: baseProduct.imageUrl || undefined,
+        attributes: { Medida: normalizeLabel(size) },
+      });
+    }
+    return variants;
+  }
+
+  // Case 3: Both colors and sizes selected -> Cartesian product
+  for (const color of colors) {
+    for (const size of sizes) {
+      variants.push({
+        id: createId('variant'),
+        sku: `${baseProduct.sku || ''}-${color.toLowerCase().replace(/\s+/g, '-')}-${size.toLowerCase().replace(/\s+/g, '-')}`,
+        quantity: Number(baseProduct.quantity || 0),
+        price: Number(baseProduct.price || 0),
+        cost: Number(baseProduct.cost || 0),
+        imageUrl: baseProduct.imageUrl || undefined,
+        attributes: { Color: normalizeLabel(color), Medida: normalizeLabel(size) },
+      });
+    }
+  }
+
+  return variants;
+};

@@ -775,6 +775,43 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   const [useVariants, setUseVariants] = useState(initialUseVariants);
   const [variantAttributes, setVariantAttributes] = useState<string[]>(defaultLabels);
   const [variantRows, setVariantRows] = useState<VariantDraft[]>(() => getInitialVariantRows(product, defaultLabels));
+
+  // Multi-color/measure for new products (no toggle mode)
+  const [selectedColors, setSelectedColors] = useState<string[]>(() => {
+    if (product?.colors?.length) return product.colors;
+    if (product?.color) return [product.color];
+    return [];
+  });
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(() => {
+    if (product?.sizes?.length) return product.sizes;
+    if (product?.dimensions) return [product.dimensions];
+    return [];
+  });
+  const [comboValues, setComboValues] = useState<Record<string, { quantity: number; price: number; cost: number }>>({});
+
+  // Update comboValues when selections change
+  useEffect(() => {
+    if (!isEditing && isMultiMode) {
+      const combos = getComboEntries(selectedColors, selectedSizes);
+      setComboValues((prev) => {
+        const updated: Record<string, { quantity: number; price: number; cost: number }> = {};
+        for (const key of combos) {
+          updated[key] = prev[key] || { quantity: 0, price: Number(price) || 0, cost: Number(cost) || 0 };
+        }
+        return updated;
+      });
+    }
+  }, [selectedColors.length, selectedSizes.length]);
+
+  const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
+  const isEditing = product !== null;
+
+  const getComboEntries = (colors: string[], sizes: string[]): string[] => {
+    if (colors.length > 0 && sizes.length > 0) {
+      return colors.flatMap((c) => sizes.map((s) => `${c}|${s}`));
+    }
+    return colors.map((c) => `color:${c}`).concat(sizes.map((s) => `size:${s}`));
+  };
   const productHistory = useMemo(() => {
     if (!product) return [];
     return (state.productChangeHistory || [])
@@ -969,7 +1006,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
       newErrors.name = t('validation.nameRequired');
     }
 
-    if (useVariants) {
+    if (isEditing && useVariants) {
       if (variantRows.length === 0) newErrors.variants = 'Agrega al menos una variante.';
       const labels = normalizeLabels(variantAttributes);
       if (labels.length === 0) newErrors.variants = 'Define al menos un atributo de variante.';
@@ -996,6 +1033,20 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
           newErrors[`variant_${index}_cost`] = t('validation.costNonNegative');
         }
       });
+    } else if (!isEditing && isMultiMode) {
+      const keys = getComboEntries(selectedColors, selectedSizes);
+      if (keys.length === 0) {
+        newErrors.variants = 'Selecciona al menos un color o medida.';
+      }
+      for (const key of keys) {
+        const val = comboValues[key];
+        if (!val || Number(val.quantity) <= 0) {
+          newErrors[`combo_${key}`] = 'Debe tener cantidad mayor a 0.';
+        }
+        if (val && Number(val.price) < 0) {
+          newErrors[`combo_price_${key}`] = 'Precio no puede ser negativo.';
+        }
+      }
     } else {
       if (quantity === '' || Number(quantity) < 0 || !Number.isInteger(Number(quantity))) {
         newErrors.quantity = t('validation.quantityNonNegative');
@@ -1045,6 +1096,57 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
           quantity: Number(variant.quantity),
           price: Number(variant.price),
           cost: Number(variant.cost),
+        })) as any,
+      });
+      return;
+    }
+
+    // Multi-mode: new product with multiple colors/measures
+    if (!isEditing && isMultiMode) {
+      const keys = getComboEntries(selectedColors, selectedSizes);
+      const variants = keys.map((key) => {
+        const parts = key.split('|');
+        const attributes: Record<string, string> = {};
+        if (selectedColors.length > 0 && selectedSizes.length > 0) {
+          attributes.Color = parts[0];
+          attributes.Medida = parts[1];
+        } else if (selectedColors.length > 0) {
+          attributes.Color = key.replace('color:', '');
+        } else {
+          attributes.Medida = key.replace('size:', '');
+        }
+        const val = comboValues[key] || { quantity: 0, price: 0, cost: 0 };
+        return {
+          id: '',
+          sku: `${sku || name.toLowerCase().replace(/\s+/g, '-')}-${key.toLowerCase().replace(/[|:]/g, '-').replace(/\s+/g, '-')}`,
+          quantity: Number(val.quantity) || 0,
+          price: Number(val.price) || Number(price) || 0,
+          cost: Number(val.cost) || Number(cost) || 0,
+          imageUrl: imageUrl || undefined,
+          attributes,
+        } as VariantDraft;
+      });
+      const totalQty = variants.reduce((sum, v) => sum + Number(v.quantity), 0);
+      const attrLabels = selectedColors.length > 0 && selectedSizes.length > 0
+        ? ['Color', 'Medida']
+        : selectedColors.length > 0 ? ['Color'] : ['Medida'];
+
+      onSave({
+        name,
+        sku,
+        colors: selectedColors,
+        sizes: selectedSizes,
+        supplierId: supplierId || undefined,
+        quantity: totalQty,
+        price: Number(price) || 0,
+        cost: Number(cost) || 0,
+        imageUrl: imageUrl ?? undefined,
+        variantAttributes: attrLabels,
+        variants: variants.map((v) => ({
+          ...v,
+          quantity: Number(v.quantity),
+          price: Number(v.price),
+          cost: Number(v.cost),
         })) as any,
       });
       return;
@@ -1273,39 +1375,112 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
           )}
 
           <div className="rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 space-y-4 min-w-0">
-            <div className="grid grid-cols-2 gap-2 rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-1">
-              {[
-                { enabled: false, label: 'Articulo simple', icon: Box },
-                { enabled: true, label: 'Con variantes', icon: Layers3 },
-              ].map((mode) => {
-                const Icon = mode.icon;
-                const selected = useVariants === mode.enabled;
-                return (
-                  <button
-                    key={mode.label}
-                    type="button"
-                    onClick={() => {
-                      setUseVariants(mode.enabled);
-                      if (mode.enabled && variantAttributes.length === 0) {
-                        const labels = getInitialVariantAttributes(product, true, inventoryConfig.variantAttributes);
-                        setVariantAttributes(labels);
-                        setVariantRows(getInitialVariantRows(product, labels));
-                      }
-                    }}
-                    className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${
-                      selected
-                        ? 'bg-[#F5F5DC] text-[#121212]'
-                        : 'bg-transparent text-[#F5F5DC]/70 hover:bg-white/5 hover:text-[#F5F5DC]'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" aria-hidden="true" />
-                    <span className="truncate">{mode.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            {isEditing && (
+              <div className="grid grid-cols-2 gap-2 rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-1">
+                {[
+                  { enabled: false, label: 'Articulo simple', icon: Box },
+                  { enabled: true, label: 'Con variantes', icon: Layers3 },
+                ].map((mode) => {
+                  const Icon = mode.icon;
+                  const selected = useVariants === mode.enabled;
+                  return (
+                    <button
+                      key={mode.label}
+                      type="button"
+                      onClick={() => {
+                        setUseVariants(mode.enabled);
+                        if (mode.enabled && variantAttributes.length === 0) {
+                          const labels = getInitialVariantAttributes(product, true, inventoryConfig.variantAttributes);
+                          setVariantAttributes(labels);
+                          setVariantRows(getInitialVariantRows(product, labels));
+                        }
+                      }}
+                      className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${
+                        selected
+                          ? 'bg-[#F5F5DC] text-[#121212]'
+                          : 'bg-transparent text-[#F5F5DC]/70 hover:bg-white/5 hover:text-[#F5F5DC]'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                      <span className="truncate">{mode.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-            {useVariants ? (
+            {!isEditing && !isMultiMode && (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
+                  <label className="block text-xs text-[#F5F5DC]/60">Colores</label>
+                  <div className="flex flex-wrap gap-2">
+                    {PRESET_COLORS.map((preset) => {
+                      const selected = selectedColors.includes(preset.name);
+                      return (
+                        <button
+                          key={`mc-${preset.name}`}
+                          type="button"
+                          onClick={() => {
+                            setSelectedColors(prev =>
+                              selected ? prev.filter(c => c !== preset.name) : [...prev, preset.name]
+                            );
+                          }}
+                          className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 ${
+                            selected
+                              ? 'border-white scale-110 ring-2 ring-white/30'
+                              : 'border-[#F5F5DC]/20 hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: preset.hex }}
+                          title={preset.name}
+                          aria-label={preset.name}
+                        />
+                      );
+                    })}
+                  </div>
+                  {selectedColors.length > 0 && (
+                    <div className="text-xs text-[#F5F5DC]/60">
+                      Seleccionados: {selectedColors.join(', ')}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
+                  <label className="block text-xs text-[#F5F5DC]/60">Medidas</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {inventoryConfig.measureOptions.map((suggestion) => {
+                      const selected = selectedSizes.includes(suggestion);
+                      return (
+                        <button
+                          key={`ms-${suggestion}`}
+                          type="button"
+                          onClick={() => {
+                            setSelectedSizes(prev =>
+                              selected ? prev.filter(s => s !== suggestion) : [...prev, suggestion]
+                            );
+                          }}
+                          className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
+                            selected
+                              ? 'border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308]'
+                              : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
+                          }`}
+                        >
+                          {suggestion}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedSizes.length > 0 && (
+                    <div className="text-xs text-[#F5F5DC]/60">
+                      Seleccionados: {selectedSizes.join(', ')}
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs text-[#F5F5DC]/50 text-center">
+                  Selecciona varios colores o medidas para crear combinaciones autom&aacute;ticas
+                </div>
+              </div>
+            )}
+
+            {isEditing && useVariants ? (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1509,7 +1684,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   {errors.variants && <p className="text-red-400 text-xs">{errors.variants}</p>}
                 </div>
               </div>
-            ) : (
+            ) : isEditing || !isMultiMode ? (
               <>
                 {inventoryConfig.fields.map((field) => {
                   const fieldValue = getFieldValue(field.key);
@@ -1622,6 +1797,153 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     />
                     {errors.cost && <p className="text-red-400 text-xs mt-1">{errors.cost}</p>}
                   </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
+                  <label className="block text-xs text-[#F5F5DC]/60">Colores seleccionados</label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedColors.map((c) => {
+                      const preset = PRESET_COLORS.find(p => p.name === c);
+                      return (
+                        <button
+                          key={`selc-${c}`}
+                          type="button"
+                          onClick={() => setSelectedColors(prev => prev.filter(x => x !== c))}
+                          className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 border-white ring-2 ring-white/30`}
+                          style={{ backgroundColor: preset?.hex || '#888' }}
+                          title={`Quitar ${c}`}
+                        />
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedColors([])}
+                      className="text-xs text-red-300 hover:text-red-200 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20"
+                    >
+                      Limpiar
+                    </button>
+                  </div>
+                </div>
+
+                {selectedSizes.length > 0 && (
+                  <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
+                    <label className="block text-xs text-[#F5F5DC]/60">Medidas seleccionadas</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedSizes.map((s) => (
+                        <button
+                          key={`sels-${s}`}
+                          type="button"
+                          onClick={() => setSelectedSizes(prev => prev.filter(x => x !== s))}
+                          className="rounded-full border border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308] px-2.5 py-1 text-[11px]"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSizes([])}
+                        className="text-xs text-red-300 hover:text-red-200 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-[#F5F5DC]">
+                      {selectedColors.length > 0 && selectedSizes.length > 0
+                        ? `Combinaciones (${selectedColors.length} x ${selectedSizes.length})`
+                        : `Variantes (${selectedColors.length || selectedSizes.length})`}
+                    </h3>
+                  </div>
+
+                  {(selectedColors.length > 0 || selectedSizes.length > 0) && (
+                    <div className="space-y-2">
+                      {(() => {
+                        const keys = getComboEntries(selectedColors, selectedSizes);
+
+                        return keys.map((key, i) => {
+                          const parts = key.split('|');
+                          const label = parts.length > 1 ? parts.join(' / ') : parts[0].replace(/^(color:|size:)/, '');
+                          const val = comboValues[key] || { quantity: 0, price: Number(price) || 0, cost: Number(cost) || 0 };
+
+                          return (
+                            <div
+                              key={`combo-${i}`}
+                              className="rounded-lg border border-[#F5F5DC]/15 bg-[#121212] p-3 space-y-2"
+                            >
+                              <div className="text-xs font-semibold text-[#F5F5DC]/60 uppercase tracking-wide">
+                                {label}
+                              </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                <div>
+                                  <label className="block text-[10px] text-[#F5F5DC]/50 mb-0.5">Cant</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={val.quantity}
+                                    onChange={(e) => {
+                                      setComboValues((prev) => ({
+                                        ...prev,
+                                        [key]: { ...prev[key] || val, quantity: Number(e.target.value) },
+                                      }));
+                                    }}
+                                    className="w-full p-1.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded text-xs"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] text-[#F5F5DC]/50 mb-0.5">Precio</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={val.price}
+                                    onChange={(e) => {
+                                      setComboValues((prev) => ({
+                                        ...prev,
+                                        [key]: { ...prev[key] || val, price: Number(e.target.value) },
+                                      }));
+                                    }}
+                                    className="w-full p-1.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded text-xs"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] text-[#F5F5DC]/50 mb-0.5">Costo</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={val.cost}
+                                    onChange={(e) => {
+                                      setComboValues((prev) => ({
+                                        ...prev,
+                                        [key]: { ...prev[key] || val, cost: Number(e.target.value) },
+                                      }));
+                                    }}
+                                    className="w-full p-1.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded text-xs"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 text-xs text-[#F5F5DC]/50">
+                  <Ruler className="h-3 w-3" />
+                  <span>
+                    {selectedColors.length > 0 && selectedSizes.length > 0
+                      ? `${selectedColors.length} color(es) x ${selectedSizes.length} medida(s) = ${selectedColors.length * selectedSizes.length} combinaciones`
+                      : `${selectedColors.length || selectedSizes.length} variante(s)`}
+                  </span>
                 </div>
               </>
             )}

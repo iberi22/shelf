@@ -109,6 +109,22 @@ Key documents:
 - [`docs/src/non-functional/SRC-CRDT-001.md`](docs/src/non-functional/SRC-CRDT-001.md)
 - [`docs/src/non-functional/SRC-EDGE-001.md`](docs/src/non-functional/SRC-EDGE-001.md)
 - [`docs/src/non-functional/SRC-QA-001.md`](docs/src/non-functional/SRC-QA-001.md)
+- [`docs/src/non-functional/SRC-GPU-001.md`](docs/src/non-functional/SRC-GPU-001.md)
+
+## GitCore
+
+Shelf uses GitCore (v3.6.0) for architecture governance, feature tracking, and SDLC workflow.
+
+| File | Purpose |
+| --- | --- |
+| `.gitcore/ARCHITECTURE.md` | Project architecture, stack, patterns, layers |
+| `.gitcore/features.json` | Feature registry (21 features, 100% implemented) |
+| `.gitcore/AGENT_INDEX.md` | Agent labels (jules, opencode, gemini, claude) |
+| `.gitcore/SDLC_WORKFLOW.md` | Development lifecycle workflow |
+| `.gitcore/CORTEX_INTEGRATION.md` | SWAL neural core integration |
+| `.gitcore/SRC_CONFIG.md` | SRC document configuration |
+| `.gitcore/planning/PLANNING.md` | Sprint planning |
+| `.gitcore/planning/TASK.md` | Active task tracking |
 
 ## CI and Deployment
 

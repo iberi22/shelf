@@ -1,7 +1,7 @@
 # Shelf Architecture — GitCore
 
 **Protocol Version:** 3.6.0
-**Updated:** 2026-06-11
+**Updated:** 2026-06-27
 
 ## Stack
 - **Monorepo:** pnpm workspaces + Turborepo 2
@@ -10,9 +10,12 @@
 - **State Management:** React Context (`useReducer`)
 - **Persistence:** localStorage (all tiers), Firebase Firestore (Pro sync)
 - **P2P Sync:** WebRTC (PeerJS), Yjs (CRDT)
+- **Edge Mesh:** @shelf/edge-mesh (reusable P2P browser runtime)
+- **Edge Mesh React:** @shelf/edge-mesh-react (React bindings)
+- **GPU Agents:** @shelf/gpu-agent (WebGPU tenant surfaces)
 - **Security:** ML-KEM-768 (PQC), ML-DSA-65 (signatures), AES-GCM
-- **AI:** Gemini API via Firebase Cloud Functions
-- **Testing:** Cypress E2E, Biome linting
+- **AI:** Gemini API via Firebase Cloud Functions, local WebLLM (MLC)
+- **Testing:** Playwright E2E (edge-mesh), Cypress E2E (UI), Biome linting
 - **CI/CD:** GitHub Actions, Vercel (preview + production)
 - **Payments:** Stripe (webhooks + subscriptions)
 - **Auth:** Firebase Auth (email/password)
@@ -21,24 +24,27 @@
 ```
 shelf/
 ├── apps/
-│   ├── shelf-inventory/     # Main app (React)
+│   ├── shelf-inventory/     # Main app (React 19 + Vite 8)
 │   │   ├── src/             # React source
 │   │   ├── components/      # Shared components
 │   │   ├── context/         # React Context providers
 │   │   ├── hooks/           # Custom React hooks
-│   │   ├── locales/         # i18n translations (EN/ES/PT)
-│   │   └── cypress/         # E2E tests
+│   │   ├── locales/         # i18n translations (20 languages)
+│   │   └── tests/           # Playwright E2E + unit tests
 │   └── docs/                # VitePress documentation
 │       └── guide/           # User guides
 ├── packages/
-│   └── p2p-mesh-core/       # P2P engine (WebRTC, Yjs, PQC)
+│   ├── p2p-mesh-core/       # Legacy P2P engine (WebRTC, Yjs, PQC)
+│   ├── edge-mesh/           # Reusable P2P browser runtime (Yjs, CRDT, authz)
+│   ├── edge-mesh-react/     # React provider + hooks for edge-mesh
+│   └── gpu-agent/           # WebGPU agent integration surface
 ├── .gitcore/                # GitCore protocol (v3.6.0)
 ├── .github/
 │   └── workflows/           # CI/CD pipelines
 └── docs/
     ├── src/                 # SRC documents
     │   ├── features/        # Per-feature SRC (FUN-*)
-    │   └── non-functional/  # Per-feature SRC (PQC, P2P, ...)
+    │   └── non-functional/  # Per-feature SRC (PQC, P2P, EDGE, CRDT, QA, PWA)
     └── archive/             # Archived docs
 ```
 
@@ -60,16 +66,28 @@ shelf/
 ### 1. Offline-First
 Todas las operaciones son locales (localStorage). Cloud sync es opcional y solo para usuarios Pro. El usuario puede usar la app desconectado permanentemente.
 
-### 2. P2P Mesh
+### 2. Edge Mesh Runtime
+La sincronización P2P se maneja a través de `@shelf/edge-mesh`, un runtime reutilizable que:
+- Crea nodos P2P sobre transports pluggables (PeerJS WebRTC)
+- Envuelve documentos Yjs en namespaces con nombre
+- Broadcasts updates CRDT locales como deltas codificados
+- Aplica updates remotos con tipo `{ type: 'remote', peerId }`
+- Autoriza mutaciones remotas antes de que entren al estado de la app
+- Revierte cambios CRDT no autorizados con security origin dedicado
+
+### 3. P2P Mesh
 Cada instancia de la app es un nodo en la red mesh. No hay servidor central para sincronización. La topología es fully-connected: cada peer se conecta a todos los demás.
 
-### 3. CRDT (Conflict-Free Replicated Data Types)
-Usando Yjs para consistencia eventual. Los cambios se replican entre peers sin conflictos. LWW (Last-Writer-Wins) para campos simples.
+### 4. CRDT (Conflict-Free Replicated Data Types)
+Usando Yjs para consistencia eventual. Los cambios se replican entre peers sin conflictos. LWW (Last-Writer-Wins) para campos simples. Implementado via `@shelf/edge-mesh` namespaces.
 
-### 4. Admin Node
+### 5. GPU Agents (WebGPU)
+Extension point via `@shelf/gpu-agent` para ejecución de agentes en el edge local (WebGPU). Las tareas intensivas se delegan al tenant WebGPU expuesto por edge-mesh.
+
+### 6. Admin Node
 Nodo designado (primer peer en conectarse) que coordina peers y mantiene el estado global. Soporta multi-user (Pyme plan).
 
-### 5. Monetización por Tiers
+### 7. Monetización por Tiers
 | Tier | Price | Ads | Cloud Sync | AI | Multi-user |
 |------|-------|-----|-------------|----|------------|
 | Free | $0 | ✅ | ❌ | ❌ | ❌ |
@@ -77,35 +95,55 @@ Nodo designado (primer peer en conectarse) que coordina peers y mantiene el esta
 | Pro | TBD | ❌ | ✅ | ✅ | ❌ |
 | Pyme | TBD | ❌ | ✅ | ✅ | ✅ |
 
-## Security Architecture
+## Architecture Layers
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Application Layer                  │
-│  React 19 UI ←→ Context API ←→ localStorage/Firestore│
-└─────────────────────┬───────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────┐
-│                   P2P Mesh Layer                     │
-│  PeerJS (WebRTC) ←→ Yjs (CRDT) ←→ p2p-mesh-core    │
-└─────────────────────┬───────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────┐
-│              Post-Quantum Security Layer              │
-│  ML-KEM-768 (key exchange) → AES-GCM (encryption)   │
-│  ML-DSA-65 (signatures)                             │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    Application Layer                          │
+│  React 19 UI ←→ Context API ←→ localStorage/Firestore        │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│                   Edge Mesh Layer                             │
+│  @shelf/edge-mesh (Yjs CRDT + PeerJS transport)              │
+│  @shelf/edge-mesh-react (React bindings)                     │
+│  @shelf/gpu-agent (WebGPU tenant)                            │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│                   Legacy P2P Layer                            │
+│  PeerJS (WebRTC) ←→ Yjs (CRDT) ←→ p2p-mesh-core             │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│              Post-Quantum Security Layer                      │
+│  ML-KEM-768 (key exchange) → AES-GCM (encryption)           │
+│  ML-DSA-65 (signatures)                                     │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## Data Flow
 ```
 User Action → Context Dispatch → Reducer → State Update
                                                 ↓
-                      ┌─────────────────────────┼─────────────┐
-                      ↓                         ↓             ↓
-                 localStorage              P2P Broadcast    Firestore
-                 (always)                  (Yjs CRDT)    (Pro only)
+                ┌─────────────────────────────────┼───────────────────┐
+                ↓                                 ↓                   ↓
+           localStorage                  Edge Mesh Broadcast    Firestore
+           (always)                      (Yjs CRDT via          (Pro only)
+                                          edge-mesh namespace)
 ```
+
+## Edge Mesh Namespace
+Shelf usa el namespace `shelf` en edge-mesh para:
+- products
+- sales
+- clients
+- suppliers
+- purchaseOrders
+- arqueoSessions
+- ocrResults
+- auditLogs
+- teamMembers
 
 ## Network Topology (P2P Mesh)
 ```

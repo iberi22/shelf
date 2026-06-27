@@ -32,8 +32,12 @@ export interface Product extends BaseEntity {
   price: number;
   cost: number;
   imageUrl?: string;
+  /** @deprecated Use colors[] for multiple colors */
   color?: string;
+  colors?: string[];
+  /** @deprecated Use dimensions or sizes[] */
   dimensions?: string;
+  sizes?: string[];
   capacity?: string;
   material?: string;
   customFields?: Record<string, string>;
@@ -247,7 +251,7 @@ export interface ArqueoSession extends BaseEntity {
   status: 'open' | 'closed';
 }
 
-export type InventoryFieldType = 'text' | 'color' | 'measure';
+export type InventoryFieldType = 'text' | 'color' | 'measure' | 'multiColor' | 'multiMeasure';
 
 export interface InventoryFieldDefinition {
   id: string;

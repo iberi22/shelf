@@ -5,29 +5,34 @@
     "project_display": "Shelf Inventory Management",
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
-    "updated": "2026-06-11",
+    "updated": "2026-06-27",
     "version": "1.2.0",
     "sdlc_phase": "production",
-    "total_features": 19,
-    "features_implemented": 19,
+    "total_features": 21,
+    "features_implemented": 21,
     "implementation_percentage": 100,
     "stack": {
       "monorepo": "pnpm + Turborepo",
       "frontend": "React 19 + Vite 8",
       "language": "TypeScript 6",
-      "styling": "Tailwind CSS 4 + PostCSS",
+      "styling": "Tailwind CSS 4 + PostCSS + Biome",
       "p2p": "PeerJS (WebRTC) + Yjs (CRDT)",
+      "edge-mesh": "@shelf/edge-mesh (reusable P2P runtime)",
+      "edge-mesh-react": "@shelf/edge-mesh-react (React bindings)",
+      "gpu-agent": "@shelf/gpu-agent (WebGPU)",
       "crypto": "@noble/post-quantum (ML-KEM-768, ML-DSA-65)",
       "auth": "Firebase Auth",
       "payments": "Stripe",
       "deploy": "Vercel",
-      "testing": "Cypress + Biome + Husky"
+      "testing": "Playwright + Cypress + Biome + Husky"
     },
     "categories": {
-      "FUN": {"name": "Funcionalidades Core", "count": 14, "description": "Funcionalidades core del sistema de inventario SaaS"},
+      "FUN": {"name": "Funcionalidades Core", "count": 15, "description": "Funcionalidades core del sistema de inventario SaaS"},
       "PQC": {"name": "Post-Quantum Cryptography", "count": 1, "description": "Criptografía post-cuántica (ML-KEM-768, ML-DSA-65)"},
       "P2P": {"name": "P2P Mesh Sync", "count": 1, "description": "Sincronización P2P descentralizada vía WebRTC"},
       "CRDT": {"name": "CRDT Conflict Resolution", "count": 1, "description": "Resolución de conflictos vía CRDT (Yjs)"},
+      "EDGE": {"name": "Edge Mesh Runtime", "count": 1, "description": "Runtime P2P reutilizable con namespaces y autorización"},
+      "GPU": {"name": "GPU Agent", "count": 1, "description": "Agentes WebGPU para procesamiento edge"},
       "QA": {"name": "Quality Assurance", "count": 1, "description": "Infraestructura de testing y calidad"},
       "PWA": {"name": "PWA & Offline", "count": 1, "description": "Progressive Web App con soporte offline"}
     }
@@ -401,6 +406,45 @@
         "Service worker configurado para caching offline",
         "Persistencia en localStorage + IndexedDB",
         "Actualización automática cuando hay nueva versión"
+      ]
+    },
+    {
+      "id": "SRC-EDGE-001",
+      "name": "Edge Mesh Runtime",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "EDGE",
+      "description": "Runtime P2P reutilizable (@shelf/edge-mesh) con namespaces por entidad, autorización de mutaciones remotas, y reversión de cambios no autorizados",
+      "user_story": "Como desarrollador, quiero un runtime P2P reutilizable que encapsule la logica mesh en un package independiente",
+      "actor": "Desarrollador",
+      "dependencies": ["SRC-P2P-001", "SRC-CRDT-001", "SRC-PQC-001"],
+      "technologies": ["Yjs", "PeerJS", "@shelf/edge-mesh", "@shelf/edge-mesh-react"],
+      "acceptance_criteria": [
+        "Namespaces por tipo de entidad (products, sales, clients, etc)",
+        "Broadcasts de updates CRDT como deltas codificados",
+        "Aplica updates remotos con tipo { type: 'remote', peerId }",
+        "Autoriza mutaciones remotas antes de entrar al estado",
+        "Revoca cambios CRDT no autorizados via security origin",
+        "React bindings via @shelf/edge-mesh-react"
+      ]
+    },
+    {
+      "id": "SRC-GPU-001",
+      "name": "GPU Agent (WebGPU)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "GPU",
+      "description": "Extension point para ejecución de agentes en el edge via WebGPU, expuesto como tenant WebGPU por edge-mesh",
+      "user_story": "Como desarrollador, quiero delegar tareas intensivas al WebGPU local via un package reutilizable",
+      "actor": "Desarrollador",
+      "dependencies": ["SRC-EDGE-001"],
+      "technologies": ["WebGPU", "@shelf/gpu-agent"],
+      "acceptance_criteria": [
+        "Tenant WebGPU expuesto por edge-mesh",
+        "Ejecución de agentes en edge local",
+        "Package reutilizable @shelf/gpu-agent"
       ]
     }
   ],
