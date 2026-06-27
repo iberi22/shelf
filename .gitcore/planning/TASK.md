@@ -39,6 +39,8 @@
 
 | ID | Tarea | Prioridad | Estado |
 |----|-------|-----------|--------|
+| SRC-EDGE-001 | Edge Mesh Runtime (70%) | P0 | 🟡 |
+| SRC-FUN-015 | Multi-color/multi-measure product | P1 | 🔴 |
 | — | Error Monitoring (Sentry) | P1 | 🔴 |
 | — | User Analytics (GA) | P2 | 🔴 |
 | — | Full Cloud Sync (Pro) | P1 | 🔴 |

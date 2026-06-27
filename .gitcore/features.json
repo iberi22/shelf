@@ -5,12 +5,12 @@
     "project_display": "Shelf Inventory Management",
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
-    "updated": "2026-06-11",
-    "version": "1.2.0",
+    "updated": "2026-06-27",
+    "version": "1.3.0",
     "sdlc_phase": "production",
-    "total_features": 19,
+    "total_features": 20,
     "features_implemented": 19,
-    "implementation_percentage": 100,
+    "implementation_percentage": 98.5,
     "stack": {
       "monorepo": "pnpm + Turborepo",
       "frontend": "React 19 + Vite 8",
@@ -29,10 +29,35 @@
       "P2P": {"name": "P2P Mesh Sync", "count": 1, "description": "Sincronización P2P descentralizada vía WebRTC"},
       "CRDT": {"name": "CRDT Conflict Resolution", "count": 1, "description": "Resolución de conflictos vía CRDT (Yjs)"},
       "QA": {"name": "Quality Assurance", "count": 1, "description": "Infraestructura de testing y calidad"},
-      "PWA": {"name": "PWA & Offline", "count": 1, "description": "Progressive Web App con soporte offline"}
+      "PWA": {"name": "PWA & Offline", "count": 1, "description": "Progressive Web App con soporte offline"},
+      "EDGE": {"name": "Edge Mesh Runtime", "count": 1, "description": "Runtime descentralizado para colaboración local-first"}
     }
   },
   "features": [
+    {
+      "id": "SRC-EDGE-001",
+      "name": "Edge Mesh Runtime",
+      "status": "partial",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "EDGE",
+      "description": "Runtime browser-to-browser reutilizable para colaboración local-first con Yjs, PeerJS y guardias de seguridad",
+      "user_story": "Como operador de tienda, quiero que los navegadores compartan el estado de inventario directamente preservando permisos",
+      "actor": "Operador de Tienda",
+      "dependencies": ["SRC-P2P-001", "SRC-CRDT-001", "SRC-PQC-001", "SRC-QA-001"],
+      "technologies": ["Yjs", "PeerJS", "React", "WebGPU", "Playwright"],
+      "acceptance_criteria": [
+        "Paquete @shelf/edge-mesh reutilizable",
+        "Namespaces Yjs con deltas locales/remotos",
+        "Metadatos de origen remote/peerId",
+        "Prevención de bucles de re-broadcast",
+        "Integración con namespace 'shelf'",
+        "Permisos a nivel de colección",
+        "Reversión de mutaciones no autorizadas en CRDT",
+        "Harness E2E para tests deterministas",
+        "Extensión para ejecución de agentes WebGPU"
+      ]
+    },
     {
       "id": "SRC-FUN-001",
       "name": "Inventory Management",

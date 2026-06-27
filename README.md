@@ -8,10 +8,10 @@ Shelf is a decentralized, offline-first inventory and point-of-sale platform. Th
 | --- | --- |
 | `apps/shelf-inventory` | Main React/Vite inventory application |
 | `docs/src` | Technical SRC documentation |
-| `packages/p2p-mesh-core` | Existing P2P sync engine, roles, permissions, audit state, and post-quantum security integration |
-| `packages/edge-mesh` | New reusable Edge Mesh runtime for P2P nodes, CRDT namespaces, transport, storage, protocol, presence, authz, and WebGPU extension points |
+| `packages/edge-mesh` | Reusable Edge Mesh runtime (Yjs, PeerJS, Authz, Storage) |
 | `packages/edge-mesh-react` | React provider and hooks for Edge Mesh namespaces |
 | `packages/gpu-agent` | GPU/WebGPU agent integration surface |
+| `packages/p2p-mesh-core` | Shared P2P logic, roles, permissions, and PQC |
 
 ## Edge Mesh Runtime
 

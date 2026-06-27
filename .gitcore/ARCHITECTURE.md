@@ -1,7 +1,7 @@
 # Shelf Architecture — GitCore
 
 **Protocol Version:** 3.6.0
-**Updated:** 2026-06-11
+**Updated:** 2026-06-27
 
 ## Stack
 - **Monorepo:** pnpm workspaces + Turborepo 2
@@ -9,10 +9,11 @@
 - **Styling:** Tailwind CSS 4, PostCSS, Biome
 - **State Management:** React Context (`useReducer`)
 - **Persistence:** localStorage (all tiers), Firebase Firestore (Pro sync)
-- **P2P Sync:** WebRTC (PeerJS), Yjs (CRDT)
+- **P2P Sync:** WebRTC (PeerJS), Yjs (CRDT), Edge Mesh Runtime
+- **GPU Agent:** WebGPU extension points
 - **Security:** ML-KEM-768 (PQC), ML-DSA-65 (signatures), AES-GCM
 - **AI:** Gemini API via Firebase Cloud Functions
-- **Testing:** Cypress E2E, Biome linting
+- **Testing:** Playwright E2E, Vitest, Biome linting
 - **CI/CD:** GitHub Actions, Vercel (preview + production)
 - **Payments:** Stripe (webhooks + subscriptions)
 - **Auth:** Firebase Auth (email/password)
@@ -27,11 +28,13 @@ shelf/
 │   │   ├── context/         # React Context providers
 │   │   ├── hooks/           # Custom React hooks
 │   │   ├── locales/         # i18n translations (EN/ES/PT)
-│   │   └── cypress/         # E2E tests
-│   └── docs/                # VitePress documentation
-│       └── guide/           # User guides
+│   │   └── tests/           # Playwright E2E tests
+│   └── docs/                # Technical documentation
 ├── packages/
-│   └── p2p-mesh-core/       # P2P engine (WebRTC, Yjs, PQC)
+│   ├── edge-mesh/           # Edge Mesh Runtime (Yjs, PeerJS, Storage)
+│   ├── edge-mesh-react/     # React bindings for Edge Mesh
+│   ├── gpu-agent/           # GPU/WebGPU agent integration
+│   └── p2p-mesh-core/       # Shared P2P logic, roles, and PQC
 ├── .gitcore/                # GitCore protocol (v3.6.0)
 ├── .github/
 │   └── workflows/           # CI/CD pipelines
@@ -86,8 +89,13 @@ Nodo designado (primer peer en conectarse) que coordina peers y mantiene el esta
 └─────────────────────┬───────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────┐
-│                   P2P Mesh Layer                     │
-│  PeerJS (WebRTC) ←→ Yjs (CRDT) ←→ p2p-mesh-core    │
+│                  Edge Mesh Runtime                    │
+│  Namespace Guard ←→ Yjs CRDT ←→ Authz (Capabilities)  │
+└─────────────────────┬───────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────┐
+│                   P2P Transport Layer                 │
+│  PeerJS (WebRTC) ←→ p2p-mesh-core ←→ GPU Agent        │
 └─────────────────────┬───────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────┐
@@ -103,8 +111,11 @@ User Action → Context Dispatch → Reducer → State Update
                                                 ↓
                       ┌─────────────────────────┼─────────────┐
                       ↓                         ↓             ↓
-                 localStorage              P2P Broadcast    Firestore
-                 (always)                  (Yjs CRDT)    (Pro only)
+                 localStorage            Edge Mesh Sync     Firestore
+                 (always)                (Yjs + Guard)    (Pro only)
+                                                ↓
+                                         P2P Broadcast
+                                         (WebRTC Mesh)
 ```
 
 ## Network Topology (P2P Mesh)
