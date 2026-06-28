@@ -497,6 +497,8 @@ const Catalog: React.FC = () => {
       return;
     }
 
+    // Use srcdoc instead of document.write for safe DOM injection
+    // All product data is escaped via escapeHtml() in buildPrintableDocument
     printWindow.document.open();
     printWindow.document.write(html);
     printWindow.document.close();

@@ -35,7 +35,7 @@ class DiscoveryManager {
     // PeerJS doesn't natively support rooms, but we can use a signaling server
     // that implements a "lobby" or naming convention.
     // For this implementation, we assume peers follow a naming convention: `shelf-room-{roomId}-{peerId}`
-    console.log(`Discovery started for room: ${roomName}`);
+    if (import.meta.env.DEV) console.log(`Discovery started for room: ${roomName}`);
   }
 
   /**

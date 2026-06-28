@@ -95,7 +95,7 @@ const createAuditEntry = (
   action: string,
   entityId?: string,
   entityType?: AuditEntry['entityType'],
-  details?: any,
+  details?: unknown,
 ): AuditEntry => ({
   id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   timestamp: new Date().toISOString(),
@@ -107,7 +107,7 @@ const createAuditEntry = (
   details,
 });
 
-const enrich = (state: AppState, item: any) => ({
+const enrich = <T>(state: AppState, item: T) => ({
   isActive: true,
   updatedAt: new Date().toISOString(),
   updatedBy: state.localPeerId || 'local',
@@ -119,6 +119,29 @@ const getTimestamp = (item: any): number => {
   const ts = item.updatedAt || item.timestamp || item.lastSeen || 0;
   return ts ? new Date(ts).getTime() : 0;
 };
+
+/** Helper: extract the element type of an array property on AppState */
+const getCollection = <K extends keyof AppState>(
+  state: AppState,
+  key: K,
+): AppState[K] extends Array<infer U> ? U[] : never => {
+  return (state[key] as unknown) as AppState[K] extends Array<infer U> ? U[] : never;
+};
+
+/** Type guard: action has a payload with an `.id` string */
+function hasPayloadWithId(action: Action): action is Action & { payload: { id: string } } {
+  return (
+    'payload' in action &&
+    typeof (action as { payload: unknown }).payload === 'object' &&
+    (action as { payload: Record<string, unknown> }).payload !== null &&
+    typeof (action as { payload: Record<string, unknown> }).payload.id === 'string'
+  );
+}
+
+/** Type guard: payload is a string (used for delete actions) */
+function hasStringPayload(action: Action): action is Action & { payload: string } {
+  return 'payload' in action && typeof (action as { payload: unknown }).payload === 'string';
+}
 
 const normalizeProductsCollection = (products: Product[] | undefined): Product[] =>
   (products || []).map((product) => normalizeProduct(product));
@@ -717,10 +740,10 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
     case 'SYNC_ENTITIES': {
       const { collection, items, deletedIds } = action.payload;
-      const existingItems = (state[collection] as any[]) || [];
       const updatedIds = new Set(items.map((i) => i.id));
       const deletedIdsSet = new Set(deletedIds);
 
+      const existingItems = getCollection(state, collection);
       const filteredExisting = existingItems.filter((i) => !updatedIds.has(i.id) && !deletedIdsSet.has(i.id));
 
       const nextItems = collection === 'products' ? normalizeProductsCollection(items as Product[]) : items;
