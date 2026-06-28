@@ -17,7 +17,7 @@ import type {
   Supplier,
   TeamMember,
 } from 'p2p-mesh-core';
-import { dbSync, p2pManager } from 'p2p-mesh-core';
+import { dbSync, p2pManager, type PeerPermissions } from 'p2p-mesh-core';
 import React, {
   createContext,
   type Dispatch,
@@ -83,8 +83,8 @@ type Action =
   | { type: 'UPDATE_ARQUEO_SESSION'; payload: ArqueoSession }
   | { type: 'ADD_OCR_RESULT'; payload: InvoiceOCRResult }
   | { type: 'UPDATE_OCR_RESULT'; payload: InvoiceOCRResult }
-  | { type: 'UPDATE_PEER_PERMISSIONS'; payload: { targetPeerId: string; permissions: Record<string, unknown> } }
-  | { type: 'UPDATE_PEER_CONFIG'; payload: { targetPeerId: string; role: P2PRole; permissions?: Record<string, unknown> } }
+  | { type: 'UPDATE_PEER_PERMISSIONS'; payload: { targetPeerId: string; permissions: PeerPermissions } }
+  | { type: 'UPDATE_PEER_CONFIG'; payload: { targetPeerId: string; role: P2PRole; permissions?: PeerPermissions } }
   | { type: 'UPDATE_INVENTORY_CONFIG'; payload: InventoryConfig }
   | { type: 'RESTORE_PRODUCT_VERSION'; payload: { productId: string; historyId: string } }
   | { type: 'CLEAR_AUDIT_LOGS'; payload?: { beforeDate: string } }
@@ -115,7 +115,7 @@ const enrich = <T,>(state: AppState, item: T) => ({
   ...item,
 });
 
-const getTimestamp = (item: { updatedAt?: string; timestamp?: string; lastSeen?: string }): number => {
+const getTimestamp = (item: { updatedAt?: unknown; timestamp?: unknown; lastSeen?: unknown }): number => {
   const ts = item.updatedAt || item.timestamp || item.lastSeen || 0;
   return ts ? new Date(ts).getTime() : 0;
 };
@@ -124,8 +124,9 @@ const getTimestamp = (item: { updatedAt?: string; timestamp?: string; lastSeen?:
 const getCollection = <K extends keyof AppState,>(
   state: AppState,
   key: K,
-): AppState[K] extends Array<infer U> ? U[] : never => {
-  return (state[key] as unknown) as AppState[K] extends Array<infer U> ? U[] : never;
+): unknown[] => {
+  const col = state[key];
+  return Array.isArray(col) ? (col as unknown as unknown[]) : [];
 };
 
 /** Type guard: action has a payload with an `.id` string */
@@ -743,8 +744,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
       const updatedIds = new Set(items.map((i) => i.id));
       const deletedIdsSet = new Set(deletedIds);
 
-      const existingItems = getCollection(state, collection);
-      const filteredExisting = existingItems.filter((i) => !updatedIds.has(i.id) && !deletedIdsSet.has(i.id));
+      const existingItems = getCollection(state, collection) as Array<Record<string, unknown>>;
+      const filteredExisting = existingItems.filter((i) => !updatedIds.has(i.id as string) && !deletedIdsSet.has(i.id as string));
 
       const nextItems = collection === 'products' ? normalizeProductsCollection(items as Product[]) : items;
 
@@ -825,7 +826,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
       const stateKey = typeMap[action.type];
       if (stateKey) {
-        const collection = getCollection(state, stateKey);
+        const collection = getCollection(state, stateKey) as Array<Record<string, unknown>>;
         const oldItem = collection.find((i) => i.id === action.payload.id);
         if (oldItem && 'id' in oldItem) {
           const diff: Record<string, { old: unknown; new: unknown }> = {};
@@ -1152,7 +1153,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           purchaseOrder: 'purchaseOrders',
         };
         const collection = type ? collectionMap[type] : undefined;
-        const item = collection ? getCollection(currentState, collection).find((entry) => entry.id === id) : null;
+        const item = collection ? (getCollection(currentState, collection) as Array<Record<string, unknown>>).find((entry) => entry.id === id) : null;
         if (collection && item) {
           dbSync.upsertEntity(collection, {
             ...item,
@@ -1221,7 +1222,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
           for (const [key, collection] of Object.entries(collectionMap)) {
             if (typeStr.includes(key)) {
-              const items = getCollection(currentState, collection);
+              const items = getCollection(currentState, collection) as Array<Record<string, unknown>>;
               const item = items.find((i) => i.id === id);
               if (item) {
                 if (collection === 'products' && typeStr === 'DELETE_PRODUCT') {
