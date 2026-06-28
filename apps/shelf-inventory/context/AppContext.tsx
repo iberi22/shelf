@@ -115,18 +115,18 @@ const enrich = <T,>(state: AppState, item: T) => ({
   ...item,
 });
 
-const getTimestamp = (item: { updatedAt?: unknown; timestamp?: unknown; lastSeen?: unknown }): number => {
+const getTimestamp = (item: Record<string, unknown>): number => {
   const ts = item.updatedAt || item.timestamp || item.lastSeen || 0;
-  return ts ? new Date(ts).getTime() : 0;
+  return ts ? new Date(ts as string | number).getTime() : 0;
 };
 
-/** Helper: extract the element type of an array property on AppState */
-const getCollection = <K extends keyof AppState,>(
+/** Helper: extract items from an array property on AppState */
+const getCollection = <K extends keyof AppState>(
   state: AppState,
   key: K,
-): unknown[] => {
+): Array<Record<string, unknown>> => {
   const col = state[key];
-  return Array.isArray(col) ? (col as unknown as unknown[]) : [];
+  return Array.isArray(col) ? (col as unknown as Array<Record<string, unknown>>) : [];
 };
 
 /** Type guard: action has a payload with an `.id` string */
@@ -179,7 +179,7 @@ const pushProductHistory = (
     entry,
     ...existing.filter((item) => item.productId === entry.productId && item.id !== entry.id),
   ]
-    .sort((a, b) => getTimestamp(b) - getTimestamp(a))
+    .sort((a, b) => getTimestamp(b as unknown as Record<string, unknown>) - getTimestamp(a as unknown as Record<string, unknown>))
     .slice(0, limit);
   const nextForProductIds = new Set(nextForProduct.map((item) => item.id));
   const otherProducts = existing.filter(
@@ -266,7 +266,7 @@ const mergeCollections = <T extends { id: string }>(local: T[], remote: T[] | un
 
   for (const remoteItem of remote) {
     const localItem = map.get(remoteItem.id);
-    if (!localItem || getTimestamp(remoteItem) > getTimestamp(localItem)) {
+    if (!localItem || getTimestamp(remoteItem as { updatedAt?: unknown }) > getTimestamp(localItem as { updatedAt?: unknown })) {
       map.set(remoteItem.id, remoteItem);
     }
   }
@@ -741,10 +741,10 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
     case 'SYNC_ENTITIES': {
       const { collection, items, deletedIds } = action.payload;
-      const updatedIds = new Set(items.map((i) => i.id));
+      const updatedIds = new Set(items.map((i: unknown) => (i as Record<string, unknown>).id as string));
       const deletedIdsSet = new Set(deletedIds);
 
-      const existingItems = getCollection(state, collection) as Array<Record<string, unknown>>;
+      const existingItems = getCollection(state, collection);
       const filteredExisting = existingItems.filter((i) => !updatedIds.has(i.id as string) && !deletedIdsSet.has(i.id as string));
 
       const nextItems = collection === 'products' ? normalizeProductsCollection(items as Product[]) : items;
@@ -1037,15 +1037,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (typeStr === 'BATCH_UPDATE_PRODUCTS') {
         const { toAdd, toUpdate } = p as { toAdd: Record<string, unknown>[]; toUpdate: Record<string, unknown>[] };
         toAdd.forEach((item: Record<string, unknown>) => {
-          dbSync.upsertEntity('products', enrich(currentState, item));
+          const upsertPayload: Record<string, unknown> = {
+            isActive: true,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentState.localPeerId || 'local',
+            updatedByRole: currentState.role || 'collaborator',
+            ...item,
+          };
+          dbSync.upsertEntity('products', upsertPayload as Parameters<typeof dbSync.upsertEntity>[1]);
         });
         toUpdate.forEach((item: Record<string, unknown>) => {
           const baseProduct = currentState.products.find((product) => product.id === item.id);
           syncProductHistoryEntry(baseProduct, 'BATCH_UPDATE_PRODUCTS');
-          dbSync.upsertEntity('products', {
-            ...enrich(currentState, item),
+          const upsertPayload: Record<string, unknown> = {
+            isActive: true,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentState.localPeerId || 'local',
+            updatedByRole: currentState.role || 'collaborator',
+            ...item,
             __baseUpdatedAt: baseProduct?.updatedAt,
-          });
+          };
+          dbSync.upsertEntity('products', upsertPayload as Parameters<typeof dbSync.upsertEntity>[1]);
         });
       } else if (typeStr === 'IMPORT_PRODUCTS') {
         const { products: newProductsData, strategy } = p as {
@@ -1064,20 +1076,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               const existingProduct = existingSkus.get(sku);
               if (existingProduct) {
                 syncProductHistoryEntry(existingProduct, 'IMPORT_PRODUCTS');
-                dbSync.upsertEntity('products', {
-                  ...enrich(currentState, { ...existingProduct, ...newProductData }),
+                const upsertPayload: Record<string, unknown> = {
+                  ...existingProduct,
+                  isActive: true,
+                  updatedAt: new Date().toISOString(),
+                  updatedBy: currentState.localPeerId || 'local',
+                  updatedByRole: currentState.role || 'collaborator',
+                  ...newProductData,
                   __baseUpdatedAt: existingProduct.updatedAt,
-                });
+                };
+                dbSync.upsertEntity('products', upsertPayload as Parameters<typeof dbSync.upsertEntity>[1]);
               }
             }
           } else {
-            dbSync.upsertEntity(
-              'products',
-              enrich(currentState, {
-                id: `${new Date().toISOString()}_${Math.random()}`,
-                ...newProductData,
-              }),
-            );
+            const upsertPayload: Record<string, unknown> = {
+              isActive: true,
+              updatedAt: new Date().toISOString(),
+              updatedBy: currentState.localPeerId || 'local',
+              updatedByRole: currentState.role || 'collaborator',
+              id: `${new Date().toISOString()}_${Math.random()}`,
+              ...newProductData,
+            };
+            dbSync.upsertEntity('products', upsertPayload as Parameters<typeof dbSync.upsertEntity>[1]);
           }
         });
       } else if (typeStr === 'RESTORE_PRODUCT_VERSION') {
@@ -1086,14 +1106,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const currentProduct = currentState.products.find((product) => product.id === restorePayload.productId);
         if (historyEntry && currentProduct) {
           syncProductHistoryEntry(currentProduct, 'RESTORE_PRODUCT_VERSION');
-          dbSync.upsertEntity('products', {
+          const upsertPayload: Record<string, unknown> = {
             ...normalizeProduct(historyEntry.snapshot),
             isActive: true,
             updatedAt: new Date().toISOString(),
             updatedBy: currentState.localPeerId || 'local',
             updatedByRole: currentState.role || 'collaborator',
             __baseUpdatedAt: currentProduct.updatedAt,
-          });
+          };
+          dbSync.upsertEntity('products', upsertPayload as Parameters<typeof dbSync.upsertEntity>[1]);
         }
       } else if (typeStr === 'ADD_SALE') {
         const saleP = p as Sale;
@@ -1195,14 +1216,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                   'UPDATE_PRODUCT',
                 );
               }
-              const syncPayload =
+              const syncPayload: Record<string, unknown> =
                 collection === 'products'
                   ? {
-                      ...enrich(currentState, normalizeProduct(addUpdateP as unknown as Product)),
+                      ...normalizeProduct(addUpdateP as unknown as Product),
+                      isActive: true,
+                      updatedAt: new Date().toISOString(),
+                      updatedBy: currentState.localPeerId || 'local',
+                      updatedByRole: currentState.role || 'collaborator',
                       __baseUpdatedAt: currentState.products.find((product) => product.id === addUpdateP.id)?.updatedAt,
                     }
-                  : enrich(currentState, addUpdateP);
-              dbSync.upsertEntity(collection, syncPayload);
+                  : {
+                      ...addUpdateP,
+                      isActive: true,
+                      updatedAt: new Date().toISOString(),
+                      updatedBy: currentState.localPeerId || 'local',
+                      updatedByRole: currentState.role || 'collaborator',
+                    };
+              dbSync.upsertEntity(collection, syncPayload as Parameters<typeof dbSync.upsertEntity>[1]);
               break;
             }
           }
@@ -1230,12 +1261,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 if (collection === 'products' && typeStr === 'DELETE_PRODUCT') {
                   syncProductHistoryEntry(item as unknown as Product, 'DELETE_PRODUCT');
                 }
-                dbSync.upsertEntity(collection, {
+                const upsertPayload: Record<string, unknown> = {
                   ...item,
                   isActive: false,
                   updatedAt: new Date().toISOString(),
                   updatedBy: currentState.localPeerId || 'local',
-                });
+                };
+                dbSync.upsertEntity(collection, upsertPayload as Parameters<typeof dbSync.upsertEntity>[1]);
               } else {
                 dbSync.deleteEntity(collection, id);
               }
