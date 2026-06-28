@@ -240,6 +240,46 @@ export const splitVariantLabel = (label: string): string[] =>
     .map((part) => normalizeLabel(part))
     .filter(Boolean);
 
+/**
+ * Generates all possible variant combinations from a set of selected attribute values.
+ * This is the "native" way to create multi-color/multi-measure products.
+ */
+export const generateVariantsFromSelections = (
+  attributeSelections: Record<string, string[]>,
+  baseProduct?: Partial<Product>,
+): VariantDraft[] => {
+  const labels = Object.keys(attributeSelections).filter((label) => attributeSelections[label].length > 0);
+  if (labels.length === 0) return [];
+
+  const combinations: Record<string, string>[] = [];
+
+  const cartesian = (index: number, current: Record<string, string>) => {
+    if (index === labels.length) {
+      combinations.push({ ...current });
+      return;
+    }
+
+    const label = labels[index];
+    const values = attributeSelections[label];
+    for (const value of values) {
+      current[label] = value;
+      cartesian(index + 1, current);
+    }
+  };
+
+  cartesian(0, {});
+
+  return combinations.map((attrs) =>
+    createVariantDraft(labels, {
+      sku: baseProduct?.sku || '',
+      quantity: 0,
+      price: baseProduct?.price || 0,
+      cost: baseProduct?.cost || 0,
+      attributes: attrs,
+    }),
+  );
+};
+
 export const mergeProductVariants = (products: Product[]): ProductVariant[] => {
   const labels = products.flatMap((product) => getProductVariantAttributes(product));
   const normalizedLabels = Array.from(new Set(labels));
@@ -267,65 +307,4 @@ export const mergeProductVariants = (products: Product[]): ProductVariant[] => {
   return Array.from(merged.values());
 };
 
-/**
- * Generate variant drafts from multi-color and multi-measure selections.
- * Returns one VariantDraft per color if only colors selected,
- * one per measure if only measures selected,
- * or one per color x measure combination if both are selected.
- */
-export const generateVariantsFromSelections = (
-  colors: string[],
-  sizes: string[],
-  baseProduct: { sku?: string; price?: number; cost?: number; quantity?: number; imageUrl?: string },
-): VariantDraft[] => {
-  const variants: VariantDraft[] = [];
 
-  // Case 1: Only colors selected (no sizes)
-  if (colors.length > 0 && sizes.length === 0) {
-    for (const color of colors) {
-      variants.push({
-        id: createId('variant'),
-        sku: `${baseProduct.sku || ''}-${color.toLowerCase().replace(/\s+/g, '-')}`,
-        quantity: Number(baseProduct.quantity || 0),
-        price: Number(baseProduct.price || 0),
-        cost: Number(baseProduct.cost || 0),
-        imageUrl: baseProduct.imageUrl || undefined,
-        attributes: { Color: normalizeLabel(color) },
-      });
-    }
-    return variants;
-  }
-
-  // Case 2: Only sizes selected (no colors)
-  if (sizes.length > 0 && colors.length === 0) {
-    for (const size of sizes) {
-      variants.push({
-        id: createId('variant'),
-        sku: `${baseProduct.sku || ''}-${size.toLowerCase().replace(/\s+/g, '-')}`,
-        quantity: Number(baseProduct.quantity || 0),
-        price: Number(baseProduct.price || 0),
-        cost: Number(baseProduct.cost || 0),
-        imageUrl: baseProduct.imageUrl || undefined,
-        attributes: { Medida: normalizeLabel(size) },
-      });
-    }
-    return variants;
-  }
-
-  // Case 3: Both colors and sizes selected -> Cartesian product
-  for (const color of colors) {
-    for (const size of sizes) {
-      variants.push({
-        id: createId('variant'),
-        sku: `${baseProduct.sku || ''}-${color.toLowerCase().replace(/\s+/g, '-')}-${size.toLowerCase().replace(/\s+/g, '-')}`,
-        quantity: Number(baseProduct.quantity || 0),
-        price: Number(baseProduct.price || 0),
-        cost: Number(baseProduct.cost || 0),
-        imageUrl: baseProduct.imageUrl || undefined,
-        attributes: { Color: normalizeLabel(color), Medida: normalizeLabel(size) },
-      });
-    }
-  }
-
-  return variants;
-};

@@ -35,7 +35,6 @@ export interface Product extends BaseEntity {
   /** @deprecated Use colors[] for multiple colors */
   color?: string;
   colors?: string[];
-  /** @deprecated Use dimensions or sizes[] */
   dimensions?: string;
   sizes?: string[];
   capacity?: string;

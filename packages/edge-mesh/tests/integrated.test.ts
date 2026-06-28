@@ -44,7 +44,7 @@ describe('Edge Mesh Integrated Sync', () => {
 			signature: new Uint8Array(),
 		});
 
-		expect(nodeB_authz.hasCapability('nodeB', 'inventory:edit')).toBe(true);
+		expect(nodeB_authz.hasCapability('nodeB', 'inventory:edit', null)).toBe(true);
 		expect(nodeB_authz.hasCapability('nodeB', 'inventory:delete')).toBe(false);
 	});
 });

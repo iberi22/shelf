@@ -900,25 +900,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     dbSync.onChange((_update, origin) => {
       if (origin !== 'local') {
         const remoteState = dbSync.getState(dbSync.localPeerId);
-        // Dispatch full entity sync to ensure UI stays updated with remote changes
+        // Only dispatch metadata updates here; entities are handled granularly by onObserve
         rawDispatch({
           type: 'SYNC_STATE',
           payload: {
-            products: remoteState.products,
-            sales: remoteState.sales,
-            clients: remoteState.clients,
-            suppliers: remoteState.suppliers,
-            purchaseOrders: remoteState.purchaseOrders,
-            arqueoSessions: remoteState.arqueoSessions,
-            ocrResults: remoteState.ocrResults,
-            teamMembers: remoteState.teamMembers,
             inventoryConfig: remoteState.inventoryConfig,
             role: remoteState.role,
             permissions: remoteState.permissions,
-            peers: remoteState.peers,
-            auditLogs: remoteState.auditLogs,
-            pendingEdits: remoteState.pendingEdits,
-            productChangeHistory: remoteState.productChangeHistory,
           },
         });
       }
