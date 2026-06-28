@@ -266,7 +266,7 @@ const mergeCollections = <T extends { id: string }>(local: T[], remote: T[] | un
 
   for (const remoteItem of remote) {
     const localItem = map.get(remoteItem.id);
-    if (!localItem || getTimestamp(remoteItem as { updatedAt?: unknown }) > getTimestamp(localItem as { updatedAt?: unknown })) {
+    if (!localItem || getTimestamp(remoteItem as Record<string, unknown>) > getTimestamp(localItem as Record<string, unknown>)) {
       map.set(remoteItem.id, remoteItem);
     }
   }
