@@ -10,4 +10,9 @@ interface Window {
       destroy(): void;
     }>;
   };
+
+  /** Exposed for Playwright testing (set in AppContext.tsx) */
+  __shelfAppStateForTest?: import('p2p-mesh-core').AppState;
+  _p2pManagerForTest?: typeof import('p2p-mesh-core').p2pManager;
+  _dbSyncForTest?: typeof import('p2p-mesh-core').dbSync;
 }

@@ -909,11 +909,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         send: (to: string, data: Uint8Array) => p2pManager.sendTo(to, { type: 'EDGE_MESH_SYNC', payload: data } as unknown as Parameters<typeof p2pManager.sendTo>[1]),
         broadcast: (data: Uint8Array) => p2pManager.broadcast({ type: 'EDGE_MESH_SYNC', payload: data } as unknown as Parameters<typeof p2pManager.broadcast>[0]),
         onMessage: (callback: (from: string, data: Uint8Array) => void) => {
-          p2pManager.onMessage((msg: { type: string; payload: Uint8Array }, from: string) => {
-            if (msg.type === 'EDGE_MESH_SYNC') {
-              callback(from, msg.payload);
+          p2pManager.onMessage((msg: unknown, from: string) => {
+            const typedMsg = msg as { type: string; payload: Uint8Array };
+            if (typedMsg.type === 'EDGE_MESH_SYNC') {
+              callback(from, typedMsg.payload);
             }
           });
+
         },
         onPeerConnect: (_callback: (peerId: string) => void) => {
           // Simplified, ideally p2pManager should expose this cleanly
@@ -1160,7 +1162,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             isActive: true,
             updatedAt: new Date().toISOString(),
             updatedBy: currentState.localPeerId || 'local',
-          });
+          } as unknown as Parameters<typeof dbSync.upsertEntity>[1]);
         }
       } else if (typeStr === 'CLEAR_AUDIT_LOGS') {
         const clearP = p as { beforeDate?: string };
