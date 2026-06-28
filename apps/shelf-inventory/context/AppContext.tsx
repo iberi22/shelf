@@ -77,14 +77,14 @@ type Action =
   | { type: 'SET_ROLE'; payload: P2PRole }
   | { type: 'SET_EXPELLED'; payload: boolean }
   | { type: 'SYNC_STATE'; payload: Partial<AppState> }
-  | { type: 'SYNC_ENTITIES'; payload: { collection: keyof AppState; items: any[]; deletedIds: string[] } }
+  | { type: 'SYNC_ENTITIES'; payload: { collection: keyof AppState; items: unknown[]; deletedIds: string[] } }
   | { type: 'RECOVER_ITEM'; payload: { type: AuditEntry['entityType']; id: string } }
   | { type: 'ADD_ARQUEO_SESSION'; payload: ArqueoSession }
   | { type: 'UPDATE_ARQUEO_SESSION'; payload: ArqueoSession }
   | { type: 'ADD_OCR_RESULT'; payload: InvoiceOCRResult }
   | { type: 'UPDATE_OCR_RESULT'; payload: InvoiceOCRResult }
-  | { type: 'UPDATE_PEER_PERMISSIONS'; payload: { targetPeerId: string; permissions: any } }
-  | { type: 'UPDATE_PEER_CONFIG'; payload: { targetPeerId: string; role: P2PRole; permissions?: any } }
+  | { type: 'UPDATE_PEER_PERMISSIONS'; payload: { targetPeerId: string; permissions: Record<string, unknown> } }
+  | { type: 'UPDATE_PEER_CONFIG'; payload: { targetPeerId: string; role: P2PRole; permissions?: Record<string, unknown> } }
   | { type: 'UPDATE_INVENTORY_CONFIG'; payload: InventoryConfig }
   | { type: 'RESTORE_PRODUCT_VERSION'; payload: { productId: string; historyId: string } }
   | { type: 'CLEAR_AUDIT_LOGS'; payload?: { beforeDate: string } }
@@ -107,7 +107,7 @@ const createAuditEntry = (
   details,
 });
 
-const enrich = <T>(state: AppState, item: T) => ({
+const enrich = <T,>(state: AppState, item: T) => ({
   isActive: true,
   updatedAt: new Date().toISOString(),
   updatedBy: state.localPeerId || 'local',
@@ -115,13 +115,13 @@ const enrich = <T>(state: AppState, item: T) => ({
   ...item,
 });
 
-const getTimestamp = (item: any): number => {
+const getTimestamp = (item: { updatedAt?: string; timestamp?: string; lastSeen?: string }): number => {
   const ts = item.updatedAt || item.timestamp || item.lastSeen || 0;
   return ts ? new Date(ts).getTime() : 0;
 };
 
 /** Helper: extract the element type of an array property on AppState */
-const getCollection = <K extends keyof AppState>(
+const getCollection = <K extends keyof AppState,>(
   state: AppState,
   key: K,
 ): AppState[K] extends Array<infer U> ? U[] : never => {
@@ -809,11 +809,11 @@ const appReducer = (state: AppState, action: Action): AppState => {
   // Audit Logging for state-mutating actions
   const mutationActions = ['ADD', 'UPDATE', 'DELETE', 'IMPORT', 'BATCH', 'RECOVER', 'RESTORE_PRODUCT'];
   if (mutationActions.some((prefix) => action.type.startsWith(prefix))) {
-    let details: any;
+    let details: unknown;
 
     if (action.type.includes('IMPORT') || action.type.includes('BATCH')) {
       details = action.payload;
-    } else if (action.type.startsWith('UPDATE_') && (action as any).payload?.id) {
+    } else if (action.type.startsWith('UPDATE_') && hasPayloadWithId(action)) {
       const typeMap: Record<string, keyof AppState> = {
         UPDATE_PRODUCT: 'products',
         UPDATE_SALE: 'sales',
@@ -825,12 +825,19 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
       const stateKey = typeMap[action.type];
       if (stateKey) {
-        const oldItem = (state[stateKey] as any[])?.find((i) => i.id === (action as any).payload.id);
-        if (oldItem) {
-          const diff: any = {};
-          for (const key in action.payload as any) {
-            if ((action.payload as any)[key] !== oldItem[key] && key !== 'updatedAt' && key !== 'updatedBy') {
-              diff[key] = { old: oldItem[key], new: (action.payload as any)[key] };
+        const collection = getCollection(state, stateKey);
+        const oldItem = collection.find((i) => i.id === action.payload.id);
+        if (oldItem && 'id' in oldItem) {
+          const diff: Record<string, { old: unknown; new: unknown }> = {};
+          const payload = action.payload as Record<string, unknown>;
+          const oldRecord = oldItem as Record<string, unknown>;
+          for (const key in payload) {
+            if (
+              payload[key] !== oldRecord[key] &&
+              key !== 'updatedAt' &&
+              key !== 'updatedBy'
+            ) {
+              diff[key] = { old: oldRecord[key], new: payload[key] };
             }
           }
           details = { diff };
@@ -844,11 +851,16 @@ const appReducer = (state: AppState, action: Action): AppState => {
       details = { payload: action.payload };
     }
 
+    const entityId = hasPayloadWithId(action)
+      ? action.payload.id
+      : hasStringPayload(action)
+        ? action.payload
+        : undefined;
+
     const auditEntry = createAuditEntry(
       state,
       action.type,
-      (action as any).payload?.id ||
-        (typeof (action as any).payload === 'string' ? (action as any).payload : undefined),
+      entityId,
       action.type.toLowerCase().includes('product')
         ? 'product'
         : action.type.toLowerCase().includes('sale')
@@ -884,7 +896,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     stateRef.current = state;
     if (typeof window !== 'undefined' && ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname)) {
-      (window as any).__shelfAppStateForTest = state;
+      window.__shelfAppStateForTest = state;
     }
   }, [state]);
 
@@ -893,10 +905,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return {
       localPeerId: state.localPeerId,
       transport: {
-        send: (to: string, data: Uint8Array) => p2pManager.sendTo(to, { type: 'EDGE_MESH_SYNC', payload: data } as any),
-        broadcast: (data: Uint8Array) => p2pManager.broadcast({ type: 'EDGE_MESH_SYNC', payload: data } as any),
+        send: (to: string, data: Uint8Array) => p2pManager.sendTo(to, { type: 'EDGE_MESH_SYNC', payload: data } as unknown as Parameters<typeof p2pManager.sendTo>[1]),
+        broadcast: (data: Uint8Array) => p2pManager.broadcast({ type: 'EDGE_MESH_SYNC', payload: data } as unknown as Parameters<typeof p2pManager.broadcast>[0]),
         onMessage: (callback: (from: string, data: Uint8Array) => void) => {
-          p2pManager.onMessage((msg: any, from: string) => {
+          p2pManager.onMessage((msg: { type: string; payload: Uint8Array }, from: string) => {
             if (msg.type === 'EDGE_MESH_SYNC') {
               callback(from, msg.payload);
             }
@@ -941,7 +953,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         if (masterId && masterId !== dbSync.localPeerId && linkedNodes.length > 0) {
           const myNode = linkedNodes.find((node) => node.id === dbSync.localPeerId);
-          const isExplicitlyExpelled = myNode && (myNode as any).status === 'expelled';
+          const isExplicitlyExpelled = myNode && 'status' in myNode && (myNode as { status: string }).status === 'expelled';
           const isMissing = !myNode;
 
           // Only expel if explicitly marked as expelled, not just missing from linkedNodes
@@ -953,7 +965,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           } else if (isMissing) {
             // Unexpcted absence — request full state to re-sync, don't wipe
             console.log('[P2P Mesh] Peer not in linkedNodes yet (stale sync). Requesting state refresh...');
-            p2pManager.broadcast({ type: 'REQUEST_FULL_STATE', payload: {} } as any);
+            p2pManager.broadcast({ type: 'REQUEST_FULL_STATE', payload: {} } as unknown as Parameters<typeof p2pManager.broadcast>[0]);
           }
         }
       }
@@ -970,8 +982,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     // Expose for Playwright testing
     if (typeof window !== 'undefined') {
-      (window as any)._p2pManagerForTest = p2pManager;
-      (window as any)._dbSyncForTest = dbSync;
+      window._p2pManagerForTest = p2pManager;
+      window._dbSyncForTest = dbSync;
     }
 
     return () => {
@@ -1010,7 +1022,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (action.type === 'SYNC_STATE' || action.type === 'SYNC_ENTITIES' || action.type === 'RESET_DATA') return;
 
       const typeStr = action.type;
-      const payload = (action as any).payload;
+      const payload = 'payload' in action ? (action as { payload: unknown }).payload : undefined;
+      type Payload = unknown;
+      const p = payload as Payload;
       const currentState = stateRef.current;
       const syncProductHistoryEntry = (product: Product | undefined, sourceAction: string) => {
         if (!product) return;
@@ -1018,27 +1032,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
 
       if (typeStr === 'BATCH_UPDATE_PRODUCTS') {
-        const { toAdd, toUpdate } = payload;
-        toAdd.forEach((p: any) => {
-          dbSync.upsertEntity('products', enrich(currentState, p));
+        const { toAdd, toUpdate } = p as { toAdd: Record<string, unknown>[]; toUpdate: Record<string, unknown>[] };
+        toAdd.forEach((item: Record<string, unknown>) => {
+          dbSync.upsertEntity('products', enrich(currentState, item));
         });
-        toUpdate.forEach((p: any) => {
-          const baseProduct = currentState.products.find((product) => product.id === p.id);
+        toUpdate.forEach((item: Record<string, unknown>) => {
+          const baseProduct = currentState.products.find((product) => product.id === item.id);
           syncProductHistoryEntry(baseProduct, 'BATCH_UPDATE_PRODUCTS');
           dbSync.upsertEntity('products', {
-            ...enrich(currentState, p),
+            ...enrich(currentState, item),
             __baseUpdatedAt: baseProduct?.updatedAt,
           });
         });
       } else if (typeStr === 'IMPORT_PRODUCTS') {
-        const { products: newProductsData, strategy } = payload;
+        const { products: newProductsData, strategy } = p as {
+          products: Record<string, unknown>[];
+          strategy: string;
+        };
         const existingSkus = new Map<string, Product>();
-        currentState.products.forEach((p) => {
-          if (p.sku) existingSkus.set(p.sku, p);
+        currentState.products.forEach((product) => {
+          if (product.sku) existingSkus.set(product.sku, product);
         });
 
-        newProductsData.forEach((newProductData: any) => {
-          const sku = newProductData.sku;
+        newProductsData.forEach((newProductData: Record<string, unknown>) => {
+          const sku = newProductData.sku as string | undefined;
           if (sku && existingSkus.has(sku)) {
             if (strategy === 'update') {
               const existingProduct = existingSkus.get(sku);
@@ -1061,8 +1078,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           }
         });
       } else if (typeStr === 'RESTORE_PRODUCT_VERSION') {
-        const historyEntry = currentState.productChangeHistory.find((entry) => entry.id === payload.historyId);
-        const currentProduct = currentState.products.find((product) => product.id === payload.productId);
+        const restorePayload = p as { historyId: string; productId: string };
+        const historyEntry = currentState.productChangeHistory.find((entry) => entry.id === restorePayload.historyId);
+        const currentProduct = currentState.products.find((product) => product.id === restorePayload.productId);
         if (historyEntry && currentProduct) {
           syncProductHistoryEntry(currentProduct, 'RESTORE_PRODUCT_VERSION');
           dbSync.upsertEntity('products', {
@@ -1075,11 +1093,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           });
         }
       } else if (typeStr === 'ADD_SALE') {
-        const salePayload = enrich(currentState, payload);
+        const saleP = p as Sale;
+        const salePayload = enrich(currentState, saleP);
         dbSync.upsertEntity('sales', salePayload);
-        syncInventoryStockChanges(currentState, currentState.products, payload.items || [], -1);
+        syncInventoryStockChanges(currentState, currentState.products, saleP.items || [], -1);
       } else if (typeStr === 'UPDATE_SALE') {
-        const oldSale = currentState.sales.find((sale) => sale.id === payload.id);
+        const saleP = p as Sale;
+        const oldSale = currentState.sales.find((sale) => sale.id === saleP.id);
         if (oldSale) {
           const adjustedProducts = syncInventoryStockChanges(
             currentState,
@@ -1087,15 +1107,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             oldSale.items || [],
             1,
           );
-          syncInventoryStockChanges(currentState, adjustedProducts, payload.items || [], -1);
+          syncInventoryStockChanges(currentState, adjustedProducts, saleP.items || [], -1);
         }
-        dbSync.upsertEntity('sales', enrich(currentState, payload));
+        dbSync.upsertEntity('sales', enrich(currentState, saleP));
       } else if (typeStr === 'DELETE_SALE') {
-        const deletedSale = currentState.sales.find((sale) => sale.id === payload);
+        const saleId = p as string;
+        const deletedSale = currentState.sales.find((sale) => sale.id === saleId);
         if (deletedSale) {
           syncInventoryStockChanges(currentState, currentState.products, deletedSale.items || [], 1);
         }
-        const sale = currentState.sales.find((s) => s.id === payload);
+        const sale = currentState.sales.find((s) => s.id === saleId);
         if (sale) {
           dbSync.upsertEntity('sales', {
             ...sale,
@@ -1105,30 +1126,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           });
         }
       } else if (typeStr === 'UPDATE_PURCHASE_ORDER') {
-        const oldPO = currentState.purchaseOrders.find((po) => po.id === payload.id);
-        if (oldPO?.status === 'pending' && payload.status === 'received') {
-          syncInventoryStockChanges(currentState, currentState.products, payload.items || [], 1);
+        const poP = p as PurchaseOrder;
+        const oldPO = currentState.purchaseOrders.find((po) => po.id === poP.id);
+        if (oldPO?.status === 'pending' && poP.status === 'received') {
+          syncInventoryStockChanges(currentState, currentState.products, poP.items || [], 1);
         }
-        dbSync.upsertEntity('purchaseOrders', enrich(currentState, payload));
+        dbSync.upsertEntity('purchaseOrders', enrich(currentState, poP));
       } else if (typeStr === 'ADD_TEAM_MEMBER' || typeStr === 'UPDATE_TEAM_MEMBER') {
-        if (payload?.id) {
-          dbSync.upsertEntity('teamMembers', payload);
+        const teamP = p as { id: string };
+        if (teamP?.id) {
+          dbSync.upsertEntity('teamMembers', teamP);
         }
       } else if (typeStr === 'DELETE_TEAM_MEMBER') {
-        if (payload) {
-          dbSync.deleteEntity('teamMembers', payload);
+        if (p) {
+          dbSync.deleteEntity('teamMembers', p as string);
         }
       } else if (typeStr === 'RECOVER_ITEM') {
-        const { type, id } = payload || {};
-        const collectionMap: Record<NonNullable<AuditEntry['entityType']>, keyof AppState> = {
+        const recoverP = p as { type?: string; id?: string };
+        const { type, id } = recoverP || {};
+        const collectionMap: Record<string, keyof AppState> = {
           product: 'products',
           sale: 'sales',
           client: 'clients',
           supplier: 'suppliers',
           purchaseOrder: 'purchaseOrders',
         };
-        const collection = type ? collectionMap[type as NonNullable<AuditEntry['entityType']>] : undefined;
-        const item = collection ? (currentState[collection] as any[])?.find((entry) => entry.id === id) : null;
+        const collection = type ? collectionMap[type] : undefined;
+        const item = collection ? getCollection(currentState, collection).find((entry) => entry.id === id) : null;
         if (collection && item) {
           dbSync.upsertEntity(collection, {
             ...item,
@@ -1138,7 +1162,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           });
         }
       } else if (typeStr === 'CLEAR_AUDIT_LOGS') {
-        const beforeDate = payload?.beforeDate ? new Date(payload.beforeDate).getTime() : null;
+        const clearP = p as { beforeDate?: string };
+        const beforeDate = clearP?.beforeDate ? new Date(clearP.beforeDate).getTime() : null;
         const logsToDelete = currentState.auditLogs.filter((log) => {
           if (beforeDate === null) return true;
           return new Date(log.timestamp).getTime() < beforeDate;
@@ -1147,7 +1172,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           dbSync.deleteEntity('auditLogs', log.id);
         });
       } else if (typeStr.startsWith('ADD_') || typeStr.startsWith('UPDATE_')) {
-        if (payload?.id) {
+        const addUpdateP = p as { id: string };
+        if (addUpdateP?.id) {
           const collectionMap: Record<string, keyof AppState> = {
             PRODUCT: 'products',
             SALE: 'sales',
@@ -1162,24 +1188,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (typeStr.includes(key)) {
               if (collection === 'products' && typeStr === 'UPDATE_PRODUCT') {
                 syncProductHistoryEntry(
-                  currentState.products.find((product) => product.id === payload.id),
+                  currentState.products.find((product) => product.id === addUpdateP.id),
                   'UPDATE_PRODUCT',
                 );
               }
               const syncPayload =
                 collection === 'products'
                   ? {
-                      ...enrich(currentState, normalizeProduct(payload as Product)),
-                      __baseUpdatedAt: currentState.products.find((product) => product.id === payload.id)?.updatedAt,
+                      ...enrich(currentState, normalizeProduct(addUpdateP as unknown as Product)),
+                      __baseUpdatedAt: currentState.products.find((product) => product.id === addUpdateP.id)?.updatedAt,
                     }
-                  : enrich(currentState, payload);
+                  : enrich(currentState, addUpdateP);
               dbSync.upsertEntity(collection, syncPayload);
               break;
             }
           }
         }
       } else if (typeStr.startsWith('DELETE_')) {
-        const id = typeof payload === 'string' ? payload : payload?.id;
+        const deleteP = p as { id?: string } | string;
+        const id = typeof deleteP === 'string' ? deleteP : deleteP?.id;
         if (id) {
           const collectionMap: Record<string, keyof AppState> = {
             PRODUCT: 'products',
@@ -1194,10 +1221,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
           for (const [key, collection] of Object.entries(collectionMap)) {
             if (typeStr.includes(key)) {
-              const item = (currentState[collection] as any[]).find((i) => i.id === id);
+              const items = getCollection(currentState, collection);
+              const item = items.find((i) => i.id === id);
               if (item) {
                 if (collection === 'products' && typeStr === 'DELETE_PRODUCT') {
-                  syncProductHistoryEntry(item as Product, 'DELETE_PRODUCT');
+                  syncProductHistoryEntry(item as unknown as Product, 'DELETE_PRODUCT');
                 }
                 dbSync.upsertEntity(collection, {
                   ...item,
