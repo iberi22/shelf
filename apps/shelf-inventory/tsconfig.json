@@ -37,7 +37,8 @@
     "hooks/**/*.tsx",
     "lib/**/*.ts",
     "lib/**/*.tsx",
-    "src/**/*.d.ts"
+    "src/**/*.d.ts",
+    "types/**/*.d.ts"
   ],
   "exclude": ["node_modules", "functions", "src"],
   "references": [
