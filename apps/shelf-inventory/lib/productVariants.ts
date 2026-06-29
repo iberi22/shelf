@@ -306,5 +306,3 @@ export const mergeProductVariants = (products: Product[]): ProductVariant[] => {
 
   return Array.from(merged.values());
 };
-
-

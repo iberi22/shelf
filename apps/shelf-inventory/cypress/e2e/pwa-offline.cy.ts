@@ -36,9 +36,9 @@ describe('PWA Offline Mode', () => {
       if ('caches' in win) {
         const cacheNames = await win.caches.keys();
         expect(cacheNames.length).to.be.at.least(1);
-        
+
         // Verify shelf-specific cache exists
-        const shelfCache = cacheNames.find(name => name.includes('shelf'));
+        const shelfCache = cacheNames.find((name) => name.includes('shelf'));
         expect(shelfCache).to.not.be.undefined;
       }
     });
