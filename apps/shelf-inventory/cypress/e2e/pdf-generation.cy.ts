@@ -19,9 +19,11 @@ describe('PDF Generation', () => {
 
   it('should open PDF preview from inventory', () => {
     cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
-    cy.contains('PDF Test Product').parent().within(() => {
-      cy.get('[data-testid="pdf-preview-button"]').click({ force: true });
-    });
+    cy.contains('PDF Test Product')
+      .parent()
+      .within(() => {
+        cy.get('[data-testid="pdf-preview-button"]').click({ force: true });
+      });
 
     // Verify PDF modal opens
     cy.get('[data-testid="pdf-modal"]').should('exist');
@@ -30,9 +32,11 @@ describe('PDF Generation', () => {
 
   it('should include product details in the PDF', () => {
     cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
-    cy.contains('PDF Test Product').parent().within(() => {
-      cy.get('[data-testid="pdf-preview-button"]').click({ force: true });
-    });
+    cy.contains('PDF Test Product')
+      .parent()
+      .within(() => {
+        cy.get('[data-testid="pdf-preview-button"]').click({ force: true });
+      });
 
     // Verify product name and SKU appear in PDF preview
     cy.contains('PDF Test Product').should('exist');
@@ -41,9 +45,11 @@ describe('PDF Generation', () => {
 
   it('should allow downloading the PDF', () => {
     cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
-    cy.contains('PDF Test Product').parent().within(() => {
-      cy.get('[data-testid="pdf-preview-button"]').click({ force: true });
-    });
+    cy.contains('PDF Test Product')
+      .parent()
+      .within(() => {
+        cy.get('[data-testid="pdf-preview-button"]').click({ force: true });
+      });
 
     // Click download button
     cy.get('[data-testid="pdf-download-button"]').click({ force: true });

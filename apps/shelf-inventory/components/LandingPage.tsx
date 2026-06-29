@@ -167,9 +167,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 </a>
 
                 <ul className="space-y-4">
-                  {(Array.isArray(t('landing.governance.points', { returnObjects: true })) 
-                    ? (t('landing.governance.points', { returnObjects: true }) as string[]) 
-                    : []).map((item, i) => (
+                  {(Array.isArray(t('landing.governance.points', { returnObjects: true }))
+                    ? (t('landing.governance.points', { returnObjects: true }) as string[])
+                    : []
+                  ).map((item, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <div className="mt-1 flex-shrink-0 w-5 h-5 rounded-full bg-yellow-500/20 flex items-center justify-center border border-yellow-500/50">
                         <svg
