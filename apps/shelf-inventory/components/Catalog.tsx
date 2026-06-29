@@ -497,9 +497,15 @@ const Catalog: React.FC = () => {
       return;
     }
 
-    printWindow.document.open();
-    printWindow.document.write(html);
-    printWindow.document.close();
+    printWindow.document.body.style.margin = '0';
+    printWindow.document.body.style.padding = '0';
+    const iframe = printWindow.document.createElement('iframe');
+    iframe.srcdoc = html;
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.style.display = 'block';
+    printWindow.document.body.appendChild(iframe);
     printWindow.focus();
   };
 

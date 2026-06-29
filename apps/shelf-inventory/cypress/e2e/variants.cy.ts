@@ -22,9 +22,12 @@ describe('Multi-Color / Multi-Measure Variants', () => {
     cy.contains('Variant Test').should('exist');
 
     // Click edit using the first product's edit button
-    cy.contains('Variant Test').parents('tr').first().within(() => {
-      cy.get('button[aria-label*="edit" i]').click({ force: true });
-    });
+    cy.contains('Variant Test')
+      .parents('tr')
+      .first()
+      .within(() => {
+        cy.get('button[aria-label*="edit" i]').click({ force: true });
+      });
 
     // Verify the variant toggle exists in the modal
     cy.contains('Artículo simple').should('exist');
@@ -41,9 +44,12 @@ describe('Multi-Color / Multi-Measure Variants', () => {
     });
 
     cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
-    cy.contains('Color Test').parents('tr').first().within(() => {
-      cy.get('button[aria-label*="edit" i]').click({ force: true });
-    });
+    cy.contains('Color Test')
+      .parents('tr')
+      .first()
+      .within(() => {
+        cy.get('button[aria-label*="edit" i]').click({ force: true });
+      });
 
     // Toggle to variant mode
     cy.contains('Con variantes').click();
@@ -62,9 +68,12 @@ describe('Multi-Color / Multi-Measure Variants', () => {
     });
 
     cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
-    cy.contains('Size Test').parents('tr').first().within(() => {
-      cy.get('button[aria-label*="edit" i]').click({ force: true });
-    });
+    cy.contains('Size Test')
+      .parents('tr')
+      .first()
+      .within(() => {
+        cy.get('button[aria-label*="edit" i]').click({ force: true });
+      });
 
     // Toggle to variant mode
     cy.contains('Con variantes').click();
@@ -83,9 +92,12 @@ describe('Multi-Color / Multi-Measure Variants', () => {
     });
 
     cy.get('[data-testid="nav-item-nav.inventory"]').last().click();
-    cy.contains('Variant Save').parents('tr').first().within(() => {
-      cy.get('button[aria-label*="edit" i]').click({ force: true });
-    });
+    cy.contains('Variant Save')
+      .parents('tr')
+      .first()
+      .within(() => {
+        cy.get('button[aria-label*="edit" i]').click({ force: true });
+      });
 
     // Enable variants
     cy.contains('Con variantes').click();
