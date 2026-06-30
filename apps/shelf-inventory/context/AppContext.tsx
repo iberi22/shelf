@@ -88,6 +88,7 @@ type Action =
   | { type: 'UPDATE_INVENTORY_CONFIG'; payload: InventoryConfig }
   | { type: 'RESTORE_PRODUCT_VERSION'; payload: { productId: string; historyId: string } }
   | { type: 'CLEAR_AUDIT_LOGS'; payload?: { beforeDate: string } }
+  | { type: 'SET_ACTIVE_BRANCH'; payload: string }
   | { type: 'RESET_DATA' };
 
 const createAuditEntry = (
@@ -686,6 +687,24 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
     }
 
+    case 'SET_ACTIVE_BRANCH':
+      return {
+        ...state,
+        activeBranch: action.payload,
+        // When switching branches, we clear the local lists to avoid showing stale data
+        // while the new branch data loads from the CRDT.
+        products: [],
+        sales: [],
+        clients: [],
+        suppliers: [],
+        purchaseOrders: [],
+        auditLogs: [],
+        arqueoSessions: [],
+        ocrResults: [],
+        pendingEdits: [],
+        productChangeHistory: [],
+      };
+
     case 'RESTORE_PRODUCT_VERSION': {
       const historyEntry = state.productChangeHistory.find((entry) => entry.id === action.payload.historyId);
       if (!historyEntry || historyEntry.productId !== action.payload.productId) return state;
@@ -991,9 +1010,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     return () => {
       unobserve();
-      p2pManager.disconnect();
     };
-  }, [rawDispatch]);
+  }, [rawDispatch, state.activeBranch]);
 
   // Populate Yjs CRDT once initial state is loaded from IndexedDB
   useEffect(() => {
@@ -1023,6 +1041,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // 2. Synchronize to CRDT surgically
       if (!isLoaded) return;
       if (action.type === 'SYNC_STATE' || action.type === 'SYNC_ENTITIES' || action.type === 'RESET_DATA') return;
+
+      if (action.type === 'SET_ACTIVE_BRANCH') {
+        const branchId = action.payload;
+        dbSync.setActiveBranch(branchId);
+        p2pManager.setActiveBranch(branchId);
+        // Refresh local state with data from the new branch
+        const newState = dbSync.getState();
+        rawDispatch({ type: 'SYNC_STATE', payload: newState });
+        return;
+      }
 
       const typeStr = action.type;
       const payload = 'payload' in action ? (action as { payload: unknown }).payload : undefined;

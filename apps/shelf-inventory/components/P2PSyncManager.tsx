@@ -104,6 +104,7 @@ const P2PSyncManager: React.FC = () => {
   const [showLogsForPeer, setShowLogsForPeer] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [isForcingSync, setIsForcingSync] = useState(false);
+  const [branchInput, setBranchInput] = useState(state.activeBranch || '');
   const [selectedRole, setSelectedRole] = useState<P2PRole>('collaborator');
   const [selectedPermissions, setSelectedPermissions] = useState<PeerPermissions>(permissionPresets.collaborator);
   const [peerHealth, setPeerHealth] = useState<Record<string, PeerHealthInfo>>(() => {
@@ -537,6 +538,12 @@ const P2PSyncManager: React.FC = () => {
     }, 1200);
   };
 
+  const handleBranchSwitch = () => {
+    if (branchInput.trim() === (state.activeBranch || '')) return;
+    dispatch({ type: 'SET_ACTIVE_BRANCH', payload: branchInput.trim() });
+    showNotification(`Cambiando a rama: ${branchInput.trim() || 'Global'}`, 'success');
+  };
+
   return (
     <div className="mt-6 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-[#F5F5DC]/30 bg-[#1a1a1a] p-4 md:p-6">
       <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
@@ -591,6 +598,27 @@ const P2PSyncManager: React.FC = () => {
             <span className="text-[10px] text-[#F5F5DC]/50 mt-1">
               {t('p2pSync.encryptedTunnelActive') || 'Encrypted Tunnel: ACTIVE (ML-KEM-768 via P2PManager)'}
             </span>
+            <div className="mt-2 flex flex-col gap-2 p-2 rounded border border-purple-500/30 bg-purple-500/5">
+              <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Branch Isolation</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="ID de Rama (vacio para Global)..."
+                  value={branchInput}
+                  onChange={(e) => setBranchInput(e.target.value)}
+                  className="flex-1 bg-black/40 border border-[#F5F5DC]/20 rounded px-2 py-1 text-xs text-purple-200 focus:outline-none focus:border-purple-500/50"
+                />
+                <button
+                  onClick={handleBranchSwitch}
+                  className="bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold px-2 py-1 rounded transition-colors"
+                >
+                  Switch
+                </button>
+              </div>
+              <span className="text-[9px] text-purple-400/70">
+                Current: <span className="font-mono text-purple-300">{state.activeBranch || 'Global (None)'}</span>
+              </span>
+            </div>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-[#F5F5DC]/65">
               <span
                 className={`inline-flex items-center gap-1.5 rounded border px-2 py-1 ${

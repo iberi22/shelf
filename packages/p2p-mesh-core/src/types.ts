@@ -7,6 +7,7 @@ export interface NavItem {
 
 export interface BaseEntity {
   id: string;
+  branchId?: string;
   isActive: boolean;
   updatedBy: string; // Peer ID
   updatedByRole?: P2PRole; // Role of the peer that updated
@@ -191,6 +192,7 @@ export interface AppState {
   isExpelled?: boolean;
   pendingEdits: EntityEditProposal[];
   productChangeHistory: ProductChangeHistoryEntry[];
+  activeBranch?: string;
 }
 
 export type ImportStrategy = 'skip' | 'update';
