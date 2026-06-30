@@ -1,5 +1,3 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { Image as ImageIcon, X } from 'lucide-react';
 import type { Product, Sale, SaleItem } from 'p2p-mesh-core';
 import type React from 'react';
@@ -29,7 +27,10 @@ const Sales: React.FC = () => {
     getSortIndicator,
   } = useSortableTable<Sale>(activeSales, { key: 'date', direction: 'desc' });
 
-  const generateReceipt = (sale: Sale) => {
+  const generateReceipt = async (sale: Sale) => {
+    const { jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
+
     const doc = new jsPDF();
 
     // Header
