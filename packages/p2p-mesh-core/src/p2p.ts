@@ -4,6 +4,7 @@ import {
 	type PeerHealthState,
 } from "edge-mesh";
 import { type DataConnection, Peer } from "peerjs";
+import { ml_dsa65 } from "@noble/post-quantum/ml-dsa.js";
 import { decryptData, encryptData, importPQCSharedSecret } from "./crypto";
 import {
 	decapsulate,
@@ -156,6 +157,18 @@ class P2PManager {
 	// PQC Keypairs
 	private kemKeyPair = generateKEMKeyPair();
 	private dsaKeyPair = generateDSAKeyPair();
+
+	public sign(message: Uint8Array): Uint8Array {
+		return ml_dsa65.sign(message, this.dsaKeyPair.secretKey);
+	}
+
+	public verify(
+		signature: Uint8Array,
+		message: Uint8Array,
+		publicKeyHex: string,
+	): boolean {
+		return ml_dsa65.verify(signature, message, fromHex(publicKeyHex));
+	}
 	private yjsSyncInitialized = false;
 	private readonly yjsRetryDelays = [750, 2500];
 
