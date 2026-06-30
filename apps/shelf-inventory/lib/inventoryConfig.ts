@@ -19,6 +19,7 @@ export const DEFAULT_INVENTORY_CONFIG: InventoryConfig = {
   measureOptions: ['5CM', '7CM', '10CM', '12CM', '14CM', '15CM', '17CM', '20CM', '28CM'],
   autoApplyProductUpdates: false,
   productHistoryLimit: 5,
+  useEdgeMeshSync: false,
 };
 
 const LEGACY_DEFAULT_MEASURE_OPTIONS = ['30CM', '40CM', '50CM', '60CM'];
@@ -83,6 +84,7 @@ export const normalizeInventoryConfig = (config?: Partial<InventoryConfig> | nul
     measureOptions: measureOptions.length > 0 ? measureOptions : DEFAULT_INVENTORY_CONFIG.measureOptions,
     autoApplyProductUpdates: Boolean(config?.autoApplyProductUpdates),
     productHistoryLimit: Math.min(5, Math.max(1, Number(config?.productHistoryLimit) || 5)),
+    useEdgeMeshSync: Boolean(config?.useEdgeMeshSync),
   };
 };
 

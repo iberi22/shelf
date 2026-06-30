@@ -18,6 +18,7 @@ import type {
 	EntityEditProposal,
 } from "./types";
 import { logger } from "./utils/logger";
+import { type CrdtSyncLayer, type CrdtSyncEnvelope, isEdgeMeshRemoteOrigin } from "edge-mesh";
 
 type EntityRecord = {
 	id: string;
@@ -60,6 +61,8 @@ export class DatabaseSyncManager {
 	private productChangeHistory: Y.Map<ProductChangeHistoryEntry>;
 	private ephemeralNodes: Map<string, Partial<LinkedNodeRecord>> = new Map();
 	public localPeerId: string | null = null;
+	private syncLayer: CrdtSyncLayer | null = null;
+	private onEnvelopeCallbacks: ((envelope: CrdtSyncEnvelope) => void)[] = [];
 	private readyCallbacks: (() => void)[] = [];
 	/**
 	 * Guards against premature YJS_UPDATE broadcasts.
@@ -166,6 +169,31 @@ export class DatabaseSyncManager {
 		this.linkedNodes = this.doc.getMap("linkedNodes");
 		this.pendingEdits = this.doc.getMap("pendingEdits");
 		this.productChangeHistory = this.doc.getMap("productChangeHistory");
+	}
+
+	public setSyncLayer(layer: CrdtSyncLayer) {
+		this.syncLayer = layer;
+	}
+
+	public onEnvelope(callback: (envelope: CrdtSyncEnvelope) => void) {
+		this.onEnvelopeCallbacks.push(callback);
+	}
+
+	public applyEnvelope(envelope: CrdtSyncEnvelope) {
+		if (this.syncLayer) {
+			this.syncLayer.applyEnvelope(envelope);
+		}
+	}
+
+	private transact(mutator: (doc: Y.Doc) => void, origin: any = "local") {
+		if (this.syncLayer && this.getInventoryConfig()?.useEdgeMeshSync) {
+			const envelope = this.syncLayer.applyLocalChange(mutator);
+			for (const cb of this.onEnvelopeCallbacks) {
+				cb(envelope);
+			}
+		} else {
+			this.doc.transact(() => mutator(this.doc), origin);
+		}
 	}
 
 	private checkPermissions(
@@ -292,7 +320,7 @@ export class DatabaseSyncManager {
 						status: "pending",
 					};
 					
-					this.doc.transact(() => {
+					this.transact(() => {
 						this.pendingEdits.set(proposalId, proposal as any);
 					}, "local");
 					
@@ -304,7 +332,7 @@ export class DatabaseSyncManager {
 			}
 		}
 
-		this.doc.transact(() => {
+		this.transact(() => {
 			yMap.set(item.id, persistableItem as any);
 		}, "local");
 	}
@@ -323,7 +351,7 @@ export class DatabaseSyncManager {
 		const yMap = this.getMapForCollection(collectionName);
 		if (!yMap) return;
 
-		this.doc.transact(() => {
+		this.transact(() => {
 			yMap.delete(id);
 		}, "local");
 	}
@@ -343,7 +371,7 @@ export class DatabaseSyncManager {
 		const proposal = this.pendingEdits.get(proposalId);
 		if (!proposal) return;
 
-		this.doc.transact(() => {
+		this.transact(() => {
 			if (resolution === 'approve') {
 				const finalData = mergedData || proposal.proposedData;
 				const collectionMap = this.getMapForCollection(proposal.collectionName);
@@ -395,7 +423,7 @@ export class DatabaseSyncManager {
 	 * Syncs the local AppState into the Yjs Doc.
 	 */
 	public initWithState(state: AppState) {
-		this.doc.transact(() => {
+		this.transact(() => {
 			const mergeAndSync = <T extends { id: string }>(
 				collectionName: keyof AppState,
 				array: T[] = [],
@@ -424,7 +452,7 @@ export class DatabaseSyncManager {
 				}
 			}
 
-			this.metadata.set("inventoryConfig", JSON.stringify(state.inventoryConfig));
+			this.metadata.set("inventoryConfig", JSON.stringify(normalizeInventoryConfig(state.inventoryConfig)));
 
 			if (state.peers && state.peers.length > 0) {
 				for (const peer of state.peers) {
@@ -512,7 +540,7 @@ export class DatabaseSyncManager {
 	}
 
 	public setInventoryConfig(config: InventoryConfig) {
-		this.doc.transact(() => {
+		this.transact(() => {
 			this.metadata.set("inventoryConfig", JSON.stringify(config));
 		}, "local");
 	}
@@ -537,7 +565,7 @@ export class DatabaseSyncManager {
 			return;
 		}
 
-		this.doc.transact(() => {
+		this.transact(() => {
 			this.metadata.set("authorityPeerId", peerId);
 			this.metadata.set("masterPeerId", peerId);
 		}, "local");
@@ -570,7 +598,7 @@ export class DatabaseSyncManager {
 		info: Partial<LinkedNodeRecord>,
 		authorityPeerId: string | null = this.localPeerId,
 	) {
-		this.doc.transact(() => {
+		this.transact(() => {
 			const existing = this.linkedNodes.get(peerId) || ({} as LinkedNodeRecord);
 			const { id: _existingId, ...existingWithoutId } = existing;
 			const canEditPeerConfig = this.isPeerConfigMutationAllowed(
@@ -692,7 +720,7 @@ export class DatabaseSyncManager {
 			return;
 		}
 
-		this.doc.transact(() => {
+		this.transact(() => {
 			const existing = this.linkedNodes.get(peerId) || ({} as LinkedNodeRecord);
 			const { id: _existingConfigId, ...existingConfigWithoutId } = existing;
 			const existingEphemeral = this.ephemeralNodes.get(peerId) || {};
@@ -714,7 +742,7 @@ export class DatabaseSyncManager {
 	}
 
 	public removeLinkedNode(peerId: string) {
-		this.doc.transact(() => {
+		this.transact(() => {
 			this.linkedNodes.delete(peerId);
 		}, "local");
 	}
@@ -779,7 +807,7 @@ export class DatabaseSyncManager {
 			}
 
 			if (keysToDelete.length > 0) {
-				this.doc.transact(() => {
+				this.transact(() => {
 					for (const key of keysToDelete) {
 						yMap.delete(key);
 					}
@@ -834,7 +862,13 @@ export class DatabaseSyncManager {
 	 */
 	public onChange(callback: (update: Uint8Array, origin: unknown) => void) {
 		this.doc.on("update", (update, origin) => {
-			callback(update, origin);
+			if (isEdgeMeshRemoteOrigin(origin)) {
+				callback(update, origin);
+			} else if (origin !== "local" && typeof origin === "string") {
+				callback(update, origin);
+			} else if (origin === "local") {
+				callback(update, origin);
+			}
 		});
 	}
 
@@ -868,7 +902,10 @@ export class DatabaseSyncManager {
 			if (!yMap) return null;
 
 			const observer = (event: Y.YMapEvent<EntityRecord>) => {
-				if (event.transaction.origin !== "local") {
+				const origin = event.transaction.origin;
+				const isRemote = isEdgeMeshRemoteOrigin(origin) || (origin !== "local" && typeof origin === "string");
+
+				if (isRemote) {
 					const items: EntityRecord[] = [];
 					const deletedIds: string[] = [];
 
