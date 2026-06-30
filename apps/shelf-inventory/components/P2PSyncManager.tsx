@@ -14,6 +14,7 @@ import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
 import { buildPeerInviteLink, buildPeerInviteMessage, buildPwaInstallLink } from '../lib/share-links';
 import { isBiometricsSupported } from '../lib/webauthn';
+import { createCrdtSyncLayer } from 'edge-mesh';
 import { useEdgeMeshWorkflowStatus } from './EdgeMeshWorkflowBridge';
 import QRScannerModal from './QRScannerModal';
 
@@ -268,6 +269,27 @@ const P2PSyncManager: React.FC = () => {
         clearInterval(interval);
       }
     }, 1000);
+
+    // Initialize CrdtSyncLayer if enabled
+    if (p2pManager.localPeerId && state.inventoryConfig.useEdgeMeshSync) {
+      const syncLayer = createCrdtSyncLayer({
+        namespace: 'shelf-sync',
+        identity: {
+          peerId: p2pManager.localPeerId,
+          sign: (msg) => p2pManager.sign(msg),
+          verify: (sig, msg, id) => p2pManager.verify(sig, msg, id),
+        },
+      });
+
+      dbSync.setSyncLayer(syncLayer);
+      dbSync.onEnvelope((envelope) => {
+        p2pManager.broadcast({ type: 'CRDT_SYNC_ENVELOPE', payload: { envelope } });
+      });
+
+      syncLayer.load().then(() => {
+        console.log('[P2P] CrdtSyncLayer loaded');
+      });
+    }
 
     return () => {
       // Cleanup interval if component unmounts before it fires

@@ -1022,6 +1022,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       // 2. Synchronize to CRDT surgically
       if (!isLoaded) return;
+
+      const useEdgeMeshSync = dbSync.getInventoryConfig()?.useEdgeMeshSync;
       if (action.type === 'SYNC_STATE' || action.type === 'SYNC_ENTITIES' || action.type === 'RESET_DATA') return;
 
       const typeStr = action.type;
