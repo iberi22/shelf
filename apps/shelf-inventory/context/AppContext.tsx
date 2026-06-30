@@ -3,6 +3,7 @@ import type {
   AppState,
   ArqueoSession,
   AuditEntry,
+  Branch,
   Client,
   ImportProductsPayload,
   InventoryConfig,
@@ -48,6 +49,23 @@ const initialState: AppState = {
   ocrResults: [],
   pendingEdits: [],
   productChangeHistory: [],
+  branches: [
+    {
+      id: 'main-warehouse',
+      name: 'Bodega Central',
+      isActive: true,
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'system',
+    },
+    {
+      id: 'north-branch',
+      name: 'Sucursal Norte',
+      isActive: true,
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'system',
+    },
+  ],
+  activeBranch: 'main-warehouse',
 };
 
 type Action =
@@ -64,6 +82,10 @@ type Action =
   | { type: 'ADD_SUPPLIER'; payload: Supplier }
   | { type: 'UPDATE_SUPPLIER'; payload: Supplier }
   | { type: 'DELETE_SUPPLIER'; payload: string }
+  | { type: 'ADD_BRANCH'; payload: Branch }
+  | { type: 'UPDATE_BRANCH'; payload: Branch }
+  | { type: 'DELETE_BRANCH'; payload: string }
+  | { type: 'SET_ACTIVE_BRANCH'; payload: string | null }
   | { type: 'ADD_PURCHASE_ORDER'; payload: PurchaseOrder }
   | { type: 'UPDATE_PURCHASE_ORDER'; payload: PurchaseOrder }
   | { type: 'DELETE_PURCHASE_ORDER'; payload: string }
@@ -542,6 +564,29 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
       break;
 
+    case 'ADD_BRANCH':
+      newState = { ...state, branches: [...state.branches, enrich(state, action.payload)] };
+      break;
+    case 'UPDATE_BRANCH':
+      newState = {
+        ...state,
+        branches: state.branches.map((b) => (b.id === action.payload.id ? enrich(state, action.payload) : b)),
+      };
+      break;
+    case 'DELETE_BRANCH':
+      newState = {
+        ...state,
+        branches: state.branches.map((b) =>
+          b.id === action.payload
+            ? { ...b, isActive: false, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' }
+            : b,
+        ),
+      };
+      break;
+    case 'SET_ACTIVE_BRANCH':
+      newState = { ...state, activeBranch: action.payload };
+      break;
+
     case 'ADD_PURCHASE_ORDER':
       newState = { ...state, purchaseOrders: [...state.purchaseOrders, enrich(state, action.payload)] };
       break;
@@ -733,6 +778,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
         arqueoSessions: mergeCollections(state.arqueoSessions, p.arqueoSessions),
         ocrResults: mergeCollections(state.ocrResults, p.ocrResults),
         teamMembers: mergeCollections(state.teamMembers, p.teamMembers),
+        branches: mergeCollections(state.branches, p.branches),
+        activeBranch: p.activeBranch || state.activeBranch,
         productChangeHistory: mergeCollections(state.productChangeHistory, p.productChangeHistory),
         inventoryConfig: normalizeInventoryConfig(p.inventoryConfig || state.inventoryConfig),
         peers: mergeCollections(state.peers, p.peers),
@@ -871,9 +918,11 @@ const appReducer = (state: AppState, action: Action): AppState => {
             ? 'client'
             : action.type.toLowerCase().includes('supplier')
               ? 'supplier'
-              : action.type.toLowerCase().includes('purchase')
-                ? 'purchaseOrder'
-                : undefined,
+                : action.type.toLowerCase().includes('branch')
+                  ? 'branch'
+                  : action.type.toLowerCase().includes('purchase')
+                    ? 'purchaseOrder'
+                    : undefined,
       details,
     );
     newState.auditLogs = [auditEntry, ...newState.auditLogs].slice(0, 1000);
@@ -1176,6 +1225,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (p) {
           dbSync.deleteEntity('teamMembers', p as string);
         }
+      } else if (typeStr === 'SET_ACTIVE_BRANCH') {
+        // Local only UI state, but could be persisted in metadata if needed
+        // For now we don't sync activeBranch globally as it's per-peer
       } else if (typeStr === 'RECOVER_ITEM') {
         const recoverP = p as { type?: string; id?: string };
         const { type, id } = recoverP || {};
@@ -1185,6 +1237,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           client: 'clients',
           supplier: 'suppliers',
           purchaseOrder: 'purchaseOrders',
+          branch: 'branches',
         };
         const collection = type ? collectionMap[type] : undefined;
         const item = collection
@@ -1216,6 +1269,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             SALE: 'sales',
             CLIENT: 'clients',
             SUPPLIER: 'suppliers',
+            BRANCH: 'branches',
             PURCHASE_ORDER: 'purchaseOrders',
             ARQUEO_SESSION: 'arqueoSessions',
             OCR_RESULT: 'ocrResults',
@@ -1260,6 +1314,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             SALE: 'sales',
             CLIENT: 'clients',
             SUPPLIER: 'suppliers',
+            BRANCH: 'branches',
             PURCHASE_ORDER: 'purchaseOrders',
             ARQUEO_SESSION: 'arqueoSessions',
             OCR_RESULT: 'ocrResults',

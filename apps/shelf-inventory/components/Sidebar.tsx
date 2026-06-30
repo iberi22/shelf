@@ -215,6 +215,41 @@ interface SidebarProps {
   setActiveComponent: (component: string) => void;
 }
 
+const BranchSelector = ({ mobile = false }: { mobile?: boolean }) => {
+  const { state, dispatch } = useAppContext();
+  const { branches, activeBranch } = state;
+
+  if (!branches || branches.length === 0) return null;
+
+  return (
+    <div className={`${mobile ? 'px-3 mb-2' : 'px-4 mb-4'}`}>
+      <div className="relative group">
+        <select
+          data-testid="host-branch-selector"
+          value={activeBranch || ''}
+          onChange={(e) => dispatch({ type: 'SET_ACTIVE_BRANCH', payload: e.target.value })}
+          className={`w-full bg-[#1A1A1A] text-[#4ADE80] font-bold py-2.5 px-3 rounded-xl border border-white/5 focus:outline-none focus:border-[#4ADE80]/30 appearance-none cursor-pointer transition-all hover:bg-[#222] shadow-sm ${
+            mobile ? 'text-sm' : 'text-xs'
+          }`}
+        >
+          {branches
+            .filter((b) => b.isActive)
+            .map((branch) => (
+              <option key={branch.id} value={branch.id} className="bg-[#0A0A0A] text-white">
+                {branch.name}
+              </option>
+            ))}
+        </select>
+        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-[#4ADE80]/50">
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }) => {
   const { t } = useI18n();
   const { isPro } = useSubscription();
@@ -293,7 +328,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-foreground/20">
+        <div className="flex items-center justify-between p-4 border-b border-foreground/20 mb-4">
           <h1 className="text-xl font-bold tracking-widest text-[#F5F5DC]">[ Shelf. ]</h1>
           <div className="flex items-center gap-1">
             <button
@@ -327,7 +362,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
             </button>
           </div>
         </div>
-        <nav className="flex-1 px-3 py-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+        <BranchSelector mobile />
+        <nav className="flex-1 px-3 py-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
           <ul>
             {filteredNavItems.map((item) => (
               <li key={item.nameKey}>
@@ -389,6 +425,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
             </svg>
           </button>
         </div>
+        <BranchSelector />
         <nav className="flex-1 px-4 py-2">
           <ul>
             {filteredNavItems.map((item) => (

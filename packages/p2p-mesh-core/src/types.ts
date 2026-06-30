@@ -87,6 +87,10 @@ export interface Client extends BaseEntity {
   email?: string;
 }
 
+export interface Branch extends BaseEntity {
+  name: string;
+}
+
 export interface Supplier extends BaseEntity {
   name: string;
   phone: string;
@@ -160,7 +164,7 @@ export interface AuditEntry {
   peerRole?: P2PRole; // Role of the peer that performed the action
   action: string;
   entityId?: string;
-  entityType?: 'product' | 'sale' | 'client' | 'supplier' | 'purchaseOrder';
+  entityType?: 'product' | 'sale' | 'client' | 'supplier' | 'purchaseOrder' | 'branch';
   details?: any;
   signature?: string; // Cryptographic signature of the log entry
 }
@@ -182,6 +186,8 @@ export interface AppState {
   auditLogs: AuditEntry[];
   peers: PeerInfo[];
   teamMembers: TeamMember[];
+  branches: Branch[];
+  activeBranch: string | null;
   inventoryConfig: InventoryConfig;
   localPeerId: string | null;
   role: P2PRole;
