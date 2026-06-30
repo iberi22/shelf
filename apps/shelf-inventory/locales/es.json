@@ -292,6 +292,27 @@
       "placeholder": "Tu mensaje...",
       "button": "Enviar Sugerencia",
       "success": "¡Gracias! Tu sugerencia ha sido enviada."
+    },
+    "branches": {
+      "title": "Sucursales / Bodegas",
+      "description": "Gestiona las ubicaciones físicas de tu inventario.",
+      "add": "Agregar Sucursal",
+      "new": "Nueva Sucursal",
+      "edit": "Editar Sucursal",
+      "nameLabel": "Nombre de la Sucursal/Bodega",
+      "namePlaceholder": "Ej. Bodega Central o Sucursal Norte",
+      "table": {
+        "name": "Nombre",
+        "id": "ID",
+        "createdAt": "Fecha Creación",
+        "actions": "Acciones"
+      },
+      "empty": "No hay sucursales configuradas.",
+      "deleteConfirm": "¿Estás seguro de que deseas eliminar esta sucursal?",
+      "deleteErrorHasProducts": "No se puede eliminar la sucursal porque tiene productos asignados.",
+      "successAdd": "Sucursal agregada.",
+      "successUpdate": "Sucursal actualizada.",
+      "successDelete": "Sucursal eliminada correctamente."
     }
   },
   "auth": {

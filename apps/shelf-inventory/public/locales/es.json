@@ -293,18 +293,26 @@
       "button": "Enviar Sugerencia",
       "success": "¡Gracias! Tu sugerencia ha sido enviada."
     },
-    "ai": {
-      "title": "Configuración de IA",
-      "description": "Configura tus propias llaves para el asistente de IA.",
-      "proxyUrl": "URL del Proxy Local (Opcional)"
-    },
-    "security": {
-      "title": "Seguridad",
-      "description": "Configura un PIN para proteger el acceso a la aplicación.",
-      "appLock": "Bloqueo de Aplicación",
-      "enable": "Activar",
-      "disable": "Desactivar",
-      "lockedNote": "La aplicación se bloqueará automáticamente al recargar."
+    "branches": {
+      "title": "Sucursales / Bodegas",
+      "description": "Gestiona las ubicaciones físicas de tu inventario.",
+      "add": "Agregar Sucursal",
+      "new": "Nueva Sucursal",
+      "edit": "Editar Sucursal",
+      "nameLabel": "Nombre de la Sucursal/Bodega",
+      "namePlaceholder": "Ej. Bodega Central o Sucursal Norte",
+      "table": {
+        "name": "Nombre",
+        "id": "ID",
+        "createdAt": "Fecha Creación",
+        "actions": "Acciones"
+      },
+      "empty": "No hay sucursales configuradas.",
+      "deleteConfirm": "¿Estás seguro de que deseas eliminar esta sucursal?",
+      "deleteErrorHasProducts": "No se puede eliminar la sucursal porque tiene productos asignados.",
+      "successAdd": "Sucursal agregada.",
+      "successUpdate": "Sucursal actualizada.",
+      "successDelete": "Sucursal eliminada correctamente."
     }
   },
   "auth": {
@@ -435,14 +443,15 @@
       "description": "Actualiza a Pro para sincronizar tus datos en todos tus dispositivos, manteniéndolos seguros y actualizados."
     },
     "governance": {
-      "title": "Red Multibodega",
-      "highlight": "Descentralizada",
-      "description": "Conecta múltiples tiendas y bodegas de forma segura sin un servidor central. Sincroniza datos en tiempo real o sin conexión.",
-      "learnMore": "Conoce cómo funciona",
+      "title": "Gobernanza de datos distribuida",
+      "highlight": "Control total.",
+      "description": "Shelf funciona con una arquitectura peer-to-peer offline-first. Tus datos permanecen locales y se sincronizan directamente entre dispositivos confiables, sin que un servidor central decida qui?n controla tu inventario.",
+      "learnMore": "Saber m?s",
       "points": [
-        "Cifrado de extremo a extremo para todos los datos",
-        "Permisos basados en roles por sucursal",
-        "Resolución automática de conflictos"
+        "Gesti?n unificada de m?ltiples sucursales y bodegas.",
+        "Datos particionados local-first, coordinados por el host autorizado.",
+        "Reportes consolidados que pueden unir inventarios remotos.",
+        "Seguridad criptogr?fica post-cu?ntica con permisos verificables por nodo."
       ]
     }
   },

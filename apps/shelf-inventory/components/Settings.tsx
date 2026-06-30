@@ -1,4 +1,4 @@
-import { Building2, Fingerprint, Languages, Lock, MapPin, Plus, Save, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Building2, Fingerprint, Languages, Lock, Pencil, Plus, Save, SlidersHorizontal, Trash2 } from 'lucide-react';
 import type { Branch, InventoryConfig, InventoryFieldDefinition, RestoreStatePayload } from 'p2p-mesh-core';
 import { dbSync, decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
 import type React from 'react';
@@ -316,26 +316,54 @@ const Settings: React.FC = () => {
 
   const isAdmin = state.role === 'admin' || team.find((m) => m.email === user?.email)?.role === 'owner';
 
-  const [newBranchName, setNewBranchName] = useState('');
-  const [newBranchLocation, setNewBranchLocation] = useState('');
+  const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
+  const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
+  const [branchName, setBranchName] = useState('');
 
   const handleAddBranch = () => {
-    if (!newBranchName.trim()) {
-      showNotification('El nombre de la sucursal es obligatorio', 'error');
+    setEditingBranch(null);
+    setBranchName('');
+    setIsBranchModalOpen(true);
+  };
+
+  const handleEditBranch = (branch: Branch) => {
+    setEditingBranch(branch);
+    setBranchName(branch.name);
+    setIsBranchModalOpen(true);
+  };
+
+  const handleDeleteBranch = (branchId: string) => {
+    const hasProducts = state.products.some((p) => p.branchId === branchId && p.isActive);
+    if (hasProducts) {
+      showNotification(t('settings.branches.deleteErrorHasProducts'), 'error');
       return;
     }
-    const branch: Branch = {
-      id: `branch_${Date.now()}`,
-      name: newBranchName,
-      location: newBranchLocation,
-      isActive: true,
-      updatedAt: new Date().toISOString(),
-      updatedBy: state.localPeerId || 'local',
-    };
-    dispatch({ type: 'ADD_BRANCH', payload: branch });
-    setNewBranchName('');
-    setNewBranchLocation('');
-    showNotification('Sucursal agregada con éxito', 'success');
+
+    if (window.confirm(t('settings.branches.deleteConfirm'))) {
+      dispatch({ type: 'DELETE_BRANCH', payload: branchId });
+      showNotification(t('settings.branches.successDelete'), 'success');
+    }
+  };
+
+  const handleSaveBranch = () => {
+    if (!branchName.trim()) return;
+
+    if (editingBranch) {
+      dispatch({
+        type: 'UPDATE_BRANCH',
+        payload: { ...editingBranch, name: branchName.trim() },
+      });
+      showNotification(t('settings.branches.successUpdate'), 'success');
+    } else {
+      const newBranch: Branch = {
+        id: crypto.randomUUID(),
+        name: branchName.trim(),
+        createdAt: Date.now(),
+      };
+      dispatch({ type: 'ADD_BRANCH', payload: newBranch });
+      showNotification(t('settings.branches.successAdd'), 'success');
+    }
+    setIsBranchModalOpen(false);
   };
 
   return (
@@ -607,83 +635,80 @@ const Settings: React.FC = () => {
 
           <P2PSyncManager />
 
-          {/* Branch Management */}
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-            <div className="flex items-center gap-2 mb-4">
-              <Building2 className="h-5 w-5 text-[#4ADE80]" aria-hidden="true" />
-              <h3 className="text-xl font-bold text-[#F5F5DC]">Gestión de Sucursales</h3>
-            </div>
-            <p className="text-xs text-[#F5F5DC]/70 mb-6">
-              Crea y administra diferentes sucursales o bodegas para segmentar tu inventario.
-            </p>
-
-            {isAdmin && (
-              <div className="bg-[#121212] border border-[#F5F5DC]/10 p-4 rounded-lg mb-6">
-                <h4 className="text-sm font-bold text-[#F5F5DC] mb-4">Nueva Sucursal</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <input
-                    type="text"
-                    placeholder="Nombre de la sucursal (ej. Sucursal Norte)"
-                    value={newBranchName}
-                    onChange={(e) => setNewBranchName(e.target.value)}
-                    className="p-2.5 bg-[#0f0f0f] border rounded-md border-[#F5F5DC]/30 text-sm"
-                    data-testid="branch-name-input"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Ubicación / Dirección (opcional)"
-                    value={newBranchLocation}
-                    onChange={(e) => setNewBranchLocation(e.target.value)}
-                    className="p-2.5 bg-[#0f0f0f] border rounded-md border-[#F5F5DC]/30 text-sm"
-                  />
+          {/* Branches Management */}
+          {isAdmin && (
+            <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-[#4ADE80]" aria-hidden="true" />
+                    <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.branches.title')}</h3>
+                  </div>
+                  <p className="text-xs text-[#F5F5DC]/70 mt-1">{t('settings.branches.description')}</p>
                 </div>
                 <button
-                  onClick={handleAddBranch}
-                  className="inline-flex items-center gap-2 bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg text-sm hover:bg-opacity-80 active:scale-95"
                   data-testid="add-branch-button"
+                  onClick={handleAddBranch}
+                  className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 text-sm active:scale-95"
                 >
-                  <Plus className="h-4 w-4" />
-                  Agregar Sucursal
+                  <Plus className="h-4 w-4 inline mr-1" />
+                  {t('settings.branches.add')}
                 </button>
               </div>
-            )}
 
-            <div className="space-y-3">
-              {state.branches.filter(b => b.isActive).map((branch) => (
-                <div
-                  key={branch.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-[#F5F5DC]/10 bg-[#121212]"
-                >
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-[#F5F5DC]">{branch.name}</h4>
-                    {branch.location && (
-                      <div className="flex items-center gap-1 mt-1 text-xs text-[#F5F5DC]/60">
-                        <MapPin className="h-3 w-3" />
-                        {branch.location}
-                      </div>
+              <div className="mt-6 overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#F5F5DC]/10 text-[#F5F5DC]/50 text-xs uppercase tracking-wider">
+                      <th className="py-3 px-4 font-semibold">{t('settings.branches.table.name')}</th>
+                      <th className="py-3 px-4 font-semibold hidden md:table-cell">{t('settings.branches.table.id')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('settings.branches.table.createdAt')}</th>
+                      <th className="py-3 px-4 font-semibold text-right">{t('settings.branches.table.actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#F5F5DC]/10">
+                    {state.branches.length > 0 ? (
+                      state.branches.map((branch) => (
+                        <tr key={branch.id} className="text-[#F5F5DC]/90 text-sm hover:bg-white/5 transition-colors">
+                          <td className="py-4 px-4 font-medium">{branch.name}</td>
+                          <td className="py-4 px-4 hidden md:table-cell">
+                            <code className="text-[10px] bg-[#121212] px-1.5 py-0.5 rounded border border-[#F5F5DC]/10 text-[#F5F5DC]/40">
+                              {branch.id}
+                            </code>
+                          </td>
+                          <td className="py-4 px-4">{new Date(branch.createdAt).toLocaleDateString()}</td>
+                          <td className="py-4 px-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => handleEditBranch(branch)}
+                                className="p-2 text-[#4ADE80] hover:bg-[#4ADE80]/10 rounded-md transition-colors"
+                                title={t('common.edit')}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteBranch(branch.id)}
+                                className="p-2 text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+                                title={t('common.delete')}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="py-10 text-center text-[#F5F5DC]/40 italic">
+                          {t('settings.branches.empty')}
+                        </td>
+                      </tr>
                     )}
-                  </div>
-                  {isAdmin && (
-                    <button
-                      onClick={() => {
-                        if (window.confirm('¿Estás seguro de que quieres eliminar esta sucursal?')) {
-                          dispatch({ type: 'DELETE_BRANCH', payload: branch.id });
-                        }
-                      }}
-                      className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              {state.branches.filter(b => b.isActive).length === 0 && (
-                <p className="text-center py-4 text-xs text-[#F5F5DC]/40 italic">
-                  No hay sucursales configuradas. El inventario se guardará en el espacio global.
-                </p>
-              )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
 
           <DeviceManagementPanel />
 
@@ -1057,6 +1082,50 @@ const Settings: React.FC = () => {
       {isImportModalOpen && <ImportCSVModal onClose={() => setIsImportModalOpen(false)} />}
       {isInviteModalOpen && (
         <InviteMemberModal onClose={() => setInviteModalOpen(false)} onInviteSent={handleInviteSent} />
+      )}
+
+      {isBranchModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 w-full max-w-md rounded-xl shadow-2xl overflow-hidden">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-[#F5F5DC] mb-4">
+                {editingBranch ? t('settings.branches.edit') : t('settings.branches.new')}
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="branch-name" className="block text-sm font-medium text-[#F5F5DC]/70 mb-1">
+                    {t('settings.branches.nameLabel')}
+                  </label>
+                  <input
+                    id="branch-name"
+                    data-testid="branch-name-input"
+                    type="text"
+                    value={branchName}
+                    onChange={(e) => setBranchName(e.target.value)}
+                    placeholder={t('settings.branches.namePlaceholder')}
+                    className="w-full p-3 bg-[#121212] border border-[#F5F5DC]/20 rounded-lg text-[#F5F5DC] focus:outline-none focus:ring-2 focus:ring-[#4ADE80]/50 transition-all"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-8">
+                <button
+                  onClick={() => setIsBranchModalOpen(false)}
+                  className="flex-1 px-4 py-3 border border-[#F5F5DC]/20 text-[#F5F5DC]/70 rounded-lg font-bold hover:bg-white/5 transition-all active:scale-95"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  data-testid="save-branch-button"
+                  onClick={handleSaveBranch}
+                  disabled={!branchName.trim()}
+                  className="flex-1 px-4 py-3 bg-[#F5F5DC] text-[#121212] rounded-lg font-bold hover:bg-opacity-90 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {editingBranch ? t('common.save') : t('settings.branches.add')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

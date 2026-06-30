@@ -294,6 +294,27 @@
       "placeholder": "Your message...",
       "button": "Send Feedback",
       "success": "Thank you! Your feedback has been sent."
+    },
+    "branches": {
+      "title": "Branches / Warehouses",
+      "description": "Manage the physical locations of your inventory.",
+      "add": "Add Branch",
+      "new": "New Branch",
+      "edit": "Edit Branch",
+      "nameLabel": "Branch/Warehouse Name",
+      "namePlaceholder": "e.g. Central Warehouse or North Branch",
+      "table": {
+        "name": "Name",
+        "id": "ID",
+        "createdAt": "Creation Date",
+        "actions": "Actions"
+      },
+      "empty": "No branches configured.",
+      "deleteConfirm": "Are you sure you want to delete this branch?",
+      "deleteErrorHasProducts": "Cannot delete branch because it has products assigned.",
+      "successAdd": "Branch added.",
+      "successUpdate": "Branch updated.",
+      "successDelete": "Branch deleted successfully."
     }
   },
   "auth": {

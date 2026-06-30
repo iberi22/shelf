@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { dismissModals, setupPage } from './helpers';
 import { expectProductPriceSync, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
-const _collaboratorPermissions = {
+const collaboratorPermissions = {
   canViewProducts: true,
   canEditProducts: true,
   canViewSales: true,
@@ -50,8 +50,8 @@ test.describe('Multi-Peer E2E Synchronization', () => {
       .poll(
         async () => {
           return adminPage.evaluate(() => {
-            const dbSync = (window as any)._dbSyncForTest;
-            return dbSync?.getLinkedNodes()?.length || 0;
+            const mgr = (window as any)._p2pManagerForTest;
+            return mgr ? mgr.getState()?.peers?.length : 0;
           });
         },
         { timeout: 15000 },

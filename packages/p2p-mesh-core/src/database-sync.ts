@@ -3,19 +3,20 @@ import type {
 	AppState,
 	ArqueoSession,
 	AuditEntry,
+	Branch,
 	Client,
-	InvoiceOCRResult,
+	EntityEditProposal,
 	InventoryConfig,
+	InvoiceOCRResult,
 	P2PRole,
 	PeerInfo,
 	PeerPermissions,
 	Product,
 	ProductChangeHistoryEntry,
 	PurchaseOrder,
-	TeamMember,
 	Sale,
 	Supplier,
-	EntityEditProposal,
+	TeamMember,
 } from "./types";
 import { logger } from "./utils/logger";
 
@@ -45,22 +46,22 @@ type LinkedNodeRecord = Omit<PeerInfo, "lastSeen"> & {
  */
 export class DatabaseSyncManager {
 	public doc: Y.Doc;
-	private products!: Y.Map<Product>;
-	private sales!: Y.Map<Sale>;
-	private clients!: Y.Map<Client>;
-	private suppliers!: Y.Map<Supplier>;
-	private purchaseOrders!: Y.Map<PurchaseOrder>;
-	private auditLogs!: Y.Map<AuditEntry>;
-	private arqueoSessions!: Y.Map<ArqueoSession>;
-	private ocrResults!: Y.Map<InvoiceOCRResult>;
-	private teamMembers!: Y.Map<TeamMember>;
+	private products: Y.Map<Product>;
+	private sales: Y.Map<Sale>;
+	private clients: Y.Map<Client>;
+	private suppliers: Y.Map<Supplier>;
+	private purchaseOrders: Y.Map<PurchaseOrder>;
+	private auditLogs: Y.Map<AuditEntry>;
+	private arqueoSessions: Y.Map<ArqueoSession>;
+	private ocrResults: Y.Map<InvoiceOCRResult>;
+	private teamMembers: Y.Map<TeamMember>;
+	private branches: Y.Map<Branch>;
 	private metadata: Y.Map<string>;
 	private linkedNodes: Y.Map<LinkedNodeRecord>;
-	private pendingEdits!: Y.Map<EntityEditProposal>;
-	private productChangeHistory!: Y.Map<ProductChangeHistoryEntry>;
+	private pendingEdits: Y.Map<EntityEditProposal>;
+	private productChangeHistory: Y.Map<ProductChangeHistoryEntry>;
 	private ephemeralNodes: Map<string, Partial<LinkedNodeRecord>> = new Map();
 	public localPeerId: string | null = null;
-	public activeBranchId: string | null = null;
 	private readyCallbacks: (() => void)[] = [];
 	/**
 	 * Guards against premature YJS_UPDATE broadcasts.
@@ -154,32 +155,20 @@ export class DatabaseSyncManager {
 
 	constructor() {
 		this.doc = new Y.Doc();
+		this.products = this.doc.getMap("products");
+		this.sales = this.doc.getMap("sales");
+		this.clients = this.doc.getMap("clients");
+		this.suppliers = this.doc.getMap("suppliers");
+		this.purchaseOrders = this.doc.getMap("purchaseOrders");
+		this.auditLogs = this.doc.getMap("auditLogs");
+		this.arqueoSessions = this.doc.getMap("arqueoSessions");
+		this.ocrResults = this.doc.getMap("ocrResults");
+		this.teamMembers = this.doc.getMap("teamMembers");
+		this.branches = this.doc.getMap("branches");
 		this.metadata = this.doc.getMap("metadata");
 		this.linkedNodes = this.doc.getMap("linkedNodes");
-		this.initializeMaps();
-	}
-
-	public setActiveBranch(branchId: string) {
-		this.activeBranchId = branchId;
-		this.doc.transact(() => {
-			this.metadata.set("activeBranchId", branchId);
-		}, "local");
-		this.initializeMaps();
-	}
-
-	private initializeMaps() {
-		const branchSuffix = this.activeBranchId ? `:${this.activeBranchId}` : "";
-		this.products = this.doc.getMap(`products${branchSuffix}`);
-		this.sales = this.doc.getMap(`sales${branchSuffix}`);
-		this.clients = this.doc.getMap(`clients${branchSuffix}`);
-		this.suppliers = this.doc.getMap(`suppliers${branchSuffix}`);
-		this.purchaseOrders = this.doc.getMap(`purchaseOrders${branchSuffix}`);
-		this.auditLogs = this.doc.getMap(`auditLogs${branchSuffix}`);
-		this.arqueoSessions = this.doc.getMap(`arqueoSessions${branchSuffix}`);
-		this.ocrResults = this.doc.getMap(`ocrResults${branchSuffix}`);
-		this.teamMembers = this.doc.getMap(`teamMembers${branchSuffix}`);
-		this.pendingEdits = this.doc.getMap(`pendingEdits${branchSuffix}`);
-		this.productChangeHistory = this.doc.getMap(`productChangeHistory${branchSuffix}`);
+		this.pendingEdits = this.doc.getMap("pendingEdits");
+		this.productChangeHistory = this.doc.getMap("productChangeHistory");
 	}
 
 	private checkPermissions(
@@ -228,6 +217,8 @@ export class DatabaseSyncManager {
 				return !!perms.canEditPurchaseOrders;
 			case "teamMembers":
 				return false;
+			case "branches":
+				return true; // Allow for now, might need more granular perms later
 			case "arqueoSessions":
 				return !!perms.canViewArqueo;
 			case "ocrResults":
@@ -256,7 +247,6 @@ export class DatabaseSyncManager {
 	public upsertEntity<
 		T extends {
 			id: string;
-			branchId?: string;
 			lastSeen?: string;
 			action?: string;
 			timestamp?: string;
@@ -272,8 +262,7 @@ export class DatabaseSyncManager {
 			return;
 		}
 
-		const targetBranchId = item.branchId || this.activeBranchId;
-		const yMap = this.getMapForCollection(collectionName, targetBranchId);
+		const yMap = this.getMapForCollection(collectionName);
 		if (!yMap) return;
 		const { __baseUpdatedAt, ...persistableItem } = item as T &
 			SyncEntityRecord;
@@ -286,7 +275,7 @@ export class DatabaseSyncManager {
 			const autoApplyProductUpdates = Boolean(
 				this.getInventoryConfig()?.autoApplyProductUpdates,
 			);
-			
+
 			if (!isAdmin && !autoApplyProductUpdates) {
 				const originalData = yMap.get(item.id);
 				const hasConcurrentChange =
@@ -307,14 +296,11 @@ export class DatabaseSyncManager {
 						timestamp: new Date().toISOString(),
 						status: "pending",
 					};
-					
+
 					this.doc.transact(() => {
-						const pendingEditsMap = this.getMapForCollection("pendingEdits", targetBranchId);
-						if (pendingEditsMap) {
-							pendingEditsMap.set(proposalId, proposal as any);
-						}
-					}, { origin: "local", branchId: targetBranchId });
-					
+						this.pendingEdits.set(proposalId, proposal as any);
+					}, "local");
+
 					logger.log(
 						`[MERGE] Conflicting collaborator edit on ${item.id} routed to pendingEdits`,
 					);
@@ -324,14 +310,14 @@ export class DatabaseSyncManager {
 		}
 
 		this.doc.transact(() => {
-			yMap.set(item.id, { ...persistableItem, branchId: targetBranchId } as any);
-		}, { origin: "local", branchId: targetBranchId });
+			yMap.set(item.id, persistableItem as any);
+		}, "local");
 	}
 
 	/**
 	 * Helper to perform surgical deletes (soft deletes or physical if needed)
 	 */
-	public deleteEntity(collectionName: keyof AppState, id: string, branchId?: string | null) {
+	public deleteEntity(collectionName: keyof AppState, id: string) {
 		if (!this.checkPermissions(collectionName)) {
 			logger.warn(
 				`[SECURITY] Unauthorized deletion attempt on ${collectionName}`,
@@ -339,98 +325,83 @@ export class DatabaseSyncManager {
 			return;
 		}
 
-		const targetBranchId = branchId !== undefined ? branchId : this.activeBranchId;
-		const yMap = this.getMapForCollection(collectionName, targetBranchId);
+		const yMap = this.getMapForCollection(collectionName);
 		if (!yMap) return;
 
 		this.doc.transact(() => {
 			yMap.delete(id);
-		}, { origin: "local", branchId: targetBranchId });
+		}, "local");
 	}
 
 	/**
 	 * Admin-only function to resolve a pending edit
 	 */
-	public resolvePendingEdit(proposalId: string, resolution: 'approve' | 'reject', mergedData?: any) {
+	public resolvePendingEdit(
+		proposalId: string,
+		resolution: "approve" | "reject",
+		mergedData?: any,
+	) {
 		const effectiveSelf = this.getEffectivePeerConfig(this.localPeerId);
 		const isAdmin = effectiveSelf.role === "admin" || effectiveSelf.isMaster;
-		
+
 		if (!isAdmin) {
-			logger.warn(`[SECURITY] Unauthorized attempt to resolve pending edit by ${this.localPeerId}`);
+			logger.warn(
+				`[SECURITY] Unauthorized attempt to resolve pending edit by ${this.localPeerId}`,
+			);
 			return;
 		}
 
 		const proposal = this.pendingEdits.get(proposalId);
 		if (!proposal) return;
 
-		const targetBranchId = (proposal.proposedData as any)?.branchId || this.activeBranchId;
-
 		this.doc.transact(() => {
-			if (resolution === 'approve') {
+			if (resolution === "approve") {
 				const finalData = mergedData || proposal.proposedData;
-				const collectionMap = this.getMapForCollection(proposal.collectionName, targetBranchId);
+				const collectionMap = this.getMapForCollection(proposal.collectionName);
 				if (collectionMap) {
 					// We temporarily bypass the upsertEntity hook by setting it directly to the map
-					collectionMap.set(proposal.entityId, { ...finalData, branchId: targetBranchId } as any);
+					collectionMap.set(proposal.entityId, finalData as any);
 				}
 			}
-			
+
 			// Always remove the proposal once resolved
-			const pendingEditsMap = this.getMapForCollection("pendingEdits", targetBranchId);
-			if (pendingEditsMap) {
-				pendingEditsMap.delete(proposalId);
-			}
-		}, { origin: "local", branchId: targetBranchId });
-		
+			this.pendingEdits.delete(proposalId);
+		}, "local");
+
 		logger.log(`[MERGE] Proposal ${proposalId} resolved as ${resolution}`);
 	}
 
-	private getMapForCollection(collection: string, branchId?: string | null): Y.Map<EntityRecord> | null {
-		const targetBranchId = branchId !== undefined ? branchId : this.activeBranchId;
-
-		if (targetBranchId === this.activeBranchId) {
-			switch (collection) {
-				case "products":
-					return this.products as unknown as Y.Map<EntityRecord>;
-				case "sales":
-					return this.sales as unknown as Y.Map<EntityRecord>;
-				case "clients":
-					return this.clients as unknown as Y.Map<EntityRecord>;
-				case "suppliers":
-					return this.suppliers as unknown as Y.Map<EntityRecord>;
-				case "purchaseOrders":
-					return this.purchaseOrders as unknown as Y.Map<EntityRecord>;
-				case "auditLogs":
-					return this.auditLogs as unknown as Y.Map<EntityRecord>;
-				case "arqueoSessions":
-					return this.arqueoSessions as unknown as Y.Map<EntityRecord>;
-				case "ocrResults":
-					return this.ocrResults as unknown as Y.Map<EntityRecord>;
-				case "teamMembers":
-					return this.teamMembers as unknown as Y.Map<EntityRecord>;
-				case "pendingEdits":
-					return this.pendingEdits as unknown as Y.Map<EntityRecord>;
-				case "productChangeHistory":
-					return this.productChangeHistory as unknown as Y.Map<EntityRecord>;
-			}
+	private getMapForCollection(collection: string): Y.Map<EntityRecord> | null {
+		switch (collection) {
+			case "products":
+				return this.products as unknown as Y.Map<EntityRecord>;
+			case "sales":
+				return this.sales as unknown as Y.Map<EntityRecord>;
+			case "clients":
+				return this.clients as unknown as Y.Map<EntityRecord>;
+			case "suppliers":
+				return this.suppliers as unknown as Y.Map<EntityRecord>;
+			case "purchaseOrders":
+				return this.purchaseOrders as unknown as Y.Map<EntityRecord>;
+			case "auditLogs":
+				return this.auditLogs as unknown as Y.Map<EntityRecord>;
+			case "arqueoSessions":
+				return this.arqueoSessions as unknown as Y.Map<EntityRecord>;
+			case "ocrResults":
+				return this.ocrResults as unknown as Y.Map<EntityRecord>;
+			case "teamMembers":
+				return this.teamMembers as unknown as Y.Map<EntityRecord>;
+			case "branches":
+				return this.branches as unknown as Y.Map<EntityRecord>;
+			case "pendingEdits":
+				return this.pendingEdits as unknown as Y.Map<EntityRecord>;
+			case "productChangeHistory":
+				return this.productChangeHistory as unknown as Y.Map<EntityRecord>;
+			case "peers":
+				return this.linkedNodes as unknown as Y.Map<EntityRecord>;
+			default:
+				return null;
 		}
-
-		if (collection === "peers" || collection === "linkedNodes") {
-			return this.linkedNodes as unknown as Y.Map<EntityRecord>;
-		}
-
-		const branchSuffix = targetBranchId ? `:${targetBranchId}` : "";
-		const branchableCollections = [
-			"products", "sales", "clients", "suppliers", "purchaseOrders",
-			"auditLogs", "arqueoSessions", "ocrResults", "teamMembers",
-			"pendingEdits", "productChangeHistory"
-		];
-
-		if (branchableCollections.includes(collection)) {
-			return this.doc.getMap(`${collection}${branchSuffix}`) as unknown as Y.Map<EntityRecord>;
-		}
-
-		return null;
 	}
 
 	/**
@@ -458,15 +429,19 @@ export class DatabaseSyncManager {
 			mergeAndSync("purchaseOrders", state.purchaseOrders);
 			mergeAndSync("auditLogs", state.auditLogs);
 			mergeAndSync("teamMembers", state.teamMembers);
+			mergeAndSync("branches", state.branches);
 			mergeAndSync("productChangeHistory", state.productChangeHistory);
-			
+
 			if (state.pendingEdits) {
 				for (const edit of state.pendingEdits) {
 					this.pendingEdits.set(edit.id, edit as any);
 				}
 			}
 
-			this.metadata.set("inventoryConfig", JSON.stringify(state.inventoryConfig));
+			this.metadata.set(
+				"inventoryConfig",
+				JSON.stringify(state.inventoryConfig),
+			);
 
 			if (state.peers && state.peers.length > 0) {
 				for (const peer of state.peers) {
@@ -531,15 +506,17 @@ export class DatabaseSyncManager {
 			arqueoSessions: Array.from(this.arqueoSessions.values()),
 			ocrResults: Array.from(this.ocrResults.values()),
 			teamMembers: Array.from(this.teamMembers.values()),
+			branches: Array.from(this.branches.values()),
 			inventoryConfig: this.getInventoryConfig(),
 			role: resolvedRole,
 			permissions: resolvedPermissions,
 			peers: peers,
-			pendingEdits: Array.from(this.pendingEdits.values()) as EntityEditProposal[],
+			pendingEdits: Array.from(
+				this.pendingEdits.values(),
+			) as EntityEditProposal[],
 			productChangeHistory: Array.from(
 				this.productChangeHistory.values(),
 			) as ProductChangeHistoryEntry[],
-			activeBranch: this.activeBranchId || undefined,
 		};
 	}
 
@@ -902,6 +879,7 @@ export class DatabaseSyncManager {
 			"arqueoSessions",
 			"ocrResults",
 			"teamMembers",
+			"branches",
 			"pendingEdits",
 			"productChangeHistory",
 		];
@@ -911,10 +889,7 @@ export class DatabaseSyncManager {
 			if (!yMap) return null;
 
 			const observer = (event: Y.YMapEvent<EntityRecord>) => {
-				const origin = event.transaction.origin;
-				const isLocal = typeof origin === "object" && origin !== null ? (origin as any).origin === "local" : origin === "local";
-
-				if (!isLocal) {
+				if (event.transaction.origin !== "local") {
 					const items: EntityRecord[] = [];
 					const deletedIds: string[] = [];
 
