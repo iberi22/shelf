@@ -50,8 +50,8 @@ test.describe('Multi-Peer E2E Synchronization', () => {
       .poll(
         async () => {
           return adminPage.evaluate(() => {
-            const mgr = (window as any)._p2pManagerForTest;
-            return mgr ? mgr.getState()?.peers?.length : 0;
+            const dbSync = (window as any)._dbSyncForTest;
+            return dbSync?.getLinkedNodes()?.length || 0;
           });
         },
         { timeout: 15000 },
