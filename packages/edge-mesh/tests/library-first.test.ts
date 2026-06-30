@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import * as Y from 'yjs';
+import { describe, expect, it, vi } from 'vitest';
 import {
 	InMemoryStorage,
 	createCrdtSyncLayer,
@@ -200,5 +201,66 @@ describe('library-first edge mesh APIs', () => {
 			action: 'gc',
 		});
 		expect(authorizer.can('node-b', 'shelf/auditLogs', 'gc')).toBe(true);
+	});
+
+	it('implements formal ack/retry for reliable delivery', async () => {
+		vi.useFakeTimers();
+		const nodeA = createCrdtSyncLayer({
+			namespace: 'shelf',
+			identity: identity('node-a'),
+			ackTimeout: 100,
+			maxRetries: 2,
+		});
+		const nodeB = createCrdtSyncLayer({
+			namespace: 'shelf',
+			identity: identity('node-b'),
+		});
+		await Promise.all([nodeA.load(), nodeB.load()]);
+
+		const sent: any[] = [];
+		nodeA.on('send', (envelope) => sent.push(envelope));
+
+		// node-a applies local change and generates update for node-b
+		nodeA.applyLocalChange((doc) => {
+			doc.getMap('products').set('sku-ack', { id: 'sku-ack', name: 'Ack' });
+		});
+		const update = nodeA.createUpdateForPeer(Y.encodeStateVector(new Y.Doc()), 'node-b');
+		nodeA.send(update);
+
+		expect(sent).toHaveLength(1);
+		expect(sent[0].type).toBe('sync:update');
+
+		// 1st retry
+		vi.advanceTimersByTime(100);
+		expect(sent).toHaveLength(2);
+		expect(sent[1].opId).toBe(update.opId);
+
+		// 2nd retry
+		vi.advanceTimersByTime(200);
+		expect(sent).toHaveLength(3);
+
+		// Fail after max retries
+		const failed: any[] = [];
+		nodeA.on('operation:failed', (e) => failed.push(e));
+		vi.advanceTimersByTime(400);
+		expect(failed).toHaveLength(1);
+		expect(failed[0].envelope.opId).toBe(update.opId);
+		expect(failed[0].error.message).toMatch(/timed out after 2 retries/i);
+
+		// Verify success with ACK
+		sent.length = 0;
+		const update2 = nodeA.createUpdateForPeer(Y.encodeStateVector(new Y.Doc()), 'node-b');
+		nodeA.send(update2);
+		expect(sent).toHaveLength(1);
+
+		const ack = nodeB.applyEnvelope(update2);
+		expect(ack?.type).toBe('sync:ack');
+		expect(ack?.ackId).toBe(update2.opId);
+
+		nodeA.applyEnvelope(ack!);
+		vi.advanceTimersByTime(1000);
+		expect(sent).toHaveLength(1); // No more retries
+
+		vi.useRealTimers();
 	});
 });

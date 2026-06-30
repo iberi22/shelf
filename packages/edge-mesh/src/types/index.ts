@@ -181,10 +181,11 @@ export interface GovernanceProposal {
 export interface CrdtSyncEnvelope {
 	id: string;
 	opId: string;
-	type: 'sync:request' | 'sync:update' | 'sync:snapshot';
+	type: 'sync:request' | 'sync:update' | 'sync:snapshot' | 'sync:ack';
 	namespace: string;
 	sourcePeerId: string;
 	targetPeerId?: string;
+	ackId?: string;
 	timestamp: number;
 	stateVector?: Uint8Array;
 	update?: Uint8Array;
