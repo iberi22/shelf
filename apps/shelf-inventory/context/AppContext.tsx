@@ -3,6 +3,7 @@ import type {
   AppState,
   ArqueoSession,
   AuditEntry,
+  Branch,
   Client,
   ImportProductsPayload,
   InventoryConfig,
@@ -17,7 +18,7 @@ import type {
   Supplier,
   TeamMember,
 } from 'p2p-mesh-core';
-import { dbSync, p2pManager, type PeerPermissions } from 'p2p-mesh-core';
+import { dbSync, type PeerPermissions, p2pManager } from 'p2p-mesh-core';
 import React, {
   createContext,
   type Dispatch,
@@ -41,6 +42,7 @@ const initialState: AppState = {
   auditLogs: [],
   peers: [],
   teamMembers: [],
+  branches: [],
   inventoryConfig: DEFAULT_INVENTORY_CONFIG,
   localPeerId: null,
   role: 'admin',
@@ -70,6 +72,9 @@ type Action =
   | { type: 'ADD_TEAM_MEMBER'; payload: TeamMember }
   | { type: 'UPDATE_TEAM_MEMBER'; payload: TeamMember }
   | { type: 'DELETE_TEAM_MEMBER'; payload: string }
+  | { type: 'ADD_BRANCH'; payload: Branch }
+  | { type: 'UPDATE_BRANCH'; payload: Branch }
+  | { type: 'DELETE_BRANCH'; payload: string }
   | { type: 'RESTORE_STATE'; payload: RestoreStatePayload }
   | { type: 'BATCH_UPDATE_PRODUCTS'; payload: { toAdd: Product[]; toUpdate: Product[] } }
   | { type: 'SET_LOCAL_PEER_ID'; payload: string }
@@ -121,10 +126,7 @@ const getTimestamp = (item: Record<string, unknown>): number => {
 };
 
 /** Helper: extract items from an array property on AppState */
-const getCollection = <K extends keyof AppState>(
-  state: AppState,
-  key: K,
-): Array<Record<string, unknown>> => {
+const getCollection = <K extends keyof AppState>(state: AppState, key: K): Array<Record<string, unknown>> => {
   const col = state[key];
   return Array.isArray(col) ? (col as unknown as Array<Record<string, unknown>>) : [];
 };
@@ -179,7 +181,10 @@ const pushProductHistory = (
     entry,
     ...existing.filter((item) => item.productId === entry.productId && item.id !== entry.id),
   ]
-    .sort((a, b) => getTimestamp(b as unknown as Record<string, unknown>) - getTimestamp(a as unknown as Record<string, unknown>))
+    .sort(
+      (a, b) =>
+        getTimestamp(b as unknown as Record<string, unknown>) - getTimestamp(a as unknown as Record<string, unknown>),
+    )
     .slice(0, limit);
   const nextForProductIds = new Set(nextForProduct.map((item) => item.id));
   const otherProducts = existing.filter(
@@ -266,7 +271,10 @@ const mergeCollections = <T extends { id: string }>(local: T[], remote: T[] | un
 
   for (const remoteItem of remote) {
     const localItem = map.get(remoteItem.id);
-    if (!localItem || getTimestamp(remoteItem as Record<string, unknown>) > getTimestamp(localItem as Record<string, unknown>)) {
+    if (
+      !localItem ||
+      getTimestamp(remoteItem as Record<string, unknown>) > getTimestamp(localItem as Record<string, unknown>)
+    ) {
       map.set(remoteItem.id, remoteItem);
     }
   }
@@ -593,6 +601,21 @@ const appReducer = (state: AppState, action: Action): AppState => {
         teamMembers: state.teamMembers.filter((m) => m.id !== action.payload),
       };
       break;
+    case 'ADD_BRANCH':
+      newState = { ...state, branches: [...state.branches, action.payload] };
+      break;
+    case 'UPDATE_BRANCH':
+      newState = {
+        ...state,
+        branches: state.branches.map((b) => (b.id === action.payload.id ? action.payload : b)),
+      };
+      break;
+    case 'DELETE_BRANCH':
+      newState = {
+        ...state,
+        branches: state.branches.filter((b) => b.id !== action.payload),
+      };
+      break;
     case 'ADD_ARQUEO_SESSION':
       newState = { ...state, arqueoSessions: [...state.arqueoSessions, enrich(state, action.payload)] };
       break;
@@ -730,6 +753,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
         arqueoSessions: mergeCollections(state.arqueoSessions, p.arqueoSessions),
         ocrResults: mergeCollections(state.ocrResults, p.ocrResults),
         teamMembers: mergeCollections(state.teamMembers, p.teamMembers),
+        branches: mergeCollections(state.branches, p.branches),
         productChangeHistory: mergeCollections(state.productChangeHistory, p.productChangeHistory),
         inventoryConfig: normalizeInventoryConfig(p.inventoryConfig || state.inventoryConfig),
         peers: mergeCollections(state.peers, p.peers),
@@ -745,7 +769,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
       const deletedIdsSet = new Set(deletedIds);
 
       const existingItems = getCollection(state, collection);
-      const filteredExisting = existingItems.filter((i) => !updatedIds.has(i.id as string) && !deletedIdsSet.has(i.id as string));
+      const filteredExisting = existingItems.filter(
+        (i) => !updatedIds.has(i.id as string) && !deletedIdsSet.has(i.id as string),
+      );
 
       const nextItems = collection === 'products' ? normalizeProductsCollection(items as Product[]) : items;
 
@@ -833,11 +859,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
           const payload = action.payload as Record<string, unknown>;
           const oldRecord = oldItem as Record<string, unknown>;
           for (const key in payload) {
-            if (
-              payload[key] !== oldRecord[key] &&
-              key !== 'updatedAt' &&
-              key !== 'updatedBy'
-            ) {
+            if (payload[key] !== oldRecord[key] && key !== 'updatedAt' && key !== 'updatedBy') {
               diff[key] = { old: oldRecord[key], new: payload[key] };
             }
           }
@@ -906,8 +928,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return {
       localPeerId: state.localPeerId,
       transport: {
-        send: (to: string, data: Uint8Array) => p2pManager.sendTo(to, { type: 'EDGE_MESH_SYNC', payload: data } as unknown as Parameters<typeof p2pManager.sendTo>[1]),
-        broadcast: (data: Uint8Array) => p2pManager.broadcast({ type: 'EDGE_MESH_SYNC', payload: data } as unknown as Parameters<typeof p2pManager.broadcast>[0]),
+        send: (to: string, data: Uint8Array) =>
+          p2pManager.sendTo(to, { type: 'EDGE_MESH_SYNC', payload: data } as unknown as Parameters<
+            typeof p2pManager.sendTo
+          >[1]),
+        broadcast: (data: Uint8Array) =>
+          p2pManager.broadcast({ type: 'EDGE_MESH_SYNC', payload: data } as unknown as Parameters<
+            typeof p2pManager.broadcast
+          >[0]),
         onMessage: (callback: (from: string, data: Uint8Array) => void) => {
           p2pManager.onMessage((msg: unknown, from: string) => {
             const typedMsg = msg as { type: string; payload: Uint8Array };
@@ -915,7 +943,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               callback(from, typedMsg.payload);
             }
           });
-
         },
         onPeerConnect: (_callback: (peerId: string) => void) => {
           // Simplified, ideally p2pManager should expose this cleanly
@@ -956,7 +983,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         if (masterId && masterId !== dbSync.localPeerId && linkedNodes.length > 0) {
           const myNode = linkedNodes.find((node) => node.id === dbSync.localPeerId);
-          const isExplicitlyExpelled = myNode && 'status' in myNode && (myNode as { status: string }).status === 'expelled';
+          const isExplicitlyExpelled =
+            myNode && 'status' in myNode && (myNode as { status: string }).status === 'expelled';
           const isMissing = !myNode;
 
           // Only expel if explicitly marked as expelled, not just missing from linkedNodes
@@ -968,7 +996,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           } else if (isMissing) {
             // Unexpcted absence — request full state to re-sync, don't wipe
             console.log('[P2P Mesh] Peer not in linkedNodes yet (stale sync). Requesting state refresh...');
-            p2pManager.broadcast({ type: 'REQUEST_FULL_STATE', payload: {} } as unknown as Parameters<typeof p2pManager.broadcast>[0]);
+            p2pManager.broadcast({ type: 'REQUEST_FULL_STATE', payload: {} } as unknown as Parameters<
+              typeof p2pManager.broadcast
+            >[0]);
           }
         }
       }
@@ -1176,7 +1206,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           purchaseOrder: 'purchaseOrders',
         };
         const collection = type ? collectionMap[type] : undefined;
-        const item = collection ? (getCollection(currentState, collection) as Array<Record<string, unknown>>).find((entry) => entry.id === id) : null;
+        const item = collection
+          ? (getCollection(currentState, collection) as Array<Record<string, unknown>>).find((entry) => entry.id === id)
+          : null;
         if (collection && item) {
           dbSync.upsertEntity(collection, {
             ...item,
@@ -1207,6 +1239,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             ARQUEO_SESSION: 'arqueoSessions',
             OCR_RESULT: 'ocrResults',
             TEAM_MEMBER: 'teamMembers',
+            BRANCH: 'branches',
           };
           for (const [key, collection] of Object.entries(collectionMap)) {
             if (typeStr.includes(key)) {
@@ -1251,6 +1284,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             ARQUEO_SESSION: 'arqueoSessions',
             OCR_RESULT: 'ocrResults',
             TEAM_MEMBER: 'teamMembers',
+            BRANCH: 'branches',
           };
 
           for (const [key, collection] of Object.entries(collectionMap)) {

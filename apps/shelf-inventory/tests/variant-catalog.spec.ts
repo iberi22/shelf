@@ -34,7 +34,9 @@ test.describe('Variant Catalog', () => {
     }
 
     // Verify search/filter works
-    const searchInput = page.locator('[data-testid="search-input"], input[placeholder*="buscar"], input[placeholder*="search"]');
+    const searchInput = page.locator(
+      '[data-testid="search-input"], input[placeholder*="buscar"], input[placeholder*="search"]',
+    );
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill('test');
       await page.waitForTimeout(500);
@@ -43,7 +45,9 @@ test.describe('Variant Catalog', () => {
     }
 
     // Verify catalog is functional — product count is accessible
-    const productRows = await page.locator('[data-testid^="product-row-"], table tbody tr, [class*="product-card"]').count();
+    const productRows = await page
+      .locator('[data-testid^="product-row-"], table tbody tr, [class*="product-card"]')
+      .count();
     console.log('Product rows in catalog:', productRows);
     expect(productRows).toBeGreaterThanOrEqual(0);
   });

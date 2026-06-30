@@ -126,7 +126,9 @@ const P2PSyncManager: React.FC = () => {
   stateRef.current = state;
 
   useEffect(() => {
-    isBiometricsSupported().then(setIsBiometricAvailable).catch(() => setIsBiometricAvailable(false));
+    isBiometricsSupported()
+      .then(setIsBiometricAvailable)
+      .catch(() => setIsBiometricAvailable(false));
     p2pManager.init();
 
     const isAuthorizedConfigSender = (fromPeerId: string) => {

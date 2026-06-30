@@ -3,19 +3,20 @@ import type {
 	AppState,
 	ArqueoSession,
 	AuditEntry,
+	Branch,
 	Client,
-	InvoiceOCRResult,
+	EntityEditProposal,
 	InventoryConfig,
+	InvoiceOCRResult,
 	P2PRole,
 	PeerInfo,
 	PeerPermissions,
 	Product,
 	ProductChangeHistoryEntry,
 	PurchaseOrder,
-	TeamMember,
 	Sale,
 	Supplier,
-	EntityEditProposal,
+	TeamMember,
 } from "./types";
 import { logger } from "./utils/logger";
 
@@ -54,6 +55,7 @@ export class DatabaseSyncManager {
 	private arqueoSessions: Y.Map<ArqueoSession>;
 	private ocrResults: Y.Map<InvoiceOCRResult>;
 	private teamMembers: Y.Map<TeamMember>;
+	private branches: Y.Map<Branch>;
 	private metadata: Y.Map<string>;
 	private linkedNodes: Y.Map<LinkedNodeRecord>;
 	private pendingEdits: Y.Map<EntityEditProposal>;
@@ -162,6 +164,7 @@ export class DatabaseSyncManager {
 		this.arqueoSessions = this.doc.getMap("arqueoSessions");
 		this.ocrResults = this.doc.getMap("ocrResults");
 		this.teamMembers = this.doc.getMap("teamMembers");
+		this.branches = this.doc.getMap("branches");
 		this.metadata = this.doc.getMap("metadata");
 		this.linkedNodes = this.doc.getMap("linkedNodes");
 		this.pendingEdits = this.doc.getMap("pendingEdits");
@@ -214,6 +217,8 @@ export class DatabaseSyncManager {
 				return !!perms.canEditPurchaseOrders;
 			case "teamMembers":
 				return false;
+			case "branches":
+				return true; // Allow for now, might need more granular perms later
 			case "arqueoSessions":
 				return !!perms.canViewArqueo;
 			case "ocrResults":
@@ -270,7 +275,7 @@ export class DatabaseSyncManager {
 			const autoApplyProductUpdates = Boolean(
 				this.getInventoryConfig()?.autoApplyProductUpdates,
 			);
-			
+
 			if (!isAdmin && !autoApplyProductUpdates) {
 				const originalData = yMap.get(item.id);
 				const hasConcurrentChange =
@@ -291,11 +296,11 @@ export class DatabaseSyncManager {
 						timestamp: new Date().toISOString(),
 						status: "pending",
 					};
-					
+
 					this.doc.transact(() => {
 						this.pendingEdits.set(proposalId, proposal as any);
 					}, "local");
-					
+
 					logger.log(
 						`[MERGE] Conflicting collaborator edit on ${item.id} routed to pendingEdits`,
 					);
@@ -331,12 +336,18 @@ export class DatabaseSyncManager {
 	/**
 	 * Admin-only function to resolve a pending edit
 	 */
-	public resolvePendingEdit(proposalId: string, resolution: 'approve' | 'reject', mergedData?: any) {
+	public resolvePendingEdit(
+		proposalId: string,
+		resolution: "approve" | "reject",
+		mergedData?: any,
+	) {
 		const effectiveSelf = this.getEffectivePeerConfig(this.localPeerId);
 		const isAdmin = effectiveSelf.role === "admin" || effectiveSelf.isMaster;
-		
+
 		if (!isAdmin) {
-			logger.warn(`[SECURITY] Unauthorized attempt to resolve pending edit by ${this.localPeerId}`);
+			logger.warn(
+				`[SECURITY] Unauthorized attempt to resolve pending edit by ${this.localPeerId}`,
+			);
 			return;
 		}
 
@@ -344,7 +355,7 @@ export class DatabaseSyncManager {
 		if (!proposal) return;
 
 		this.doc.transact(() => {
-			if (resolution === 'approve') {
+			if (resolution === "approve") {
 				const finalData = mergedData || proposal.proposedData;
 				const collectionMap = this.getMapForCollection(proposal.collectionName);
 				if (collectionMap) {
@@ -352,11 +363,11 @@ export class DatabaseSyncManager {
 					collectionMap.set(proposal.entityId, finalData as any);
 				}
 			}
-			
+
 			// Always remove the proposal once resolved
 			this.pendingEdits.delete(proposalId);
 		}, "local");
-		
+
 		logger.log(`[MERGE] Proposal ${proposalId} resolved as ${resolution}`);
 	}
 
@@ -380,6 +391,8 @@ export class DatabaseSyncManager {
 				return this.ocrResults as unknown as Y.Map<EntityRecord>;
 			case "teamMembers":
 				return this.teamMembers as unknown as Y.Map<EntityRecord>;
+			case "branches":
+				return this.branches as unknown as Y.Map<EntityRecord>;
 			case "pendingEdits":
 				return this.pendingEdits as unknown as Y.Map<EntityRecord>;
 			case "productChangeHistory":
@@ -416,15 +429,19 @@ export class DatabaseSyncManager {
 			mergeAndSync("purchaseOrders", state.purchaseOrders);
 			mergeAndSync("auditLogs", state.auditLogs);
 			mergeAndSync("teamMembers", state.teamMembers);
+			mergeAndSync("branches", state.branches);
 			mergeAndSync("productChangeHistory", state.productChangeHistory);
-			
+
 			if (state.pendingEdits) {
 				for (const edit of state.pendingEdits) {
 					this.pendingEdits.set(edit.id, edit as any);
 				}
 			}
 
-			this.metadata.set("inventoryConfig", JSON.stringify(state.inventoryConfig));
+			this.metadata.set(
+				"inventoryConfig",
+				JSON.stringify(state.inventoryConfig),
+			);
 
 			if (state.peers && state.peers.length > 0) {
 				for (const peer of state.peers) {
@@ -489,11 +506,14 @@ export class DatabaseSyncManager {
 			arqueoSessions: Array.from(this.arqueoSessions.values()),
 			ocrResults: Array.from(this.ocrResults.values()),
 			teamMembers: Array.from(this.teamMembers.values()),
+			branches: Array.from(this.branches.values()),
 			inventoryConfig: this.getInventoryConfig(),
 			role: resolvedRole,
 			permissions: resolvedPermissions,
 			peers: peers,
-			pendingEdits: Array.from(this.pendingEdits.values()) as EntityEditProposal[],
+			pendingEdits: Array.from(
+				this.pendingEdits.values(),
+			) as EntityEditProposal[],
 			productChangeHistory: Array.from(
 				this.productChangeHistory.values(),
 			) as ProductChangeHistoryEntry[],
@@ -859,6 +879,7 @@ export class DatabaseSyncManager {
 			"arqueoSessions",
 			"ocrResults",
 			"teamMembers",
+			"branches",
 			"pendingEdits",
 			"productChangeHistory",
 		];

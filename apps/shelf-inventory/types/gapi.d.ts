@@ -9,10 +9,7 @@ declare namespace gapi {
 
     namespace drive {
       namespace files {
-        function list(params: {
-          q: string;
-          fields: string;
-        }): Promise<{
+        function list(params: { q: string; fields: string }): Promise<{
           result: {
             files: Array<{ id: string; name: string }>;
           };

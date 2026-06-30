@@ -34,8 +34,6 @@ test.describe('P2P Multi-Branch Architecture', () => {
     await dismissModals(hostPage);
 
     // Assume Jules adds a branch config section
-    // For now, this is a skeleton acting as TDD for Jules
-    /* 
     await hostPage.getByTestId('add-branch-button').click();
     await hostPage.getByTestId('branch-name-input').fill('Sucursal Norte');
     await hostPage.getByTestId('save-branch-button').click();
@@ -43,7 +41,10 @@ test.describe('P2P Multi-Branch Architecture', () => {
     await hostPage.getByTestId('add-branch-button').click();
     await hostPage.getByTestId('branch-name-input').fill('Bodega Sur');
     await hostPage.getByTestId('save-branch-button').click();
-    */
+
+    // Verify branches are listed
+    await expect(hostPage.locator('text=Sucursal Norte')).toBeVisible();
+    await expect(hostPage.locator('text=Bodega Sur')).toBeVisible();
 
     // 4. Get Peer IDs for Branch 1 and Branch 2
     await b1Page.locator('[data-testid="nav-item-nav.settings"]').last().click();

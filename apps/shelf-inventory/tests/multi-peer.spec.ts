@@ -47,12 +47,15 @@ test.describe('Multi-Peer E2E Synchronization', () => {
 
     // Wait for connection
     await expect
-      .poll(async () => {
-        return adminPage.evaluate(() => {
-          const mgr = (window as any)._p2pManagerForTest;
-          return mgr ? mgr.getState()?.peers?.length : 0;
-        });
-      }, { timeout: 15000 })
+      .poll(
+        async () => {
+          return adminPage.evaluate(() => {
+            const mgr = (window as any)._p2pManagerForTest;
+            return mgr ? mgr.getState()?.peers?.length : 0;
+          });
+        },
+        { timeout: 15000 },
+      )
       .toBeGreaterThanOrEqual(1);
 
     // Step 2: Peer A creates a product

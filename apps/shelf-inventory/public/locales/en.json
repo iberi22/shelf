@@ -295,18 +295,26 @@
       "button": "Send Feedback",
       "success": "Thank you! Your feedback has been sent."
     },
-    "ai": {
-      "title": "Configuración de IA",
-      "description": "Configura tus propias llaves para el asistente de IA.",
-      "proxyUrl": "URL del Proxy Local (Opcional)"
-    },
-    "security": {
-      "title": "Seguridad",
-      "description": "Configura un PIN para proteger el acceso a la aplicación.",
-      "appLock": "Bloqueo de Aplicación",
-      "enable": "Activar",
-      "disable": "Desactivar",
-      "lockedNote": "La aplicación se bloqueará automáticamente al recargar."
+    "branches": {
+      "title": "Branches / Warehouses",
+      "description": "Manage the physical locations of your inventory.",
+      "add": "Add Branch",
+      "new": "New Branch",
+      "edit": "Edit Branch",
+      "nameLabel": "Branch/Warehouse Name",
+      "namePlaceholder": "e.g. Central Warehouse or North Branch",
+      "table": {
+        "name": "Name",
+        "id": "ID",
+        "createdAt": "Creation Date",
+        "actions": "Actions"
+      },
+      "empty": "No branches configured.",
+      "deleteConfirm": "Are you sure you want to delete this branch?",
+      "deleteErrorHasProducts": "Cannot delete branch because it has products assigned.",
+      "successAdd": "Branch added.",
+      "successUpdate": "Branch updated.",
+      "successDelete": "Branch deleted successfully."
     }
   },
   "auth": {
@@ -425,14 +433,15 @@
       "description": "Upgrade to Pro to sync your data across all your devices, keeping them safe and up-to-date."
     },
     "governance": {
-      "title": "Decentralized",
-      "highlight": "Multi-Branch Network",
-      "description": "Connect multiple stores and warehouses securely without a central server. Sync data in real-time or offline.",
-      "learnMore": "Learn how it works",
+      "title": "Distributed Data Governance",
+      "highlight": "Full Control.",
+      "description": "Shelf runs on an offline-first peer-to-peer architecture. Your data stays local and syncs directly between trusted devices, without a central server deciding who owns your inventory.",
+      "learnMore": "Learn more",
       "points": [
-        "End-to-end encryption for all synced data",
-        "Role-based permissions per branch",
-        "Automated conflict resolution"
+        "Unified management for multiple branches and warehouses.",
+        "Partitioned local-first data, coordinated by the authorized host.",
+        "Consolidated reports that can combine remote inventories.",
+        "Post-quantum cryptographic security with verifiable node permissions."
       ]
     }
   },
