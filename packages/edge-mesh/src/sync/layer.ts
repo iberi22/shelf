@@ -30,6 +30,8 @@ export interface CrdtSyncLayerOptions {
 	idFactory?: () => string;
 	opLog?: OpLog;
 	snapshots?: SnapshotManager;
+	ackTimeout?: number;
+	maxRetries?: number;
 }
 
 export interface CrdtSyncLayerEvents {
@@ -48,6 +50,11 @@ export interface CrdtSyncLayerEvents {
 		envelope: CrdtSyncEnvelope;
 		reason: string;
 	}) => void;
+	'operation:failed': (event: {
+		envelope: CrdtSyncEnvelope;
+		error: Error;
+	}) => void;
+	send: (envelope: CrdtSyncEnvelope) => void;
 	error: (error: Error) => void;
 }
 
@@ -70,6 +77,16 @@ export class CrdtSyncLayer extends EventEmitter {
 	private idFactory: () => string;
 	private dedupe = new MessageDeduplicator();
 	private ready = false;
+	private ackTimeout: number;
+	private maxRetries: number;
+	private pendingOps = new Map<
+		string,
+		{
+			envelope: CrdtSyncEnvelope;
+			retries: number;
+			timer: ReturnType<typeof setTimeout>;
+		}
+	>();
 
 	constructor(options: CrdtSyncLayerOptions) {
 		super();
@@ -89,6 +106,8 @@ export class CrdtSyncLayer extends EventEmitter {
 		this.opLog = options.opLog || createOpLog();
 		this.snapshots =
 			options.snapshots || createSnapshotManager({ now: this.now });
+		this.ackTimeout = options.ackTimeout || 5000;
+		this.maxRetries = options.maxRetries || 3;
 	}
 
 	isReady(): boolean {
@@ -173,7 +192,24 @@ export class CrdtSyncLayer extends EventEmitter {
 
 	applyEnvelope(envelope: CrdtSyncEnvelope): CrdtSyncEnvelope | null {
 		this.requireReady();
-		if (this.dedupe.isDuplicate(envelope.id) || this.opLog.has(envelope.opId)) {
+
+		if (envelope.type === 'sync:ack') {
+			this.handleAck(envelope);
+			return null;
+		}
+
+		const isDuplicate =
+			this.dedupe.isDuplicate(envelope.id) || this.opLog.has(envelope.opId);
+
+		if (isDuplicate) {
+			// If it's a duplicate update/snapshot, we should still return an ACK
+			// to the sender to stop their retries.
+			if (
+				envelope.type === 'sync:update' ||
+				envelope.type === 'sync:snapshot'
+			) {
+				return this.createAckEnvelope(envelope);
+			}
 			return null;
 		}
 
@@ -195,7 +231,7 @@ export class CrdtSyncLayer extends EventEmitter {
 			);
 		}
 
-		if (envelope.update) {
+		if (envelope.update && envelope.update.length > 0) {
 			Y.applyUpdate(this.doc, envelope.update, {
 				type: 'remote',
 				peerId: envelope.sourcePeerId,
@@ -209,13 +245,76 @@ export class CrdtSyncLayer extends EventEmitter {
 			sourcePeerId: envelope.sourcePeerId,
 			opId: envelope.opId,
 		});
+
+		if (envelope.type === 'sync:update' || envelope.type === 'sync:snapshot') {
+			return this.createAckEnvelope(envelope);
+		}
+
 		return null;
+	}
+
+	public send(envelope: CrdtSyncEnvelope): void {
+		const needsAck =
+			(envelope.type === 'sync:update' || envelope.type === 'sync:snapshot') &&
+			envelope.targetPeerId;
+
+		if (needsAck && !this.pendingOps.has(envelope.opId)) {
+			this.scheduleRetry(envelope, 0);
+		}
+
+		this.emit('send', envelope);
+	}
+
+	private handleAck(envelope: CrdtSyncEnvelope): void {
+		if (!envelope.ackId) return;
+		const pending = this.pendingOps.get(envelope.ackId);
+		if (pending) {
+			clearTimeout(pending.timer);
+			this.pendingOps.delete(envelope.ackId);
+		}
+	}
+
+	private scheduleRetry(envelope: CrdtSyncEnvelope, retries: number): void {
+		if (this.pendingOps.has(envelope.opId)) {
+			const existing = this.pendingOps.get(envelope.opId);
+			if (existing) clearTimeout(existing.timer);
+		}
+
+		const timer = setTimeout(() => {
+			const pending = this.pendingOps.get(envelope.opId);
+			if (!pending) return;
+
+			if (pending.retries < this.maxRetries) {
+				const nextRetry = pending.retries + 1;
+				this.emit('send', envelope);
+				this.scheduleRetry(envelope, nextRetry);
+			} else {
+				this.pendingOps.delete(envelope.opId);
+				this.emit('operation:failed', {
+					envelope: pending.envelope,
+					error: new Error(
+						`Operation timed out after ${this.maxRetries} retries`,
+					),
+				});
+			}
+		}, this.ackTimeout * 2 ** retries);
+
+		this.pendingOps.set(envelope.opId, { envelope, retries, timer });
+	}
+
+	private createAckEnvelope(envelope: CrdtSyncEnvelope): CrdtSyncEnvelope {
+		return this.createEnvelope('sync:ack', {
+			targetPeerId: envelope.sourcePeerId,
+			ackId: envelope.opId,
+			action: 'read', // ACK doesn't need special capability
+		});
 	}
 
 	private createEnvelope(
 		type: CrdtSyncEnvelope['type'],
 		input: {
 			targetPeerId?: string;
+			ackId?: string;
 			stateVector?: Uint8Array;
 			update?: Uint8Array;
 			action: NamespaceAction;
@@ -228,6 +327,7 @@ export class CrdtSyncLayer extends EventEmitter {
 			namespace: this.namespace,
 			sourcePeerId: this.identity.peerId,
 			targetPeerId: input.targetPeerId,
+			ackId: input.ackId,
 			timestamp: this.now(),
 			stateVector: input.stateVector,
 			update: input.update,
@@ -254,7 +354,8 @@ export class CrdtSyncLayer extends EventEmitter {
 				envelope.namespace,
 				'write',
 			) &&
-			envelope.type !== 'sync:request'
+			envelope.type !== 'sync:request' &&
+			envelope.type !== 'sync:ack'
 		) {
 			return 'missing namespace write capability';
 		}
@@ -281,6 +382,7 @@ export class CrdtSyncLayer extends EventEmitter {
 			namespace: envelope.namespace,
 			sourcePeerId: envelope.sourcePeerId,
 			targetPeerId: envelope.targetPeerId,
+			ackId: envelope.ackId,
 			timestamp: envelope.timestamp,
 			capability: envelope.capability,
 			stateVector: envelope.stateVector
