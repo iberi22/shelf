@@ -4,17 +4,26 @@ import type * as Y from 'yjs';
 export const SHELF_EDGE_NAMESPACE = 'shelf';
 export const SHELF_EDGE_LOCAL_ORIGIN = 'shelf-edge-workflow';
 
-export const SHELF_EDGE_COLLECTIONS = [
-  'products',
-  'sales',
+export const SHELF_EDGE_GLOBAL_COLLECTIONS = [
   'clients',
   'suppliers',
+  'auditLogs',
+  'teamMembers',
+  'branches',
+] as const satisfies readonly (keyof AppState)[];
+
+export const SHELF_EDGE_BRANCH_COLLECTIONS = [
+  'products',
+  'sales',
   'purchaseOrders',
   'arqueoSessions',
   'ocrResults',
-  'auditLogs',
-  'teamMembers',
   'productChangeHistory',
+] as const satisfies readonly (keyof AppState)[];
+
+export const SHELF_EDGE_COLLECTIONS = [
+  ...SHELF_EDGE_GLOBAL_COLLECTIONS,
+  ...SHELF_EDGE_BRANCH_COLLECTIONS,
 ] as const satisfies readonly (keyof AppState)[];
 
 export type ShelfEdgeCollection = (typeof SHELF_EDGE_COLLECTIONS)[number];
@@ -65,13 +74,13 @@ export const readShelfEdgeState = (doc: Y.Doc): Partial<AppState> => {
 export const syncAppStateToShelfEdgeDoc = (
   doc: Y.Doc,
   state: AppState,
-  canMutate?: (collection: ShelfEdgeCollection, items: unknown[]) => boolean,
+  collections: ShelfEdgeCollection[] = SHELF_EDGE_COLLECTIONS as any,
 ): ShelfEdgeSyncResult => {
   const changedCollections: ShelfEdgeCollection[] = [];
   const stats = createEmptyShelfEdgeStats();
 
   doc.transact(() => {
-    for (const collection of SHELF_EDGE_COLLECTIONS) {
+    for (const collection of collections) {
       const yMap = doc.getMap(collection);
       const items = ((state[collection] as unknown[]) || []).filter(hasEntityId);
       const nextIds = new Set(items.map((item) => item.id));
@@ -79,9 +88,6 @@ export const syncAppStateToShelfEdgeDoc = (
 
       for (const id of Array.from(yMap.keys())) {
         if (!nextIds.has(id)) {
-          if (canMutate && !canMutate(collection, [])) {
-            continue;
-          }
           yMap.delete(id);
           changed = true;
         }
@@ -89,9 +95,6 @@ export const syncAppStateToShelfEdgeDoc = (
 
       for (const item of items) {
         if (!isEqualEntity(yMap.get(item.id), item)) {
-          if (canMutate && !canMutate(collection, [item])) {
-            continue;
-          }
           yMap.set(item.id, item);
           changed = true;
         }

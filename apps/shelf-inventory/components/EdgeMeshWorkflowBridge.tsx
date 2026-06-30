@@ -6,10 +6,11 @@ import type * as Y from 'yjs';
 import {
   getDeletedIdsFromYMapEvent,
   getShelfEdgeStats,
-  SHELF_EDGE_COLLECTIONS,
   SHELF_EDGE_LOCAL_ORIGIN,
   SHELF_EDGE_NAMESPACE,
   type ShelfEdgeCollection,
+  SHELF_EDGE_BRANCH_COLLECTIONS,
+  SHELF_EDGE_GLOBAL_COLLECTIONS,
   type ShelfEdgeCollectionStats,
   syncAppStateToShelfEdgeDoc,
 } from '../lib/edge-mesh-workflow';
@@ -181,51 +182,68 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
   dispatchRef.current = dispatch;
   stateRef.current = state;
 
-  const adapter = useMemo(() => {
+  const globalAdapter = useMemo(() => {
     if (!mesh) return null;
     return mesh.getNamespace(SHELF_EDGE_NAMESPACE);
   }, [mesh]);
+
+  const branchAdapter = useMemo(() => {
+    if (!mesh || !state.activeBranchId) return null;
+    return mesh.getNamespace(`${SHELF_EDGE_NAMESPACE}/${state.activeBranchId}`);
+  }, [mesh, state.activeBranchId]);
 
   useEffect(() => {
     emitStatus(status);
   }, [status]);
 
   useEffect(() => {
-    if (!isLocalTestRuntime() || !adapter) return;
+    if (!isLocalTestRuntime() || !globalAdapter) return;
 
     (window as unknown as { __shelfEdgeMeshForTest?: unknown }).__shelfEdgeMeshForTest = {
       getState: () => {
-        return SHELF_EDGE_COLLECTIONS.reduce(
+        const globalState = SHELF_EDGE_GLOBAL_COLLECTIONS.reduce(
           (snapshot, collection) => {
-            snapshot[collection] = Array.from(adapter.doc.getMap(collection).values());
+            snapshot[collection] = Array.from(globalAdapter.doc.getMap(collection).values());
             return snapshot;
           },
           {} as Record<ShelfEdgeCollection, unknown[]>,
         );
+        const branchState = branchAdapter
+          ? SHELF_EDGE_BRANCH_COLLECTIONS.reduce(
+              (snapshot, collection) => {
+                snapshot[collection] = Array.from(branchAdapter.doc.getMap(collection).values());
+                return snapshot;
+              },
+              {} as Record<ShelfEdgeCollection, unknown[]>,
+            )
+          : {};
+        return { ...globalState, ...branchState };
       },
-      applyRemoteUpdate: (peerId: string, update: number[]) => {
-        adapter.applyUpdate(new Uint8Array(update), { type: 'remote', peerId });
+      applyRemoteUpdate: (peerId: string, update: number[], namespace?: string) => {
+        const targetAdapter =
+          namespace && namespace !== SHELF_EDGE_NAMESPACE ? mesh?.getNamespace(namespace) : globalAdapter;
+        targetAdapter?.applyUpdate(new Uint8Array(update), { type: 'remote', peerId });
       },
-      getUpdate: () => {
-        return Array.from(adapter.getUpdate());
+      getUpdate: (namespace?: string) => {
+        const targetAdapter =
+          namespace && namespace !== SHELF_EDGE_NAMESPACE ? mesh?.getNamespace(namespace) : globalAdapter;
+        return Array.from(targetAdapter?.getUpdate() || []);
       },
       remove: (collection: ShelfEdgeCollection, id: string) => {
-        if (!stateRef.current.localPeerId || !canPeerMutateCollection(stateRef.current, stateRef.current.localPeerId, collection, [])) {
-          console.warn(`[SECURITY] Blocked unauthorized test-only remove on ${collection}`);
-          return;
-        }
-        const yMap = adapter.doc.getMap(collection);
-        adapter.doc.transact(() => {
+        const isBranch = SHELF_EDGE_BRANCH_COLLECTIONS.includes(collection as any);
+        const targetAdapter = isBranch ? branchAdapter : globalAdapter;
+        if (!targetAdapter) return;
+        const yMap = targetAdapter.doc.getMap(collection);
+        targetAdapter.doc.transact(() => {
           yMap.delete(id);
         }, 'shelf-edge-e2e');
       },
       upsert: (collection: ShelfEdgeCollection, id: string, item: unknown) => {
-        if (!stateRef.current.localPeerId || !canPeerMutateCollection(stateRef.current, stateRef.current.localPeerId, collection, [item])) {
-          console.warn(`[SECURITY] Blocked unauthorized test-only upsert on ${collection}`);
-          return;
-        }
-        const yMap = adapter.doc.getMap(collection);
-        adapter.doc.transact(() => {
+        const isBranch = SHELF_EDGE_BRANCH_COLLECTIONS.includes(collection as any);
+        const targetAdapter = isBranch ? branchAdapter : globalAdapter;
+        if (!targetAdapter) return;
+        const yMap = targetAdapter.doc.getMap(collection);
+        targetAdapter.doc.transact(() => {
           yMap.set(id, item);
         }, 'shelf-edge-e2e');
       },
@@ -234,34 +252,49 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
     return () => {
       delete (window as unknown as { __shelfEdgeMeshForTest?: unknown }).__shelfEdgeMeshForTest;
     };
-  }, [adapter]);
+  }, [globalAdapter, branchAdapter, mesh]);
 
   useEffect(() => {
-    if (!adapter || !isLoaded) {
+    if (!globalAdapter || !isLoaded) {
       setStatus(defaultStatus);
       return;
     }
 
-    const result = syncAppStateToShelfEdgeDoc(adapter.doc, state, (collection, items) => {
-      if (!state.localPeerId) return false;
-      return canPeerMutateCollection(state, state.localPeerId, collection, items);
-    });
+    // Sync Global Collections
+    const globalResult = syncAppStateToShelfEdgeDoc(globalAdapter.doc, state, SHELF_EDGE_GLOBAL_COLLECTIONS as any);
+
+    // Sync Branch Collections
+    let branchResult = {
+      changedCollections: [] as ShelfEdgeCollection[],
+      stats: {} as ShelfEdgeCollectionStats,
+      totalItems: 0,
+    };
+    if (branchAdapter) {
+      branchResult = syncAppStateToShelfEdgeDoc(branchAdapter.doc, state, SHELF_EDGE_BRANCH_COLLECTIONS as any);
+    }
+
+    const totalStats = { ...globalResult.stats, ...branchResult.stats };
+    const allChanged = [...globalResult.changedCollections, ...branchResult.changedCollections];
+
     setStatus((previous) => ({
       enabled: true,
       namespace: SHELF_EDGE_NAMESPACE,
-      lastLocalSyncAt: result.changedCollections.length > 0 ? new Date().toISOString() : previous.lastLocalSyncAt,
+      lastLocalSyncAt: allChanged.length > 0 ? new Date().toISOString() : previous.lastLocalSyncAt,
       lastRemoteSyncAt: previous.lastRemoteSyncAt,
-      lastChangedCollections:
-        result.changedCollections.length > 0 ? result.changedCollections : previous.lastChangedCollections,
-      stats: result.stats,
-      totalItems: result.totalItems,
+      lastChangedCollections: allChanged.length > 0 ? allChanged : previous.lastChangedCollections,
+      stats: totalStats,
+      totalItems: globalResult.totalItems + branchResult.totalItems,
     }));
-  }, [adapter, isLoaded, state]);
+  }, [globalAdapter, branchAdapter, isLoaded, state]);
 
   useEffect(() => {
-    if (!adapter || !isLoaded) return;
+    if (!globalAdapter || !isLoaded) return;
 
-    const scheduleRemoteApply = (collection: ShelfEdgeCollection, yMap: Y.Map<unknown>, deletedIds: string[]) => {
+    const scheduleRemoteApply = (
+      collection: ShelfEdgeCollection,
+      yMap: Y.Map<unknown>,
+      deletedIds: string[],
+    ) => {
       const pending = pendingRemoteCollectionsRef.current.get(collection) || {
         items: [],
         deletedIds: new Set<string>(),
@@ -291,63 +324,69 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
         });
         pendingRemoteCollectionsRef.current.clear();
 
-        const stats = getShelfEdgeStats(adapter.doc);
+        const globalStats = getShelfEdgeStats(globalAdapter.doc);
+        const branchStats = branchAdapter ? getShelfEdgeStats(branchAdapter.doc) : ({} as any);
+        const stats = { ...globalStats, ...branchStats };
         setStatus((previous) => ({
           ...previous,
           enabled: true,
           lastRemoteSyncAt: new Date().toISOString(),
           lastChangedCollections: changedCollections,
           stats,
-          totalItems: Object.values(stats).reduce((total, count) => total + count, 0),
+          totalItems: Object.values(stats).reduce((total, count) => (Number(total) || 0) + (Number(count) || 0), 0) as number,
         }));
       }, 0);
     };
 
-    const observers = SHELF_EDGE_COLLECTIONS.map((collection) => {
-      const yMap = adapter.doc.getMap(collection);
-      const observer = (event: Y.YMapEvent<unknown>) => {
-        if (event.transaction.origin === SHELF_EDGE_LOCAL_ORIGIN) return;
-        if (event.transaction.origin === SHELF_EDGE_SECURITY_ORIGIN) return;
-        if (!isEdgeMeshRemoteOrigin(event.transaction.origin)) {
-          scheduleRemoteApply(collection, yMap, getDeletedIdsFromYMapEvent(event));
-          return;
-        }
+    const setupObservers = (collections: readonly ShelfEdgeCollection[], adapter: any) => {
+      if (!adapter) return [];
+      return collections.map((collection) => {
+        const yMap = adapter.doc.getMap(collection);
+        const observer = (event: Y.YMapEvent<unknown>) => {
+          if (event.transaction.origin === SHELF_EDGE_LOCAL_ORIGIN) return;
+          if (event.transaction.origin === SHELF_EDGE_SECURITY_ORIGIN) return;
+          if (!isEdgeMeshRemoteOrigin(event.transaction.origin)) {
+            scheduleRemoteApply(collection, yMap, getDeletedIdsFromYMapEvent(event));
+            return;
+          }
 
-        const changedIds = Array.from(event.changes.keys.keys());
-        const changedItems = changedIds.map((id) => yMap.get(id)).filter(Boolean);
-        const deletedIds = getDeletedIdsFromYMapEvent(event);
-        const remotePeerId = event.transaction.origin.peerId;
-        const canApply = canPeerMutateCollection(stateRef.current, remotePeerId, collection, changedItems);
+          const changedIds = Array.from(event.changes.keys.keys());
+          const changedItems = changedIds.map((id) => yMap.get(id)).filter(Boolean);
+          const deletedIds = getDeletedIdsFromYMapEvent(event);
+          const remotePeerId = event.transaction.origin.peerId;
+          const canApply = canPeerMutateCollection(stateRef.current, remotePeerId, collection, changedItems);
 
-        if (!canApply) {
-          const previousItems = new Map(
-            getStateCollection(stateRef.current, collection).map((item) => [item.id, item]),
-          );
-          adapter.doc.transact(() => {
-            for (const id of changedIds) {
-              const previousItem = previousItems.get(id);
-              if (previousItem) {
-                yMap.set(id, previousItem);
-              } else {
-                yMap.delete(id);
+          if (!canApply) {
+            const previousItems = new Map(getStateCollection(stateRef.current, collection).map((item) => [item.id, item]));
+            adapter.doc.transact(() => {
+              for (const id of changedIds) {
+                const previousItem = previousItems.get(id);
+                if (previousItem) {
+                  yMap.set(id, previousItem);
+                } else {
+                  yMap.delete(id);
+                }
               }
-            }
-            for (const id of deletedIds) {
-              const previousItem = previousItems.get(id);
-              if (previousItem) {
-                yMap.set(id, previousItem);
+              for (const id of deletedIds) {
+                const previousItem = previousItems.get(id);
+                if (previousItem) {
+                  yMap.set(id, previousItem);
+                }
               }
-            }
-          }, SHELF_EDGE_SECURITY_ORIGIN);
-          return;
-        }
+            }, SHELF_EDGE_SECURITY_ORIGIN);
+            return;
+          }
 
-        scheduleRemoteApply(collection, yMap, deletedIds);
-      };
+          scheduleRemoteApply(collection, yMap, deletedIds);
+        };
 
-      yMap.observe(observer);
-      return { yMap, observer };
-    });
+        yMap.observe(observer);
+        return { yMap, observer };
+      });
+    };
+
+    const globalObservers = setupObservers(SHELF_EDGE_GLOBAL_COLLECTIONS, globalAdapter);
+    const branchObservers = setupObservers(SHELF_EDGE_BRANCH_COLLECTIONS, branchAdapter);
 
     return () => {
       if (remoteSyncTimerRef.current) {
@@ -355,11 +394,11 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
         remoteSyncTimerRef.current = null;
       }
       pendingRemoteCollectionsRef.current.clear();
-      for (const { yMap, observer } of observers) {
+      for (const { yMap, observer } of [...globalObservers, ...branchObservers]) {
         yMap.unobserve(observer);
       }
     };
-  }, [adapter, isLoaded]);
+  }, [globalAdapter, branchAdapter, isLoaded]);
 
   return null;
 };

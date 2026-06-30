@@ -1,5 +1,5 @@
-import { Fingerprint, Languages, Lock, Plus, Save, SlidersHorizontal, Trash2 } from 'lucide-react';
-import type { InventoryConfig, InventoryFieldDefinition, RestoreStatePayload } from 'p2p-mesh-core';
+import { Building2, Fingerprint, Languages, Lock, MapPin, Plus, Save, SlidersHorizontal, Trash2 } from 'lucide-react';
+import type { Branch, InventoryConfig, InventoryFieldDefinition, RestoreStatePayload } from 'p2p-mesh-core';
 import { dbSync, decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -316,6 +316,28 @@ const Settings: React.FC = () => {
 
   const isAdmin = state.role === 'admin' || team.find((m) => m.email === user?.email)?.role === 'owner';
 
+  const [newBranchName, setNewBranchName] = useState('');
+  const [newBranchLocation, setNewBranchLocation] = useState('');
+
+  const handleAddBranch = () => {
+    if (!newBranchName.trim()) {
+      showNotification('El nombre de la sucursal es obligatorio', 'error');
+      return;
+    }
+    const branch: Branch = {
+      id: `branch_${Date.now()}`,
+      name: newBranchName,
+      location: newBranchLocation,
+      isActive: true,
+      updatedAt: new Date().toISOString(),
+      updatedBy: state.localPeerId || 'local',
+    };
+    dispatch({ type: 'ADD_BRANCH', payload: branch });
+    setNewBranchName('');
+    setNewBranchLocation('');
+    showNotification('Sucursal agregada con éxito', 'success');
+  };
+
   return (
     <>
       <div className="pb-10">
@@ -584,6 +606,84 @@ const Settings: React.FC = () => {
           </div>
 
           <P2PSyncManager />
+
+          {/* Branch Management */}
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <Building2 className="h-5 w-5 text-[#4ADE80]" aria-hidden="true" />
+              <h3 className="text-xl font-bold text-[#F5F5DC]">Gestión de Sucursales</h3>
+            </div>
+            <p className="text-xs text-[#F5F5DC]/70 mb-6">
+              Crea y administra diferentes sucursales o bodegas para segmentar tu inventario.
+            </p>
+
+            {isAdmin && (
+              <div className="bg-[#121212] border border-[#F5F5DC]/10 p-4 rounded-lg mb-6">
+                <h4 className="text-sm font-bold text-[#F5F5DC] mb-4">Nueva Sucursal</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <input
+                    type="text"
+                    placeholder="Nombre de la sucursal (ej. Sucursal Norte)"
+                    value={newBranchName}
+                    onChange={(e) => setNewBranchName(e.target.value)}
+                    className="p-2.5 bg-[#0f0f0f] border rounded-md border-[#F5F5DC]/30 text-sm"
+                    data-testid="branch-name-input"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Ubicación / Dirección (opcional)"
+                    value={newBranchLocation}
+                    onChange={(e) => setNewBranchLocation(e.target.value)}
+                    className="p-2.5 bg-[#0f0f0f] border rounded-md border-[#F5F5DC]/30 text-sm"
+                  />
+                </div>
+                <button
+                  onClick={handleAddBranch}
+                  className="inline-flex items-center gap-2 bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg text-sm hover:bg-opacity-80 active:scale-95"
+                  data-testid="add-branch-button"
+                >
+                  <Plus className="h-4 w-4" />
+                  Agregar Sucursal
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {state.branches.filter(b => b.isActive).map((branch) => (
+                <div
+                  key={branch.id}
+                  className="flex items-center justify-between p-4 rounded-lg border border-[#F5F5DC]/10 bg-[#121212]"
+                >
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-[#F5F5DC]">{branch.name}</h4>
+                    {branch.location && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-[#F5F5DC]/60">
+                        <MapPin className="h-3 w-3" />
+                        {branch.location}
+                      </div>
+                    )}
+                  </div>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        if (window.confirm('¿Estás seguro de que quieres eliminar esta sucursal?')) {
+                          dispatch({ type: 'DELETE_BRANCH', payload: branch.id });
+                        }
+                      }}
+                      className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              {state.branches.filter(b => b.isActive).length === 0 && (
+                <p className="text-center py-4 text-xs text-[#F5F5DC]/40 italic">
+                  No hay sucursales configuradas. El inventario se guardará en el espacio global.
+                </p>
+              )}
+            </div>
+          </div>
 
           <DeviceManagementPanel />
 
