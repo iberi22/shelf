@@ -68,7 +68,9 @@ const Settings: React.FC = () => {
   }, [state.inventoryConfig]);
 
   useEffect(() => {
-    isBiometricsSupported().then(setBiometricsSupported).catch(() => setBiometricsSupported(false));
+    isBiometricsSupported()
+      .then(setBiometricsSupported)
+      .catch(() => setBiometricsSupported(false));
   }, []);
 
   const team = [
