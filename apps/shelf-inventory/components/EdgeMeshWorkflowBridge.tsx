@@ -210,12 +210,20 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
         return Array.from(adapter.getUpdate());
       },
       remove: (collection: ShelfEdgeCollection, id: string) => {
+        if (!stateRef.current.localPeerId || !canPeerMutateCollection(stateRef.current, stateRef.current.localPeerId, collection, [])) {
+          console.warn(`[SECURITY] Blocked unauthorized test-only remove on ${collection}`);
+          return;
+        }
         const yMap = adapter.doc.getMap(collection);
         adapter.doc.transact(() => {
           yMap.delete(id);
         }, 'shelf-edge-e2e');
       },
       upsert: (collection: ShelfEdgeCollection, id: string, item: unknown) => {
+        if (!stateRef.current.localPeerId || !canPeerMutateCollection(stateRef.current, stateRef.current.localPeerId, collection, [item])) {
+          console.warn(`[SECURITY] Blocked unauthorized test-only upsert on ${collection}`);
+          return;
+        }
         const yMap = adapter.doc.getMap(collection);
         adapter.doc.transact(() => {
           yMap.set(id, item);
@@ -234,7 +242,10 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
       return;
     }
 
-    const result = syncAppStateToShelfEdgeDoc(adapter.doc, state);
+    const result = syncAppStateToShelfEdgeDoc(adapter.doc, state, (collection, items) => {
+      if (!state.localPeerId) return false;
+      return canPeerMutateCollection(state, state.localPeerId, collection, items);
+    });
     setStatus((previous) => ({
       enabled: true,
       namespace: SHELF_EDGE_NAMESPACE,

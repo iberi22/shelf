@@ -185,4 +185,40 @@ describe('DatabaseSyncManager lifecycle sync', () => {
 		expect(state.pendingEdits).toHaveLength(1);
 		expect(state.pendingEdits?.[0].proposedData).toEqual(expect.objectContaining({ price: 12 }));
 	});
+
+	it('blocks unauthorized authority mutations from collaborators', () => {
+		const sync = new DatabaseSyncManager();
+		sync.initWithState(
+			baseState({
+				peers: [
+					{
+						id: 'host',
+						role: 'admin',
+						isMaster: true,
+						lastSeen: '2026-06-14T00:00:00.000Z',
+					},
+					{
+						id: 'node-b',
+						role: 'collaborator',
+						lastSeen: '2026-06-14T00:00:00.000Z',
+					},
+				],
+			}),
+		);
+		sync.localPeerId = 'node-b';
+		sync.setMasterPeerId('host');
+
+		// Attempt unauthorized inventory config change
+		const newConfig = { ...baseState().inventoryConfig, lowStockThreshold: 99 };
+		sync.setInventoryConfig(newConfig as any);
+		expect(sync.getInventoryConfig()?.lowStockThreshold).not.toBe(99);
+
+		// Attempt unauthorized master reassignment
+		sync.setMasterPeerId('node-b');
+		expect(sync.getMasterPeerId()).toBe('host');
+
+		// Attempt unauthorized peer removal
+		sync.removeLinkedNode('host');
+		expect(sync.getLinkedNodes().find(n => n.id === 'host')).toBeDefined();
+	});
 });

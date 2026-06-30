@@ -59,3 +59,4 @@ apps/docs/.vitepress/cache
 
 
 .vercel
+*.tsbuildinfo

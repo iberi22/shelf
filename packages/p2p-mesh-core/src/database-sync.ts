@@ -512,6 +512,11 @@ export class DatabaseSyncManager {
 	}
 
 	public setInventoryConfig(config: InventoryConfig) {
+		if (!this.isLocalAuthority()) {
+			logger.warn(`[SECURITY] Unauthorized attempt to change inventoryConfig`);
+			return;
+		}
+
 		this.doc.transact(() => {
 			this.metadata.set("inventoryConfig", JSON.stringify(config));
 		}, "local");
@@ -529,6 +534,13 @@ export class DatabaseSyncManager {
 	}
 
 	public setMasterPeerId(peerId: string) {
+		if (!this.isLocalAuthority() && this.getMasterPeerId() !== null) {
+			logger.warn(
+				`[SECURITY] Unauthorized attempt to set masterPeerId to ${peerId}`,
+			);
+			return;
+		}
+
 		const currentMaster = this.getMasterPeerId();
 		if (currentMaster && currentMaster !== peerId) {
 			logger.warn(
@@ -714,6 +726,11 @@ export class DatabaseSyncManager {
 	}
 
 	public removeLinkedNode(peerId: string) {
+		if (!this.isLocalAuthority()) {
+			logger.warn(`[SECURITY] Unauthorized attempt to remove linked node ${peerId}`);
+			return;
+		}
+
 		this.doc.transact(() => {
 			this.linkedNodes.delete(peerId);
 		}, "local");
