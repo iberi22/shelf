@@ -45,6 +45,8 @@ const initialState: AppState = {
   branches: [],
   inventoryConfig: DEFAULT_INVENTORY_CONFIG,
   localPeerId: null,
+  activeBranch: null,
+  activeBranchId: null,
   role: 'admin',
   arqueoSessions: [],
   ocrResults: [],
@@ -92,6 +94,7 @@ type Action =
   | { type: 'UPDATE_PEER_CONFIG'; payload: { targetPeerId: string; role: P2PRole; permissions?: PeerPermissions } }
   | { type: 'UPDATE_INVENTORY_CONFIG'; payload: InventoryConfig }
   | { type: 'RESTORE_PRODUCT_VERSION'; payload: { productId: string; historyId: string } }
+  | { type: 'SET_ACTIVE_BRANCH'; payload: string | null }
   | { type: 'CLEAR_AUDIT_LOGS'; payload?: { beforeDate: string } }
   | { type: 'RESET_DATA' };
 
@@ -805,6 +808,10 @@ const appReducer = (state: AppState, action: Action): AppState => {
       }
       break;
     }
+
+    case 'SET_ACTIVE_BRANCH':
+      dbSync.activeBranchId = action.payload;
+      return { ...state, activeBranch: action.payload, activeBranchId: action.payload };
 
     case 'RESTORE_STATE':
       return {

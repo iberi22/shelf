@@ -78,7 +78,9 @@ export type SyncMessage =
 	| {
 			type: "DEVICE_AUTHORIZED";
 			payload: { deviceId: string; deviceName: string; authorizedAt: string };
-	  };
+	  }
+	| { type: "CRDT_SYNC_ENVELOPE"; payload: { envelope: any } }
+	| { type: "EDGE_MESH_SYNC"; payload: Uint8Array };
 
 export type ConnectionErrorInfo = {
 	peerId?: string;
@@ -764,6 +766,16 @@ class P2PManager {
 				);
 			}
 		});
+	}
+
+	public sign(message: Uint8Array): Uint8Array {
+		// Mock signature for testing or implementation placeholder
+		return new Uint8Array();
+	}
+
+	public verify(signature: Uint8Array, message: Uint8Array, peerId: string): boolean {
+		// Mock verification for testing or implementation placeholder
+		return true;
 	}
 
 	public async sendTo(peerId: string, message: SyncMessage) {

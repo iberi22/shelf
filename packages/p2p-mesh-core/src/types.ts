@@ -29,6 +29,7 @@ export interface Branch {
 	id: string; // UUID
 	name: string; // 'Bodega Central', 'Sucursal Norte'
 	createdAt: number; // timestamp
+	isActive?: boolean;
 }
 
 export interface Product extends BaseEntity {
@@ -50,6 +51,7 @@ export interface Product extends BaseEntity {
 	supplierId?: string;
 	variantAttributes?: string[];
 	variants?: ProductVariant[];
+	branchName?: string;
 }
 
 export interface ProductVariant extends BaseEntity {
@@ -191,6 +193,8 @@ export interface AppState {
 	teamMembers: TeamMember[];
 	inventoryConfig: InventoryConfig;
 	localPeerId: string | null;
+	activeBranch: string | null;
+	activeBranchId: string | null;
 	role: P2PRole;
 	permissions?: PeerPermissions;
 	arqueoSessions: ArqueoSession[];
@@ -278,4 +282,5 @@ export interface InventoryConfig {
 	measureOptions: string[];
 	autoApplyProductUpdates: boolean;
 	productHistoryLimit: number;
+	useEdgeMeshSync?: boolean;
 }
