@@ -62,7 +62,11 @@ export const readShelfEdgeState = (doc: Y.Doc): Partial<AppState> => {
   return partial;
 };
 
-export const syncAppStateToShelfEdgeDoc = (doc: Y.Doc, state: AppState): ShelfEdgeSyncResult => {
+export const syncAppStateToShelfEdgeDoc = (
+  doc: Y.Doc,
+  state: AppState,
+  canMutate?: (collection: ShelfEdgeCollection, items: unknown[]) => boolean,
+): ShelfEdgeSyncResult => {
   const changedCollections: ShelfEdgeCollection[] = [];
   const stats = createEmptyShelfEdgeStats();
 
@@ -75,6 +79,9 @@ export const syncAppStateToShelfEdgeDoc = (doc: Y.Doc, state: AppState): ShelfEd
 
       for (const id of Array.from(yMap.keys())) {
         if (!nextIds.has(id)) {
+          if (canMutate && !canMutate(collection, [])) {
+            continue;
+          }
           yMap.delete(id);
           changed = true;
         }
@@ -82,6 +89,9 @@ export const syncAppStateToShelfEdgeDoc = (doc: Y.Doc, state: AppState): ShelfEd
 
       for (const item of items) {
         if (!isEqualEntity(yMap.get(item.id), item)) {
+          if (canMutate && !canMutate(collection, [item])) {
+            continue;
+          }
           yMap.set(item.id, item);
           changed = true;
         }
