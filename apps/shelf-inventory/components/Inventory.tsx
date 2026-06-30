@@ -10,11 +10,7 @@ import useLocalStorage from '../hooks/useLocalStorage';
 import { useSortableTable } from '../hooks/useSortableTable';
 import { compressImage } from '../lib/imageCompression';
 import { DEFAULT_INVENTORY_CONFIG, getInventoryFieldValue, normalizeInventoryConfig } from '../lib/inventoryConfig';
-import {
-  createVariantDraft,
-  summarizeVariantValues,
-  type VariantDraft,
-} from '../lib/productVariants';
+import { createVariantDraft, summarizeVariantValues, type VariantDraft } from '../lib/productVariants';
 import BarcodeScanner from './BarcodeScanner';
 import { InfiniteTable } from './InfiniteTable';
 import Modal from './Modal';
@@ -38,12 +34,16 @@ const PRESET_COLORS = [
 
 const isColorAttribute = (label: string, config: InventoryConfig): boolean => {
   const normalizedLabel = label.trim().toLowerCase();
-  return config.fields.some((f) => f.type === 'color' && (f.label.toLowerCase() === normalizedLabel || f.key === normalizedLabel));
+  return config.fields.some(
+    (f) => f.type === 'color' && (f.label.toLowerCase() === normalizedLabel || f.key === normalizedLabel),
+  );
 };
 
 const isMeasureAttribute = (label: string, config: InventoryConfig): boolean => {
   const normalizedLabel = label.trim().toLowerCase();
-  return config.fields.some((f) => f.type === 'measure' && (f.label.toLowerCase() === normalizedLabel || f.key === normalizedLabel));
+  return config.fields.some(
+    (f) => f.type === 'measure' && (f.label.toLowerCase() === normalizedLabel || f.key === normalizedLabel),
+  );
 };
 
 const csvEscape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
@@ -1134,9 +1134,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
         } as VariantDraft;
       });
       const totalQty = variants.reduce((sum, v) => sum + Number(v.quantity), 0);
-      const attrLabels = selectedColors.length > 0 && selectedSizes.length > 0
-        ? ['Color', 'Medida']
-        : selectedColors.length > 0 ? ['Color'] : ['Medida'];
+      const attrLabels =
+        selectedColors.length > 0 && selectedSizes.length > 0
+          ? ['Color', 'Medida']
+          : selectedColors.length > 0
+            ? ['Color']
+            : ['Medida'];
 
       onSave({
         name,
@@ -1428,8 +1431,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                           key={`mc-${preset.name}`}
                           type="button"
                           onClick={() => {
-                            setSelectedColors(prev =>
-                              selected ? prev.filter(c => c !== preset.name) : [...prev, preset.name]
+                            setSelectedColors((prev) =>
+                              selected ? prev.filter((c) => c !== preset.name) : [...prev, preset.name],
                             );
                           }}
                           className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 ${
@@ -1445,9 +1448,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     })}
                   </div>
                   {selectedColors.length > 0 && (
-                    <div className="text-xs text-[#F5F5DC]/60">
-                      Seleccionados: {selectedColors.join(', ')}
-                    </div>
+                    <div className="text-xs text-[#F5F5DC]/60">Seleccionados: {selectedColors.join(', ')}</div>
                   )}
                 </div>
                 <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
@@ -1460,8 +1461,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                           key={`ms-${suggestion}`}
                           type="button"
                           onClick={() => {
-                            setSelectedSizes(prev =>
-                              selected ? prev.filter(s => s !== suggestion) : [...prev, suggestion]
+                            setSelectedSizes((prev) =>
+                              selected ? prev.filter((s) => s !== suggestion) : [...prev, suggestion],
                             );
                           }}
                           className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
@@ -1476,9 +1477,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     })}
                   </div>
                   {selectedSizes.length > 0 && (
-                    <div className="text-xs text-[#F5F5DC]/60">
-                      Seleccionados: {selectedSizes.join(', ')}
-                    </div>
+                    <div className="text-xs text-[#F5F5DC]/60">Seleccionados: {selectedSizes.join(', ')}</div>
                   )}
                 </div>
                 <div className="text-xs text-[#F5F5DC]/50 text-center">
@@ -1555,7 +1554,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                         {variantAttributes.map((label) => (
                           <div key={`${row.id}-${label}`} className="min-w-0">
                             <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">{label}</label>
-                        {isColorAttribute(label, inventoryConfig) && (
+                            {isColorAttribute(label, inventoryConfig) && (
                               <div className="flex flex-wrap gap-1.5 mb-2 max-w-full">
                                 {PRESET_COLORS.map((preset) => {
                                   const selected = row.attributes?.[label] === preset.name;
@@ -1579,7 +1578,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                 })}
                               </div>
                             )}
-                        {isMeasureAttribute(label, inventoryConfig) && (
+                            {isMeasureAttribute(label, inventoryConfig) && (
                               <div className="flex flex-wrap gap-1.5 mb-2 max-w-full">
                                 {inventoryConfig.measureOptions.map((suggestion) => {
                                   const selected = (row.attributes?.[label] || '').toUpperCase() === suggestion;
@@ -1812,13 +1811,15 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   <label className="block text-xs text-[#F5F5DC]/60">Colores seleccionados</label>
                   <div className="flex flex-wrap gap-2">
                     {selectedColors.map((c) => {
-                      const preset = PRESET_COLORS.find(p => p.name === c);
+                      const preset = PRESET_COLORS.find((p) => p.name === c);
                       return (
                         <button
                           key={`selc-${c}`}
                           type="button"
-                          onClick={() => setSelectedColors(prev => prev.filter(x => x !== c))}
-                          className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 border-white ring-2 ring-white/30`}
+                          onClick={() => setSelectedColors((prev) => prev.filter((x) => x !== c))}
+                          className={
+                            'w-8 h-8 rounded-full border-2 transition-all active:scale-90 border-white ring-2 ring-white/30'
+                          }
                           style={{ backgroundColor: preset?.hex || '#888' }}
                           title={`Quitar ${c}`}
                         />
@@ -1842,7 +1843,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                         <button
                           key={`sels-${s}`}
                           type="button"
-                          onClick={() => setSelectedSizes(prev => prev.filter(x => x !== s))}
+                          onClick={() => setSelectedSizes((prev) => prev.filter((x) => x !== s))}
                           className="rounded-full border border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308] px-2.5 py-1 text-[11px]"
                         >
                           {s}
@@ -1876,7 +1877,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                         return keys.map((key, i) => {
                           const parts = key.split('|');
                           const label = parts.length > 1 ? parts.join(' / ') : parts[0].replace(/^(color:|size:)/, '');
-                          const val = comboValues[key] || { quantity: 0, price: Number(price) || 0, cost: Number(cost) || 0 };
+                          const val = comboValues[key] || {
+                            quantity: 0,
+                            price: Number(price) || 0,
+                            cost: Number(cost) || 0,
+                          };
 
                           return (
                             <div
@@ -1897,7 +1902,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                     onChange={(e) => {
                                       setComboValues((prev) => ({
                                         ...prev,
-                                        [key]: { ...prev[key] || val, quantity: Number(e.target.value) },
+                                        [key]: { ...(prev[key] || val), quantity: Number(e.target.value) },
                                       }));
                                     }}
                                     className="w-full p-1.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded text-xs"
@@ -1913,7 +1918,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                     onChange={(e) => {
                                       setComboValues((prev) => ({
                                         ...prev,
-                                        [key]: { ...prev[key] || val, price: Number(e.target.value) },
+                                        [key]: { ...(prev[key] || val), price: Number(e.target.value) },
                                       }));
                                     }}
                                     className="w-full p-1.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded text-xs"
@@ -1929,7 +1934,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                     onChange={(e) => {
                                       setComboValues((prev) => ({
                                         ...prev,
-                                        [key]: { ...prev[key] || val, cost: Number(e.target.value) },
+                                        [key]: { ...(prev[key] || val), cost: Number(e.target.value) },
                                       }));
                                     }}
                                     className="w-full p-1.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded text-xs"

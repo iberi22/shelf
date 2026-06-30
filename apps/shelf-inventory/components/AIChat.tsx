@@ -50,9 +50,7 @@ const AIChat: React.FC = () => {
     try {
       // Priority 1: Gemini Nano (window.ai) - Built-in Chrome feature
       try {
-        // @ts-expect-error - window.ai is experimental
         if (window.ai && (await window.ai.canCreateTextSession()) === 'readily') {
-          // @ts-expect-error
           const session = await window.ai.createTextSession();
           const prompt = `You are an AI assistant for a business inventory app called Shelf. 
           Below is the current inventory and sales data for context.
