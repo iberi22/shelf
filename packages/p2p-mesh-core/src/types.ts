@@ -7,18 +7,12 @@ export interface NavItem {
 
 export interface BaseEntity {
   id: string;
+  branchId?: string;
   isActive: boolean;
   updatedBy: string; // Peer ID
   updatedByRole?: P2PRole; // Role of the peer that updated
   updatedAt: string; // ISO String
   signature?: string; // Cryptographic signature of the entity state
-  branchId?: string;
-  branchName?: string;
-}
-
-export interface Branch extends BaseEntity {
-  name: string;
-  location?: string;
 }
 
 export interface EntityEditProposal {
@@ -94,10 +88,6 @@ export interface Client extends BaseEntity {
   email?: string;
 }
 
-export interface Branch extends BaseEntity {
-  name: string;
-}
-
 export interface Supplier extends BaseEntity {
   name: string;
   phone: string;
@@ -171,7 +161,7 @@ export interface AuditEntry {
   peerRole?: P2PRole; // Role of the peer that performed the action
   action: string;
   entityId?: string;
-  entityType?: 'product' | 'sale' | 'client' | 'supplier' | 'purchaseOrder' | 'branch';
+  entityType?: 'product' | 'sale' | 'client' | 'supplier' | 'purchaseOrder';
   details?: any;
   signature?: string; // Cryptographic signature of the log entry
 }
@@ -193,8 +183,6 @@ export interface AppState {
   auditLogs: AuditEntry[];
   peers: PeerInfo[];
   teamMembers: TeamMember[];
-  branches: Branch[];
-  activeBranch: string | null;
   inventoryConfig: InventoryConfig;
   localPeerId: string | null;
   role: P2PRole;
@@ -204,8 +192,7 @@ export interface AppState {
   isExpelled?: boolean;
   pendingEdits: EntityEditProposal[];
   productChangeHistory: ProductChangeHistoryEntry[];
-  branches: Branch[];
-  activeBranchId: string | null;
+  activeBranch?: string;
 }
 
 export type ImportStrategy = 'skip' | 'update';
@@ -280,5 +267,4 @@ export interface InventoryConfig {
   measureOptions: string[];
   autoApplyProductUpdates: boolean;
   productHistoryLimit: number;
-  useEdgeMeshSync: boolean;
 }

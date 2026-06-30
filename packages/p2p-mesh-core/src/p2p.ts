@@ -44,12 +44,12 @@ export type SyncMessage =
 			type: "PQC_HANDSHAKE_RESPONSE";
 			payload: { cipherText: string; signature: string; dsaPubKey: string };
 	  }
-	| { type: "YJS_UPDATE"; payload: { update: string } }
+	| { type: "YJS_UPDATE"; payload: { update: string; branchId?: string } }
 	| {
 			type: "YJS_SYNC_REQUEST";
-			payload: { stateVector: string; respondWithRequest?: boolean };
+			payload: { stateVector: string; branchId?: string; respondWithRequest?: boolean };
 	  }
-	| { type: "CRDT_SYNC_ENVELOPE"; payload: any }
+	| { type: "SET_ACTIVE_BRANCH"; payload: { branchId: string } }
 	| {
 			type: "UPDATE_PEER_PERMISSIONS";
 			payload: {
@@ -106,6 +106,7 @@ class P2PManager {
 	private connections: Map<string, DataConnection> = new Map();
 	private sharedSecrets: Map<string, Uint8Array> = new Map();
 	private encryptionKeys: Map<string, CryptoKey> = new Map();
+	private peerBranches: Map<string, string> = new Map();
 	private health = createPeerHealthMonitor({
 		staleAfterMs: 30000,
 		offlineAfterMs: 60000,
@@ -188,17 +189,13 @@ class P2PManager {
 
 		dbSync.onChange((update, origin) => {
 			if (!dbSync.isReady) return;
-
-			const useEdgeMeshSync = Boolean(
-				dbSync.getInventoryConfig()?.useEdgeMeshSync,
-			);
-			if (useEdgeMeshSync) return; // Managed by CRDT_SYNC_ENVELOPE
-
 			// Only broadcast if the update originated locally to prevent infinite loops
-			if (origin === "local") {
+			const isLocal = typeof origin === "object" && origin !== null ? (origin as any).origin === "local" : origin === "local";
+			if (isLocal) {
+				const branchId = typeof origin === "object" && origin !== null ? (origin as any).branchId : undefined;
 				const message: SyncMessage = {
 					type: "YJS_UPDATE",
-					payload: { update: toHex(update) },
+					payload: { update: toHex(update), branchId },
 				};
 
 				this.broadcast(message);
@@ -212,13 +209,6 @@ class P2PManager {
 					}, delay);
 				}
 			}
-		});
-
-		dbSync.onEnvelope((envelope) => {
-			this.broadcast({
-				type: "CRDT_SYNC_ENVELOPE",
-				payload: envelope,
-			});
 		});
 
 		dbSync.onReady(() => {
@@ -263,22 +253,27 @@ class P2PManager {
 		this.health.on("peer:offline", emit);
 	}
 
-	private requestYjsSync(peerId: string) {
+	private requestYjsSync(peerId: string, branchId?: string) {
 		if (!dbSync.isReady) return;
+		const targetBranchId = branchId || dbSync.activeBranchId || undefined;
 		this.sendTo(peerId, {
 			type: "YJS_SYNC_REQUEST",
 			payload: {
 				stateVector: toHex(dbSync.getStateVector()),
+				branchId: targetBranchId,
 				respondWithRequest: true,
 			},
 		});
 	}
 
-	private sendYjsDiff(peerId: string, stateVectorHex: string) {
+	private sendYjsDiff(peerId: string, stateVectorHex: string, branchId?: string) {
 		if (!dbSync.isReady) return;
 		this.sendTo(peerId, {
 			type: "YJS_UPDATE",
-			payload: { update: toHex(dbSync.getDiff(fromHex(stateVectorHex))) },
+			payload: {
+				update: toHex(dbSync.getDiff(fromHex(stateVectorHex))),
+				branchId: branchId || dbSync.activeBranchId || undefined
+			},
 		});
 	}
 
@@ -463,6 +458,14 @@ class P2PManager {
 			// Broadcast updated peer list to the mesh
 			this.broadcastPeerList();
 
+			// Inform peer of our active branch if we have one
+			if (dbSync.activeBranchId) {
+				conn.send({
+					type: "SET_ACTIVE_BRANCH",
+					payload: { branchId: dbSync.activeBranchId },
+				});
+			}
+
 			// Start PQC Handshake deterministically to avoid both sides sending it
 			if (this.localPeerId && this.localPeerId > conn.peer) {
 				conn.send({
@@ -572,35 +575,38 @@ class P2PManager {
 					return;
 				}
 
-				// Handle CRDT Sync Layer Envelopes
-				if (message.type === "CRDT_SYNC_ENVELOPE") {
-					if (dbSync.syncLayer) {
-						const reply = dbSync.syncLayer.applyEnvelope(message.payload);
-						if (reply) {
+				// Handle Yjs Updates
+				if (message.type === "YJS_UPDATE") {
+					const branchId = message.payload.branchId;
+					// Only apply update if it matches our active branch, or is a global update
+					if (!branchId || branchId === dbSync.activeBranchId) {
+						dbSync.applyUpdate(fromHex(message.payload.update), conn.peer);
+					}
+					this.emitMessageCallbacks(message, conn.peer);
+					return; // Already handled; prevent fallthrough to callbacks
+				}
+
+				if (message.type === "YJS_SYNC_REQUEST") {
+					const branchId = message.payload.branchId;
+					if (!branchId || branchId === dbSync.activeBranchId) {
+						this.sendYjsDiff(conn.peer, message.payload.stateVector, branchId);
+						if (message.payload.respondWithRequest) {
 							this.sendTo(conn.peer, {
-								type: "CRDT_SYNC_ENVELOPE",
-								payload: reply,
+								type: "YJS_SYNC_REQUEST",
+								payload: {
+									stateVector: toHex(dbSync.getStateVector()),
+									branchId: dbSync.activeBranchId || undefined
+								},
 							});
 						}
 					}
 					return;
 				}
 
-				// Handle Yjs Updates
-				if (message.type === "YJS_UPDATE") {
-					dbSync.applyUpdate(fromHex(message.payload.update), conn.peer);
-					this.emitMessageCallbacks(message, conn.peer);
-					return; // Already handled; prevent fallthrough to callbacks
-				}
-
-				if (message.type === "YJS_SYNC_REQUEST") {
-					this.sendYjsDiff(conn.peer, message.payload.stateVector);
-					if (message.payload.respondWithRequest) {
-						this.sendTo(conn.peer, {
-							type: "YJS_SYNC_REQUEST",
-							payload: { stateVector: toHex(dbSync.getStateVector()) },
-						});
-					}
+				if (message.type === "SET_ACTIVE_BRANCH") {
+					this.peerBranches.set(conn.peer, message.payload.branchId);
+					logger.log(`Peer ${conn.peer} joined branch: ${message.payload.branchId}`);
+					this.requestYjsSync(conn.peer, message.payload.branchId);
 					return;
 				}
 
@@ -745,6 +751,14 @@ class P2PManager {
 	public broadcast(message: SyncMessage) {
 		this.connections.forEach((conn) => {
 			if (conn.open) {
+				// Branch filtering for YJS_UPDATE
+				if (message.type === "YJS_UPDATE" && message.payload.branchId) {
+					const peerBranch = this.peerBranches.get(conn.peer);
+					if (peerBranch !== message.payload.branchId) {
+						return; // Skip peers not in the same branch
+					}
+				}
+
 				this.sendTo(conn.peer, message).catch((err) =>
 					logger.error("Broadcast encrypt failed", err),
 				);
@@ -809,32 +823,28 @@ class P2PManager {
 			}
 
 			// Dispatch the decrypted message
-			if (message.type === "CRDT_SYNC_ENVELOPE") {
-				if (dbSync.syncLayer) {
-					const reply = dbSync.syncLayer.applyEnvelope(message.payload);
-					if (reply) {
-						this.sendTo(fromPeerId, {
-							type: "CRDT_SYNC_ENVELOPE",
-							payload: reply,
-						});
-					}
-				}
-				return;
-			}
-
 			if (message.type === "YJS_UPDATE") {
-				dbSync.applyUpdate(fromHex(message.payload.update), fromPeerId);
+				const branchId = message.payload.branchId;
+				if (!branchId || branchId === dbSync.activeBranchId) {
+					dbSync.applyUpdate(fromHex(message.payload.update), fromPeerId);
+				}
 				this.emitMessageCallbacks(message, fromPeerId);
 				return; // Already applied; prevent double-handling via callbacks
 			}
 
 			if (message.type === "YJS_SYNC_REQUEST") {
-				this.sendYjsDiff(fromPeerId, message.payload.stateVector);
-				if (message.payload.respondWithRequest) {
-					this.sendTo(fromPeerId, {
-						type: "YJS_SYNC_REQUEST",
-						payload: { stateVector: toHex(dbSync.getStateVector()) },
-					});
+				const branchId = message.payload.branchId;
+				if (!branchId || branchId === dbSync.activeBranchId) {
+					this.sendYjsDiff(fromPeerId, message.payload.stateVector, branchId);
+					if (message.payload.respondWithRequest) {
+						this.sendTo(fromPeerId, {
+							type: "YJS_SYNC_REQUEST",
+							payload: {
+								stateVector: toHex(dbSync.getStateVector()),
+								branchId: dbSync.activeBranchId || undefined
+							},
+						});
+					}
 				}
 				return;
 			}
@@ -888,6 +898,18 @@ class P2PManager {
 		cb: (payload: HandshakeResponsePayload, fromPeerId: string) => void,
 	) {
 		this.onHandshakeResponseCallbacks.push(cb);
+	}
+
+	public setActiveBranch(branchId: string) {
+		this.broadcast({
+			type: "SET_ACTIVE_BRANCH",
+			payload: { branchId },
+		});
+
+		// Also re-request sync for the new branch from all connected peers
+		this.connections.forEach((_conn, peerId) => {
+			this.requestYjsSync(peerId, branchId);
+		});
 	}
 
 	/**
