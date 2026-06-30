@@ -121,14 +121,23 @@ export class CrdtSyncLayer extends EventEmitter {
 			return;
 		}
 
-		const snapshot = bytesFromStorage(
-			await this.storage.get(`sync:${this.namespace}:snapshot`),
-		);
-		if (snapshot) {
-			Y.applyUpdate(this.doc, snapshot, {
-				type: 'storage',
-				namespace: this.namespace,
-			});
+		const snapshotId = await this.storage.get(`sync:${this.namespace}:lastSnapshotId`);
+		if (snapshotId) {
+			const snapshot = await this.snapshots.get(snapshotId);
+			if (snapshot) {
+				await this.snapshots.recover(this.doc, snapshot);
+			}
+		} else {
+			// Legacy fallback or first load
+			const snapshotData = bytesFromStorage(
+				await this.storage.get(`sync:${this.namespace}:snapshot`),
+			);
+			if (snapshotData) {
+				Y.applyUpdate(this.doc, snapshotData, {
+					type: 'storage',
+					namespace: this.namespace,
+				});
+			}
 		}
 
 		this.ready = true;
@@ -136,11 +145,19 @@ export class CrdtSyncLayer extends EventEmitter {
 	}
 
 	async persistSnapshot(): Promise<void> {
-		const snapshot = this.snapshots.create(this.namespace, this.doc);
-		await this.storage?.set(
-			`sync:${this.namespace}:snapshot`,
-			bytesToStorage(snapshot.update),
-		);
+		const snapshot = await this.snapshots.create(this.doc);
+		if (this.storage) {
+			await this.storage.set(
+				`sync:${this.namespace}:lastSnapshotId`,
+				snapshot.id,
+			);
+			// For backward compatibility or simpler recovery
+			await this.storage.set(
+				`sync:${this.namespace}:snapshot`,
+				bytesToStorage(snapshot.data),
+			);
+		}
+		this.opLog.compactBefore(snapshot.timestamp);
 	}
 
 	getStateVector(): Uint8Array {

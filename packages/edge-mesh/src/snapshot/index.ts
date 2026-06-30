@@ -1,39 +1,71 @@
 import * as Y from 'yjs';
+import type { MeshStorage } from '../types';
 
-export interface SnapshotRecord {
-	namespace: string;
-	update: Uint8Array;
+export interface Snapshot {
+	id: string;
+	timestamp: number;
 	stateVector: Uint8Array;
-	createdAt: number;
+	data: Uint8Array; // serialized Y.Doc update
+}
+
+export interface SnapshotManagerOptions {
+	storage?: MeshStorage;
+	now?: () => number;
+	idFactory?: () => string;
 }
 
 export class SnapshotManager {
-	private snapshots = new Map<string, SnapshotRecord>();
+	private storage?: MeshStorage;
 	private now: () => number;
+	private idFactory: () => string;
+	private memorySnapshots = new Map<string, Snapshot>();
 
-	constructor(options: { now?: () => number } = {}) {
+	constructor(options: SnapshotManagerOptions = {}) {
+		this.storage = options.storage;
 		this.now = options.now || (() => Date.now());
+		this.idFactory =
+			options.idFactory ||
+			(() => {
+				if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+				return `snap-${this.now()}-${Math.random().toString(36).slice(2)}`;
+			});
 	}
 
-	create(namespace: string, doc: Y.Doc): SnapshotRecord {
-		const snapshot: SnapshotRecord = {
-			namespace,
-			update: Y.encodeStateAsUpdate(doc),
+	async create(doc: Y.Doc): Promise<Snapshot> {
+		const snapshot: Snapshot = {
+			id: this.idFactory(),
+			timestamp: this.now(),
 			stateVector: Y.encodeStateVector(doc),
-			createdAt: this.now(),
+			data: Y.encodeStateAsUpdate(doc),
 		};
-		this.snapshots.set(namespace, snapshot);
+
+		this.memorySnapshots.set(snapshot.id, snapshot);
+
+		if (this.storage) {
+			await this.storage.set(`snapshot:${snapshot.id}`, snapshot);
+		}
+
 		return snapshot;
 	}
 
-	get(namespace: string): SnapshotRecord | undefined {
-		return this.snapshots.get(namespace);
+	async get(id: string): Promise<Snapshot | null> {
+		const memory = this.memorySnapshots.get(id);
+		if (memory) return memory;
+
+		if (this.storage) {
+			const persisted = await this.storage.get(`snapshot:${id}`);
+			if (persisted) {
+				return persisted as Snapshot;
+			}
+		}
+
+		return null;
 	}
 
-	apply(doc: Y.Doc, snapshot: SnapshotRecord, origin?: unknown): void {
-		Y.applyUpdate(doc, snapshot.update, origin);
+	async recover(doc: Y.Doc, snapshot: Snapshot): Promise<void> {
+		Y.applyUpdate(doc, snapshot.data, 'snapshot-recovery');
 	}
 }
 
-export const createSnapshotManager = (options: { now?: () => number } = {}) =>
+export const createSnapshotManager = (options: SnapshotManagerOptions = {}) =>
 	new SnapshotManager(options);
