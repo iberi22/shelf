@@ -21,15 +21,16 @@
 		"format": "biome format --write ."
 	},
 	"dependencies": {
+		"@noble/post-quantum": "^0.6.1",
 		"events": "^3.3.0",
-		"peerjs": "^1.5.5",
-		"yjs": "^13.6.31",
-		"y-protocols": "^1.0.7",
 		"idb": "^8.0.0",
-		"@noble/post-quantum": "^0.6.1"
+		"peerjs": "^1.5.5",
+		"y-protocols": "^1.0.7",
+		"yjs": "^13.6.31"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.0",
+		"@playwright/test": "^1.61.0",
 		"@types/node": "^25.9.2",
 		"typescript": "^6.0.3",
 		"vitest": "^4.1.9"
