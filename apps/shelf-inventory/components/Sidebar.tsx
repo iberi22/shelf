@@ -1,3 +1,4 @@
+import { Building2 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { NAV_ITEMS } from '../constants';
@@ -220,7 +221,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
   const { isPro } = useSubscription();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
-  const { state } = useAppContext();
+  const { state, dispatch } = useAppContext();
+
+  const activeBranches = state.branches.filter((b) => b.isActive);
 
   const filteredNavItems = NAV_ITEMS.filter((item) => {
     const p = state.permissions;
@@ -294,7 +297,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
         }`}
       >
         <div className="flex items-center justify-between p-4 border-b border-foreground/20">
-          <h1 className="text-xl font-bold tracking-widest text-[#F5F5DC]">[ Shelf. ]</h1>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-widest text-[#F5F5DC]">[ Shelf. ]</h1>
+          </div>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setSearchOpen(true)}
@@ -328,6 +333,31 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
           </div>
         </div>
         <nav className="flex-1 px-3 py-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+          {/* Branch Selector (Mobile) */}
+          {activeBranches.length > 0 && (
+            <div className="px-3 mb-4">
+              <label className="text-[10px] uppercase tracking-wider text-foreground/40 font-bold mb-1 block">
+                Sucursal
+              </label>
+              <div className="relative">
+                <select
+                  value={state.activeBranchId || 'global'}
+                  onChange={(e) => dispatch({ type: 'SET_ACTIVE_BRANCH', payload: e.target.value === 'global' ? null : e.target.value })}
+                  className="w-full bg-[#1A1A1A] border border-white/10 rounded-lg py-2 px-3 pl-9 text-sm text-[#F5F5DC] appearance-none focus:outline-none focus:ring-1 focus:ring-[#4ADE80]/50"
+                  data-testid="mobile-branch-selector"
+                >
+                  <option value="global">🌍 Global / Principal</option>
+                  {activeBranches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      📍 {branch.name}
+                    </option>
+                  ))}
+                </select>
+                <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-foreground/40" />
+              </div>
+            </div>
+          )}
+
           <ul>
             {filteredNavItems.map((item) => (
               <li key={item.nameKey}>
@@ -365,7 +395,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-[260px] bg-[#0A0A0A] border-r border-white/5 relative z-10">
         <div className="p-6 flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-bold tracking-widest text-white">[ Shelf. ]</h1>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-widest text-white">[ Shelf. ]</h1>
+          </div>
           <button
             onClick={() => setSearchOpen(true)}
             className="p-2 text-foreground/60 hover:text-foreground hover:bg-foreground/10 rounded-lg transition-colors active:scale-95"
@@ -390,6 +422,31 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
           </button>
         </div>
         <nav className="flex-1 px-4 py-2">
+          {/* Branch Selector (Desktop) */}
+          {activeBranches.length > 0 && (
+            <div className="px-4 mb-6">
+              <label className="text-[10px] uppercase tracking-wider text-foreground/40 font-bold mb-2 block">
+                Sucursal Activa
+              </label>
+              <div className="relative">
+                <select
+                  value={state.activeBranchId || 'global'}
+                  onChange={(e) => dispatch({ type: 'SET_ACTIVE_BRANCH', payload: e.target.value === 'global' ? null : e.target.value })}
+                  className="w-full bg-[#141414] border border-white/10 rounded-xl py-2.5 px-4 pl-10 text-sm text-[#F5F5DC] appearance-none focus:outline-none focus:ring-1 focus:ring-[#4ADE80]/50 transition-all hover:bg-[#1A1A1A] cursor-pointer"
+                  data-testid="host-branch-selector"
+                >
+                  <option value="global">🌍 Global / Principal</option>
+                  {activeBranches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      📍 {branch.name}
+                    </option>
+                  ))}
+                </select>
+                <Building2 className="absolute left-3.5 top-3 h-4 w-4 text-foreground/40 pointer-events-none" />
+              </div>
+            </div>
+          )}
+
           <ul>
             {filteredNavItems.map((item) => (
               <li key={item.nameKey}>

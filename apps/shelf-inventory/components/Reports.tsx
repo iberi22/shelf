@@ -9,6 +9,8 @@ import {
   Title,
   Tooltip,
 } from 'chart.js';
+import { useEdgeMesh } from 'edge-mesh-react';
+import { Building2 } from 'lucide-react';
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import { Line } from 'react-chartjs-2';
@@ -25,6 +27,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 const Reports: React.FC = () => {
   const { t, locale } = useI18n();
   const { state } = useAppContext();
+  const mesh = useEdgeMesh();
   const { isFree } = useSubscription();
   const { openSubscriptionModal } = useUI();
   const { formatCurrency } = useCurrency();
@@ -37,9 +40,44 @@ const Reports: React.FC = () => {
   const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
   const [selectedProductId, setSelectedProductId] = useState<string>('all');
   const [selectedClientId, setSelectedClientId] = useState<string>('all');
+  const [isConsolidated, setIsConsolidated] = useState(false);
+
+  const consolidatedData = useMemo(() => {
+    if (!isConsolidated || !mesh) {
+      return { sales: state.sales, products: state.products };
+    }
+
+    const allSales = [...state.sales];
+    const allProducts = [...state.products];
+
+    // Get data from other branches
+    const activeBranches = state.branches.filter((b) => b.isActive);
+    for (const branch of activeBranches) {
+      if (branch.id === state.activeBranchId) continue; // Skip current (already in state)
+
+      const namespace = `shelf/${branch.id}`;
+      const adapter = mesh.getNamespace(namespace);
+      const branchSales = Array.from(adapter.doc.getMap('sales').values()) as any[];
+      const branchProducts = Array.from(adapter.doc.getMap('products').values()) as any[];
+
+      allSales.push(...branchSales.map((s) => ({ ...s, branchName: branch.name })));
+      allProducts.push(...branchProducts.map((p) => ({ ...p, branchName: branch.name })));
+    }
+
+    // Special case for "Global" namespace if current is a branch
+    if (state.activeBranchId !== null) {
+      const adapter = mesh.getNamespace('shelf');
+      const globalSales = Array.from(adapter.doc.getMap('sales').values()) as any[];
+      const globalProducts = Array.from(adapter.doc.getMap('products').values()) as any[];
+      allSales.push(...globalSales.map((s) => ({ ...s, branchName: 'Global' })));
+      allProducts.push(...globalProducts.map((p) => ({ ...p, branchName: 'Global' })));
+    }
+
+    return { sales: allSales, products: allProducts };
+  }, [isConsolidated, mesh, state.sales, state.products, state.branches, state.activeBranchId]);
 
   const filteredSales = useMemo(() => {
-    return state.sales.filter((sale) => {
+    return consolidatedData.sales.filter((sale) => {
       const saleDate = new Date(sale.date);
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -150,9 +188,25 @@ const Reports: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl md:text-3xl font-bold mb-2 text-[#F5F5DC]">{t('reports.title')}</h2>
-        <p className="text-sm md:text-base text-foreground/80">{t('reports.description')}</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2 text-[#F5F5DC]">{t('reports.title')}</h2>
+          <p className="text-sm md:text-base text-foreground/80">{t('reports.description')}</p>
+        </div>
+        {state.branches.filter((b) => b.isActive).length > 0 && (
+          <button
+            onClick={() => setIsConsolidated(!isConsolidated)}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold transition-all active:scale-95 border ${
+              isConsolidated
+                ? 'bg-[#4ADE80] text-[#121212] border-[#4ADE80]'
+                : 'bg-transparent text-[#F5F5DC] border-[#F5F5DC]/30 hover:bg-[#F5F5DC]/5'
+            }`}
+            data-testid="consolidated-report-toggle"
+          >
+            <Building2 className="h-4 w-4" />
+            {isConsolidated ? 'Vista Consolidada Activa' : 'Consolidar Sucursales'}
+          </button>
+        )}
       </div>
 
       {/* Filters Section */}
@@ -192,9 +246,9 @@ const Reports: React.FC = () => {
               <option value="all">
                 {t('reports.filters.all')} {t('common.products')}
               </option>
-              {state.products.map((p) => (
+              {consolidatedData.products.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name}
+                  {p.name} {p.branchName ? `(${p.branchName})` : ''}
                 </option>
               ))}
             </select>
@@ -251,10 +305,15 @@ const Reports: React.FC = () => {
               <ul className="space-y-2">
                 {topProducts.byRevenue.map((p, i) => (
                   <li key={p.id} className="flex justify-between items-center text-sm p-2 rounded-md bg-background/50">
-                    <span>
-                      {i + 1}. {p.name}
-                    </span>
-                    <span className="font-bold">{formatCurrency(p.revenue)}</span>
+                    <div className="min-w-0">
+                      <div className="truncate">
+                        {i + 1}. {p.name}
+                      </div>
+                      {(p as any).branchName && (
+                        <div className="text-[10px] text-[#F5F5DC]/40 uppercase tracking-wider">{(p as any).branchName}</div>
+                      )}
+                    </div>
+                    <span className="font-bold ml-2 shrink-0">{formatCurrency(p.revenue)}</span>
                   </li>
                 ))}
               </ul>
@@ -267,10 +326,15 @@ const Reports: React.FC = () => {
               <ul className="space-y-2">
                 {topProducts.byProfit.map((p, i) => (
                   <li key={p.id} className="flex justify-between items-center text-sm p-2 rounded-md bg-background/50">
-                    <span>
-                      {i + 1}. {p.name}
-                    </span>
-                    <span className="font-bold text-green-400">{formatCurrency(p.profit)}</span>
+                    <div className="min-w-0">
+                      <div className="truncate">
+                        {i + 1}. {p.name}
+                      </div>
+                      {(p as any).branchName && (
+                        <div className="text-[10px] text-[#F5F5DC]/40 uppercase tracking-wider">{(p as any).branchName}</div>
+                      )}
+                    </div>
+                    <span className="font-bold text-green-400 ml-2 shrink-0">{formatCurrency(p.profit)}</span>
                   </li>
                 ))}
               </ul>
@@ -280,6 +344,43 @@ const Reports: React.FC = () => {
       ) : (
         <div className="text-center py-16 text-[#F5F5DC]/80">
           <p>{t('reports.noDataForPeriod')}</p>
+        </div>
+      )}
+
+      {/* Consolidated Inventory Table */}
+      {isConsolidated && consolidatedData.products.length > 0 && (
+        <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
+          <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">Inventario Consolidado</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="text-[#F5F5DC]/60 border-b border-[#F5F5DC]/10">
+                <tr>
+                  <th className="py-2 px-3">Producto</th>
+                  <th className="py-2 px-3">SKU</th>
+                  <th className="py-2 px-3">Sucursal</th>
+                  <th className="py-2 px-3 text-right">Stock</th>
+                  <th className="py-2 px-3 text-right">Precio</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F5F5DC]/5">
+                {consolidatedData.products
+                  .filter((p) => p.isActive)
+                  .map((p) => (
+                    <tr key={`${p.id}-${(p as any).branchName || 'global'}`}>
+                      <td className="py-2 px-3 font-medium">{p.name}</td>
+                      <td className="py-2 px-3 text-[#F5F5DC]/60">{p.sku || '-'}</td>
+                      <td className="py-2 px-3">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-foreground/10 uppercase font-bold">
+                          {(p as any).branchName || 'Global'}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3 text-right font-mono">{p.quantity}</td>
+                      <td className="py-2 px-3 text-right font-mono">{formatCurrency(p.price)}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

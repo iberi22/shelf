@@ -16,6 +16,7 @@ import type {
   Sale,
   Supplier,
   TeamMember,
+  Branch,
 } from 'p2p-mesh-core';
 import { dbSync, p2pManager, type PeerPermissions } from 'p2p-mesh-core';
 import React, {
@@ -48,6 +49,8 @@ const initialState: AppState = {
   ocrResults: [],
   pendingEdits: [],
   productChangeHistory: [],
+  branches: [],
+  activeBranchId: null,
 };
 
 type Action =
@@ -55,6 +58,10 @@ type Action =
   | { type: 'UPDATE_PRODUCT'; payload: Product }
   | { type: 'DELETE_PRODUCT'; payload: string }
   | { type: 'IMPORT_PRODUCTS'; payload: ImportProductsPayload }
+  | { type: 'ADD_BRANCH'; payload: Branch }
+  | { type: 'UPDATE_BRANCH'; payload: Branch }
+  | { type: 'DELETE_BRANCH'; payload: string }
+  | { type: 'SET_ACTIVE_BRANCH'; payload: string | null }
   | { type: 'ADD_SALE'; payload: Sale }
   | { type: 'UPDATE_SALE'; payload: Sale }
   | { type: 'DELETE_SALE'; payload: string }
@@ -112,6 +119,7 @@ const enrich = <T,>(state: AppState, item: T) => ({
   updatedAt: new Date().toISOString(),
   updatedBy: state.localPeerId || 'local',
   updatedByRole: state.role || 'collaborator',
+  branchId: (item as any).branchId || state.activeBranchId || undefined,
   ...item,
 });
 
@@ -593,6 +601,39 @@ const appReducer = (state: AppState, action: Action): AppState => {
         teamMembers: state.teamMembers.filter((m) => m.id !== action.payload),
       };
       break;
+    case 'ADD_BRANCH':
+      newState = { ...state, branches: [...state.branches, enrich(state, action.payload)] };
+      break;
+    case 'UPDATE_BRANCH':
+      newState = {
+        ...state,
+        branches: state.branches.map((b) => (b.id === action.payload.id ? enrich(state, action.payload) : b)),
+      };
+      break;
+    case 'DELETE_BRANCH':
+      newState = {
+        ...state,
+        branches: state.branches.map((b) =>
+          b.id === action.payload
+            ? { ...b, isActive: false, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' }
+            : b,
+        ),
+      };
+      break;
+    case 'SET_ACTIVE_BRANCH':
+      newState = {
+        ...state,
+        activeBranchId: action.payload,
+        // Clear branch-specific data to allow the bridge to re-populate from the new namespace
+        products: [],
+        sales: [],
+        purchaseOrders: [],
+        arqueoSessions: [],
+        ocrResults: [],
+        productChangeHistory: [],
+        pendingEdits: [],
+      };
+      break;
     case 'ADD_ARQUEO_SESSION':
       newState = { ...state, arqueoSessions: [...state.arqueoSessions, enrich(state, action.payload)] };
       break;
@@ -731,6 +772,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
         ocrResults: mergeCollections(state.ocrResults, p.ocrResults),
         teamMembers: mergeCollections(state.teamMembers, p.teamMembers),
         productChangeHistory: mergeCollections(state.productChangeHistory, p.productChangeHistory),
+        branches: mergeCollections(state.branches, p.branches),
         inventoryConfig: normalizeInventoryConfig(p.inventoryConfig || state.inventoryConfig),
         peers: mergeCollections(state.peers, p.peers),
         role: p.role || state.role,
@@ -787,6 +829,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
         products: normalizeProductsCollection(action.payload.products),
         productChangeHistory: action.payload.productChangeHistory || [],
         inventoryConfig: normalizeInventoryConfig(action.payload.inventoryConfig || initialState.inventoryConfig),
+        branches: action.payload.branches || [],
       };
 
     case 'CLEAR_AUDIT_LOGS': {
@@ -1207,6 +1250,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             ARQUEO_SESSION: 'arqueoSessions',
             OCR_RESULT: 'ocrResults',
             TEAM_MEMBER: 'teamMembers',
+            BRANCH: 'branches',
           };
           for (const [key, collection] of Object.entries(collectionMap)) {
             if (typeStr.includes(key)) {
@@ -1251,6 +1295,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             ARQUEO_SESSION: 'arqueoSessions',
             OCR_RESULT: 'ocrResults',
             TEAM_MEMBER: 'teamMembers',
+            BRANCH: 'branches',
           };
 
           for (const [key, collection] of Object.entries(collectionMap)) {

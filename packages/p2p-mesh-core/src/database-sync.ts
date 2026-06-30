@@ -16,6 +16,7 @@ import type {
 	Sale,
 	Supplier,
 	EntityEditProposal,
+	Branch,
 } from "./types";
 import { logger } from "./utils/logger";
 
@@ -54,6 +55,7 @@ export class DatabaseSyncManager {
 	private arqueoSessions: Y.Map<ArqueoSession>;
 	private ocrResults: Y.Map<InvoiceOCRResult>;
 	private teamMembers: Y.Map<TeamMember>;
+	private branches: Y.Map<Branch>;
 	private metadata: Y.Map<string>;
 	private linkedNodes: Y.Map<LinkedNodeRecord>;
 	private pendingEdits: Y.Map<EntityEditProposal>;
@@ -162,6 +164,7 @@ export class DatabaseSyncManager {
 		this.arqueoSessions = this.doc.getMap("arqueoSessions");
 		this.ocrResults = this.doc.getMap("ocrResults");
 		this.teamMembers = this.doc.getMap("teamMembers");
+		this.branches = this.doc.getMap("branches");
 		this.metadata = this.doc.getMap("metadata");
 		this.linkedNodes = this.doc.getMap("linkedNodes");
 		this.pendingEdits = this.doc.getMap("pendingEdits");
@@ -213,6 +216,8 @@ export class DatabaseSyncManager {
 			case "purchaseOrders":
 				return !!perms.canEditPurchaseOrders;
 			case "teamMembers":
+				return false;
+			case "branches":
 				return false;
 			case "arqueoSessions":
 				return !!perms.canViewArqueo;
@@ -380,6 +385,8 @@ export class DatabaseSyncManager {
 				return this.ocrResults as unknown as Y.Map<EntityRecord>;
 			case "teamMembers":
 				return this.teamMembers as unknown as Y.Map<EntityRecord>;
+			case "branches":
+				return this.branches as unknown as Y.Map<EntityRecord>;
 			case "pendingEdits":
 				return this.pendingEdits as unknown as Y.Map<EntityRecord>;
 			case "productChangeHistory":
@@ -417,6 +424,7 @@ export class DatabaseSyncManager {
 			mergeAndSync("auditLogs", state.auditLogs);
 			mergeAndSync("teamMembers", state.teamMembers);
 			mergeAndSync("productChangeHistory", state.productChangeHistory);
+			mergeAndSync("branches", state.branches);
 			
 			if (state.pendingEdits) {
 				for (const edit of state.pendingEdits) {
@@ -489,6 +497,7 @@ export class DatabaseSyncManager {
 			arqueoSessions: Array.from(this.arqueoSessions.values()),
 			ocrResults: Array.from(this.ocrResults.values()),
 			teamMembers: Array.from(this.teamMembers.values()),
+			branches: Array.from(this.branches.values()),
 			inventoryConfig: this.getInventoryConfig(),
 			role: resolvedRole,
 			permissions: resolvedPermissions,
@@ -861,6 +870,7 @@ export class DatabaseSyncManager {
 			"teamMembers",
 			"pendingEdits",
 			"productChangeHistory",
+			"branches",
 		];
 
 		const observers = collections.map((col) => {

@@ -12,6 +12,13 @@ export interface BaseEntity {
   updatedByRole?: P2PRole; // Role of the peer that updated
   updatedAt: string; // ISO String
   signature?: string; // Cryptographic signature of the entity state
+  branchId?: string;
+  branchName?: string;
+}
+
+export interface Branch extends BaseEntity {
+  name: string;
+  location?: string;
 }
 
 export interface EntityEditProposal {
@@ -191,6 +198,8 @@ export interface AppState {
   isExpelled?: boolean;
   pendingEdits: EntityEditProposal[];
   productChangeHistory: ProductChangeHistoryEntry[];
+  branches: Branch[];
+  activeBranchId: string | null;
 }
 
 export type ImportStrategy = 'skip' | 'update';
