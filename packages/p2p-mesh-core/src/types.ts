@@ -265,4 +265,5 @@ export interface InventoryConfig {
   measureOptions: string[];
   autoApplyProductUpdates: boolean;
   productHistoryLimit: number;
+  useEdgeMeshSync: boolean;
 }

@@ -807,7 +807,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
         return updated;
       });
     }
-  }, [selectedColors.length, selectedSizes.length]);
+  }, [
+    selectedColors.length,
+    selectedSizes.length,
+    isMultiMode,
+    selectedSizes,
+    cost,
+    price,
+    selectedColors,
+    isEditing,
+    getComboEntries,
+  ]);
 
   const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
   const isEditing = product !== null;

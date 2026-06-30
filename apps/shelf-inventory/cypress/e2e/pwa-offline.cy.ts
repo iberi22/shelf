@@ -51,7 +51,7 @@ describe('PWA Offline Mode', () => {
 
     // Go offline
     cy.log('Going offline...');
-    cy.window().then((win) => {
+    cy.window().then((_win) => {
       // Use Chrome DevTools Protocol to simulate offline
       cy.exec('start /B "" cmd /c "echo online=false"', { failOnNonZeroExit: false });
     });

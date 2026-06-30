@@ -1,4 +1,5 @@
 import * as Y from "yjs";
+import type { CrdtSyncLayer, CrdtSyncEnvelope } from "edge-mesh";
 import type {
 	AppState,
 	ArqueoSession,
@@ -66,6 +67,27 @@ export class DatabaseSyncManager {
 	 * Set to true only after initWithState() completes.
 	 */
 	public isReady: boolean = false;
+	public syncLayer: CrdtSyncLayer | null = null;
+	private onEnvelopeCallbacks: ((envelope: CrdtSyncEnvelope) => void)[] = [];
+
+	public setSyncLayer(layer: CrdtSyncLayer) {
+		this.syncLayer = layer;
+	}
+
+	public onEnvelope(cb: (envelope: CrdtSyncEnvelope) => void) {
+		this.onEnvelopeCallbacks.push(cb);
+		return () => {
+			this.onEnvelopeCallbacks = this.onEnvelopeCallbacks.filter(
+				(c) => c !== cb,
+			);
+		};
+	}
+
+	private emitEnvelope(envelope: CrdtSyncEnvelope) {
+		for (const cb of this.onEnvelopeCallbacks) {
+			cb(envelope);
+		}
+	}
 
 	private getAuthorityPeerId(): string | null {
 		return (
@@ -262,6 +284,8 @@ export class DatabaseSyncManager {
 		const { __baseUpdatedAt, ...persistableItem } = item as T &
 			SyncEntityRecord;
 
+		const useEdgeMeshSync = Boolean(this.getInventoryConfig()?.useEdgeMeshSync);
+
 		// MERGE RESOLUTION SYSTEM
 		// If a collaborator edits a product, we route it to pendingEdits for the admin to approve.
 		if (collectionName === "products" && this.localPeerId && this.isReady) {
@@ -270,7 +294,7 @@ export class DatabaseSyncManager {
 			const autoApplyProductUpdates = Boolean(
 				this.getInventoryConfig()?.autoApplyProductUpdates,
 			);
-			
+
 			if (!isAdmin && !autoApplyProductUpdates) {
 				const originalData = yMap.get(item.id);
 				const hasConcurrentChange =
@@ -291,11 +315,17 @@ export class DatabaseSyncManager {
 						timestamp: new Date().toISOString(),
 						status: "pending",
 					};
-					
-					this.doc.transact(() => {
-						this.pendingEdits.set(proposalId, proposal as any);
-					}, "local");
-					
+
+					const proposalMutator = (doc: Y.Doc) => {
+						doc.getMap("pendingEdits").set(proposalId, proposal as any);
+					};
+
+					if (useEdgeMeshSync && this.syncLayer) {
+						this.emitEnvelope(this.syncLayer.applyLocalChange(proposalMutator));
+					} else {
+						this.doc.transact(() => proposalMutator(this.doc), "local");
+					}
+
 					logger.log(
 						`[MERGE] Conflicting collaborator edit on ${item.id} routed to pendingEdits`,
 					);
@@ -304,9 +334,18 @@ export class DatabaseSyncManager {
 			}
 		}
 
-		this.doc.transact(() => {
-			yMap.set(item.id, persistableItem as any);
-		}, "local");
+		const upsertMutator = (doc: Y.Doc) => {
+			const targetMap = this.getMapFromDoc(doc, collectionName);
+			if (targetMap) {
+				targetMap.set(item.id, persistableItem as any);
+			}
+		};
+
+		if (useEdgeMeshSync && this.syncLayer) {
+			this.emitEnvelope(this.syncLayer.applyLocalChange(upsertMutator));
+		} else {
+			this.doc.transact(() => upsertMutator(this.doc), "local");
+		}
 	}
 
 	/**
@@ -323,41 +362,95 @@ export class DatabaseSyncManager {
 		const yMap = this.getMapForCollection(collectionName);
 		if (!yMap) return;
 
-		this.doc.transact(() => {
-			yMap.delete(id);
-		}, "local");
+		const useEdgeMeshSync = Boolean(this.getInventoryConfig()?.useEdgeMeshSync);
+		const deleteMutator = (doc: Y.Doc) => {
+			const targetMap = this.getMapFromDoc(doc, collectionName);
+			if (targetMap) {
+				targetMap.delete(id);
+			}
+		};
+
+		if (useEdgeMeshSync && this.syncLayer) {
+			this.emitEnvelope(this.syncLayer.applyLocalChange(deleteMutator));
+		} else {
+			this.doc.transact(() => deleteMutator(this.doc), "local");
+		}
 	}
 
 	/**
 	 * Admin-only function to resolve a pending edit
 	 */
-	public resolvePendingEdit(proposalId: string, resolution: 'approve' | 'reject', mergedData?: any) {
+	public resolvePendingEdit(
+		proposalId: string,
+		resolution: "approve" | "reject",
+		mergedData?: any,
+	) {
 		const effectiveSelf = this.getEffectivePeerConfig(this.localPeerId);
 		const isAdmin = effectiveSelf.role === "admin" || effectiveSelf.isMaster;
-		
+
 		if (!isAdmin) {
-			logger.warn(`[SECURITY] Unauthorized attempt to resolve pending edit by ${this.localPeerId}`);
+			logger.warn(
+				`[SECURITY] Unauthorized attempt to resolve pending edit by ${this.localPeerId}`,
+			);
 			return;
 		}
 
 		const proposal = this.pendingEdits.get(proposalId);
 		if (!proposal) return;
 
-		this.doc.transact(() => {
-			if (resolution === 'approve') {
+		const useEdgeMeshSync = Boolean(this.getInventoryConfig()?.useEdgeMeshSync);
+		const resolveMutator = (doc: Y.Doc) => {
+			if (resolution === "approve") {
 				const finalData = mergedData || proposal.proposedData;
-				const collectionMap = this.getMapForCollection(proposal.collectionName);
+				const collectionMap = this.getMapFromDoc(doc, proposal.collectionName);
 				if (collectionMap) {
 					// We temporarily bypass the upsertEntity hook by setting it directly to the map
 					collectionMap.set(proposal.entityId, finalData as any);
 				}
 			}
-			
+
 			// Always remove the proposal once resolved
-			this.pendingEdits.delete(proposalId);
-		}, "local");
-		
+			doc.getMap("pendingEdits").delete(proposalId);
+		};
+
+		if (useEdgeMeshSync && this.syncLayer) {
+			this.emitEnvelope(this.syncLayer.applyLocalChange(resolveMutator));
+		} else {
+			this.doc.transact(() => resolveMutator(this.doc), "local");
+		}
+
 		logger.log(`[MERGE] Proposal ${proposalId} resolved as ${resolution}`);
+	}
+
+	private getMapFromDoc(doc: Y.Doc, collection: string): Y.Map<any> | null {
+		switch (collection) {
+			case "products":
+				return doc.getMap("products");
+			case "sales":
+				return doc.getMap("sales");
+			case "clients":
+				return doc.getMap("clients");
+			case "suppliers":
+				return doc.getMap("suppliers");
+			case "purchaseOrders":
+				return doc.getMap("purchaseOrders");
+			case "auditLogs":
+				return doc.getMap("auditLogs");
+			case "arqueoSessions":
+				return doc.getMap("arqueoSessions");
+			case "ocrResults":
+				return doc.getMap("ocrResults");
+			case "teamMembers":
+				return doc.getMap("teamMembers");
+			case "pendingEdits":
+				return doc.getMap("pendingEdits");
+			case "productChangeHistory":
+				return doc.getMap("productChangeHistory");
+			case "peers":
+				return doc.getMap("linkedNodes");
+			default:
+				return null;
+		}
 	}
 
 	private getMapForCollection(collection: string): Y.Map<EntityRecord> | null {
@@ -512,9 +605,16 @@ export class DatabaseSyncManager {
 	}
 
 	public setInventoryConfig(config: InventoryConfig) {
-		this.doc.transact(() => {
-			this.metadata.set("inventoryConfig", JSON.stringify(config));
-		}, "local");
+		const useEdgeMeshSync = Boolean(this.getInventoryConfig()?.useEdgeMeshSync);
+		const configMutator = (doc: Y.Doc) => {
+			doc.getMap("metadata").set("inventoryConfig", JSON.stringify(config));
+		};
+
+		if (useEdgeMeshSync && this.syncLayer) {
+			this.emitEnvelope(this.syncLayer.applyLocalChange(configMutator));
+		} else {
+			this.doc.transact(() => configMutator(this.doc), "local");
+		}
 	}
 
 	public getMasterPeerId(): string | null {
@@ -537,10 +637,17 @@ export class DatabaseSyncManager {
 			return;
 		}
 
-		this.doc.transact(() => {
-			this.metadata.set("authorityPeerId", peerId);
-			this.metadata.set("masterPeerId", peerId);
-		}, "local");
+		const useEdgeMeshSync = Boolean(this.getInventoryConfig()?.useEdgeMeshSync);
+		const masterMutator = (doc: Y.Doc) => {
+			doc.getMap("metadata").set("authorityPeerId", peerId);
+			doc.getMap("metadata").set("masterPeerId", peerId);
+		};
+
+		if (useEdgeMeshSync && this.syncLayer) {
+			this.emitEnvelope(this.syncLayer.applyLocalChange(masterMutator));
+		} else {
+			this.doc.transact(() => masterMutator(this.doc), "local");
+		}
 	}
 
 	public getLinkedNodes(): LinkedNodeRecord[] {
@@ -570,8 +677,12 @@ export class DatabaseSyncManager {
 		info: Partial<LinkedNodeRecord>,
 		authorityPeerId: string | null = this.localPeerId,
 	) {
-		this.doc.transact(() => {
-			const existing = this.linkedNodes.get(peerId) || ({} as LinkedNodeRecord);
+		const useEdgeMeshSync = Boolean(this.getInventoryConfig()?.useEdgeMeshSync);
+		const nodeMutator = (doc: Y.Doc) => {
+			const linkedNodes = doc.getMap("linkedNodes");
+			const existing =
+				(linkedNodes.get(peerId) as LinkedNodeRecord) ||
+				({} as LinkedNodeRecord);
 			const { id: _existingId, ...existingWithoutId } = existing;
 			const canEditPeerConfig = this.isPeerConfigMutationAllowed(
 				authorityPeerId,
@@ -600,7 +711,7 @@ export class DatabaseSyncManager {
 						...rest
 					}) => rest)(info || {});
 
-			this.linkedNodes.set(peerId, {
+			linkedNodes.set(peerId, {
 				...existingWithoutId,
 				...safeInfo,
 				id: peerId,
@@ -608,8 +719,14 @@ export class DatabaseSyncManager {
 				role: nextRole,
 				isMaster: nextIsMaster,
 				lastSeen: new Date().toISOString(),
-			});
-		}, "local");
+			} as any);
+		};
+
+		if (useEdgeMeshSync && this.syncLayer) {
+			this.emitEnvelope(this.syncLayer.applyLocalChange(nodeMutator));
+		} else {
+			this.doc.transact(() => nodeMutator(this.doc), "local");
+		}
 	}
 
 	private getDefaultPermissions(
@@ -692,15 +809,19 @@ export class DatabaseSyncManager {
 			return;
 		}
 
-		this.doc.transact(() => {
-			const existing = this.linkedNodes.get(peerId) || ({} as LinkedNodeRecord);
+		const useEdgeMeshSync = Boolean(this.getInventoryConfig()?.useEdgeMeshSync);
+		const configMutator = (doc: Y.Doc) => {
+			const linkedNodes = doc.getMap("linkedNodes");
+			const existing =
+				(linkedNodes.get(peerId) as LinkedNodeRecord) ||
+				({} as LinkedNodeRecord);
 			const { id: _existingConfigId, ...existingConfigWithoutId } = existing;
 			const existingEphemeral = this.ephemeralNodes.get(peerId) || {};
 			const nextRole = role;
 			const nextPermissions =
 				permissions || this.getDefaultPermissions(nextRole);
 
-			this.linkedNodes.set(peerId, {
+			linkedNodes.set(peerId, {
 				...existingEphemeral,
 				...existingConfigWithoutId,
 				id: peerId,
@@ -709,14 +830,27 @@ export class DatabaseSyncManager {
 				isMaster:
 					peerId === authorityPeerId ? existing.isMaster || false : false,
 				lastSeen: new Date().toISOString(),
-			});
-		}, "local");
+			} as any);
+		};
+
+		if (useEdgeMeshSync && this.syncLayer) {
+			this.emitEnvelope(this.syncLayer.applyLocalChange(configMutator));
+		} else {
+			this.doc.transact(() => configMutator(this.doc), "local");
+		}
 	}
 
 	public removeLinkedNode(peerId: string) {
-		this.doc.transact(() => {
-			this.linkedNodes.delete(peerId);
-		}, "local");
+		const useEdgeMeshSync = Boolean(this.getInventoryConfig()?.useEdgeMeshSync);
+		const removeMutator = (doc: Y.Doc) => {
+			doc.getMap("linkedNodes").delete(peerId);
+		};
+
+		if (useEdgeMeshSync && this.syncLayer) {
+			this.emitEnvelope(this.syncLayer.applyLocalChange(removeMutator));
+		} else {
+			this.doc.transact(() => removeMutator(this.doc), "local");
+		}
 	}
 
 	/** Role override set by p2pManager to sync the effective peer role into database-sync */
@@ -779,11 +913,23 @@ export class DatabaseSyncManager {
 			}
 
 			if (keysToDelete.length > 0) {
-				this.doc.transact(() => {
-					for (const key of keysToDelete) {
-						yMap.delete(key);
+				const useEdgeMeshSync = Boolean(
+					this.getInventoryConfig()?.useEdgeMeshSync,
+				);
+				const gcMutator = (doc: Y.Doc) => {
+					const targetMap = this.getMapFromDoc(doc, collectionName);
+					if (targetMap) {
+						for (const key of keysToDelete) {
+							targetMap.delete(key);
+						}
 					}
-				}, "local");
+				};
+
+				if (useEdgeMeshSync && this.syncLayer) {
+					this.emitEnvelope(this.syncLayer.applyLocalChange(gcMutator));
+				} else {
+					this.doc.transact(() => gcMutator(this.doc), "local");
+				}
 				logger.log(
 					`[GC] Purged ${keysToDelete.length} old items from ${collectionName}`,
 				);

@@ -1,3 +1,4 @@
+import { createCrdtSyncLayer } from 'edge-mesh';
 import { Download, Info, Link2, MessageCircle, QrCode, RadioTower, RefreshCw, Settings, X } from 'lucide-react';
 import {
   dbSync,
@@ -126,7 +127,9 @@ const P2PSyncManager: React.FC = () => {
   stateRef.current = state;
 
   useEffect(() => {
-    isBiometricsSupported().then(setIsBiometricAvailable).catch(() => setIsBiometricAvailable(false));
+    isBiometricsSupported()
+      .then(setIsBiometricAvailable)
+      .catch(() => setIsBiometricAvailable(false));
     p2pManager.init();
 
     const isAuthorizedConfigSender = (fromPeerId: string) => {
@@ -265,6 +268,20 @@ const P2PSyncManager: React.FC = () => {
     const interval = setInterval(() => {
       if (p2pManager.localPeerId) {
         dispatch({ type: 'SET_LOCAL_PEER_ID', payload: p2pManager.localPeerId });
+
+        if (!dbSync.syncLayer) {
+          const syncLayer = createCrdtSyncLayer({
+            namespace: 'shelf-inventory',
+            doc: dbSync.doc,
+            identity: {
+              peerId: p2pManager.localPeerId,
+            },
+          });
+          syncLayer.load().then(() => {
+            dbSync.setSyncLayer(syncLayer);
+          });
+        }
+
         clearInterval(interval);
       }
     }, 1000);

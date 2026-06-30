@@ -49,6 +49,7 @@ export type SyncMessage =
 			type: "YJS_SYNC_REQUEST";
 			payload: { stateVector: string; respondWithRequest?: boolean };
 	  }
+	| { type: "CRDT_SYNC_ENVELOPE"; payload: any }
 	| {
 			type: "UPDATE_PEER_PERMISSIONS";
 			payload: {
@@ -187,6 +188,12 @@ class P2PManager {
 
 		dbSync.onChange((update, origin) => {
 			if (!dbSync.isReady) return;
+
+			const useEdgeMeshSync = Boolean(
+				dbSync.getInventoryConfig()?.useEdgeMeshSync,
+			);
+			if (useEdgeMeshSync) return; // Managed by CRDT_SYNC_ENVELOPE
+
 			// Only broadcast if the update originated locally to prevent infinite loops
 			if (origin === "local") {
 				const message: SyncMessage = {
@@ -205,6 +212,13 @@ class P2PManager {
 					}, delay);
 				}
 			}
+		});
+
+		dbSync.onEnvelope((envelope) => {
+			this.broadcast({
+				type: "CRDT_SYNC_ENVELOPE",
+				payload: envelope,
+			});
 		});
 
 		dbSync.onReady(() => {
@@ -558,6 +572,20 @@ class P2PManager {
 					return;
 				}
 
+				// Handle CRDT Sync Layer Envelopes
+				if (message.type === "CRDT_SYNC_ENVELOPE") {
+					if (dbSync.syncLayer) {
+						const reply = dbSync.syncLayer.applyEnvelope(message.payload);
+						if (reply) {
+							this.sendTo(conn.peer, {
+								type: "CRDT_SYNC_ENVELOPE",
+								payload: reply,
+							});
+						}
+					}
+					return;
+				}
+
 				// Handle Yjs Updates
 				if (message.type === "YJS_UPDATE") {
 					dbSync.applyUpdate(fromHex(message.payload.update), conn.peer);
@@ -781,6 +809,19 @@ class P2PManager {
 			}
 
 			// Dispatch the decrypted message
+			if (message.type === "CRDT_SYNC_ENVELOPE") {
+				if (dbSync.syncLayer) {
+					const reply = dbSync.syncLayer.applyEnvelope(message.payload);
+					if (reply) {
+						this.sendTo(fromPeerId, {
+							type: "CRDT_SYNC_ENVELOPE",
+							payload: reply,
+						});
+					}
+				}
+				return;
+			}
+
 			if (message.type === "YJS_UPDATE") {
 				dbSync.applyUpdate(fromHex(message.payload.update), fromPeerId);
 				this.emitMessageCallbacks(message, fromPeerId);

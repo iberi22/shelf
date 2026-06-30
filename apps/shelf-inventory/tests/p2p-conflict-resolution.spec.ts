@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { dismissModals, setupPage } from './helpers';
 import { expectProductSync, getLocalPeerId } from './p2p-helpers';
 
-const collaboratorPermissions = {
+const _collaboratorPermissions = {
   canViewProducts: true,
   canEditProducts: true,
   canViewSales: true,
@@ -37,7 +37,7 @@ test.describe('P2P Conflict Resolution', () => {
     await dismissModals(collabPage);
 
     const collabId = await getLocalPeerId(collabPage);
-    const adminId = await getLocalPeerId(adminPage);
+    const _adminId = await getLocalPeerId(adminPage);
 
     // Connect peers
     await adminPage.evaluate((targetPeerId: string) => {
@@ -46,12 +46,15 @@ test.describe('P2P Conflict Resolution', () => {
 
     // Wait for connection
     await expect
-      .poll(async () => {
-        return adminPage.evaluate(() => {
-          const mgr = (window as any)._p2pManagerForTest;
-          return mgr ? mgr.getState()?.peers?.length : 0;
-        });
-      }, { timeout: 15000 })
+      .poll(
+        async () => {
+          return adminPage.evaluate(() => {
+            const mgr = (window as any)._p2pManagerForTest;
+            return mgr ? mgr.getState()?.peers?.length : 0;
+          });
+        },
+        { timeout: 15000 },
+      )
       .toBeGreaterThanOrEqual(1);
 
     // Admin creates a product
@@ -94,17 +97,20 @@ test.describe('P2P Conflict Resolution', () => {
 
     // Wait for convergence — both peers should either converge on same value or show pending edits
     await expect
-      .poll(async () => {
-        const price1 = await adminPage.evaluate((id: string) => {
-          const dbSync = (window as any)._dbSyncForTest;
-          return dbSync?.getState()?.products?.find((p: any) => p.id === id)?.price;
-        }, initialProductId);
-        const price2 = await collabPage.evaluate((id: string) => {
-          const dbSync = (window as any)._dbSyncForTest;
-          return dbSync?.getState()?.products?.find((p: any) => p.id === id)?.price;
-        }, initialProductId);
-        return price1 === price2 && (price1 === 111 || price1 === 222);
-      }, { timeout: 20000 })
+      .poll(
+        async () => {
+          const price1 = await adminPage.evaluate((id: string) => {
+            const dbSync = (window as any)._dbSyncForTest;
+            return dbSync?.getState()?.products?.find((p: any) => p.id === id)?.price;
+          }, initialProductId);
+          const price2 = await collabPage.evaluate((id: string) => {
+            const dbSync = (window as any)._dbSyncForTest;
+            return dbSync?.getState()?.products?.find((p: any) => p.id === id)?.price;
+          }, initialProductId);
+          return price1 === price2 && (price1 === 111 || price1 === 222);
+        },
+        { timeout: 20000 },
+      )
       .toBe(true);
 
     // Verify no data loss — product still exists
