@@ -11,9 +11,7 @@ import {
 	fromHex,
 	generateDSAKeyPair,
 	generateKEMKeyPair,
-	sign,
 	toHex,
-	verify,
 } from "./crypto-pqc";
 import { dbSync } from "./database-sync";
 import type { AppState, P2PRole, PeerInfo, PeerPermissions } from "./types";
@@ -51,7 +49,7 @@ export type SyncMessage =
 			type: "YJS_SYNC_REQUEST";
 			payload: { stateVector: string; respondWithRequest?: boolean };
 	  }
-	| { type: "CRDT_SYNC_ENVELOPE"; payload: { envelope: any } }
+	| { type: "CRDT_SYNC_ENVELOPE"; payload: any }
 	| {
 			type: "UPDATE_PEER_PERMISSIONS";
 			payload: {
@@ -108,7 +106,6 @@ class P2PManager {
 	private connections: Map<string, DataConnection> = new Map();
 	private sharedSecrets: Map<string, Uint8Array> = new Map();
 	private encryptionKeys: Map<string, CryptoKey> = new Map();
-	private dsaPublicKeys: Map<string, Uint8Array> = new Map();
 	private health = createPeerHealthMonitor({
 		staleAfterMs: 30000,
 		offlineAfterMs: 60000,
@@ -191,7 +188,12 @@ class P2PManager {
 
 		dbSync.onChange((update, origin) => {
 			if (!dbSync.isReady) return;
-			if (dbSync.getInventoryConfig()?.useEdgeMeshSync) return;
+
+			const useEdgeMeshSync = Boolean(
+				dbSync.getInventoryConfig()?.useEdgeMeshSync,
+			);
+			if (useEdgeMeshSync) return; // Managed by CRDT_SYNC_ENVELOPE
+
 			// Only broadcast if the update originated locally to prevent infinite loops
 			if (origin === "local") {
 				const message: SyncMessage = {
@@ -212,11 +214,16 @@ class P2PManager {
 			}
 		});
 
+		dbSync.onEnvelope((envelope) => {
+			this.broadcast({
+				type: "CRDT_SYNC_ENVELOPE",
+				payload: envelope,
+			});
+		});
+
 		dbSync.onReady(() => {
-			if (!dbSync.getInventoryConfig()?.useEdgeMeshSync) {
-				for (const peerId of this.connections.keys()) {
-					this.requestYjsSync(peerId);
-				}
+			for (const peerId of this.connections.keys()) {
+				this.requestYjsSync(peerId);
 			}
 		});
 	}
@@ -491,9 +498,6 @@ class P2PManager {
 						fromHex(message.payload.kemPublicKey),
 					);
 					this.sharedSecrets.set(conn.peer, sharedSecret);
-					if (message.payload.dsaPublicKey) {
-						this.dsaPublicKeys.set(conn.peer, fromHex(message.payload.dsaPublicKey));
-					}
 					this.setupEncryption(conn.peer, sharedSecret).then(() => {
 						// Update status in ephemeralNodes map
 						dbSync.updateEphemeralNode(conn.peer, {
@@ -504,17 +508,12 @@ class P2PManager {
 						this.updatePeerList(conn.peer, "collaborator");
 						this.notifyConnectionChange();
 
-						if (!dbSync.getInventoryConfig()?.useEdgeMeshSync) {
-							this.requestYjsSync(conn.peer);
-						}
+						this.requestYjsSync(conn.peer);
 					});
 
 					conn.send({
 						type: "PQC_KEM_REPLY",
-						payload: {
-							ciphertext: toHex(ciphertext),
-							dsaPublicKey: toHex(this.dsaKeyPair.publicKey),
-						},
+						payload: { ciphertext: toHex(ciphertext) },
 					});
 					logger.log(`PQC Handshake established with ${conn.peer}`);
 					return;
@@ -526,9 +525,6 @@ class P2PManager {
 						this.kemKeyPair.secretKey,
 					);
 					this.sharedSecrets.set(conn.peer, sharedSecret);
-					if (message.payload.dsaPublicKey) {
-						this.dsaPublicKeys.set(conn.peer, fromHex(message.payload.dsaPublicKey));
-					}
 					this.setupEncryption(conn.peer, sharedSecret).then(() => {
 						logger.log(`PQC Shared secret recovered from ${conn.peer}`);
 
@@ -539,9 +535,7 @@ class P2PManager {
 						this.updatePeerList(conn.peer, "collaborator");
 						this.notifyConnectionChange();
 
-						if (!dbSync.getInventoryConfig()?.useEdgeMeshSync) {
-							this.requestYjsSync(conn.peer);
-						}
+						this.requestYjsSync(conn.peer);
 					});
 					return;
 				}
@@ -578,6 +572,20 @@ class P2PManager {
 					return;
 				}
 
+				// Handle CRDT Sync Layer Envelopes
+				if (message.type === "CRDT_SYNC_ENVELOPE") {
+					if (dbSync.syncLayer) {
+						const reply = dbSync.syncLayer.applyEnvelope(message.payload);
+						if (reply) {
+							this.sendTo(conn.peer, {
+								type: "CRDT_SYNC_ENVELOPE",
+								payload: reply,
+							});
+						}
+					}
+					return;
+				}
+
 				// Handle Yjs Updates
 				if (message.type === "YJS_UPDATE") {
 					dbSync.applyUpdate(fromHex(message.payload.update), conn.peer);
@@ -593,11 +601,6 @@ class P2PManager {
 							payload: { stateVector: toHex(dbSync.getStateVector()) },
 						});
 					}
-					return;
-				}
-
-				if (message.type === "CRDT_SYNC_ENVELOPE") {
-					dbSync.applyEnvelope(message.payload.envelope);
 					return;
 				}
 
@@ -779,7 +782,6 @@ class P2PManager {
 			"CHANGE_ROLE",
 			"UPDATE_PEER_PERMISSIONS",
 			"RECOVERY_APPROVED",
-			"CRDT_SYNC_ENVELOPE",
 		].includes(message.type);
 	}
 
@@ -807,6 +809,19 @@ class P2PManager {
 			}
 
 			// Dispatch the decrypted message
+			if (message.type === "CRDT_SYNC_ENVELOPE") {
+				if (dbSync.syncLayer) {
+					const reply = dbSync.syncLayer.applyEnvelope(message.payload);
+					if (reply) {
+						this.sendTo(fromPeerId, {
+							type: "CRDT_SYNC_ENVELOPE",
+							payload: reply,
+						});
+					}
+				}
+				return;
+			}
+
 			if (message.type === "YJS_UPDATE") {
 				dbSync.applyUpdate(fromHex(message.payload.update), fromPeerId);
 				this.emitMessageCallbacks(message, fromPeerId);
@@ -821,11 +836,6 @@ class P2PManager {
 						payload: { stateVector: toHex(dbSync.getStateVector()) },
 					});
 				}
-				return;
-			}
-
-			if (message.type === "CRDT_SYNC_ENVELOPE") {
-				dbSync.applyEnvelope(message.payload.envelope);
 				return;
 			}
 
@@ -922,10 +932,6 @@ class P2PManager {
 	public requestFullSync(peerId?: string): number {
 		if (!dbSync.isReady) return 0;
 
-		// When useEdgeMeshSync is enabled, we rely on CrdtSyncLayer for synchronization.
-		// requestFullSync is part of the legacy Yjs state vector / diff manual flow.
-		if (dbSync.getInventoryConfig()?.useEdgeMeshSync) return 0;
-
 		if (peerId) {
 			if (!this.isPeerConnected(peerId)) return 0;
 			this.requestYjsSync(peerId);
@@ -1007,20 +1013,6 @@ class P2PManager {
 		this.pendingConnectionRequests.clear();
 		this.peer?.destroy();
 		this.peer = null;
-	}
-
-	public sign(message: Uint8Array): Uint8Array {
-		return sign(message, this.dsaKeyPair.secretKey);
-	}
-
-	public verify(
-		signature: Uint8Array,
-		message: Uint8Array,
-		peerId: string,
-	): boolean {
-		const publicKey = this.dsaPublicKeys.get(peerId);
-		if (!publicKey) return false;
-		return verify(signature, message, publicKey);
 	}
 }
 

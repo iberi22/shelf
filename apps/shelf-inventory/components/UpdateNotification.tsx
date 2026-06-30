@@ -94,7 +94,7 @@ const UpdateNotification: React.FC = () => {
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('online', onOnline);
     };
-  }, [setNeedRefresh, updateServiceWorker]);
+  }, [setNeedRefresh]);
 
   useEffect(() => {
     if (offlineReady) {
