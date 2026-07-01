@@ -89,28 +89,25 @@ describe('SnapshotManager', () => {
 
 		// 1. Add some entries to op-log
 		syncLayer.opLog.append({
-			id: '1',
 			opId: 'op1',
 			namespace: 'test',
-			sourcePeerId: 'peer2',
 			timestamp: 1000,
-			type: 'sync:update'
+			data: { id: '1', opId: 'op1', namespace: 'test', sourcePeerId: 'peer2', timestamp: 1000, type: 'sync:update' }
 		});
 		syncLayer.opLog.append({
-			id: '2',
 			opId: 'op2',
 			namespace: 'test',
-			sourcePeerId: 'peer2',
 			timestamp: 1500,
-			type: 'sync:update'
+			data: { id: '2', opId: 'op2', namespace: 'test', sourcePeerId: 'peer2', timestamp: 1500, type: 'sync:update' }
 		});
 
-		expect(syncLayer.opLog.list().length).toBe(2);
+		expect(syncLayer.opLog.getEntries().length).toBe(2);
 
 		// 2. Persist snapshot (which should trigger compaction)
 		await syncLayer.persistSnapshot();
 
 		// 3. Verify op-log is compacted for entries before snapshot timestamp (2000)
-		expect(syncLayer.opLog.list().length).toBe(0);
+		expect(syncLayer.opLog.getEntries(undefined, 2000).length).toBe(0);
+		expect(syncLayer.opLog.getEntries(undefined, 0).length).toBe(0);
 	});
 });

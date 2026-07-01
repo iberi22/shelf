@@ -157,7 +157,7 @@ export class CrdtSyncLayer extends EventEmitter {
 				bytesToStorage(snapshot.data),
 			);
 		}
-		this.opLog.compactBefore(snapshot.timestamp);
+		this.opLog.compact(snapshot.timestamp);
 	}
 
 	getStateVector(): Uint8Array {
