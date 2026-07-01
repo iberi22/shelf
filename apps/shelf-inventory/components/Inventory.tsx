@@ -819,8 +819,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     getComboEntries,
   ]);
 
-  const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
   const isEditing = product !== null;
+  const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
 
   const getComboEntries = (colors: string[], sizes: string[]): string[] => {
     if (colors.length > 0 && sizes.length > 0) {
