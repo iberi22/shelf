@@ -62,6 +62,7 @@ export class DatabaseSyncManager {
 	private productChangeHistory: Y.Map<ProductChangeHistoryEntry>;
 	private ephemeralNodes: Map<string, Partial<LinkedNodeRecord>> = new Map();
 	public localPeerId: string | null = null;
+	public activeBranchId: string | null = null;
 	private readyCallbacks: (() => void)[] = [];
 	/**
 	 * Guards against premature YJS_UPDATE broadcasts.
