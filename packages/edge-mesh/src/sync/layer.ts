@@ -239,7 +239,12 @@ export class CrdtSyncLayer extends EventEmitter {
 			});
 		}
 
-		this.opLog.append(envelope);
+		this.opLog.append({
+			opId: envelope.opId,
+			namespace: envelope.namespace,
+			timestamp: envelope.timestamp,
+			data: envelope,
+		});
 		this.emit('synced', {
 			namespace: envelope.namespace,
 			sourcePeerId: envelope.sourcePeerId,
