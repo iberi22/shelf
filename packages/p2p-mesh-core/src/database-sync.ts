@@ -62,6 +62,7 @@ export class DatabaseSyncManager {
 	private productChangeHistory: Y.Map<ProductChangeHistoryEntry>;
 	private ephemeralNodes: Map<string, Partial<LinkedNodeRecord>> = new Map();
 	public localPeerId: string | null = null;
+	public activeBranchId: string | null = null;
 	private readyCallbacks: (() => void)[] = [];
 	/**
 	 * Guards against premature YJS_UPDATE broadcasts.
@@ -829,7 +830,18 @@ export class DatabaseSyncManager {
 	/**
 	 * Applies an update from a remote peer.
 	 */
+	public syncLayer: any = null;
+
+	public setSyncLayer(layer: any) {
+		this.syncLayer = layer;
+	}
+
+	public onEnvelope(callback: (envelope: any) => void) {
+		// This is a placeholder for the callback used in P2PSyncManager
+	}
+
 	public applyUpdate(update: Uint8Array, origin?: unknown) {
+		if (update.length === 0) return;
 		Y.applyUpdate(this.doc, update, origin);
 	}
 

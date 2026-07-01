@@ -196,6 +196,8 @@ export interface AppState {
 	arqueoSessions: ArqueoSession[];
 	ocrResults: InvoiceOCRResult[];
 	branches: Branch[];
+	activeBranch?: string;
+	activeBranchId?: string;
 	isExpelled?: boolean;
 	pendingEdits: EntityEditProposal[];
 	productChangeHistory: ProductChangeHistoryEntry[];
@@ -278,4 +280,5 @@ export interface InventoryConfig {
 	measureOptions: string[];
 	autoApplyProductUpdates: boolean;
 	productHistoryLimit: number;
+	useEdgeMeshSync: boolean;
 }
