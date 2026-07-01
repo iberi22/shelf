@@ -795,16 +795,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   });
   const [comboValues, setComboValues] = useState<Record<string, { quantity: number; price: number; cost: number }>>({});
 
-  const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
-  const isEditing = product !== null;
-
-  const getComboEntries = (colors: string[], sizes: string[]): string[] => {
-    if (colors.length > 0 && sizes.length > 0) {
-      return colors.flatMap((c) => sizes.map((s) => `${c}|${s}`));
-    }
-    return colors.map((c) => `color:${c}`).concat(sizes.map((s) => `size:${s}`));
-  };
-
   // Update comboValues when selections change
   useEffect(() => {
     if (!isEditing && isMultiMode) {
@@ -828,6 +818,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     isEditing,
     getComboEntries,
   ]);
+
+  const isEditing = product !== null;
+  const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
+
+  const getComboEntries = (colors: string[], sizes: string[]): string[] => {
+    if (colors.length > 0 && sizes.length > 0) {
+      return colors.flatMap((c) => sizes.map((s) => `${c}|${s}`));
+    }
+    return colors.map((c) => `color:${c}`).concat(sizes.map((s) => `size:${s}`));
+  };
 
   const productHistory = useMemo(() => {
     if (!product) return [];

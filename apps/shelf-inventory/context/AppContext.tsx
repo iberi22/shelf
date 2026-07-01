@@ -96,6 +96,7 @@ type Action =
   | { type: 'RESTORE_PRODUCT_VERSION'; payload: { productId: string; historyId: string } }
   | { type: 'SET_ACTIVE_BRANCH'; payload: string | null }
   | { type: 'CLEAR_AUDIT_LOGS'; payload?: { beforeDate: string } }
+  | { type: 'SET_ACTIVE_BRANCH'; payload: string }
   | { type: 'RESET_DATA' };
 
 const createAuditEntry = (
@@ -654,6 +655,10 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
     case 'SET_EXPELLED':
       return { ...state, isExpelled: action.payload };
+
+    case 'SET_ACTIVE_BRANCH':
+      dbSync.activeBranchId = action.payload;
+      return { ...state, activeBranchId: action.payload, activeBranch: action.payload };
 
     case 'UPDATE_PEER_PERMISSIONS': {
       if (action.payload.targetPeerId === state.localPeerId) {
