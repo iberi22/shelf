@@ -5,7 +5,7 @@
     "project_display": "Shelf Inventory Management",
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
-    "updated": "2026-06-27",
+    "updated": "2026-06-28",
     "version": "1.2.0",
     "sdlc_phase": "production",
     "total_features": 21,
@@ -27,14 +27,46 @@
       "testing": "Playwright + Cypress + Biome + Husky"
     },
     "categories": {
-      "FUN": {"name": "Funcionalidades Core", "count": 15, "description": "Funcionalidades core del sistema de inventario SaaS"},
-      "PQC": {"name": "Post-Quantum Cryptography", "count": 1, "description": "Criptografía post-cuántica (ML-KEM-768, ML-DSA-65)"},
-      "P2P": {"name": "P2P Mesh Sync", "count": 1, "description": "Sincronización P2P descentralizada vía WebRTC"},
-      "CRDT": {"name": "CRDT Conflict Resolution", "count": 1, "description": "Resolución de conflictos vía CRDT (Yjs)"},
-      "EDGE": {"name": "Edge Mesh Runtime", "count": 1, "description": "Runtime P2P reutilizable con namespaces y autorización"},
-      "GPU": {"name": "GPU Agent", "count": 1, "description": "Agentes WebGPU para procesamiento edge"},
-      "QA": {"name": "Quality Assurance", "count": 1, "description": "Infraestructura de testing y calidad"},
-      "PWA": {"name": "PWA & Offline", "count": 1, "description": "Progressive Web App con soporte offline"}
+      "FUN": {
+        "name": "Funcionalidades Core",
+        "count": 14,
+        "description": "Funcionalidades core del sistema de inventario SaaS"
+      },
+      "PQC": {
+        "name": "Post-Quantum Cryptography",
+        "count": 1,
+        "description": "Criptografía post-cuántica (ML-KEM-768, ML-DSA-65)"
+      },
+      "P2P": {
+        "name": "P2P Mesh Sync",
+        "count": 1,
+        "description": "Sincronización P2P descentralizada vía WebRTC"
+      },
+      "CRDT": {
+        "name": "CRDT Conflict Resolution",
+        "count": 1,
+        "description": "Resolución de conflictos vía CRDT (Yjs)"
+      },
+      "EDGE": {
+        "name": "Edge Mesh Runtime",
+        "count": 1,
+        "description": "Runtime P2P reutilizable con namespaces y autorización"
+      },
+      "GPU": {
+        "name": "GPU Agent",
+        "count": 1,
+        "description": "Agentes WebGPU para procesamiento edge"
+      },
+      "QA": {
+        "name": "Quality Assurance",
+        "count": 1,
+        "description": "Infraestructura de testing y calidad"
+      },
+      "PWA": {
+        "name": "PWA & Offline",
+        "count": 1,
+        "description": "Progressive Web App con soporte offline"
+      }
     }
   },
   "features": [
@@ -164,7 +196,11 @@
       "user_story": "Como usuario Pro, quiero preguntarle a un AI sobre mi inventario en lenguaje natural",
       "actor": "Usuario Pro",
       "dependencies": ["SRC-FUN-008", "SRC-FUN-001"],
-      "technologies": ["@google/genai", "Firebase Cloud Functions", "Gemini API"],
+      "technologies": [
+        "@google/genai",
+        "Firebase Cloud Functions",
+        "Gemini API"
+      ],
       "acceptance_criteria": [
         "Chat integrado en reports page",
         "Gemini API vía Firebase Cloud Function proxy",
@@ -319,7 +355,12 @@
       "user_story": "Como usuario, quiero que mis datos estén protegidos incluso contra computación cuántica",
       "actor": "Usuario Pro",
       "dependencies": [],
-      "technologies": ["@noble/post-quantum", "ML-KEM-768", "ML-DSA-65", "AES-GCM"],
+      "technologies": [
+        "@noble/post-quantum",
+        "ML-KEM-768",
+        "ML-DSA-65",
+        "AES-GCM"
+      ],
       "acceptance_criteria": [
         "Intercambio de llaves ML-KEM-768 (NIST estandarizado)",
         "Firmas digitales ML-DSA-65",
@@ -379,7 +420,13 @@
       "user_story": "Como desarrollador, quiero tests automatizados para asegurar calidad del código",
       "actor": "Desarrollador",
       "dependencies": [],
-      "technologies": ["Cypress", "Biome", "Husky", "lint-staged", "GitHub Actions"],
+      "technologies": [
+        "Cypress",
+        "Biome",
+        "Husky",
+        "lint-staged",
+        "GitHub Actions"
+      ],
       "acceptance_criteria": [
         "data-testid en todos los elementos interactivos",
         "Tests E2E con Cypress para flujos críticos",
@@ -399,7 +446,12 @@
       "user_story": "Como usuario, quiero instalar la app y usarla sin internet",
       "actor": "Usuario Free",
       "dependencies": [],
-      "technologies": ["vite-plugin-pwa", "workbox-window", "Service Worker", "IndexedDB"],
+      "technologies": [
+        "vite-plugin-pwa",
+        "workbox-window",
+        "Service Worker",
+        "IndexedDB"
+      ],
       "acceptance_criteria": [
         "Instalable como PWA",
         "Funciona 100% sin conexión a internet",
@@ -419,7 +471,12 @@
       "user_story": "Como desarrollador, quiero un runtime P2P reutilizable que encapsule la logica mesh en un package independiente",
       "actor": "Desarrollador",
       "dependencies": ["SRC-P2P-001", "SRC-CRDT-001", "SRC-PQC-001"],
-      "technologies": ["Yjs", "PeerJS", "@shelf/edge-mesh", "@shelf/edge-mesh-react"],
+      "technologies": [
+        "Yjs",
+        "PeerJS",
+        "@shelf/edge-mesh",
+        "@shelf/edge-mesh-react"
+      ],
       "acceptance_criteria": [
         "Namespaces por tipo de entidad (products, sales, clients, etc)",
         "Broadcasts de updates CRDT como deltas codificados",
