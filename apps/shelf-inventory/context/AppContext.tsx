@@ -45,8 +45,8 @@ const initialState: AppState = {
   branches: [],
   inventoryConfig: DEFAULT_INVENTORY_CONFIG,
   localPeerId: null,
-  activeBranch: null,
-  activeBranchId: null,
+  activeBranch: undefined,
+  activeBranchId: undefined,
   role: 'admin',
   arqueoSessions: [],
   ocrResults: [],
@@ -96,7 +96,6 @@ type Action =
   | { type: 'RESTORE_PRODUCT_VERSION'; payload: { productId: string; historyId: string } }
   | { type: 'SET_ACTIVE_BRANCH'; payload: string | null }
   | { type: 'CLEAR_AUDIT_LOGS'; payload?: { beforeDate: string } }
-  | { type: 'SET_ACTIVE_BRANCH'; payload: string }
   | { type: 'RESET_DATA' };
 
 const createAuditEntry = (
@@ -606,12 +605,12 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
       break;
     case 'ADD_BRANCH':
-      newState = { ...state, branches: [...state.branches, action.payload] };
+      newState = { ...state, branches: [...state.branches, enrich(state, action.payload)] };
       break;
     case 'UPDATE_BRANCH':
       newState = {
         ...state,
-        branches: state.branches.map((b) => (b.id === action.payload.id ? action.payload : b)),
+        branches: state.branches.map((b) => (b.id === action.payload.id ? enrich(state, action.payload) : b)),
       };
       break;
     case 'DELETE_BRANCH':
@@ -658,7 +657,11 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
     case 'SET_ACTIVE_BRANCH':
       dbSync.activeBranchId = action.payload;
-      return { ...state, activeBranchId: action.payload, activeBranch: action.payload };
+      return {
+        ...state,
+        activeBranchId: action.payload || undefined,
+        activeBranch: action.payload || undefined,
+      };
 
     case 'UPDATE_PEER_PERMISSIONS': {
       if (action.payload.targetPeerId === state.localPeerId) {
@@ -813,10 +816,6 @@ const appReducer = (state: AppState, action: Action): AppState => {
       }
       break;
     }
-
-    case 'SET_ACTIVE_BRANCH':
-      dbSync.activeBranchId = action.payload;
-      return { ...state, activeBranch: action.payload, activeBranchId: action.payload };
 
     case 'RESTORE_STATE':
       return {

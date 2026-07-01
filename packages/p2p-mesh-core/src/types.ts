@@ -25,8 +25,7 @@ export interface EntityEditProposal {
 	status: "pending" | "approved" | "rejected";
 }
 
-export interface Branch {
-	id: string; // UUID
+export interface Branch extends BaseEntity {
 	name: string; // 'Bodega Central', 'Sucursal Norte'
 	createdAt: number; // timestamp
 }
@@ -35,6 +34,7 @@ export interface Product extends BaseEntity {
 	name: string;
 	sku?: string;
 	branchId?: string;
+	branchName?: string;
 	quantity: number;
 	price: number;
 	cost: number;

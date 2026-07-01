@@ -1,7 +1,7 @@
 import { Box, History, Images, Layers3, Package2, PencilLine, RotateCcw, Ruler, Trash2 } from 'lucide-react';
 import type { InventoryConfig, Product } from 'p2p-mesh-core';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
@@ -795,6 +795,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   });
   const [comboValues, setComboValues] = useState<Record<string, { quantity: number; price: number; cost: number }>>({});
 
+  const isEditing = product !== null;
+  const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
+
+  const getComboEntries = useCallback((colors: string[], sizes: string[]): string[] => {
+    if (colors.length > 0 && sizes.length > 0) {
+      return colors.flatMap((c) => sizes.map((s) => `${c}|${s}`));
+    }
+    return colors.map((c) => `color:${c}`).concat(sizes.map((s) => `size:${s}`));
+  }, []);
+
   // Update comboValues when selections change
   useEffect(() => {
     if (!isEditing && isMultiMode) {
@@ -818,16 +828,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     isEditing,
     getComboEntries,
   ]);
-
-  const isEditing = product !== null;
-  const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
-
-  const getComboEntries = (colors: string[], sizes: string[]): string[] => {
-    if (colors.length > 0 && sizes.length > 0) {
-      return colors.flatMap((c) => sizes.map((s) => `${c}|${s}`));
-    }
-    return colors.map((c) => `color:${c}`).concat(sizes.map((s) => `size:${s}`));
-  };
 
   const productHistory = useMemo(() => {
     if (!product) return [];
