@@ -154,6 +154,19 @@ export class DatabaseSyncManager {
 		};
 	}
 
+	private isBranchScoped(collectionName: string): boolean {
+		const scopedCollections = [
+			"products",
+			"sales",
+			"arqueoSessions",
+			"ocrResults",
+			"purchaseOrders",
+			"productChangeHistory",
+			"pendingEdits",
+		];
+		return scopedCollections.includes(collectionName);
+	}
+
 	constructor() {
 		this.doc = new Y.Doc();
 		this.products = this.doc.getMap("products");
@@ -300,7 +313,7 @@ export class DatabaseSyncManager {
 
 					this.doc.transact(() => {
 						this.pendingEdits.set(proposalId, proposal as any);
-					}, "local");
+					}, { origin: "local", branchId: this.activeBranchId });
 
 					logger.log(
 						`[MERGE] Conflicting collaborator edit on ${item.id} routed to pendingEdits`,
@@ -310,9 +323,13 @@ export class DatabaseSyncManager {
 			}
 		}
 
+		const branchId =
+			(item as any).branchId ||
+			(this.isBranchScoped(collectionName) ? this.activeBranchId : undefined);
+
 		this.doc.transact(() => {
 			yMap.set(item.id, persistableItem as any);
-		}, "local");
+		}, { origin: "local", branchId });
 	}
 
 	/**
@@ -329,9 +346,11 @@ export class DatabaseSyncManager {
 		const yMap = this.getMapForCollection(collectionName);
 		if (!yMap) return;
 
+		const branchId = this.isBranchScoped(collectionName) ? this.activeBranchId : undefined;
+
 		this.doc.transact(() => {
 			yMap.delete(id);
-		}, "local");
+		}, { origin: "local", branchId });
 	}
 
 	/**
@@ -355,6 +374,10 @@ export class DatabaseSyncManager {
 		const proposal = this.pendingEdits.get(proposalId);
 		if (!proposal) return;
 
+		const branchId = this.isBranchScoped(proposal.collectionName)
+			? (proposal.proposedData as any).branchId || this.activeBranchId
+			: undefined;
+
 		this.doc.transact(() => {
 			if (resolution === "approve") {
 				const finalData = mergedData || proposal.proposedData;
@@ -367,7 +390,7 @@ export class DatabaseSyncManager {
 
 			// Always remove the proposal once resolved
 			this.pendingEdits.delete(proposalId);
-		}, "local");
+		}, { origin: "local", branchId });
 
 		logger.log(`[MERGE] Proposal ${proposalId} resolved as ${resolution}`);
 	}
@@ -533,11 +556,14 @@ export class DatabaseSyncManager {
 	}
 
 	public setInventoryConfig(config: InventoryConfig) {
+		if (!this.isLocalAuthority()) {
+			logger.warn("[SECURITY] Blocked unauthorized inventory config update");
+			return;
+		}
 		this.doc.transact(() => {
 			this.metadata.set("inventoryConfig", JSON.stringify(config));
 		}, "local");
 	}
-
 	public getMasterPeerId(): string | null {
 		const authorityPeerId = this.metadata.get("authorityPeerId");
 		if (authorityPeerId) {

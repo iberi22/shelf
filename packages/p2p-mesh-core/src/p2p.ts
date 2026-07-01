@@ -283,11 +283,12 @@ class P2PManager {
 
 	private sendYjsDiff(peerId: string, stateVectorHex: string, branchId?: string) {
 		if (!dbSync.isReady) return;
+		const targetBranchId = branchId || dbSync.activeBranchId || undefined;
 		this.sendTo(peerId, {
 			type: "YJS_UPDATE",
 			payload: {
 				update: toHex(dbSync.getDiff(fromHex(stateVectorHex))),
-				branchId: branchId || dbSync.activeBranchId || undefined
+				branchId: targetBranchId,
 			},
 		});
 	}
@@ -603,14 +604,15 @@ class P2PManager {
 
 				if (message.type === "YJS_SYNC_REQUEST") {
 					const branchId = message.payload.branchId;
-					if (!branchId || branchId === dbSync.activeBranchId) {
+					// Serve any branch if admin/authority, or only active branch for collaborators
+					if (!branchId || branchId === dbSync.activeBranchId || this.isLocalAuthorityPeer()) {
 						this.sendYjsDiff(conn.peer, message.payload.stateVector, branchId);
 						if (message.payload.respondWithRequest) {
 							this.sendTo(conn.peer, {
 								type: "YJS_SYNC_REQUEST",
 								payload: {
 									stateVector: toHex(dbSync.getStateVector()),
-									branchId: dbSync.activeBranchId || undefined
+									branchId: dbSync.activeBranchId || undefined,
 								},
 							});
 						}
@@ -859,14 +861,14 @@ class P2PManager {
 
 			if (message.type === "YJS_SYNC_REQUEST") {
 				const branchId = message.payload.branchId;
-				if (!branchId || branchId === dbSync.activeBranchId) {
+				if (!branchId || branchId === dbSync.activeBranchId || this.isLocalAuthorityPeer()) {
 					this.sendYjsDiff(fromPeerId, message.payload.stateVector, branchId);
 					if (message.payload.respondWithRequest) {
 						this.sendTo(fromPeerId, {
 							type: "YJS_SYNC_REQUEST",
 							payload: {
 								stateVector: toHex(dbSync.getStateVector()),
-								branchId: dbSync.activeBranchId || undefined
+								branchId: dbSync.activeBranchId || undefined,
 							},
 						});
 					}
@@ -926,6 +928,7 @@ class P2PManager {
 	}
 
 	public setActiveBranch(branchId: string) {
+		dbSync.activeBranchId = branchId;
 		this.broadcast({
 			type: "SET_ACTIVE_BRANCH",
 			payload: { branchId },
