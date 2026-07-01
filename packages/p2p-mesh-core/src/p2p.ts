@@ -781,15 +781,6 @@ class P2PManager {
 		});
 	}
 
-	public sign(message: Uint8Array): Uint8Array {
-		// Mock signature for testing or implementation placeholder
-		return new Uint8Array();
-	}
-
-	public verify(signature: Uint8Array, message: Uint8Array, peerId: string): boolean {
-		// Mock verification for testing or implementation placeholder
-		return true;
-	}
 
 	public async sendTo(peerId: string, message: SyncMessage) {
 		const conn = this.connections.get(peerId);

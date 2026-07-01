@@ -533,6 +533,13 @@ export class DatabaseSyncManager {
 	}
 
 	public setInventoryConfig(config: InventoryConfig) {
+		if (!this.isLocalAuthority()) {
+			logger.warn(
+				`[SECURITY] Blocked unauthorized inventory config update from ${this.localPeerId}`,
+			);
+			return;
+		}
+
 		this.doc.transact(() => {
 			this.metadata.set("inventoryConfig", JSON.stringify(config));
 		}, "local");
@@ -734,7 +741,17 @@ export class DatabaseSyncManager {
 		}, "local");
 	}
 
-	public removeLinkedNode(peerId: string) {
+	public removeLinkedNode(
+		peerId: string,
+		authorityPeerId: string | null = this.localPeerId,
+	) {
+		if (!this.isPeerConfigMutationAllowed(authorityPeerId, peerId)) {
+			logger.warn(
+				`[SECURITY] Blocked unauthorized peer removal for ${peerId} by ${authorityPeerId}`,
+			);
+			return;
+		}
+
 		this.doc.transact(() => {
 			this.linkedNodes.delete(peerId);
 		}, "local");

@@ -19,7 +19,15 @@ const Sales: React.FC = () => {
   const { t } = useI18n();
   const { formatCurrency } = useCurrency();
 
-  const activeSales = useMemo(() => state.sales.filter((s) => s.isActive !== false), [state.sales]);
+  const activeSales = useMemo(
+    () =>
+      state.sales.filter((s) => {
+        if (s.isActive === false) return false;
+        if (!state.activeBranchId) return true;
+        return s.branchId === state.activeBranchId;
+      }),
+    [state.sales, state.activeBranchId],
+  );
 
   const {
     items: sortedSales,
@@ -99,6 +107,7 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
       const newSale = {
         id: new Date().toISOString(),
         ...saleData,
+        branchId: state.activeBranchId || undefined,
       } as Sale;
       dispatch({ type: 'ADD_SALE', payload: newSale });
     }

@@ -29,12 +29,14 @@ export interface Branch {
 	id: string; // UUID
 	name: string; // 'Bodega Central', 'Sucursal Norte'
 	createdAt: number; // timestamp
+	isActive: boolean;
 }
 
 export interface Product extends BaseEntity {
 	name: string;
 	sku?: string;
 	branchId?: string;
+	branchName?: string;
 	quantity: number;
 	price: number;
 	cost: number;
@@ -86,6 +88,7 @@ export interface Sale extends BaseEntity {
 	profit: number;
 	clientId?: string;
 	clientName?: string;
+	branchId?: string;
 }
 
 export interface Client extends BaseEntity {
@@ -116,6 +119,7 @@ export interface PurchaseOrder extends BaseEntity {
 	status: "pending" | "received";
 	orderDate: string; // YYYY-MM-DD
 	receivedDate?: string; // YYYY-MM-DD
+	branchId?: string;
 }
 
 export interface User {

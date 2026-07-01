@@ -359,6 +359,7 @@ const Settings: React.FC = () => {
         id: crypto.randomUUID(),
         name: branchName.trim(),
         createdAt: Date.now(),
+        isActive: true,
       };
       dispatch({ type: 'ADD_BRANCH', payload: newBranch });
       showNotification(t('settings.branches.successAdd'), 'success');

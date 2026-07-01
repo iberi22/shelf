@@ -45,8 +45,8 @@ const initialState: AppState = {
   branches: [],
   inventoryConfig: DEFAULT_INVENTORY_CONFIG,
   localPeerId: null,
-  activeBranch: null,
-  activeBranchId: null,
+  activeBranch: undefined,
+  activeBranchId: undefined,
   role: 'admin',
   arqueoSessions: [],
   ocrResults: [],
@@ -96,7 +96,6 @@ type Action =
   | { type: 'RESTORE_PRODUCT_VERSION'; payload: { productId: string; historyId: string } }
   | { type: 'SET_ACTIVE_BRANCH'; payload: string | null }
   | { type: 'CLEAR_AUDIT_LOGS'; payload?: { beforeDate: string } }
-  | { type: 'SET_ACTIVE_BRANCH'; payload: string }
   | { type: 'RESET_DATA' };
 
 const createAuditEntry = (
@@ -656,9 +655,6 @@ const appReducer = (state: AppState, action: Action): AppState => {
     case 'SET_EXPELLED':
       return { ...state, isExpelled: action.payload };
 
-    case 'SET_ACTIVE_BRANCH':
-      dbSync.activeBranchId = action.payload;
-      return { ...state, activeBranchId: action.payload, activeBranch: action.payload };
 
     case 'UPDATE_PEER_PERMISSIONS': {
       if (action.payload.targetPeerId === state.localPeerId) {
@@ -815,8 +811,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
     }
 
     case 'SET_ACTIVE_BRANCH':
-      dbSync.activeBranchId = action.payload;
-      return { ...state, activeBranch: action.payload, activeBranchId: action.payload };
+      dbSync.activeBranchId = action.payload || null;
+      return { ...state, activeBranch: action.payload || undefined, activeBranchId: action.payload || undefined };
 
     case 'RESTORE_STATE':
       return {
@@ -1277,6 +1273,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                       updatedAt: new Date().toISOString(),
                       updatedBy: currentState.localPeerId || 'local',
                       updatedByRole: currentState.role || 'collaborator',
+                      branchId: (addUpdateP as any).branchId || undefined,
                     };
               dbSync.upsertEntity(collection, syncPayload as Parameters<typeof dbSync.upsertEntity>[1]);
               break;
@@ -1320,6 +1317,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               break;
             }
           }
+        }
+      } else if (typeStr === 'SET_ACTIVE_BRANCH') {
+        const branchId = p as string | null;
+        if (branchId !== undefined) {
+          p2pManager.setActiveBranch(branchId || '');
         }
       }
     },
