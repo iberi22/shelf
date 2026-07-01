@@ -7,11 +7,11 @@ Shelf is a decentralized, offline-first inventory and point-of-sale platform. Th
 | Path | Purpose |
 | --- | --- |
 | `apps/shelf-inventory` | Main React/Vite inventory application |
-| `docs/src` | Technical SRC documentation |
-| `packages/p2p-mesh-core` | Existing P2P sync engine, roles, permissions, audit state, and post-quantum security integration |
-| `packages/edge-mesh` | New reusable Edge Mesh runtime for P2P nodes, CRDT namespaces, transport, storage, protocol, presence, authz, and WebGPU extension points |
-| `packages/edge-mesh-react` | React provider and hooks for Edge Mesh namespaces |
-| `packages/gpu-agent` | GPU/WebGPU agent integration surface |
+| `apps/docs` | VitePress documentation site |
+| `packages/p2p-mesh-core` | Core P2P synchronization engine, roles, and permissions |
+| `packages/edge-mesh` | High-performance P2P sync runtime using Yjs and PeerJS |
+| `packages/edge-mesh-react` | React hooks and providers for Edge Mesh |
+| `packages/gpu-agent` | WebGPU-powered agent integration |
 
 ## Edge Mesh Runtime
 
@@ -29,19 +29,71 @@ Current implementation:
 - exposes a localhost-only Playwright harness for deterministic E2E tests;
 - keeps WebGPU agent execution as an extension point for future edge-local workflows.
 
-Shelf currently uses the `shelf` namespace for:
+### Usage Examples
 
-- `products`
-- `sales`
-- `clients`
-- `suppliers`
-- `purchaseOrders`
-- `arqueoSessions`
-- `ocrResults`
-- `auditLogs`
-- `teamMembers`
+#### P2P Node API
 
-The detailed package documentation is in [`packages/edge-mesh/README.md`](packages/edge-mesh/README.md). The SRC document is [`docs/src/non-functional/SRC-EDGE-001.md`](docs/src/non-functional/SRC-EDGE-001.md).
+Use the node API when you need typed application messages and peer lifecycle events.
+
+```ts
+import {
+  InMemoryStorage,
+  PeerJSTransport,
+  createEdgeMeshNode,
+} from '@shelf/edge-mesh';
+
+const node = await createEdgeMeshNode({
+  peerId: 'store-admin-01',
+  transport: new PeerJSTransport(),
+  storage: new InMemoryStorage(),
+});
+
+await node.start();
+await node.connect('warehouse-tablet-02');
+
+node.on('peer:connected', (peerId) => {
+  console.info('peer connected', peerId);
+});
+
+node.on('message', ({ type, payload, sourcePeerId }) => {
+  console.info('message', type, sourcePeerId, payload);
+});
+
+await node.broadcast({
+  type: 'inventory:ping',
+  payload: { at: Date.now() },
+});
+```
+
+#### CRDT Namespace API
+
+Use `EdgeMesh` when a workflow needs shared mutable state. Each namespace owns a Yjs document and can contain any number of Yjs maps, arrays, or custom shared types.
+
+```ts
+import { EdgeMesh, type Transport } from '@shelf/edge-mesh';
+
+const transport: Transport = createTransportSomewhere();
+const mesh = new EdgeMesh({
+  localPeerId: 'store-admin-01',
+  transport,
+});
+
+const shelf = mesh.getNamespace('shelf');
+const products = shelf.doc.getMap('products');
+
+shelf.doc.transact(() => {
+  products.set('sku-001', {
+    id: 'sku-001',
+    name: 'USB Cable',
+    quantity: 12,
+    updatedBy: 'store-admin-01',
+  });
+}, 'local-workflow');
+
+const update = shelf.getUpdate();
+```
+
+The detailed package documentation is in [`packages/edge-mesh/README.md`](packages/edge-mesh/README.md).
 
 ## Prerequisites
 
@@ -89,27 +141,9 @@ Focused synchronization/security E2E tests:
 PLAYWRIGHT_BASE_URL=http://127.0.0.1:5187 pnpm --dir apps/shelf-inventory exec playwright test tests/edge-mesh-sync.spec.ts tests/security-sync.spec.ts tests/p2p-sync.spec.ts --project=chromium --reporter=list --config=playwright.config.ts --workers=1
 ```
 
-The focused E2E suite covers:
-
-- Edge Mesh CRDT export/import across two browser contexts;
-- remote update application into Edge Mesh and Shelf app state;
-- unauthorized remote mutation rejection and CRDT revert;
-- local unauthorized mutation blocking;
-- compatibility with the existing P2P product sync flow.
-
 ## Technical Documentation
 
-The SRC documentation lives in `docs/src`.
-
-Key documents:
-
-- [`docs/src/index.md`](docs/src/index.md)
-- [`docs/src/NON-FUNCTIONAL.md`](docs/src/NON-FUNCTIONAL.md)
-- [`docs/src/non-functional/SRC-P2P-001.md`](docs/src/non-functional/SRC-P2P-001.md)
-- [`docs/src/non-functional/SRC-CRDT-001.md`](docs/src/non-functional/SRC-CRDT-001.md)
-- [`docs/src/non-functional/SRC-EDGE-001.md`](docs/src/non-functional/SRC-EDGE-001.md)
-- [`docs/src/non-functional/SRC-QA-001.md`](docs/src/non-functional/SRC-QA-001.md)
-- [`docs/src/non-functional/SRC-GPU-001.md`](docs/src/non-functional/SRC-GPU-001.md)
+The technical documentation lives in `apps/docs`.
 
 ## GitCore
 
@@ -129,5 +163,3 @@ Shelf uses GitCore (v3.6.0) for architecture governance, feature tracking, and S
 ## CI and Deployment
 
 GitHub Actions runs lint/build jobs when hosted runners are available. Vercel deploys previews and `main`.
-
-If GitHub Actions jobs fail immediately with no steps and an annotation about billing or spending limits, that is an account-level runner availability issue rather than a code failure.

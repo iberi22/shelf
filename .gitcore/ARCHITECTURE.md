@@ -9,10 +9,12 @@
 - **Styling:** Tailwind CSS 4, PostCSS, Biome
 - **State Management:** React Context (`useReducer`)
 - **Persistence:** localStorage (all tiers), Firebase Firestore (Pro sync)
-- **P2P Sync:** WebRTC (PeerJS), Yjs (CRDT)
-- **Edge Mesh:** @shelf/edge-mesh (reusable P2P browser runtime)
-- **Edge Mesh React:** @shelf/edge-mesh-react (React bindings)
-- **GPU Agents:** @shelf/gpu-agent (WebGPU tenant surfaces)
+- **Edge Mesh Runtime (SRC-EDGE-001):** Yjs (CRDT), PeerJS (WebRTC), WebGPU stack
+- **Packages:**
+  - `@shelf/edge-mesh`: Reusable P2P browser runtime (Yjs, CRDT, authz)
+  - `@shelf/edge-mesh-react`: React provider + hooks for edge-mesh
+  - `@shelf/gpu-agent`: WebGPU agent integration surface
+  - `@shelf/p2p-mesh-core`: Core P2P engine (PQC, roles, app state contract)
 - **Security:** ML-KEM-768 (PQC), ML-DSA-65 (signatures), AES-GCM
 - **AI:** Gemini API via Firebase Cloud Functions, local WebLLM (MLC)
 - **Testing:** Playwright E2E (edge-mesh), Cypress E2E (UI), Biome linting
@@ -25,12 +27,13 @@
 shelf/
 ├── apps/
 │   ├── shelf-inventory/     # Main app (React 19 + Vite 8)
-│   │   ├── src/             # React source
-│   │   ├── components/      # Shared components
-│   │   ├── context/         # React Context providers
-│   │   ├── hooks/           # Custom React hooks
+│   │   ├── components/      # Feature-specific React components
+│   │   ├── context/         # React Context (AppState, Auth, UI)
+│   │   ├── hooks/           # Custom React hooks (Edge Mesh adapters)
+│   │   ├── lib/             # Core logic (Edge Mesh Workflow Bridge)
 │   │   ├── locales/         # i18n translations (20 languages)
-│   │   └── tests/           # Playwright E2E + unit tests
+│   │   ├── tests/           # Playwright E2E + unit tests
+│   │   └── App.tsx          # Main entry and routing
 │   └── docs/                # VitePress documentation
 │       └── guide/           # User guides
 ├── packages/
@@ -66,14 +69,15 @@ shelf/
 ### 1. Offline-First
 Todas las operaciones son locales (localStorage). Cloud sync es opcional y solo para usuarios Pro. El usuario puede usar la app desconectado permanentemente.
 
-### 2. Edge Mesh Runtime
-La sincronización P2P se maneja a través de `@shelf/edge-mesh`, un runtime reutilizable que:
-- Crea nodos P2P sobre transports pluggables (PeerJS WebRTC)
-- Envuelve documentos Yjs en namespaces con nombre
-- Broadcasts updates CRDT locales como deltas codificados
-- Aplica updates remotos con tipo `{ type: 'remote', peerId }`
-- Autoriza mutaciones remotas antes de que entren al estado de la app
-- Revierte cambios CRDT no autorizados con security origin dedicado
+### 2. Edge Mesh Runtime (SRC-EDGE-001)
+La sincronización P2P se maneja a través de `@shelf/edge-mesh`, un runtime reutilizable que proporciona una capa de sincronización local-first segura y resiliente. Sus capacidades principales incluyen:
+- **P2P Node Runtime:** Crea nodos P2P sobre transports pluggables (PeerJS WebRTC) con un API estable basado en eventos.
+- **Protocol Envelopes:** Los mensajes incluyen IDs, versiones, peer de origen/destino, timestamps y payloads tipados.
+- **Yjs Namespaces:** Envuelve documentos Yjs en namespaces independientes (ej: `shelf`) para diferentes flujos de trabajo.
+- **Delta Sync:** Broadcast de updates CRDT locales como deltas codificados (state updates) en lugar de snapshots completos.
+- **Remote Origin Tracking:** Aplica updates remotos con metadatos de origen `{ type: 'remote', peerId }`.
+- **Security Guard:** Autoriza mutaciones remotas contra los permisos de la app antes de integrarlas al estado local.
+- **Self-Healing:** Revierte cambios CRDT no autorizados automáticamente usando un security origin dedicado.
 
 ### 3. P2P Mesh
 Cada instancia de la app es un nodo en la red mesh. No hay servidor central para sincronización. La topología es fully-connected: cada peer se conecta a todos los demás.
@@ -123,6 +127,8 @@ Nodo designado (primer peer en conectarse) que coordina peers y mantiene el esta
 ```
 
 ## Data Flow
+
+### Application Flow
 ```
 User Action → Context Dispatch → Reducer → State Update
                                                 ↓
@@ -132,6 +138,15 @@ User Action → Context Dispatch → Reducer → State Update
            (always)                      (Yjs CRDT via          (Pro only)
                                           edge-mesh namespace)
 ```
+
+### Edge Mesh Sync Workflow (SRC-EDGE-001)
+1. **Local Mutation:** El estado de la app cambia y se refleja en el mapa Yjs local con origen `shelf-edge-workflow`.
+2. **Broadcast:** `@shelf/edge-mesh` detecta el update local y lo difunde a los peers conectados como un delta codificado.
+3. **Remote Receive:** Los peers reciben el update y lo aplican a su documento Yjs con el metadato `{ type: 'remote', peerId: from }`.
+4. **Auth Check:** `EdgeMeshWorkflowBridge` observa el cambio remoto y verifica los permisos del `peerId` contra la configuración de la app.
+5. **Apply/Revert:**
+   - Si es **Autorizado**: Se despacha `SYNC_ENTITIES` al reducer para actualizar el estado de React.
+   - Si es **No Autorizado**: Se revierte el cambio en el documento Yjs local con origen `shelf-edge-security-revert`.
 
 ## Edge Mesh Namespace
 Shelf usa el namespace `shelf` en edge-mesh para:
