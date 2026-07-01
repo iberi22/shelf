@@ -121,14 +121,23 @@ export class CrdtSyncLayer extends EventEmitter {
 			return;
 		}
 
-		const snapshot = bytesFromStorage(
-			await this.storage.get(`sync:${this.namespace}:snapshot`),
-		);
-		if (snapshot) {
-			Y.applyUpdate(this.doc, snapshot, {
-				type: 'storage',
-				namespace: this.namespace,
-			});
+		const snapshotId = await this.storage.get(`sync:${this.namespace}:lastSnapshotId`);
+		if (snapshotId) {
+			const snapshot = await this.snapshots.get(snapshotId);
+			if (snapshot) {
+				await this.snapshots.recover(this.doc, snapshot);
+			}
+		} else {
+			// Legacy fallback or first load
+			const snapshotData = bytesFromStorage(
+				await this.storage.get(`sync:${this.namespace}:snapshot`),
+			);
+			if (snapshotData) {
+				Y.applyUpdate(this.doc, snapshotData, {
+					type: 'storage',
+					namespace: this.namespace,
+				});
+			}
 		}
 
 		this.ready = true;
@@ -136,11 +145,19 @@ export class CrdtSyncLayer extends EventEmitter {
 	}
 
 	async persistSnapshot(): Promise<void> {
-		const snapshot = this.snapshots.create(this.namespace, this.doc);
-		await this.storage?.set(
-			`sync:${this.namespace}:snapshot`,
-			bytesToStorage(snapshot.update),
-		);
+		const snapshot = await this.snapshots.create(this.doc);
+		if (this.storage) {
+			await this.storage.set(
+				`sync:${this.namespace}:lastSnapshotId`,
+				snapshot.id,
+			);
+			// For backward compatibility or simpler recovery
+			await this.storage.set(
+				`sync:${this.namespace}:snapshot`,
+				bytesToStorage(snapshot.data),
+			);
+		}
+		this.opLog.compactBefore(snapshot.timestamp);
 	}
 
 	getStateVector(): Uint8Array {
@@ -164,12 +181,10 @@ export class CrdtSyncLayer extends EventEmitter {
 	createUpdateForPeer(
 		remoteStateVector: Uint8Array,
 		targetPeerId?: string,
-		includeStateVector = false,
 	): CrdtSyncEnvelope {
 		return this.createEnvelope('sync:update', {
 			targetPeerId,
 			update: this.getDiff(remoteStateVector),
-			stateVector: includeStateVector ? this.getStateVector() : undefined,
 			action: 'write',
 		});
 	}
@@ -183,52 +198,13 @@ export class CrdtSyncLayer extends EventEmitter {
 		});
 	}
 
-	applyLocalChange(namespace: string, operation: Uint8Array): void;
-	/** @deprecated use applyLocalChange(namespace, operation) */
-	applyLocalChange(mutator: (doc: Y.Doc) => void): CrdtSyncEnvelope;
-	applyLocalChange(
-		namespaceOrMutator: string | ((doc: Y.Doc) => void),
-		operation?: Uint8Array,
-	): void | CrdtSyncEnvelope {
+	applyLocalChange(mutator: (doc: Y.Doc) => void): CrdtSyncEnvelope {
 		this.requireReady();
-		if (typeof namespaceOrMutator === 'function') {
-			this.doc.transact(() => namespaceOrMutator(this.doc), {
-				type: 'local',
-				peerId: this.identity.peerId,
-			});
-			return this.createSnapshotEnvelope();
-		}
-
-		const namespace = namespaceOrMutator;
-		if (namespace !== this.namespace) {
-			throw new Error(
-				`Namespace mismatch: expected ${this.namespace}, got ${namespace}`,
-			);
-		}
-
-		if (!operation) {
-			throw new Error('Operation is required for applyLocalChange');
-		}
-
-		Y.applyUpdate(this.doc, operation, {
+		this.doc.transact(() => mutator(this.doc), {
 			type: 'local',
 			peerId: this.identity.peerId,
-			namespace: this.namespace,
 		});
-
-		const envelope = this.createEnvelope('sync:update', {
-			update: operation,
-			action: 'write',
-		});
-
-		this.opLog.append(envelope);
-		this.send(envelope);
-	}
-
-	requestSync(peerId: string): void {
-		this.requireReady();
-		const envelope = this.createSyncRequest(peerId);
-		this.send(envelope);
+		return this.createSnapshotEnvelope();
 	}
 
 	applyEnvelope(envelope: CrdtSyncEnvelope): CrdtSyncEnvelope | null {
@@ -266,11 +242,9 @@ export class CrdtSyncLayer extends EventEmitter {
 				targetPeerId: envelope.sourcePeerId,
 				stateVector: envelope.stateVector || new Uint8Array(),
 			});
-			// When responding to a request, we include our own state vector to allow the other side to also sync back
 			return this.createUpdateForPeer(
 				envelope.stateVector || new Uint8Array(),
 				envelope.sourcePeerId,
-				true,
 			);
 		}
 
@@ -282,20 +256,12 @@ export class CrdtSyncLayer extends EventEmitter {
 			});
 		}
 
-		// If the envelope contains a state vector and it's not a request (already handled)
-		// we check if we have any updates to send back to the peer.
-		if (envelope.stateVector && envelope.type !== 'sync:request') {
-			const diff = this.getDiff(envelope.stateVector);
-			if (diff.length > 0) {
-				const response = this.createUpdateForPeer(
-					envelope.stateVector,
-					envelope.sourcePeerId,
-				);
-				this.send(response);
-			}
-		}
-
-		this.opLog.append(envelope);
+		this.opLog.append({
+			opId: envelope.opId,
+			namespace: envelope.namespace,
+			timestamp: envelope.timestamp,
+			data: envelope,
+		});
 		this.emit('synced', {
 			namespace: envelope.namespace,
 			sourcePeerId: envelope.sourcePeerId,

@@ -15,7 +15,6 @@ import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
 import { buildPeerInviteLink, buildPeerInviteMessage, buildPwaInstallLink } from '../lib/share-links';
 import { isBiometricsSupported } from '../lib/webauthn';
-import { createCrdtSyncLayer } from 'edge-mesh';
 import { useEdgeMeshWorkflowStatus } from './EdgeMeshWorkflowBridge';
 import QRScannerModal from './QRScannerModal';
 

@@ -6,6 +6,9 @@ export interface PQCKeyPair {
 	secretKey: Uint8Array;
 }
 
+/**
+ * Legacy IdentityManager using Post-Quantum Cryptography (ML-DSA and ML-KEM).
+ */
 export class IdentityManager {
 	private kemKeys: PQCKeyPair;
 	private dsaKeys: PQCKeyPair;
@@ -67,4 +70,77 @@ export class IdentityManager {
 		}
 		return arr;
 	}
+}
+
+/**
+ * Identity interface for cryptographic node identity with message signing.
+ */
+export interface Identity {
+	peerId: string;
+	sign(data: Uint8Array): Promise<Uint8Array>;
+	verify(
+		data: Uint8Array,
+		signature: Uint8Array,
+		peerId: string,
+	): Promise<boolean>;
+}
+
+/**
+ * Creates a new Identity using Web Crypto API (SubtleCrypto) with Ed25519.
+ */
+export async function createIdentity(): Promise<Identity> {
+	const keyPair = (await crypto.subtle.generateKey(
+		{
+			name: 'Ed25519',
+		},
+		true,
+		['sign', 'verify'],
+	)) as CryptoKeyPair;
+
+	const publicKeyBuffer = await crypto.subtle.exportKey(
+		'raw',
+		keyPair.publicKey,
+	);
+	const peerId = IdentityManager.toHex(new Uint8Array(publicKeyBuffer));
+
+	return {
+		peerId,
+		async sign(data: Uint8Array): Promise<Uint8Array> {
+			const signature = await crypto.subtle.sign(
+				{
+					name: 'Ed25519',
+				},
+				keyPair.privateKey,
+				data,
+			);
+			return new Uint8Array(signature);
+		},
+		async verify(
+			data: Uint8Array,
+			signature: Uint8Array,
+			remotePeerId: string,
+		): Promise<boolean> {
+			try {
+				const publicKey = await crypto.subtle.importKey(
+					'raw',
+					IdentityManager.fromHex(remotePeerId),
+					{
+						name: 'Ed25519',
+					},
+					true,
+					['verify'],
+				);
+				return await crypto.subtle.verify(
+					{
+						name: 'Ed25519',
+					},
+					publicKey,
+					signature,
+					data,
+				);
+			} catch (error) {
+				return false;
+			}
+		},
+	};
 }

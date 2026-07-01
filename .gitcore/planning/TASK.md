@@ -29,11 +29,14 @@
 | SRC-FUN-012 | Reports & Analytics | P1 | ✅ | — | — |
 | SRC-FUN-013 | Multi-user (Pyme) | P2 | ✅ | — | — |
 | SRC-FUN-014 | CSV Import | P2 | ✅ | — | — |
+| SRC-FUN-015 | Multi-color/multi-measure | P0 | ✅ | — | — |
 | SRC-PQC-001 | Post-Quantum Crypto | P0 | ✅ | — | — |
 | SRC-P2P-001 | P2P Mesh Network | P0 | ✅ | — | — |
 | SRC-CRDT-001 | CRDT Sync (Yjs) | P0 | ✅ | — | — |
 | SRC-QA-001 | Testing Infrastructure | P1 | ✅ | — | — |
 | SRC-PWA-001 | PWA & Offline | P0 | ✅ | — | — |
+| SRC-EDGE-001 | Edge Mesh Runtime | P0 | ✅ | — | — |
+| SRC-GPU-001 | GPU Agent (WebGPU) | P1 | ✅ | — | — |
 
 ## 📋 Pendientes (Post-Launch)
 

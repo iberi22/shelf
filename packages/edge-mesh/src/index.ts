@@ -1,5 +1,6 @@
 export * from './core/node';
 export * from './edge-mesh';
+export * from './identity';
 export * from './presence';
 export * from './presence/health';
 export * from './presence/timeline';

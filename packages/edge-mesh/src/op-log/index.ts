@@ -1,45 +1,39 @@
-import type { CrdtSyncEnvelope } from '../types';
-
 export interface OpLogEntry {
-	id: string;
 	opId: string;
 	namespace: string;
-	sourcePeerId: string;
 	timestamp: number;
-	envelopeType: CrdtSyncEnvelope['type'];
+	data: unknown;
 }
 
 export class OpLog {
 	private entries = new Map<string, OpLogEntry>();
 
-	append(envelope: CrdtSyncEnvelope): OpLogEntry | null {
-		if (this.entries.has(envelope.opId)) return null;
-		const entry: OpLogEntry = {
-			id: envelope.id,
-			opId: envelope.opId,
-			namespace: envelope.namespace,
-			sourcePeerId: envelope.sourcePeerId,
-			timestamp: envelope.timestamp,
-			envelopeType: envelope.type,
-		};
+	append(entry: OpLogEntry): boolean {
+		if (this.entries.has(entry.opId)) {
+			return false;
+		}
 		this.entries.set(entry.opId, entry);
-		return entry;
+		return true;
 	}
 
 	has(opId: string): boolean {
 		return this.entries.has(opId);
 	}
 
-	list(namespace?: string): OpLogEntry[] {
+	getEntries(namespace?: string, since?: number): OpLogEntry[] {
 		return Array.from(this.entries.values())
-			.filter((entry) => !namespace || entry.namespace === namespace)
+			.filter((entry) => {
+				const nsMatch = !namespace || entry.namespace === namespace;
+				const sinceMatch = !since || entry.timestamp >= since;
+				return nsMatch && sinceMatch;
+			})
 			.sort((left, right) => left.timestamp - right.timestamp);
 	}
 
-	compactBefore(timestamp: number): number {
+	compact(before: number): number {
 		let removed = 0;
 		for (const [opId, entry] of this.entries.entries()) {
-			if (entry.timestamp < timestamp) {
+			if (entry.timestamp < before) {
 				this.entries.delete(opId);
 				removed += 1;
 			}
