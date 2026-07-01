@@ -248,7 +248,7 @@ const Reports: React.FC = () => {
               </option>
               {consolidatedData.products.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} {p.branchName ? `(${p.branchName})` : ''}
+                  {p.name} {(p as any).branchName ? `(${(p as any).branchName})` : ''}
                 </option>
               ))}
             </select>

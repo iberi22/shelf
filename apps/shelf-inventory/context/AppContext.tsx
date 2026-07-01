@@ -45,8 +45,8 @@ const initialState: AppState = {
   branches: [],
   inventoryConfig: DEFAULT_INVENTORY_CONFIG,
   localPeerId: null,
-  activeBranch: null,
-  activeBranchId: null,
+  activeBranch: undefined,
+  activeBranchId: undefined,
   role: 'admin',
   arqueoSessions: [],
   ocrResults: [],
@@ -96,7 +96,6 @@ type Action =
   | { type: 'RESTORE_PRODUCT_VERSION'; payload: { productId: string; historyId: string } }
   | { type: 'SET_ACTIVE_BRANCH'; payload: string | null }
   | { type: 'CLEAR_AUDIT_LOGS'; payload?: { beforeDate: string } }
-  | { type: 'SET_ACTIVE_BRANCH'; payload: string }
   | { type: 'RESET_DATA' };
 
 const createAuditEntry = (
@@ -617,7 +616,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
     case 'DELETE_BRANCH':
       newState = {
         ...state,
-        branches: state.branches.filter((b) => b.id !== action.payload),
+        branches: state.branches.map((b) =>
+          b.id === action.payload ? { ...b, isActive: false } : b,
+        ),
       };
       break;
     case 'ADD_ARQUEO_SESSION':
@@ -657,8 +658,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
       return { ...state, isExpelled: action.payload };
 
     case 'SET_ACTIVE_BRANCH':
-      dbSync.activeBranchId = action.payload;
-      return { ...state, activeBranchId: action.payload, activeBranch: action.payload };
+      dbSync.activeBranchId = action.payload || undefined;
+      return { ...state, activeBranchId: action.payload || undefined, activeBranch: action.payload || undefined };
 
     case 'UPDATE_PEER_PERMISSIONS': {
       if (action.payload.targetPeerId === state.localPeerId) {
@@ -813,10 +814,6 @@ const appReducer = (state: AppState, action: Action): AppState => {
       }
       break;
     }
-
-    case 'SET_ACTIVE_BRANCH':
-      dbSync.activeBranchId = action.payload;
-      return { ...state, activeBranch: action.payload, activeBranchId: action.payload };
 
     case 'RESTORE_STATE':
       return {

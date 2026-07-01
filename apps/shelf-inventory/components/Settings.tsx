@@ -319,16 +319,22 @@ const Settings: React.FC = () => {
   const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [branchName, setBranchName] = useState('');
+  const [branchAddress, setBranchAddress] = useState('');
+  const [branchType, setBranchType] = useState<'sucursal' | 'bodega'>('sucursal');
 
   const handleAddBranch = () => {
     setEditingBranch(null);
     setBranchName('');
+    setBranchAddress('');
+    setBranchType('sucursal');
     setIsBranchModalOpen(true);
   };
 
   const handleEditBranch = (branch: Branch) => {
     setEditingBranch(branch);
     setBranchName(branch.name);
+    setBranchAddress(branch.address || '');
+    setBranchType(branch.type || 'sucursal');
     setIsBranchModalOpen(true);
   };
 
@@ -351,13 +357,21 @@ const Settings: React.FC = () => {
     if (editingBranch) {
       dispatch({
         type: 'UPDATE_BRANCH',
-        payload: { ...editingBranch, name: branchName.trim() },
+        payload: {
+          ...editingBranch,
+          name: branchName.trim(),
+          address: branchAddress.trim(),
+          type: branchType,
+        },
       });
       showNotification(t('settings.branches.successUpdate'), 'success');
     } else {
       const newBranch: Branch = {
         id: crypto.randomUUID(),
         name: branchName.trim(),
+        address: branchAddress.trim(),
+        type: branchType,
+        isActive: true,
         createdAt: Date.now(),
       };
       dispatch({ type: 'ADD_BRANCH', payload: newBranch });
@@ -661,16 +675,31 @@ const Settings: React.FC = () => {
                   <thead>
                     <tr className="border-b border-[#F5F5DC]/10 text-[#F5F5DC]/50 text-xs uppercase tracking-wider">
                       <th className="py-3 px-4 font-semibold">{t('settings.branches.table.name')}</th>
+                      <th className="py-3 px-4 font-semibold">{t('settings.branches.table.type')}</th>
                       <th className="py-3 px-4 font-semibold hidden md:table-cell">{t('settings.branches.table.id')}</th>
                       <th className="py-3 px-4 font-semibold">{t('settings.branches.table.createdAt')}</th>
                       <th className="py-3 px-4 font-semibold text-right">{t('settings.branches.table.actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#F5F5DC]/10">
-                    {state.branches.length > 0 ? (
-                      state.branches.map((branch) => (
-                        <tr key={branch.id} className="text-[#F5F5DC]/90 text-sm hover:bg-white/5 transition-colors">
-                          <td className="py-4 px-4 font-medium">{branch.name}</td>
+                    {state.branches.filter((b) => b.isActive).length > 0 ? (
+                      state.branches
+                        .filter((b) => b.isActive)
+                        .map((branch) => (
+                          <tr key={branch.id} className="text-[#F5F5DC]/90 text-sm hover:bg-white/5 transition-colors">
+                          <td className="py-4 px-4 font-medium">
+                            <div>{branch.name}</div>
+                            {branch.address && (
+                              <div className="text-[10px] text-[#F5F5DC]/50 mt-0.5">{branch.address}</div>
+                            )}
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className="text-[10px] uppercase tracking-wider bg-[#F5F5DC]/10 px-2 py-0.5 rounded border border-[#F5F5DC]/20">
+                              {branch.type === 'bodega'
+                                ? t('settings.branches.types.bodega')
+                                : t('settings.branches.types.sucursal')}
+                            </span>
+                          </td>
                           <td className="py-4 px-4 hidden md:table-cell">
                             <code className="text-[10px] bg-[#121212] px-1.5 py-0.5 rounded border border-[#F5F5DC]/10 text-[#F5F5DC]/40">
                               {branch.id}
@@ -699,7 +728,7 @@ const Settings: React.FC = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={4} className="py-10 text-center text-[#F5F5DC]/40 italic">
+                        <td colSpan={5} className="py-10 text-center text-[#F5F5DC]/40 italic">
                           {t('settings.branches.empty')}
                         </td>
                       </tr>
@@ -1105,6 +1134,35 @@ const Settings: React.FC = () => {
                     placeholder={t('settings.branches.namePlaceholder')}
                     className="w-full p-3 bg-[#121212] border border-[#F5F5DC]/20 rounded-lg text-[#F5F5DC] focus:outline-none focus:ring-2 focus:ring-[#4ADE80]/50 transition-all"
                   />
+                </div>
+                <div>
+                  <label htmlFor="branch-address" className="block text-sm font-medium text-[#F5F5DC]/70 mb-1">
+                    {t('settings.branches.addressLabel')}
+                  </label>
+                  <input
+                    id="branch-address"
+                    data-testid="branch-address-input"
+                    type="text"
+                    value={branchAddress}
+                    onChange={(e) => setBranchAddress(e.target.value)}
+                    placeholder={t('settings.branches.addressPlaceholder')}
+                    className="w-full p-3 bg-[#121212] border border-[#F5F5DC]/20 rounded-lg text-[#F5F5DC] focus:outline-none focus:ring-2 focus:ring-[#4ADE80]/50 transition-all"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="branch-type" className="block text-sm font-medium text-[#F5F5DC]/70 mb-1">
+                    {t('settings.branches.typeLabel')}
+                  </label>
+                  <select
+                    id="branch-type"
+                    data-testid="branch-type-select"
+                    value={branchType}
+                    onChange={(e) => setBranchType(e.target.value as 'sucursal' | 'bodega')}
+                    className="w-full p-3 bg-[#121212] border border-[#F5F5DC]/20 rounded-lg text-[#F5F5DC] focus:outline-none focus:ring-2 focus:ring-[#4ADE80]/50 transition-all"
+                  >
+                    <option value="sucursal">{t('settings.branches.types.sucursal')}</option>
+                    <option value="bodega">{t('settings.branches.types.bodega')}</option>
+                  </select>
                 </div>
               </div>
               <div className="flex gap-3 mt-8">

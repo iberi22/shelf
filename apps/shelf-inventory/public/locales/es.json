@@ -301,9 +301,17 @@
       "edit": "Editar Sucursal",
       "nameLabel": "Nombre de la Sucursal/Bodega",
       "namePlaceholder": "Ej. Bodega Central o Sucursal Norte",
+      "addressLabel": "Dirección",
+      "addressPlaceholder": "Introduce la dirección de la sucursal",
+      "typeLabel": "Tipo",
+      "types": {
+        "sucursal": "Sucursal",
+        "bodega": "Bodega"
+      },
       "table": {
         "name": "Nombre",
         "id": "ID",
+        "type": "Tipo",
         "createdAt": "Fecha Creación",
         "actions": "Acciones"
       },
