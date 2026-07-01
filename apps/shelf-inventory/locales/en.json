@@ -175,6 +175,8 @@
   },
   "reports": {
     "title": "Reports & Insights",
+    "typeSales": "Sales Report",
+    "typeConsolidatedMultiBranch": "Consolidated Multi-Branch",
     "description": "Analyze your business performance with dynamic reports and get answers from your AI assistant.",
     "aiAssistantTitle": "AI Business Assistant",
     "proFeatureDescription": "This is a Pro feature. Upgrade your plan to get intelligent insights about your data.",
@@ -196,7 +198,10 @@
       "revenue": "Revenue",
       "profit": "Profit",
       "sales": "Sales",
-      "itemsSold": "Items Sold"
+      "itemsSold": "Items Sold",
+      "totalStock": "Total Stock",
+      "skus": "Unique SKUs",
+      "total": "TOTAL"
     },
     "salesOverTime": "Sales Over Time",
     "topProducts": "Top Products",

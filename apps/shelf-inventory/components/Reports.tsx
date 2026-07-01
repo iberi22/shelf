@@ -41,19 +41,32 @@ const Reports: React.FC = () => {
   const [selectedProductId, setSelectedProductId] = useState<string>('all');
   const [selectedClientId, setSelectedClientId] = useState<string>('all');
   const [isConsolidated, setIsConsolidated] = useState(false);
+  const [reportType, setReportType] = useState<'sales' | 'consolidated-inventory'>('sales');
 
   const consolidatedData = useMemo(() => {
-    if (!isConsolidated || !mesh) {
-      return { sales: state.sales, products: state.products };
+    const currentBranchName = state.branches.find((b) => b.id === state.activeBranchId)?.name || 'Local';
+    const activeBranches = state.branches.filter((b) => b.isActive);
+
+    if (!isConsolidated && reportType === 'sales') {
+      return {
+        sales: state.sales,
+        products: state.products.map((p) => ({ ...p, branchName: currentBranchName })),
+      };
     }
 
-    const allSales = [...state.sales];
-    const allProducts = [...state.products];
+    if (!mesh) {
+      return {
+        sales: state.sales,
+        products: state.products.map((p) => ({ ...p, branchName: currentBranchName })),
+      };
+    }
+
+    const allSales = [...state.sales.map((s) => ({ ...s, branchName: currentBranchName }))];
+    const allProducts = [...state.products.map((p) => ({ ...p, branchName: currentBranchName }))];
 
     // Get data from other branches
-    const activeBranches = state.branches.filter((b) => b.isActive);
     for (const branch of activeBranches) {
-      if (branch.id === state.activeBranchId) continue; // Skip current (already in state)
+      if (branch.id === state.activeBranchId) continue;
 
       const namespace = `shelf/${branch.id}`;
       const adapter = mesh.getNamespace(namespace);
@@ -64,17 +77,59 @@ const Reports: React.FC = () => {
       allProducts.push(...branchProducts.map((p) => ({ ...p, branchName: branch.name })));
     }
 
-    // Special case for "Global" namespace if current is a branch
+    // Global namespace
     if (state.activeBranchId !== null) {
       const adapter = mesh.getNamespace('shelf');
-      const globalSales = Array.from(adapter.doc.getMap('sales').values()) as any[];
-      const globalProducts = Array.from(adapter.doc.getMap('products').values()) as any[];
-      allSales.push(...globalSales.map((s) => ({ ...s, branchName: 'Global' })));
-      allProducts.push(...globalProducts.map((p) => ({ ...p, branchName: 'Global' })));
+      if (adapter?.doc) {
+        const globalSales = Array.from(adapter.doc.getMap('sales').values()) as any[];
+        const globalProducts = Array.from(adapter.doc.getMap('products').values()) as any[];
+        allSales.push(...globalSales.map((s) => ({ ...s, branchName: 'Global' })));
+        allProducts.push(...globalProducts.map((p) => ({ ...p, branchName: 'Global' })));
+      }
     }
 
     return { sales: allSales, products: allProducts };
-  }, [isConsolidated, mesh, state.sales, state.products, state.branches, state.activeBranchId]);
+  }, [isConsolidated, reportType, mesh, state.sales, state.products, state.branches, state.activeBranchId]);
+
+  const aggregatedInventory = useMemo(() => {
+    const agg: Record<string, { sku: string; name: string; quantities: Record<string, number>; total: number }> = {};
+
+    consolidatedData.products.forEach((p) => {
+      if (!p.isActive) return;
+      const key = p.sku || p.name;
+      if (!agg[key]) {
+        agg[key] = { sku: p.sku || '', name: p.name, quantities: {}, total: 0 };
+      }
+      const bName = p.branchName || 'Global';
+      agg[key].quantities[bName] = (agg[key].quantities[bName] || 0) + p.quantity;
+      agg[key].total += p.quantity;
+    });
+
+    return {
+      items: Object.values(agg).sort((a, b) => a.name.localeCompare(b.name)) as Array<{
+        sku: string;
+        name: string;
+        quantities: Record<string, number>;
+        total: number;
+      }>,
+      branches: Array.from(
+        new Set(
+          consolidatedData.products
+            .filter((p: any) => p.isActive)
+            .map((p: any) => (p.branchName || 'Global') as string),
+        ),
+      ),
+    };
+  }, [consolidatedData.products]);
+
+  const inventoryStats = useMemo(() => {
+    const skus = new Set(consolidatedData.products.filter((p: any) => p.isActive).map((p: any) => p.sku || p.name))
+      .size;
+    const totalStock = consolidatedData.products
+      .filter((p: any) => p.isActive)
+      .reduce((sum: number, p: any) => sum + p.quantity, 0);
+    return { skus, totalStock };
+  }, [consolidatedData.products]);
 
   const filteredSales = useMemo(() => {
     return consolidatedData.sales.filter((sale) => {
@@ -90,7 +145,7 @@ const Reports: React.FC = () => {
 
       return dateMatch && clientMatch && productMatch;
     });
-  }, [state.sales, startDate, endDate, selectedProductId, selectedClientId]);
+  }, [consolidatedData.sales, startDate, endDate, selectedProductId, selectedClientId]);
 
   const summaryStats = useMemo(() => {
     return filteredSales.reduce(
@@ -193,20 +248,47 @@ const Reports: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-bold mb-2 text-[#F5F5DC]">{t('reports.title')}</h2>
           <p className="text-sm md:text-base text-foreground/80">{t('reports.description')}</p>
         </div>
-        {state.branches.filter((b) => b.isActive).length > 0 && (
-          <button
-            onClick={() => setIsConsolidated(!isConsolidated)}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold transition-all active:scale-95 border ${
-              isConsolidated
-                ? 'bg-[#4ADE80] text-[#121212] border-[#4ADE80]'
-                : 'bg-transparent text-[#F5F5DC] border-[#F5F5DC]/30 hover:bg-[#F5F5DC]/5'
-            }`}
-            data-testid="consolidated-report-toggle"
-          >
-            <Building2 className="h-4 w-4" />
-            {isConsolidated ? 'Vista Consolidada Activa' : 'Consolidar Sucursales'}
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          {state.branches.filter((b) => b.isActive).length > 0 && reportType === 'sales' && (
+            <button
+              onClick={() => setIsConsolidated(!isConsolidated)}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold transition-all active:scale-95 border ${
+                isConsolidated
+                  ? 'bg-[#4ADE80] text-[#121212] border-[#4ADE80]'
+                  : 'bg-transparent text-[#F5F5DC] border-[#F5F5DC]/30 hover:bg-[#F5F5DC]/5'
+              }`}
+              data-testid="consolidated-report-toggle"
+            >
+              <Building2 className="h-4 w-4" />
+              {isConsolidated ? 'Vista Consolidada Activa' : 'Consolidar Sucursales'}
+            </button>
+          )}
+
+          {state.branches.filter((b) => b.isActive).length > 0 && (
+            <div className="flex bg-[#1a1a1a] p-1 rounded-lg border border-[#F5F5DC]/20">
+              <button
+                onClick={() => setReportType('sales')}
+                className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
+                  reportType === 'sales'
+                    ? 'bg-[#F5F5DC]/10 text-[#F5F5DC]'
+                    : 'text-[#F5F5DC]/50 hover:text-[#F5F5DC]/80'
+                }`}
+              >
+                {t('reports.typeSales')}
+              </button>
+              <button
+                onClick={() => setReportType('consolidated-inventory')}
+                className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
+                  reportType === 'consolidated-inventory'
+                    ? 'bg-[#F5F5DC]/10 text-[#F5F5DC]'
+                    : 'text-[#F5F5DC]/50 hover:text-[#F5F5DC]/80'
+                }`}
+              >
+                {t('reports.typeConsolidatedMultiBranch')}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Filters Section */}
@@ -277,109 +359,147 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-        <StatCard titleKey="reports.summary.revenue" value={formatCurrency(summaryStats.revenue)} icon="💰" />
-        <StatCard titleKey="reports.summary.profit" value={formatCurrency(summaryStats.profit)} icon="💹" />
-        <StatCard titleKey="reports.summary.sales" value={summaryStats.sales.toString()} icon="🛒" />
-        <StatCard titleKey="reports.summary.itemsSold" value={summaryStats.itemsSold.toString()} icon="📦" />
-      </div>
-
-      {filteredSales.length > 0 ? (
-        <div className="space-y-8">
-          {/* Sales over Time Chart */}
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
-            <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">{t('reports.salesOverTime')}</h3>
-            <div className="relative h-72">
-              <Line options={chartOptions} data={chartData} />
-            </div>
+      {reportType === 'sales' ? (
+        <>
+          {/* Summary Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            <StatCard titleKey="reports.summary.revenue" value={formatCurrency(summaryStats.revenue)} icon="💰" />
+            <StatCard titleKey="reports.summary.profit" value={formatCurrency(summaryStats.profit)} icon="💹" />
+            <StatCard titleKey="reports.summary.sales" value={summaryStats.sales.toString()} icon="🛒" />
+            <StatCard titleKey="reports.summary.itemsSold" value={summaryStats.itemsSold.toString()} icon="📦" />
           </div>
 
-          {/* Top Products */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
-            <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
-              <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">
-                {t('reports.topProducts')}{' '}
-                <span className="text-sm font-normal text-[#F5F5DC]/80">({t('reports.byRevenue')})</span>
-              </h3>
-              <ul className="space-y-2">
-                {topProducts.byRevenue.map((p, i) => (
-                  <li key={p.id} className="flex justify-between items-center text-sm p-2 rounded-md bg-background/50">
-                    <div className="min-w-0">
-                      <div className="truncate">
-                        {i + 1}. {p.name}
-                      </div>
-                      {(p as any).branchName && (
-                        <div className="text-[10px] text-[#F5F5DC]/40 uppercase tracking-wider">{(p as any).branchName}</div>
-                      )}
-                    </div>
-                    <span className="font-bold ml-2 shrink-0">{formatCurrency(p.revenue)}</span>
-                  </li>
-                ))}
-              </ul>
+          {filteredSales.length > 0 ? (
+            <div className="space-y-8">
+              {/* Sales over Time Chart */}
+              <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
+                <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">{t('reports.salesOverTime')}</h3>
+                <div className="relative h-72">
+                  <Line options={chartOptions} data={chartData} />
+                </div>
+              </div>
+
+              {/* Top Products */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
+                <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
+                  <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">
+                    {t('reports.topProducts')}{' '}
+                    <span className="text-sm font-normal text-[#F5F5DC]/80">({t('reports.byRevenue')})</span>
+                  </h3>
+                  <ul className="space-y-2">
+                    {topProducts.byRevenue.map((p, i) => (
+                      <li
+                        key={p.id}
+                        className="flex justify-between items-center text-sm p-2 rounded-md bg-background/50"
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate">
+                            {i + 1}. {p.name}
+                          </div>
+                          {(p as any).branchName && (
+                            <div className="text-[10px] text-[#F5F5DC]/40 uppercase tracking-wider">
+                              {(p as any).branchName}
+                            </div>
+                          )}
+                        </div>
+                        <span className="font-bold ml-2 shrink-0">{formatCurrency(p.revenue)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
+                  <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">
+                    {t('reports.topProducts')}{' '}
+                    <span className="text-sm font-normal text-[#F5F5DC]/80">({t('reports.byProfit')})</span>
+                  </h3>
+                  <ul className="space-y-2">
+                    {topProducts.byProfit.map((p, i) => (
+                      <li
+                        key={p.id}
+                        className="flex justify-between items-center text-sm p-2 rounded-md bg-background/50"
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate">
+                            {i + 1}. {p.name}
+                          </div>
+                          {(p as any).branchName && (
+                            <div className="text-[10px] text-[#F5F5DC]/40 uppercase tracking-wider">
+                              {(p as any).branchName}
+                            </div>
+                          )}
+                        </div>
+                        <span className="font-bold text-green-400 ml-2 shrink-0">{formatCurrency(p.profit)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
-            <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
-              <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">
-                {t('reports.topProducts')}{' '}
-                <span className="text-sm font-normal text-[#F5F5DC]/80">({t('reports.byProfit')})</span>
-              </h3>
-              <ul className="space-y-2">
-                {topProducts.byProfit.map((p, i) => (
-                  <li key={p.id} className="flex justify-between items-center text-sm p-2 rounded-md bg-background/50">
-                    <div className="min-w-0">
-                      <div className="truncate">
-                        {i + 1}. {p.name}
-                      </div>
-                      {(p as any).branchName && (
-                        <div className="text-[10px] text-[#F5F5DC]/40 uppercase tracking-wider">{(p as any).branchName}</div>
-                      )}
-                    </div>
-                    <span className="font-bold text-green-400 ml-2 shrink-0">{formatCurrency(p.profit)}</span>
-                  </li>
-                ))}
-              </ul>
+          ) : (
+            <div className="text-center py-16 text-[#F5F5DC]/80">
+              <p>{t('reports.noDataForPeriod')}</p>
             </div>
-          </div>
-        </div>
+          )}
+        </>
       ) : (
-        <div className="text-center py-16 text-[#F5F5DC]/80">
-          <p>{t('reports.noDataForPeriod')}</p>
-        </div>
-      )}
+        <div className="space-y-8">
+          <div className="grid grid-cols-2 gap-4 md:gap-6">
+            <StatCard titleKey="reports.summary.totalStock" value={inventoryStats.totalStock.toString()} icon="📦" />
+            <StatCard titleKey="reports.summary.skus" value={inventoryStats.skus.toString()} icon="🏷️" />
+          </div>
 
-      {/* Consolidated Inventory Table */}
-      {isConsolidated && consolidatedData.products.length > 0 && (
-        <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
-          <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">Inventario Consolidado</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-[#F5F5DC]/60 border-b border-[#F5F5DC]/10">
-                <tr>
-                  <th className="py-2 px-3">Producto</th>
-                  <th className="py-2 px-3">SKU</th>
-                  <th className="py-2 px-3">Sucursal</th>
-                  <th className="py-2 px-3 text-right">Stock</th>
-                  <th className="py-2 px-3 text-right">Precio</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F5F5DC]/5">
-                {consolidatedData.products
-                  .filter((p) => p.isActive)
-                  .map((p) => (
-                    <tr key={`${p.id}-${(p as any).branchName || 'global'}`}>
-                      <td className="py-2 px-3 font-medium">{p.name}</td>
-                      <td className="py-2 px-3 text-[#F5F5DC]/60">{p.sku || '-'}</td>
-                      <td className="py-2 px-3">
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-foreground/10 uppercase font-bold">
-                          {(p as any).branchName || 'Global'}
-                        </span>
+          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
+            <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">{t('reports.typeConsolidatedMultiBranch')}</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead className="text-[#F5F5DC]/60 border-b border-[#F5F5DC]/10 bg-[#121212]/50">
+                  <tr>
+                    <th className="py-3 px-3 min-w-[200px]">{t('common.product')}</th>
+                    <th className="py-3 px-3">{t('common.sku')}</th>
+                    {aggregatedInventory.branches.map((bName) => (
+                      <th
+                        key={bName}
+                        className="py-3 px-3 text-right text-[10px] uppercase tracking-wider whitespace-nowrap"
+                      >
+                        {bName}
+                      </th>
+                    ))}
+                    <th className="py-3 px-3 text-right font-bold text-[#4ADE80] border-l border-[#F5F5DC]/10 bg-[#F5F5DC]/5">
+                      {t('reports.summary.total')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F5F5DC]/5">
+                  {aggregatedInventory.items.map((item) => (
+                    <tr key={item.sku + item.name} className="hover:bg-[#F5F5DC]/5 transition-colors">
+                      <td className="py-3 px-3 font-medium">{item.name}</td>
+                      <td className="py-3 px-3 text-[#F5F5DC]/40 font-mono text-xs">{item.sku || '-'}</td>
+                      {aggregatedInventory.branches.map((bName) => (
+                        <td
+                          key={bName}
+                          className={`py-3 px-3 text-right font-mono ${item.quantities[bName] ? 'text-[#F5F5DC]' : 'text-[#F5F5DC]/20'}`}
+                        >
+                          {item.quantities[bName] || 0}
+                        </td>
+                      ))}
+                      <td className="py-3 px-3 text-right font-bold font-mono text-[#4ADE80] border-l border-[#F5F5DC]/10 bg-[#F5F5DC]/5">
+                        {item.total}
                       </td>
-                      <td className="py-2 px-3 text-right font-mono">{p.quantity}</td>
-                      <td className="py-2 px-3 text-right font-mono">{formatCurrency(p.price)}</td>
                     </tr>
                   ))}
-              </tbody>
-            </table>
+                  {aggregatedInventory.items.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={aggregatedInventory.branches.length + 3}
+                        className="py-12 text-center text-[#F5F5DC]/40 italic"
+                      >
+                        {t('reports.noDataForPeriod')}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

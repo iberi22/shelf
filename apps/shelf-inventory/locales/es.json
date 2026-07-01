@@ -175,6 +175,8 @@
   },
   "reports": {
     "title": "Reportes y Análisis",
+    "typeSales": "Reporte de Ventas",
+    "typeConsolidatedMultiBranch": "Consolidado Multi-Sucursal",
     "description": "Analiza el rendimiento de tu negocio con reportes dinámicos y obtén respuestas de tu asistente de IA.",
     "aiAssistantTitle": "Asistente de Negocios IA",
     "proFeatureDescription": "Esta es una función Pro. Actualiza tu plan para obtener análisis inteligentes sobre tus datos.",
@@ -196,7 +198,10 @@
       "revenue": "Ingresos",
       "profit": "Ganancia",
       "sales": "Ventas",
-      "itemsSold": "Artículos Vendidos"
+      "itemsSold": "Artículos Vendidos",
+      "totalStock": "Stock Total",
+      "skus": "SKUs Únicos",
+      "total": "TOTAL"
     },
     "salesOverTime": "Ventas a lo largo del Tiempo",
     "topProducts": "Productos Top",
