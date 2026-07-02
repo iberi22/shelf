@@ -17,7 +17,15 @@ const PurchaseOrders: React.FC = () => {
   const { t } = useI18n();
   const { showNotification } = useUI();
 
-  const activePOs = useMemo(() => state.purchaseOrders.filter((po) => po.isActive !== false), [state.purchaseOrders]);
+  const activePOs = useMemo(
+    () =>
+      state.purchaseOrders.filter((po) => {
+        if (po.isActive === false) return false;
+        if (!state.activeBranchId) return true;
+        return po.branchId === state.activeBranchId;
+      }),
+    [state.purchaseOrders, state.activeBranchId],
+  );
 
   const {
     items: sortedPOs,
@@ -44,6 +52,7 @@ const PurchaseOrders: React.FC = () => {
       const newPO = {
         id: new Date().toISOString(),
         ...poData,
+        branchId: state.activeBranchId || undefined,
       } as PurchaseOrder;
       dispatch({ type: 'ADD_PURCHASE_ORDER', payload: newPO });
     }

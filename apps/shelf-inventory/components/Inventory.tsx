@@ -126,8 +126,13 @@ const Inventory: React.FC = () => {
   const materialField = inventoryFieldDefinitions.find((field) => field.key === 'material');
 
   const activeProducts = useMemo(
-    () => state.products.filter((product) => product.isActive !== false),
-    [state.products],
+    () =>
+      state.products.filter((product) => {
+        if (product.isActive === false) return false;
+        if (!state.activeBranchId) return true;
+        return product.branchId === state.activeBranchId;
+      }),
+    [state.products, state.activeBranchId],
   );
 
   const {
@@ -203,6 +208,7 @@ const Inventory: React.FC = () => {
         payload: {
           id: timestamp,
           ...productData,
+          branchId: state.activeBranchId || undefined,
           isActive: true,
           updatedAt: timestamp,
         } as Product,
@@ -795,6 +801,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   });
   const [comboValues, setComboValues] = useState<Record<string, { quantity: number; price: number; cost: number }>>({});
 
+  const isEditing = product !== null;
+  const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
+
+  const getComboEntries = (colors: string[], sizes: string[]): string[] => {
+    if (colors.length > 0 && sizes.length > 0) {
+      return colors.flatMap((c) => sizes.map((s) => `${c}|${s}`));
+    }
+    return colors.map((c) => `color:${c}`).concat(sizes.map((s) => `size:${s}`));
+  };
+
   // Update comboValues when selections change
   useEffect(() => {
     if (!isEditing && isMultiMode) {
@@ -818,16 +834,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     isEditing,
     getComboEntries,
   ]);
-
-  const isEditing = product !== null;
-  const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
-
-  const getComboEntries = (colors: string[], sizes: string[]): string[] => {
-    if (colors.length > 0 && sizes.length > 0) {
-      return colors.flatMap((c) => sizes.map((s) => `${c}|${s}`));
-    }
-    return colors.map((c) => `color:${c}`).concat(sizes.map((s) => `size:${s}`));
-  };
 
   const productHistory = useMemo(() => {
     if (!product) return [];
