@@ -832,7 +832,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     price,
     selectedColors,
     isEditing,
-    getComboEntries,
   ]);
 
   const productHistory = useMemo(() => {

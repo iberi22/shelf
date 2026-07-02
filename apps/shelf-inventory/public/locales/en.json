@@ -303,9 +303,17 @@
       "edit": "Edit Branch",
       "nameLabel": "Branch/Warehouse Name",
       "namePlaceholder": "e.g. Central Warehouse or North Branch",
+      "addressLabel": "Address",
+      "addressPlaceholder": "Enter branch address",
+      "typeLabel": "Type",
+      "types": {
+        "sucursal": "Branch",
+        "bodega": "Warehouse"
+      },
       "table": {
         "name": "Name",
         "id": "ID",
+        "type": "Type",
         "createdAt": "Creation Date",
         "actions": "Actions"
       },

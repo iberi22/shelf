@@ -62,7 +62,7 @@ export class DatabaseSyncManager {
 	private productChangeHistory: Y.Map<ProductChangeHistoryEntry>;
 	private ephemeralNodes: Map<string, Partial<LinkedNodeRecord>> = new Map();
 	public localPeerId: string | null = null;
-	public activeBranchId: string | null = null;
+	public activeBranchId: string | undefined = undefined;
 	private readyCallbacks: (() => void)[] = [];
 	/**
 	 * Guards against premature YJS_UPDATE broadcasts.
@@ -534,11 +534,13 @@ export class DatabaseSyncManager {
 
 	public setInventoryConfig(config: InventoryConfig) {
 		if (!this.isLocalAuthority()) {
+
 			logger.warn(
 				`[SECURITY] Blocked unauthorized inventory config update from ${this.localPeerId}`,
 			);
 			return;
 		}
+
 
 		this.doc.transact(() => {
 			this.metadata.set("inventoryConfig", JSON.stringify(config));
@@ -741,6 +743,7 @@ export class DatabaseSyncManager {
 		}, "local");
 	}
 
+
 	public removeLinkedNode(
 		peerId: string,
 		authorityPeerId: string | null = this.localPeerId,
@@ -751,6 +754,7 @@ export class DatabaseSyncManager {
 			);
 			return;
 		}
+
 
 		this.doc.transact(() => {
 			this.linkedNodes.delete(peerId);
@@ -950,3 +954,4 @@ export class DatabaseSyncManager {
 }
 
 export const dbSync = new DatabaseSyncManager();
+

@@ -28,6 +28,9 @@ export interface EntityEditProposal {
 export interface Branch {
 	id: string; // UUID
 	name: string; // 'Bodega Central', 'Sucursal Norte'
+	address?: string;
+	type?: "sucursal" | "bodega";
+	isActive: boolean;
 	createdAt: number; // timestamp
 	isActive: boolean;
 }
