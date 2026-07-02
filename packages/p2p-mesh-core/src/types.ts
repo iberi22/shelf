@@ -31,7 +31,6 @@ export interface Branch extends BaseEntity {
 	type?: "sucursal" | "bodega";
 	isActive: boolean;
 	createdAt: number; // timestamp
-	isActive: boolean;
 }
 
 export interface Product extends BaseEntity {

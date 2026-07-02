@@ -819,7 +819,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
 
     case 'SET_ACTIVE_BRANCH':
-      dbSync.activeBranchId = action.payload || null;
+      dbSync.activeBranchId = action.payload || undefined;
       return { ...state, activeBranch: action.payload || undefined, activeBranchId: action.payload || undefined };
 
 

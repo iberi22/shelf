@@ -373,7 +373,6 @@ const Settings: React.FC = () => {
         type: branchType,
         isActive: true,
         createdAt: Date.now(),
-        isActive: true,
       };
       dispatch({ type: 'ADD_BRANCH', payload: newBranch as Branch });
       showNotification(t('settings.branches.successAdd'), 'success');
