@@ -605,12 +605,12 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
       break;
     case 'ADD_BRANCH':
-      newState = { ...state, branches: [...state.branches, action.payload] };
+      newState = { ...state, branches: [...state.branches, enrich(state, action.payload)] };
       break;
     case 'UPDATE_BRANCH':
       newState = {
         ...state,
-        branches: state.branches.map((b) => (b.id === action.payload.id ? action.payload : b)),
+        branches: state.branches.map((b) => (b.id === action.payload.id ? enrich(state, action.payload) : b)),
       };
       break;
     case 'DELETE_BRANCH':
@@ -656,6 +656,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
     case 'SET_EXPELLED':
       return { ...state, isExpelled: action.payload };
+
+
 
 
 
@@ -815,9 +817,11 @@ const appReducer = (state: AppState, action: Action): AppState => {
     }
 
 
+
     case 'SET_ACTIVE_BRANCH':
       dbSync.activeBranchId = action.payload || null;
       return { ...state, activeBranch: action.payload || undefined, activeBranchId: action.payload || undefined };
+
 
 
     case 'RESTORE_STATE':
@@ -1363,4 +1367,5 @@ export const useAppContext = () => {
 };
 
 export const useApp = useAppContext;
+
 

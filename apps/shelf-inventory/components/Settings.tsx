@@ -366,7 +366,7 @@ const Settings: React.FC = () => {
       });
       showNotification(t('settings.branches.successUpdate'), 'success');
     } else {
-      const newBranch: Branch = {
+      const newBranch = {
         id: crypto.randomUUID(),
         name: branchName.trim(),
         address: branchAddress.trim(),
@@ -375,7 +375,7 @@ const Settings: React.FC = () => {
         createdAt: Date.now(),
         isActive: true,
       };
-      dispatch({ type: 'ADD_BRANCH', payload: newBranch });
+      dispatch({ type: 'ADD_BRANCH', payload: newBranch as Branch });
       showNotification(t('settings.branches.successAdd'), 'success');
     }
     setIsBranchModalOpen(false);

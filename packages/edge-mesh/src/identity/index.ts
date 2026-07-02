@@ -111,7 +111,7 @@ export async function createIdentity(): Promise<Identity> {
 					name: 'Ed25519',
 				},
 				keyPair.privateKey,
-				data,
+				data as any,
 			);
 			return new Uint8Array(signature);
 		},
@@ -123,7 +123,7 @@ export async function createIdentity(): Promise<Identity> {
 			try {
 				const publicKey = await crypto.subtle.importKey(
 					'raw',
-					IdentityManager.fromHex(remotePeerId),
+					IdentityManager.fromHex(remotePeerId) as any,
 					{
 						name: 'Ed25519',
 					},
@@ -135,8 +135,8 @@ export async function createIdentity(): Promise<Identity> {
 						name: 'Ed25519',
 					},
 					publicKey,
-					signature,
-					data,
+					signature as any,
+					data as any,
 				);
 			} catch (error) {
 				return false;
