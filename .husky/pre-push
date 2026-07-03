@@ -1,31 +1,18 @@
-﻿#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+#!/bin/sh
 
-# ============================================================
-# SHELF - PRE-PUSH HOOK (ROBUSTO)
-# Runs: full monorepo build (tsc + vite)
-# If build fails -> push is ABORTED
-# ============================================================
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT_DIR" || exit 1
 
-SHELF_DIR="apps/shelf-inventory"
-ROOT_DIR="$(dirname -- "$0")/.."
-
-echo "🔧 [pre-push] Running full monorepo build..."
-cd "$ROOT_DIR"
-
-# Step 1: pnpm build via turbo (tsc + vite)
-echo "🔧 [pre-push] Executing: pnpm build..."
+echo "[pre-push] Running full build..."
 pnpm build 2>&1
 BUILD_EXIT=$?
-
 if [ $BUILD_EXIT -ne 0 ]; then
-  echo "❌ [pre-push] BUILD FAILED. Fix build errors before pushing."
+  echo "[pre-push] FAILED: Build errors. Fix before pushing."
   exit 1
 fi
-echo "✅ [pre-push] Build passed."
+echo "[pre-push] OK: Build passed."
 
-# Step 2: Quick lint check on whole project
-echo "🔍 [pre-push] Running Biome full check..."
-npx --no-install biome check "$SHELF_DIR/src" --reporter=summary 2>&1 || true
+echo "[pre-push] Biome check scan..."
+npx --no-install biome check apps/shelf-inventory/src --reporter=summary 2>/dev/null || true
 
-echo "✅ [pre-push] All pre-push checks passed. Push allowed."
+echo "[pre-push] OK: All checks passed. Push allowed."

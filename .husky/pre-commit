@@ -1,41 +1,27 @@
-﻿#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+#!/bin/sh
 
-# ============================================================
-# SHELF - PRE-COMMIT HOOK (ROBUSTO)
-# Runs: lint-staged (Biome) + TypeScript type check
-# If any step fails -> commit is ABORTED
-# ============================================================
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT_DIR" || exit 1
 
-SHELF_DIR="$(pwd)/apps/shelf-inventory"
-
-# ────────────────────────────────────────────────────────────
-# Step 1: Lint-staged with Biome
-# ────────────────────────────────────────────────────────────
-echo "🔍 [pre-commit] Running lint-staged (Biome)..."
-npx --no-install lint-staged --cwd "$SHELF_DIR" --config '{"*.{js,ts,jsx,tsx,json}":["biome check --write"]}'
-if [ $? -ne 0 ]; then
-  echo "❌ [pre-commit] Lint-staged failed. Fix errors and try again."
+echo "[pre-commit] Running lint-staged (Biome)..."
+cd apps/shelf-inventory && npx --no-install lint-staged
+LINT_EXIT=$?
+if [ $LINT_EXIT -ne 0 ]; then
+  echo "[pre-commit] FAILED: lint-staged errors. Fix and retry."
   exit 1
 fi
-echo "✅ [pre-commit] Lint-staged passed."
+echo "[pre-commit] OK: lint-staged passed."
 
-# ────────────────────────────────────────────────────────────
-# Step 2: TypeScript type check (full project)
-# ────────────────────────────────────────────────────────────
-echo "🔍 [pre-commit] Running TypeScript strict type check..."
-cd "$SHELF_DIR" && npx tsc --noEmit --pretty 2>&1
+echo "[pre-commit] Running TypeScript type check..."
+cd "$ROOT_DIR/apps/shelf-inventory" && npx tsc --noEmit --pretty
 TSC_EXIT=$?
-cd "$(dirname -- "$0")/.."
 if [ $TSC_EXIT -ne 0 ]; then
-  echo "❌ [pre-commit] TypeScript type check FAILED. Fix type errors before committing."
+  echo "[pre-commit] FAILED: TypeScript type errors exist."
   exit 1
 fi
-echo "✅ [pre-commit] TypeScript check passed."
+echo "[pre-commit] OK: TypeScript check passed."
 
-# ────────────────────────────────────────────────────────────
-# Step 3: Verify biome check on whole project (quick scan)
-# ────────────────────────────────────────────────────────────
-echo "🔍 [pre-commit] Biome full project check..."
-npx --no-install biome check "$SHELF_DIR/src" --reporter=summary 2>&1 || true
-echo "✅ [pre-commit] All checks passed. Commit allowed."
+echo "[pre-commit] Biome full scan..."
+npx --no-install biome check apps/shelf-inventory/src --reporter=summary 2>/dev/null || true
+
+echo "[pre-commit] OK: All checks passed. Commit allowed."
