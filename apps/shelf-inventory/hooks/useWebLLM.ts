@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
 import { CreateMLCEngine } from '@mlc-ai/web-llm';
 import { GpuAgent } from 'gpu-agent';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface UseWebLLMOptions {
   modelId?: string;
@@ -20,70 +20,76 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
     GpuAgent.isWebGpuSupported().then(setIsSupported);
   }, []);
 
-  const initEngine = useCallback(async (selectedModelId?: string) => {
-    const modelToLoad = selectedModelId || modelId;
+  const initEngine = useCallback(
+    async (selectedModelId?: string) => {
+      const modelToLoad = selectedModelId || modelId;
 
-    // If we already have an engine with the same model, reuse it
-    if (engineRef.current && engineRef.current._modelId === modelToLoad) {
-      return engineRef.current;
-    }
-
-    setIsInitializing(true);
-    setError(null);
-    setInitProgress(0);
-
-    try {
-      const newEngine = await CreateMLCEngine(modelToLoad, {
-        initProgressCallback: (report) => {
-          setInitProgress(Math.round(report.progress * 100));
-        },
-      });
-      // Tag the engine with the modelId so we know what's loaded
-      (newEngine as any)._modelId = modelToLoad;
-      engineRef.current = newEngine;
-      setEngine(newEngine);
-      setIsInitializing(false);
-      return newEngine;
-    } catch (err: any) {
-      const msg = err.message || 'Failed to initialize WebLLM engine';
-      setError(msg);
-      setIsInitializing(false);
-      throw new Error(msg);
-    }
-  }, [modelId]);
-
-  const generateResponse = useCallback(async (
-    messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
-    onUpdate?: (text: string) => void,
-    selectedModelId?: string
-  ) => {
-    try {
-      let currentEngine = engineRef.current;
-      if (!currentEngine || (selectedModelId && currentEngine._modelId !== selectedModelId)) {
-        currentEngine = await initEngine(selectedModelId);
+      // If we already have an engine with the same model, reuse it
+      if (engineRef.current && engineRef.current._modelId === modelToLoad) {
+        return engineRef.current;
       }
 
-      const chunks = await currentEngine.chat.completions.create({
-        messages,
-        stream: true,
-      });
+      setIsInitializing(true);
+      setError(null);
+      setInitProgress(0);
 
-      let fullText = '';
-      for await (const chunk of chunks) {
-        const content = chunk.choices[0]?.delta?.content || '';
-        fullText += content;
-        if (onUpdate) {
-          onUpdate(fullText);
+      try {
+        const newEngine = await CreateMLCEngine(modelToLoad, {
+          initProgressCallback: (report) => {
+            setInitProgress(Math.round(report.progress * 100));
+          },
+        });
+        // Tag the engine with the modelId so we know what's loaded
+        (newEngine as any)._modelId = modelToLoad;
+        engineRef.current = newEngine;
+        setEngine(newEngine);
+        setIsInitializing(false);
+        return newEngine;
+      } catch (err: any) {
+        const msg = err.message || 'Failed to initialize WebLLM engine';
+        setError(msg);
+        setIsInitializing(false);
+        throw new Error(msg);
+      }
+    },
+    [modelId],
+  );
+
+  const generateResponse = useCallback(
+    async (
+      messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+      onUpdate?: (text: string) => void,
+      selectedModelId?: string,
+    ) => {
+      try {
+        let currentEngine = engineRef.current;
+        if (!currentEngine || (selectedModelId && currentEngine._modelId !== selectedModelId)) {
+          currentEngine = await initEngine(selectedModelId);
         }
-      }
 
-      return fullText;
-    } catch (err: any) {
-      const msg = err.message || 'Failed to generate response';
-      setError(msg);
-      throw new Error(msg);
-    }
-  }, [initEngine]);
+        const chunks = await currentEngine.chat.completions.create({
+          messages,
+          stream: true,
+        });
+
+        let fullText = '';
+        for await (const chunk of chunks) {
+          const content = chunk.choices[0]?.delta?.content || '';
+          fullText += content;
+          if (onUpdate) {
+            onUpdate(fullText);
+          }
+        }
+
+        return fullText;
+      } catch (err: any) {
+        const msg = err.message || 'Failed to generate response';
+        setError(msg);
+        throw new Error(msg);
+      }
+    },
+    [initEngine],
+  );
 
   return {
     engine,
@@ -92,6 +98,6 @@ export function useWebLLM(options: UseWebLLMOptions = {}) {
     error,
     isSupported,
     initEngine,
-    generateResponse
+    generateResponse,
   };
 }

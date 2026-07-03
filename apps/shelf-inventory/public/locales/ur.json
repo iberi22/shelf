@@ -286,19 +286,6 @@
       "placeholder": "Your message...",
       "button": "Send Feedback",
       "success": "Thank you! Your feedback has been sent."
-    },
-    "ai": {
-      "title": "Configuración de IA",
-      "description": "Configura tus propias llaves para el asistente de IA.",
-      "proxyUrl": "URL del Proxy Local (Opcional)"
-    },
-    "security": {
-      "title": "Seguridad",
-      "description": "Configura un PIN para proteger el acceso a la aplicación.",
-      "appLock": "Bloqueo de Aplicación",
-      "enable": "Activar",
-      "disable": "Desactivar",
-      "lockedNote": "La aplicación se bloqueará automáticamente al recargar."
     }
   },
   "auth": {
@@ -415,6 +402,18 @@
     "feature4": {
       "title": "Cloud Sync (Pro)",
       "description": "Upgrade to Pro to sync your data across all your devices, keeping them safe and up-to-date."
+    },
+    "governance": {
+      "title": "Distributed Data Governance",
+      "highlight": "Full Control.",
+      "description": "Shelf runs on an offline-first peer-to-peer architecture. Your data stays local and syncs directly between trusted devices, without a central server deciding who owns your inventory.",
+      "learnMore": "Learn more",
+      "points": [
+        "Unified management for multiple branches and warehouses.",
+        "Partitioned local-first data, coordinated by the authorized host.",
+        "Consolidated reports that can combine remote inventories.",
+        "Post-quantum cryptographic security with verifiable node permissions."
+      ]
     }
   },
   "welcome": {
