@@ -139,8 +139,8 @@ const Settings: React.FC = () => {
 
       // Resolve status logic (simplified)
       const votes = Object.values(updatedProposal.votes);
-      const approveCount = votes.filter(v => v.value === 'approve').length;
-      const rejectCount = votes.filter(v => v.value === 'reject').length;
+      const approveCount = votes.filter((v: GovernanceVote) => v.value === 'approve').length;
+      const rejectCount = votes.filter((v: GovernanceVote) => v.value === 'reject').length;
 
       const totalActivePeers = state.peers.filter(p => p.status !== 'offline').length;
       const majority = Math.ceil((totalActivePeers + 1) / 2);
@@ -758,7 +758,7 @@ const Settings: React.FC = () => {
                   const minutes = Math.floor(timeLeft / 60);
                   const seconds = timeLeft % 60;
                   const votes = Object.values(proposal.votes);
-                  const approveCount = votes.filter(v => v.value === 'approve').length;
+                  const approveCount = votes.filter((v: GovernanceVote) => v.value === 'approve').length;
                   const hasVoted = state.localPeerId && proposal.votes[state.localPeerId];
 
                   return (

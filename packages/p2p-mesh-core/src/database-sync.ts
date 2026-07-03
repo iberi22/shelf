@@ -724,16 +724,16 @@ export class DatabaseSyncManager {
 			const nextRole =
 				canEditPeerConfig && info.role
 					? info.role
-					: existing.role || "collaborator";
+					: existingRecord.role || "collaborator";
 			const nextPermissions =
 				canEditPeerConfig && info.permissions
 					? info.permissions
-					: existing.permissions || this.getDefaultPermissions(nextRole);
+					: existingRecord.permissions || this.getDefaultPermissions(nextRole);
 			const nextIsMaster =
 				peerId === authorityPeerId
 					? typeof info.isMaster === "boolean"
 						? info.isMaster
-						: existing.isMaster || false
+						: existingRecord.isMaster || false
 					: false;
 			const safeInfo = canEditPeerConfig
 				? info
@@ -744,10 +744,10 @@ export class DatabaseSyncManager {
 						...rest
 					}) => rest)(info || {});
 
-			const nextConnectedAt = existing.connectedAt || new Date().toISOString();
-			let nextVerifiedAt = existing.verifiedAt;
+			const nextConnectedAt = existingRecord.connectedAt || new Date().toISOString();
+			let nextVerifiedAt = existingRecord.verifiedAt;
 			if (
-				(info.status === "verified" || existing.status === "verified") &&
+				(info.status === "verified" || existingRecord.status === "verified") &&
 				!nextVerifiedAt
 			) {
 				nextVerifiedAt = new Date().toISOString();

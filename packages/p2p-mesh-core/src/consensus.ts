@@ -1,4 +1,8 @@
 
+import type { GovernanceProposal, GovernanceVote, GovernanceVoteValue } from 'edge-mesh';
+
+export type { GovernanceProposal, GovernanceVote, GovernanceVoteValue };
+
 export interface AdminCandidacy {
 	candidatePeerId: string;
 	createdAt: number;
