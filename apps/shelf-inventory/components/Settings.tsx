@@ -1,5 +1,26 @@
-import { Building2, Fingerprint, Languages, Lock, Pencil, Plus, Save, SlidersHorizontal, Timer, Trash2, UserCheck, Vote } from 'lucide-react';
-import type { Branch, InventoryConfig, InventoryFieldDefinition, RestoreStatePayload, GovernanceProposal, GovernanceVote, GovernanceVoteValue } from 'p2p-mesh-core';
+import {
+  Building2,
+  Fingerprint,
+  Languages,
+  Lock,
+  Pencil,
+  Plus,
+  Save,
+  SlidersHorizontal,
+  Timer,
+  Trash2,
+  UserCheck,
+  Vote,
+} from 'lucide-react';
+import type {
+  Branch,
+  GovernanceProposal,
+  GovernanceVote,
+  GovernanceVoteValue,
+  InventoryConfig,
+  InventoryFieldDefinition,
+  RestoreStatePayload,
+} from 'p2p-mesh-core';
 import { dbSync, decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -71,9 +92,7 @@ const Settings: React.FC = () => {
 
   const isNextEligible = useMemo(() => {
     if (state.role === 'admin') return false;
-    const activeNonAdmins = state.peers
-      .filter((p) => p.role !== 'admin' && p.status !== 'offline')
-      .map((p) => p.id);
+    const activeNonAdmins = state.peers.filter((p) => p.role !== 'admin' && p.status !== 'offline').map((p) => p.id);
     if (state.localPeerId && !activeNonAdmins.includes(state.localPeerId)) {
       activeNonAdmins.push(state.localPeerId);
     }
@@ -145,7 +164,7 @@ const Settings: React.FC = () => {
       const approveCount = votes.filter((v: GovernanceVote) => v.value === 'approve').length;
       const rejectCount = votes.filter((v: GovernanceVote) => v.value === 'reject').length;
 
-      const totalActivePeers = state.peers.filter(p => p.status !== 'offline').length;
+      const totalActivePeers = state.peers.filter((p) => p.status !== 'offline').length;
       const majority = Math.ceil((totalActivePeers + 1) / 2);
 
       if (rejectCount > 0) {
@@ -776,7 +795,9 @@ const Settings: React.FC = () => {
                           <div className="flex items-center gap-4 mt-2 text-xs text-[#F5F5DC]/60">
                             <span className="flex items-center gap-1">
                               <Timer className="h-3 w-3" />
-                              {proposal.status === 'active' ? `${minutes}:${seconds.toString().padStart(2, '0')}` : 'Finalizado'}
+                              {proposal.status === 'active'
+                                ? `${minutes}:${seconds.toString().padStart(2, '0')}`
+                                : 'Finalizado'}
                             </span>
                             <span className="flex items-center gap-1">
                               <Vote className="h-3 w-3" />
@@ -786,14 +807,22 @@ const Settings: React.FC = () => {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-                            proposal.status === 'active' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
-                            proposal.status === 'approved' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
-                            'bg-red-500/10 text-red-400 border border-red-500/20'
-                          }`}>
-                            {proposal.status === 'active' ? 'Pendiente' :
-                             proposal.status === 'approved' ? 'Aprobado' :
-                             proposal.status === 'rejected' ? 'Rechazado' : 'Expirado'}
+                          <span
+                            className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                              proposal.status === 'active'
+                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                : proposal.status === 'approved'
+                                  ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                                  : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                            }`}
+                          >
+                            {proposal.status === 'active'
+                              ? 'Pendiente'
+                              : proposal.status === 'approved'
+                                ? 'Aprobado'
+                                : proposal.status === 'rejected'
+                                  ? 'Rechazado'
+                                  : 'Expirado'}
                           </span>
 
                           {proposal.status === 'active' && !isCandidate && !hasVoted && (
@@ -860,7 +889,9 @@ const Settings: React.FC = () => {
                     <tr className="border-b border-[#F5F5DC]/10 text-[#F5F5DC]/50 text-xs uppercase tracking-wider">
                       <th className="py-3 px-4 font-semibold">{t('settings.branches.table.name')}</th>
                       <th className="py-3 px-4 font-semibold">{t('settings.branches.table.type')}</th>
-                      <th className="py-3 px-4 font-semibold hidden md:table-cell">{t('settings.branches.table.id')}</th>
+                      <th className="py-3 px-4 font-semibold hidden md:table-cell">
+                        {t('settings.branches.table.id')}
+                      </th>
                       <th className="py-3 px-4 font-semibold">{t('settings.branches.table.createdAt')}</th>
                       <th className="py-3 px-4 font-semibold text-right">{t('settings.branches.table.actions')}</th>
                     </tr>
@@ -871,45 +902,45 @@ const Settings: React.FC = () => {
                         .filter((b) => b.isActive)
                         .map((branch) => (
                           <tr key={branch.id} className="text-[#F5F5DC]/90 text-sm hover:bg-white/5 transition-colors">
-                          <td className="py-4 px-4 font-medium">
-                            <div>{branch.name}</div>
-                            {branch.address && (
-                              <div className="text-[10px] text-[#F5F5DC]/50 mt-0.5">{branch.address}</div>
-                            )}
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="text-[10px] uppercase tracking-wider bg-[#F5F5DC]/10 px-2 py-0.5 rounded border border-[#F5F5DC]/20">
-                              {branch.type === 'bodega'
-                                ? t('settings.branches.types.bodega')
-                                : t('settings.branches.types.sucursal')}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4 hidden md:table-cell">
-                            <code className="text-[10px] bg-[#121212] px-1.5 py-0.5 rounded border border-[#F5F5DC]/10 text-[#F5F5DC]/40">
-                              {branch.id}
-                            </code>
-                          </td>
-                          <td className="py-4 px-4">{new Date(branch.createdAt).toLocaleDateString()}</td>
-                          <td className="py-4 px-4 text-right">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={() => handleEditBranch(branch)}
-                                className="p-2 text-[#4ADE80] hover:bg-[#4ADE80]/10 rounded-md transition-colors"
-                                title={t('common.edit')}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteBranch(branch.id)}
-                                className="p-2 text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
-                                title={t('common.delete')}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                            <td className="py-4 px-4 font-medium">
+                              <div>{branch.name}</div>
+                              {branch.address && (
+                                <div className="text-[10px] text-[#F5F5DC]/50 mt-0.5">{branch.address}</div>
+                              )}
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className="text-[10px] uppercase tracking-wider bg-[#F5F5DC]/10 px-2 py-0.5 rounded border border-[#F5F5DC]/20">
+                                {branch.type === 'bodega'
+                                  ? t('settings.branches.types.bodega')
+                                  : t('settings.branches.types.sucursal')}
+                              </span>
+                            </td>
+                            <td className="py-4 px-4 hidden md:table-cell">
+                              <code className="text-[10px] bg-[#121212] px-1.5 py-0.5 rounded border border-[#F5F5DC]/10 text-[#F5F5DC]/40">
+                                {branch.id}
+                              </code>
+                            </td>
+                            <td className="py-4 px-4">{new Date(branch.createdAt).toLocaleDateString()}</td>
+                            <td className="py-4 px-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  onClick={() => handleEditBranch(branch)}
+                                  className="p-2 text-[#4ADE80] hover:bg-[#4ADE80]/10 rounded-md transition-colors"
+                                  title={t('common.edit')}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteBranch(branch.id)}
+                                  className="p-2 text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+                                  title={t('common.delete')}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
                     ) : (
                       <tr>
                         <td colSpan={5} className="py-10 text-center text-[#F5F5DC]/40 italic">
@@ -1028,9 +1059,7 @@ const Settings: React.FC = () => {
           {/* AI Settings */}
           <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
             <h3 className="text-xl font-bold text-[#F5F5DC]">🤖 {t('settings.ai.title')}</h3>
-            <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">
-              {t('settings.ai.description')}
-            </p>
+            <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">{t('settings.ai.description')}</p>
 
             <div className="space-y-4">
               <div>

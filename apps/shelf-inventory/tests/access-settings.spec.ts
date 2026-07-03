@@ -34,6 +34,6 @@ test.describe('Access and settings controls', () => {
 
     await expect(page.getByTestId('nav-item-nav.inventory').last()).toBeVisible();
     await page.getByTestId('nav-item-nav.inventory').last().click();
-    await expect(page.getByRole('heading', { name: /Inventory|Inventario/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Inventory|Inventario/i, level: 2 })).toBeVisible();
   });
 });

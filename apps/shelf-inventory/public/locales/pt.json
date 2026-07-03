@@ -284,19 +284,6 @@
       "placeholder": "Sua mensagem...",
       "button": "Enviar Feedback",
       "success": "Obrigado! Seu feedback foi enviado."
-    },
-    "ai": {
-      "title": "Configuración de IA",
-      "description": "Configura tus propias llaves para el asistente de IA.",
-      "proxyUrl": "URL del Proxy Local (Opcional)"
-    },
-    "security": {
-      "title": "Seguridad",
-      "description": "Configura un PIN para proteger el acceso a la aplicación.",
-      "appLock": "Bloqueo de Aplicación",
-      "enable": "Activar",
-      "disable": "Desactivar",
-      "lockedNote": "La aplicación se bloqueará automáticamente al recargar."
     }
   },
   "auth": {
@@ -411,6 +398,18 @@
     "feature4": {
       "title": "Sincronização (Pro)",
       "description": "Atualize para o Pro para sincronizar seus dados em todos os seus dispositivos, mantendo-os seguros e atualizados."
+    },
+    "governance": {
+      "title": "Governan?a de dados distribu?da",
+      "highlight": "Controle total.",
+      "description": "O Shelf usa uma arquitetura peer-to-peer offline-first. Seus dados ficam locais e sincronizam diretamente entre dispositivos confi?veis, sem um servidor central decidindo quem controla seu invent?rio.",
+      "learnMore": "Saber mais",
+      "points": [
+        "Gest?o unificada de v?rias filiais e dep?sitos.",
+        "Dados particionados local-first, coordenados pelo host autorizado.",
+        "Relat?rios consolidados que podem combinar estoques remotos.",
+        "Seguran?a criptogr?fica p?s-qu?ntica com permiss?es verific?veis por n?."
+      ]
     }
   },
   "welcome": {
