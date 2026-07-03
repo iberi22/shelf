@@ -55,22 +55,24 @@ test.describe('E2E: Multiple products persist after page reload', () => {
       await expect(page.locator(`text=${product.name}`).first()).toBeVisible({ timeout: 10000 });
 
       // State check for precise values
-      await expect.poll(async () => {
-        return page.evaluate((name) => {
-          const state = (window as any).__shelfAppStateForTest;
-          const p = state?.products?.find((item: any) => item.name === name && item.isActive !== false);
-          if (!p) return null;
-          return {
-            name: p.name,
-            quantity: String(p.quantity),
-            price: String(p.price)
-          };
-        }, product.name);
-      }).toEqual({
-        name: product.name,
-        quantity: product.quantity,
-        price: product.price
-      });
+      await expect
+        .poll(async () => {
+          return page.evaluate((name) => {
+            const state = (window as any).__shelfAppStateForTest;
+            const p = state?.products?.find((item: any) => item.name === name && item.isActive !== false);
+            if (!p) return null;
+            return {
+              name: p.name,
+              quantity: String(p.quantity),
+              price: String(p.price),
+            };
+          }, product.name);
+        })
+        .toEqual({
+          name: product.name,
+          quantity: product.quantity,
+          price: product.price,
+        });
     }
 
     // Assert final total product count is 3

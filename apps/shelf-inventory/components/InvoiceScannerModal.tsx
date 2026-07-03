@@ -1,7 +1,9 @@
 import { Html5Qrcode } from 'html5-qrcode';
-import type { ExtractedInvoiceData, InvoiceLineItem } from 'p2p-mesh-core';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import type { ExtractedInvoiceData } from 'p2p-mesh-core';
 import { useEffect, useRef, useState } from 'react';
-import { createWorker } from 'tesseract.js';
+import { useLocalOCR } from '../hooks/useLocalOCR';
+import useLocalStorage from '../hooks/useLocalStorage';
 import Modal from './Modal';
 
 const CAPTURE_CANVAS_ID = 'invoice-capture-canvas';
@@ -21,8 +23,17 @@ export default function InvoiceScannerModal({
 }: InvoiceScannerModalProps) {
   const [scanMode, setScanMode] = useState<'camera' | 'upload' | null>(null);
   const [cameraError, setCameraError] = useState<string>('');
-  const [ocrProgress, setOcrProgress] = useState<number>(0);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [useLocalOcr, setUseLocalOcr] = useLocalStorage('useLocalOcr', true);
+  const [showRawText, setShowRawText] = useState(false);
+  const [isCloudProcessing, setIsCloudProcessing] = useState(false);
+
+  const {
+    processImage: processLocalImage,
+    progress: localProgress,
+    isProcessing: isLocalProcessing,
+    rawText: localRawText,
+  } = useLocalOCR();
+
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
   const cameraContainerId = 'invoice-camera-container';
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -84,69 +95,41 @@ export default function InvoiceScannerModal({
     };
   }, [isOpen, scanMode]);
 
-  const parseOCRText = (text: string): ExtractedInvoiceData => {
-    const lines = text.split('\n');
-    const items: InvoiceLineItem[] = [];
-
-    // Basic regex for common invoice fields
-    const totalMatch = text.match(/(?:TOTAL|SUMA|TOTAL A PAGAR)[:\s]*\$?\s*(\d+(?:[.,]\d{2})?)/i);
-    const total = totalMatch ? Number.parseFloat(totalMatch[1].replace(',', '.')) : 0;
-
-    const dateMatch = text.match(/(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/);
-    const invoiceDate = dateMatch ? dateMatch[1] : new Date().toISOString().split('T')[0];
-
-    const supplierMatch = lines[0]?.trim();
-
-    // Simple item extraction: look for lines with numbers at the end
-    for (const line of lines) {
-      const parts = line.trim().split(/\s+/);
-      if (parts.length >= 2) {
-        const lastPart = parts[parts.length - 1];
-        const price = Number.parseFloat(lastPart.replace(/[^0-9.,]/g, '').replace(',', '.'));
-        if (!Number.isNaN(price) && price > 0 && price < total) {
-          items.push({
-            description: parts.slice(0, parts.length - 1).join(' '),
-            quantity: 1,
-            unitPrice: price,
-            total: price,
-            confidence: 0.7,
-          });
-        }
-      }
-    }
-
-    return {
-      supplierName: supplierMatch || 'Unknown Supplier',
-      invoiceDate,
-      items: items.slice(0, 10), // Limit to avoid noise
-      total,
-    };
-  };
-
   const processImage = async (imageBase64: string) => {
-    setIsProcessing(true);
-    setOcrProgress(0);
-    try {
-      const worker = await createWorker('spa+eng', 1, {
-        logger: (m) => {
-          if (m.status === 'recognizing text') {
-            setOcrProgress(Math.round(m.progress * 100));
-          }
-        },
-      });
+    if (useLocalOcr) {
+      const result = await processLocalImage(imageBase64);
+      if (result) {
+        onScanComplete(imageBase64, result);
+      } else {
+        setCameraError('Local OCR failed to process image');
+      }
+    } else {
+      setIsCloudProcessing(true);
+      try {
+        const geminiApiKey = localStorage.getItem('geminiApiKey')?.replace(/"/g, '');
+        const response = await fetch('/api/extractInvoice', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: imageBase64.split(',')[1], // Remove data:image/jpeg;base64,
+            apiKey: geminiApiKey,
+          }),
+        });
 
-      const {
-        data: { text },
-      } = await worker.recognize(imageBase64);
-      await worker.terminate();
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
 
-      const extractedData = parseOCRText(text);
-      onScanComplete(imageBase64, extractedData);
-    } catch (error) {
-      console.error('OCR error:', error);
-      setCameraError('Failed to process image. Please try again.');
-    } finally {
-      setIsProcessing(false);
+        const data = await response.json();
+        onScanComplete(imageBase64, data as ExtractedInvoiceData);
+      } catch (error) {
+        console.error('Cloud OCR error:', error);
+        setCameraError('Cloud OCR failed. Check your API key and connection.');
+      } finally {
+        setIsCloudProcessing(false);
+      }
     }
   };
 
@@ -216,35 +199,60 @@ export default function InvoiceScannerModal({
   const handleClose = () => {
     setScanMode(null);
     setCameraError('');
-    setIsProcessing(false);
-    setOcrProgress(0);
     onClose();
   };
+
+  const isAnyProcessing = isLocalProcessing || isCloudProcessing || isLoading;
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Scan Invoice">
       <div className="w-full max-w-md mx-auto p-4">
-        {isProcessing || isLoading ? (
+        {/* OCR Type Selector */}
+        <div className="mb-6 p-1 bg-[#121212] rounded-lg border border-[#F5F5DC]/10 flex">
+          <button
+            onClick={() => setUseLocalOcr(true)}
+            className={`flex-1 py-2 text-xs font-bold rounded-md transition-all ${useLocalOcr ? 'bg-[#F5F5DC] text-[#121212]' : 'text-[#F5F5DC]/60 hover:text-[#F5F5DC]'}`}
+          >
+            Local OCR (Offline)
+          </button>
+          <button
+            onClick={() => setUseLocalOcr(false)}
+            className={`flex-1 py-2 text-xs font-bold rounded-md transition-all ${!useLocalOcr ? 'bg-[#F5F5DC] text-[#121212]' : 'text-[#F5F5DC]/60 hover:text-[#F5F5DC]'}`}
+          >
+            Cloud OCR (Gemini)
+          </button>
+        </div>
+
+        {isAnyProcessing ? (
           <div className="flex flex-col items-center justify-center py-8">
             <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="text-white font-medium">Processing Invoice...</p>
-            <div className="w-full bg-gray-700 h-2 rounded-full mt-4 overflow-hidden">
-              <div className="bg-blue-600 h-full transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
-            </div>
-            <p className="text-gray-400 text-xs mt-2">{ocrProgress}% complete</p>
+            <p className="text-white font-medium">
+              {isCloudProcessing ? 'Cloud processing...' : 'Processing Invoice...'}
+            </p>
+            {!isCloudProcessing && (
+              <>
+                <div className="w-full bg-gray-700 h-2 rounded-full mt-4 overflow-hidden">
+                  <div
+                    className="bg-blue-600 h-full transition-all duration-300"
+                    style={{ width: `${localProgress}%` }}
+                  />
+                </div>
+                <p className="text-gray-400 text-xs mt-2">{localProgress}% complete</p>
+              </>
+            )}
           </div>
         ) : !scanMode ? (
           <div className="flex flex-col gap-3">
             <button
               onClick={() => setScanMode('camera')}
-              disabled={isLoading || isProcessing}
+              disabled={isAnyProcessing}
               className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium disabled:opacity-50"
             >
               📷 Take Photo
             </button>
             <button
               onClick={() => setScanMode('upload')}
-              disabled={isLoading || isProcessing}
+              disabled={isAnyProcessing}
               className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium disabled:opacity-50"
             >
               📁 Upload Image
@@ -275,7 +283,7 @@ export default function InvoiceScannerModal({
                 <canvas id={CAPTURE_CANVAS_ID} style={{ display: 'none' }} />
                 <button
                   onClick={capturePhoto}
-                  disabled={isLoading || isProcessing}
+                  disabled={isAnyProcessing}
                   className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded font-medium disabled:opacity-50"
                 >
                   📸 Capture Photo
@@ -287,7 +295,7 @@ export default function InvoiceScannerModal({
                 setCameraError('');
                 setScanMode(null);
               }}
-              disabled={isLoading || isProcessing}
+              disabled={isAnyProcessing}
               className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
             >
               Back
@@ -300,7 +308,7 @@ export default function InvoiceScannerModal({
               type="file"
               accept="image/png, image/jpeg, image/webp"
               onChange={handleFileSelect}
-              disabled={isLoading || isProcessing}
+              disabled={isAnyProcessing}
               className="block w-full text-sm text-gray-400 file:mr-4 file:px-4 file:py-2 file:rounded file:bg-blue-600 file:text-white file:font-medium hover:file:bg-blue-700 disabled:opacity-50"
             />
             {cameraError && (
@@ -319,11 +327,29 @@ export default function InvoiceScannerModal({
                 setCameraError('');
                 setScanMode(null);
               }}
-              disabled={isLoading || isProcessing}
+              disabled={isAnyProcessing}
               className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
             >
               Back
             </button>
+          </div>
+        )}
+
+        {/* Debug Panel */}
+        {localRawText && (
+          <div className="mt-6 border-t border-[#F5F5DC]/10 pt-4">
+            <button
+              onClick={() => setShowRawText(!showRawText)}
+              className="flex items-center justify-between w-full text-xs text-[#F5F5DC]/60 hover:text-[#F5F5DC] transition-colors"
+            >
+              <span>{showRawText ? 'Hide' : 'Show'} Raw OCR Text</span>
+              {showRawText ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            {showRawText && (
+              <div className="mt-2 p-3 bg-black/40 rounded border border-[#F5F5DC]/5 max-h-40 overflow-y-auto text-[10px] font-mono text-[#F5F5DC]/80 whitespace-pre-wrap">
+                {localRawText}
+              </div>
+            )}
           </div>
         )}
       </div>

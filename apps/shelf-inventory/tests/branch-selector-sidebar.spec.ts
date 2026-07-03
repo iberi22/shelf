@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Branch Selector in Sidebar', () => {
   test.beforeEach(async ({ page }) => {
@@ -19,7 +19,10 @@ test.describe('Branch Selector in Sidebar', () => {
     await expect(desktopSelector).toBeVisible();
 
     // 3. Check if it's under the logo (approximately)
-    const logo = page.locator('h1:has-text("[ Shelf. ]")').filter({ hasNot: page.locator('.md\\:hidden') }).first();
+    const logo = page
+      .locator('h1:has-text("[ Shelf. ]")')
+      .filter({ hasNot: page.locator('.md\\:hidden') })
+      .first();
     const logoBox = await logo.boundingBox();
     const selectorBox = await desktopSelector.boundingBox();
 

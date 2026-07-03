@@ -6,11 +6,11 @@ import type * as Y from 'yjs';
 import {
   getDeletedIdsFromYMapEvent,
   getShelfEdgeStats,
+  SHELF_EDGE_BRANCH_COLLECTIONS,
+  SHELF_EDGE_GLOBAL_COLLECTIONS,
   SHELF_EDGE_LOCAL_ORIGIN,
   SHELF_EDGE_NAMESPACE,
   type ShelfEdgeCollection,
-  SHELF_EDGE_BRANCH_COLLECTIONS,
-  SHELF_EDGE_GLOBAL_COLLECTIONS,
   type ShelfEdgeCollectionStats,
   syncAppStateToShelfEdgeDoc,
 } from '../lib/edge-mesh-workflow';
@@ -290,11 +290,7 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
   useEffect(() => {
     if (!globalAdapter || !isLoaded) return;
 
-    const scheduleRemoteApply = (
-      collection: ShelfEdgeCollection,
-      yMap: Y.Map<unknown>,
-      deletedIds: string[],
-    ) => {
+    const scheduleRemoteApply = (collection: ShelfEdgeCollection, yMap: Y.Map<unknown>, deletedIds: string[]) => {
       const pending = pendingRemoteCollectionsRef.current.get(collection) || {
         items: [],
         deletedIds: new Set<string>(),
@@ -333,7 +329,10 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
           lastRemoteSyncAt: new Date().toISOString(),
           lastChangedCollections: changedCollections,
           stats,
-          totalItems: Object.values(stats).reduce((total, count) => (Number(total) || 0) + (Number(count) || 0), 0) as number,
+          totalItems: Object.values(stats).reduce(
+            (total, count) => (Number(total) || 0) + (Number(count) || 0),
+            0,
+          ) as number,
         }));
       }, 0);
     };
@@ -357,7 +356,9 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
           const canApply = canPeerMutateCollection(stateRef.current, remotePeerId, collection, changedItems);
 
           if (!canApply) {
-            const previousItems = new Map(getStateCollection(stateRef.current, collection).map((item) => [item.id, item]));
+            const previousItems = new Map(
+              getStateCollection(stateRef.current, collection).map((item) => [item.id, item]),
+            );
             adapter.doc.transact(() => {
               for (const id of changedIds) {
                 const previousItem = previousItems.get(id);

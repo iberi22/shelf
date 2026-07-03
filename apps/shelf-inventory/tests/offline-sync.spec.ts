@@ -32,23 +32,27 @@ test.describe('Offline Product Creation and Sync', () => {
     }, peerIdB);
 
     // Verify connection
-    await expect.poll(
-      async () => {
-        return pageA.evaluate(() => {
-          return (window as any)._dbSyncForTest?.getLinkedNodes()?.length || 0;
-        });
-      },
-      { timeout: 30000 }
-    ).toBeGreaterThanOrEqual(1);
+    await expect
+      .poll(
+        async () => {
+          return pageA.evaluate(() => {
+            return (window as any)._dbSyncForTest?.getLinkedNodes()?.length || 0;
+          });
+        },
+        { timeout: 30000 },
+      )
+      .toBeGreaterThanOrEqual(1);
 
-    await expect.poll(
-      async () => {
-        return pageB.evaluate(() => {
-          return (window as any)._dbSyncForTest?.getLinkedNodes()?.length || 0;
-        });
-      },
-      { timeout: 30000 }
-    ).toBeGreaterThanOrEqual(1);
+    await expect
+      .poll(
+        async () => {
+          return pageB.evaluate(() => {
+            return (window as any)._dbSyncForTest?.getLinkedNodes()?.length || 0;
+          });
+        },
+        { timeout: 30000 },
+      )
+      .toBeGreaterThanOrEqual(1);
 
     // 4. Take Admin B offline
     await contextB.setOffline(true);

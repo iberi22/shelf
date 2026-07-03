@@ -616,9 +616,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
     case 'DELETE_BRANCH':
       newState = {
         ...state,
-        branches: state.branches.map((b) =>
-          b.id === action.payload ? { ...b, isActive: false } : b,
-        ),
+        branches: state.branches.map((b) => (b.id === action.payload ? { ...b, isActive: false } : b)),
       };
       break;
     case 'ADD_ARQUEO_SESSION':
@@ -656,11 +654,6 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
     case 'SET_EXPELLED':
       return { ...state, isExpelled: action.payload };
-
-
-
-
-
 
     case 'UPDATE_PEER_PERMISSIONS': {
       if (action.payload.targetPeerId === state.localPeerId) {
@@ -816,13 +809,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
       break;
     }
 
-
-
     case 'SET_ACTIVE_BRANCH':
       dbSync.activeBranchId = action.payload || undefined;
       return { ...state, activeBranch: action.payload || undefined, activeBranchId: action.payload || undefined };
-
-
 
     case 'RESTORE_STATE':
       return {
@@ -1367,5 +1356,3 @@ export const useAppContext = () => {
 };
 
 export const useApp = useAppContext;
-
-
