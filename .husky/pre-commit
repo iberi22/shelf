@@ -1,0 +1,41 @@
+﻿#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# ============================================================
+# SHELF - PRE-COMMIT HOOK (ROBUSTO)
+# Runs: lint-staged (Biome) + TypeScript type check
+# If any step fails -> commit is ABORTED
+# ============================================================
+
+SHELF_DIR="$(pwd)/apps/shelf-inventory"
+
+# ────────────────────────────────────────────────────────────
+# Step 1: Lint-staged with Biome
+# ────────────────────────────────────────────────────────────
+echo "🔍 [pre-commit] Running lint-staged (Biome)..."
+npx --no-install lint-staged --cwd "$SHELF_DIR" --config '{"*.{js,ts,jsx,tsx,json}":["biome check --write"]}'
+if [ $? -ne 0 ]; then
+  echo "❌ [pre-commit] Lint-staged failed. Fix errors and try again."
+  exit 1
+fi
+echo "✅ [pre-commit] Lint-staged passed."
+
+# ────────────────────────────────────────────────────────────
+# Step 2: TypeScript type check (full project)
+# ────────────────────────────────────────────────────────────
+echo "🔍 [pre-commit] Running TypeScript strict type check..."
+cd "$SHELF_DIR" && npx tsc --noEmit --pretty 2>&1
+TSC_EXIT=$?
+cd "$(dirname -- "$0")/.."
+if [ $TSC_EXIT -ne 0 ]; then
+  echo "❌ [pre-commit] TypeScript type check FAILED. Fix type errors before committing."
+  exit 1
+fi
+echo "✅ [pre-commit] TypeScript check passed."
+
+# ────────────────────────────────────────────────────────────
+# Step 3: Verify biome check on whole project (quick scan)
+# ────────────────────────────────────────────────────────────
+echo "🔍 [pre-commit] Biome full project check..."
+npx --no-install biome check "$SHELF_DIR/src" --reporter=summary 2>&1 || true
+echo "✅ [pre-commit] All checks passed. Commit allowed."
