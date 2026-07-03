@@ -1,38 +1,6 @@
-import {
-  Building2,
-  CheckCircle2,
-  Fingerprint,
-  Languages,
-  Lock,
-  Pencil,
-  Plus,
-  Save,
-  SlidersHorizontal,
-  Timer,
-  Trash2,
-  UserCheck,
-  Vote,
-  XCircle,
-} from 'lucide-react';
-import type {
-  Branch,
-  GovernanceProposal,
-  GovernanceVote,
-  GovernanceVoteValue,
-  InventoryConfig,
-  InventoryFieldDefinition,
-  RestoreStatePayload,
-} from 'p2p-mesh-core';
-import {
-  createCandidacy,
-  dbSync,
-  decryptData,
-  deriveKey,
-  encryptData,
-  evaluateCandidacy,
-  getSessionKey,
-  vote,
-} from 'p2p-mesh-core';
+import { Building2, Fingerprint, Languages, Lock, Pencil, Plus, Save, SlidersHorizontal, Timer, Trash2, UserCheck, Vote } from 'lucide-react';
+import type { Branch, InventoryConfig, InventoryFieldDefinition, RestoreStatePayload, GovernanceProposal, GovernanceVote, GovernanceVoteValue } from 'p2p-mesh-core';
+import { dbSync, decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
@@ -82,6 +50,8 @@ const Settings: React.FC = () => {
   const [showOpenCodeGoKey, setShowOpenCodeGoKey] = useState(false);
   const [openCodeGoModel, setOpenCodeGoModel] = useLocalStorage('openCodeGoModel', 'gpt-4o');
   const [aiProxyUrl, setAiProxyUrl] = useLocalStorage('aiProxyUrl', '');
+  const [aiEngine, setAiEngine] = useLocalStorage<'auto' | 'local' | 'gemini' | 'nano'>('aiEngine', 'auto');
+  const [localAiModel, setLocalAiModel] = useLocalStorage('localAiModel', 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC');
   const { currencyCode, setCurrencyCode, numberFormat, setNumberFormat } = useCurrency();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isInviteModalOpen, setInviteModalOpen] = useState(false);
@@ -101,7 +71,9 @@ const Settings: React.FC = () => {
 
   const isNextEligible = useMemo(() => {
     if (state.role === 'admin') return false;
-    const activeNonAdmins = state.peers.filter((p) => p.role !== 'admin' && p.status !== 'offline').map((p) => p.id);
+    const activeNonAdmins = state.peers
+      .filter((p) => p.role !== 'admin' && p.status !== 'offline')
+      .map((p) => p.id);
     if (state.localPeerId && !activeNonAdmins.includes(state.localPeerId)) {
       activeNonAdmins.push(state.localPeerId);
     }
@@ -127,19 +99,21 @@ const Settings: React.FC = () => {
 
   const handlePostulate = () => {
     if (!state.localPeerId) return;
-
-    // Validation: check if already has an active candidacy
-    const hasActiveCandidacy = proposals.some((p) => p.targetPeerId === state.localPeerId && p.status === 'active');
-    if (hasActiveCandidacy) {
-      showNotification('Ya tienes una postulación activa', 'error');
-      return;
-    }
-
-    const proposal = createCandidacy(state.localPeerId);
+    const proposalId = crypto.randomUUID();
+    const proposal: GovernanceProposal = {
+      id: proposalId,
+      targetPeerId: state.localPeerId,
+      proposedRole: 'admin',
+      createdBy: state.localPeerId,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 5 * 60 * 1000,
+      status: 'active',
+      votes: {},
+    };
 
     dbSync.doc.transact(() => {
       const proposalsMap = dbSync.doc.getMap('proposals');
-      proposalsMap.set(proposal.id, proposal as any);
+      proposalsMap.set(proposalId, proposal as any);
     }, 'local');
 
     showNotification('Postulación como Admin enviada', 'success');
@@ -149,24 +123,35 @@ const Settings: React.FC = () => {
     if (!state.localPeerId) return;
     const proposalsMap = dbSync.doc.getMap('proposals');
     const proposal = proposalsMap.get(proposalId) as GovernanceProposal | undefined;
-    if (proposal?.status !== 'active') return;
+    if (!proposal || proposal.status !== 'active') return;
 
-    let reason: string | undefined;
-    if (value === 'reject') {
-      const input = window.prompt('Motivo del rechazo (opcional):');
-      if (input === null) return; // Cancelled
-      reason = input || undefined;
-    }
+    const vote: GovernanceVote = {
+      peerId: state.localPeerId,
+      value,
+      timestamp: Date.now(),
+    };
 
     dbSync.doc.transact(() => {
-      // Deep copy proposal to modify it
-      const updatedProposal = JSON.parse(JSON.stringify(proposal)) as GovernanceProposal;
-      vote(updatedProposal, state.localPeerId!, value === 'approve', reason);
+      const updatedProposal = {
+        ...proposal,
+        votes: {
+          ...proposal.votes,
+          [state.localPeerId!]: vote,
+        },
+      };
 
-      const totalActivePeers = state.peers.filter((p) => p.status !== 'offline').length;
-      updatedProposal.status = evaluateCandidacy(updatedProposal, totalActivePeers);
+      // Resolve status logic (simplified)
+      const votes = Object.values(updatedProposal.votes);
+      const approveCount = votes.filter((v: GovernanceVote) => v.value === 'approve').length;
+      const rejectCount = votes.filter((v: GovernanceVote) => v.value === 'reject').length;
 
-      if (updatedProposal.status === 'approved') {
+      const totalActivePeers = state.peers.filter(p => p.status !== 'offline').length;
+      const majority = Math.ceil((totalActivePeers + 1) / 2);
+
+      if (rejectCount > 0) {
+        updatedProposal.status = 'rejected';
+      } else if (approveCount >= majority) {
+        updatedProposal.status = 'approved';
         // Auto-promote if approved
         dbSync.updatePeerConfig(updatedProposal.targetPeerId, 'admin', undefined, state.localPeerId!);
       }
@@ -772,185 +757,78 @@ const Settings: React.FC = () => {
               <div className="space-y-4">
                 {proposals.map((proposal) => {
                   const isCandidate = proposal.targetPeerId === state.localPeerId;
-                  const duration = proposal.expiresAt - proposal.createdAt;
-                  const elapsed = now - proposal.createdAt;
-                  const progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-
                   const timeLeft = Math.max(0, Math.floor((proposal.expiresAt - now) / 1000));
                   const minutes = Math.floor(timeLeft / 60);
                   const seconds = timeLeft % 60;
-
                   const votes = Object.values(proposal.votes);
                   const approveCount = votes.filter((v: GovernanceVote) => v.value === 'approve').length;
-                  const rejectCount = votes.filter((v: GovernanceVote) => v.value === 'reject').length;
                   const hasVoted = state.localPeerId && proposal.votes[state.localPeerId];
 
                   return (
-                    <div
-                      key={proposal.id}
-                      className="p-5 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 shadow-inner"
-                    >
-                      <div className="flex flex-col gap-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <div className="p-2 rounded-full bg-yellow-400/10">
-                                <UserCheck className="h-4 w-4 text-yellow-400" />
-                              </div>
-                              <div>
-                                <span className="block text-xs text-[#F5F5DC]/50 uppercase font-bold tracking-tighter">
-                                  Candidato
-                                </span>
-                                <code className="text-sm text-yellow-400 truncate">{proposal.targetPeerId}</code>
-                              </div>
-                            </div>
+                    <div key={proposal.id} className="p-4 rounded-lg bg-[#121212] border border-[#F5F5DC]/10">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <UserCheck className="h-4 w-4 text-yellow-400" />
+                            <span className="text-sm font-semibold text-[#F5F5DC]">Candidato:</span>
+                            <code className="text-xs text-yellow-400 truncate">{proposal.targetPeerId}</code>
                           </div>
-
-                          <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
-                            <span
-                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 border ${
-                                proposal.status === 'active'
-                                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                  : proposal.status === 'approved'
-                                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                    : proposal.status === 'rejected'
-                                      ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                                      : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
-                              }`}
-                            >
-                              {proposal.status === 'active' && (
-                                <div className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
-                              )}
-                              {proposal.status === 'approved' && <CheckCircle2 className="h-3 w-3" />}
-                              {proposal.status === 'rejected' && <XCircle className="h-3 w-3" />}
-                              {proposal.status === 'active'
-                                ? 'En Curso'
-                                : proposal.status === 'approved'
-                                  ? 'Aprobado'
-                                  : proposal.status === 'rejected'
-                                    ? 'Rechazado'
-                                    : 'Expirado'}
+                          <div className="flex items-center gap-4 mt-2 text-xs text-[#F5F5DC]/60">
+                            <span className="flex items-center gap-1">
+                              <Timer className="h-3 w-3" />
+                              {proposal.status === 'active' ? `${minutes}:${seconds.toString().padStart(2, '0')}` : 'Finalizado'}
                             </span>
-
-                            {proposal.status === 'active' && !isCandidate && !hasVoted && (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleVote(proposal.id, 'approve')}
-                                  className="px-4 py-1.5 bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg text-xs font-bold hover:bg-green-500/30 transition-all hover:scale-105 active:scale-95"
-                                >
-                                  Votar Sí
-                                </button>
-                                <button
-                                  onClick={() => handleVote(proposal.id, 'reject')}
-                                  className="px-4 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-bold hover:bg-red-500/30 transition-all hover:scale-105 active:scale-95"
-                                >
-                                  Votar No
-                                </button>
-                              </div>
-                            )}
+                            <span className="flex items-center gap-1">
+                              <Vote className="h-3 w-3" />
+                              {approveCount} votos positivos
+                            </span>
                           </div>
                         </div>
 
-                        {proposal.status === 'active' && (
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between text-[10px] text-[#F5F5DC]/40 uppercase font-bold">
-                              <span>Progreso de elección</span>
-                              <span className="flex items-center gap-1">
-                                <Timer className="h-3 w-3" />
-                                {minutes}:{seconds.toString().padStart(2, '0')} restante
-                              </span>
-                            </div>
-                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-1000 ease-linear"
-                                style={{ width: `${100 - progress}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                            proposal.status === 'active' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                            proposal.status === 'approved' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                            'bg-red-500/10 text-red-400 border border-red-500/20'
+                          }`}>
+                            {proposal.status === 'active' ? 'Pendiente' :
+                             proposal.status === 'approved' ? 'Aprobado' :
+                             proposal.status === 'rejected' ? 'Rechazado' : 'Expirado'}
+                          </span>
 
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-green-500/5 border border-green-500/10 p-2 rounded-md text-center">
-                            <span className="block text-[10px] text-green-400/60 uppercase font-bold">A Favor</span>
-                            <span className="text-xl font-bold text-green-400">{approveCount}</span>
-                          </div>
-                          <div className="bg-red-500/5 border border-red-500/10 p-2 rounded-md text-center">
-                            <span className="block text-[10px] text-red-400/60 uppercase font-bold">En Contra</span>
-                            <span className="text-xl font-bold text-red-400">{rejectCount}</span>
-                          </div>
+                          {proposal.status === 'active' && !isCandidate && !hasVoted && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleVote(proposal.id, 'approve')}
+                                className="px-3 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-bold hover:bg-green-500/30 transition-colors"
+                              >
+                                Votar Sí
+                              </button>
+                              <button
+                                onClick={() => handleVote(proposal.id, 'reject')}
+                                className="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded text-xs font-bold hover:bg-red-500/30 transition-colors"
+                              >
+                                Votar No
+                              </button>
+                            </div>
+                          )}
                         </div>
-
-                        {votes.length > 0 && (
-                          <div className="mt-2">
-                            <h4 className="text-[10px] text-[#F5F5DC]/40 uppercase font-bold mb-2 border-b border-[#F5F5DC]/5 pb-1">
-                              Desglose de Votos
-                            </h4>
-                            <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
-                              {votes
-                                .sort((a, b) => b.timestamp - a.timestamp)
-                                .map((v) => (
-                                  <div
-                                    key={v.peerId}
-                                    className="flex flex-col p-1.5 rounded bg-white/5 border border-white/5"
-                                  >
-                                    <div className="flex items-center justify-between text-xs">
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <div
-                                          className={`h-1.5 w-1.5 rounded-full ${v.value === 'approve' ? 'bg-green-400' : 'bg-red-400'}`}
-                                        />
-                                        <code className="text-[10px] text-[#F5F5DC]/70 truncate">{v.peerId}</code>
-                                      </div>
-                                      <div className="flex items-center gap-3 shrink-0">
-                                        <span
-                                          className={`font-bold ${v.value === 'approve' ? 'text-green-400/80' : 'text-red-400/80'}`}
-                                        >
-                                          {v.value === 'approve' ? 'SÍ' : 'NO'}
-                                        </span>
-                                        <span className="text-[9px] text-[#F5F5DC]/30">
-                                          {new Date(v.timestamp).toLocaleTimeString([], {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                          })}
-                                        </span>
-                                      </div>
-                                    </div>
-                                    {v.reason && (
-                                      <div className="mt-1 pl-3.5 text-[10px] text-red-400/70 italic border-l border-red-400/20">
-                                        "{v.reason}"
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="text-center py-10 bg-[#121212] rounded-lg border border-dashed border-[#F5F5DC]/20">
-                <div className="inline-flex p-3 rounded-full bg-[#F5F5DC]/5 mb-3">
-                  <Vote className="h-6 w-6 text-[#F5F5DC]/30" />
-                </div>
-                <p className="text-sm text-[#F5F5DC]/50">No hay elecciones activas en este momento.</p>
-                {isNextEligible && state.role !== 'admin' && (
+              <div className="text-center py-6 bg-[#121212] rounded-lg border border-dashed border-[#F5F5DC]/20">
+                <p className="text-sm text-[#F5F5DC]/40 italic">No hay elecciones activas en este momento.</p>
+                {isNextEligible && (
                   <button
                     onClick={handlePostulate}
-                    className="mt-6 px-8 py-2.5 bg-[#F5F5DC] text-[#121212] rounded-lg text-sm font-bold hover:bg-opacity-80 active:scale-95 transition-all shadow-lg hover:shadow-yellow-500/10"
+                    className="mt-4 px-6 py-2 bg-[#F5F5DC] text-[#121212] rounded-lg text-sm font-bold hover:bg-opacity-80 active:scale-95 transition-all"
                   >
                     Postularme como Admin
                   </button>
                 )}
-              </div>
-            )}
-
-            {state.role === 'admin' && proposals.length === 0 && (
-              <div className="mt-4 p-3 bg-blue-500/5 border border-blue-500/10 rounded-md">
-                <p className="text-xs text-blue-400/80 text-center italic">
-                  Ya eres Administrador. Otros nodos elegibles verán el botón para postularse.
-                </p>
               </div>
             )}
           </div>
@@ -982,9 +860,7 @@ const Settings: React.FC = () => {
                     <tr className="border-b border-[#F5F5DC]/10 text-[#F5F5DC]/50 text-xs uppercase tracking-wider">
                       <th className="py-3 px-4 font-semibold">{t('settings.branches.table.name')}</th>
                       <th className="py-3 px-4 font-semibold">{t('settings.branches.table.type')}</th>
-                      <th className="py-3 px-4 font-semibold hidden md:table-cell">
-                        {t('settings.branches.table.id')}
-                      </th>
+                      <th className="py-3 px-4 font-semibold hidden md:table-cell">{t('settings.branches.table.id')}</th>
                       <th className="py-3 px-4 font-semibold">{t('settings.branches.table.createdAt')}</th>
                       <th className="py-3 px-4 font-semibold text-right">{t('settings.branches.table.actions')}</th>
                     </tr>
@@ -995,45 +871,45 @@ const Settings: React.FC = () => {
                         .filter((b) => b.isActive)
                         .map((branch) => (
                           <tr key={branch.id} className="text-[#F5F5DC]/90 text-sm hover:bg-white/5 transition-colors">
-                            <td className="py-4 px-4 font-medium">
-                              <div>{branch.name}</div>
-                              {branch.address && (
-                                <div className="text-[10px] text-[#F5F5DC]/50 mt-0.5">{branch.address}</div>
-                              )}
-                            </td>
-                            <td className="py-4 px-4">
-                              <span className="text-[10px] uppercase tracking-wider bg-[#F5F5DC]/10 px-2 py-0.5 rounded border border-[#F5F5DC]/20">
-                                {branch.type === 'bodega'
-                                  ? t('settings.branches.types.bodega')
-                                  : t('settings.branches.types.sucursal')}
-                              </span>
-                            </td>
-                            <td className="py-4 px-4 hidden md:table-cell">
-                              <code className="text-[10px] bg-[#121212] px-1.5 py-0.5 rounded border border-[#F5F5DC]/10 text-[#F5F5DC]/40">
-                                {branch.id}
-                              </code>
-                            </td>
-                            <td className="py-4 px-4">{new Date(branch.createdAt).toLocaleDateString()}</td>
-                            <td className="py-4 px-4 text-right">
-                              <div className="flex justify-end gap-2">
-                                <button
-                                  onClick={() => handleEditBranch(branch)}
-                                  className="p-2 text-[#4ADE80] hover:bg-[#4ADE80]/10 rounded-md transition-colors"
-                                  title={t('common.edit')}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteBranch(branch.id)}
-                                  className="p-2 text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
-                                  title={t('common.delete')}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
+                          <td className="py-4 px-4 font-medium">
+                            <div>{branch.name}</div>
+                            {branch.address && (
+                              <div className="text-[10px] text-[#F5F5DC]/50 mt-0.5">{branch.address}</div>
+                            )}
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className="text-[10px] uppercase tracking-wider bg-[#F5F5DC]/10 px-2 py-0.5 rounded border border-[#F5F5DC]/20">
+                              {branch.type === 'bodega'
+                                ? t('settings.branches.types.bodega')
+                                : t('settings.branches.types.sucursal')}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 hidden md:table-cell">
+                            <code className="text-[10px] bg-[#121212] px-1.5 py-0.5 rounded border border-[#F5F5DC]/10 text-[#F5F5DC]/40">
+                              {branch.id}
+                            </code>
+                          </td>
+                          <td className="py-4 px-4">{new Date(branch.createdAt).toLocaleDateString()}</td>
+                          <td className="py-4 px-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => handleEditBranch(branch)}
+                                className="p-2 text-[#4ADE80] hover:bg-[#4ADE80]/10 rounded-md transition-colors"
+                                title={t('common.edit')}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteBranch(branch.id)}
+                                className="p-2 text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+                                title={t('common.delete')}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
                     ) : (
                       <tr>
                         <td colSpan={5} className="py-10 text-center text-[#F5F5DC]/40 italic">
@@ -1151,9 +1027,9 @@ const Settings: React.FC = () => {
 
           {/* AI Settings */}
           <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-            <h3 className="text-xl font-bold text-[#F5F5DC]">🤖 {t('settings.ai.title') || 'Configuración de IA'}</h3>
+            <h3 className="text-xl font-bold text-[#F5F5DC]">🤖 {t('settings.ai.title')}</h3>
             <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">
-              {t('settings.ai.description') || 'Configura tus propias llaves para el asistente de IA.'}
+              {t('settings.ai.description')}
             </p>
 
             <div className="space-y-4">
@@ -1174,6 +1050,44 @@ const Settings: React.FC = () => {
                   </button>
                 </div>
               </div>
+              <div>
+                <label htmlFor="aiEngine" className="block text-sm font-medium text-[#F5F5DC]/90 mb-1">
+                  {t('settings.ai.engine')}
+                </label>
+                <select
+                  id="aiEngine"
+                  value={aiEngine}
+                  onChange={(e) => setAiEngine(e.target.value as any)}
+                  className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                >
+                  <option value="auto">{t('settings.ai.engineAuto')}</option>
+                  <option value="local">{t('settings.ai.engineLocal')}</option>
+                  <option value="gemini">{t('settings.ai.engineGemini')}</option>
+                  <option value="nano">{t('settings.ai.engineNano')}</option>
+                </select>
+              </div>
+
+              {aiEngine === 'local' && (
+                <div>
+                  <label htmlFor="localAiModel" className="block text-sm font-medium text-[#F5F5DC]/90 mb-1">
+                    {t('settings.ai.localModel')}
+                  </label>
+                  <select
+                    id="localAiModel"
+                    value={localAiModel}
+                    onChange={(e) => setLocalAiModel(e.target.value)}
+                    className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                  >
+                    <option value="Phi-3-mini-4k-instruct-q4f16_1-MLC">{t('settings.ai.modelSmall')}</option>
+                    <option value="Qwen2.5-1.5B-Instruct-q4f16_1-MLC">{t('settings.ai.modelMedium')}</option>
+                    <option value="Llama-3-8B-Instruct-q4f16_1-MLC">Large (Llama 3 8B - Heavy)</option>
+                  </select>
+                  <p className="mt-2 text-[10px] text-[#F5F5DC]/50 italic">
+                    * Los modelos locales se descargan al navegador y pueden ocupar entre 1GB y 5GB.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label htmlFor="geminiApiKey" className="block text-sm font-medium text-[#F5F5DC]/90">
@@ -1234,7 +1148,7 @@ const Settings: React.FC = () => {
 
               <div>
                 <label htmlFor="aiProxyUrl" className="block text-sm font-medium text-[#F5F5DC]/90">
-                  {t('settings.ai.proxyUrl') || 'URL del Proxy Local (Opcional)'}
+                  {t('settings.ai.proxyUrl')}
                 </label>
                 <input
                   id="aiProxyUrl"
