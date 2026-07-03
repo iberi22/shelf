@@ -1,5 +1,21 @@
 import { createCrdtSyncLayer } from 'edge-mesh';
-import { Download, Info, Link2, MessageCircle, QrCode, RadioTower, RefreshCw, Settings, X } from 'lucide-react';
+import {
+  Activity,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Download,
+  History,
+  Info,
+  Link2,
+  MessageCircle,
+  QrCode,
+  RadioTower,
+  RefreshCw,
+  Settings,
+  ShieldAlert,
+  X,
+} from 'lucide-react';
 import {
   dbSync,
   type P2PRole,
@@ -103,6 +119,7 @@ const P2PSyncManager: React.FC = () => {
   const [showConfirmConnectModal, setShowConfirmConnectModal] = useState(false);
   const [pendingPeerId, setPendingPeerId] = useState('');
   const [showLogsForPeer, setShowLogsForPeer] = useState<string | null>(null);
+  const [showHistoryForPeer, setShowHistoryForPeer] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [isForcingSync, setIsForcingSync] = useState(false);
   const [branchInput, setBranchInput] = useState(state.activeBranch || '');
@@ -582,6 +599,19 @@ const P2PSyncManager: React.FC = () => {
     showNotification(`Cambiando a rama: ${branchInput.trim() || 'Global'}`, 'success');
   };
 
+  const handleManualFailover = () => {
+    if (!state.localPeerId) return;
+    const currentMaster = dbSync.getMasterPeerId();
+    if (currentMaster === state.localPeerId || state.role === 'admin') {
+      dbSync.forceHostFailover();
+      showNotification('Iniciando failover manual...', 'success');
+    }
+  };
+
+  const currentHostId = dbSync.getMasterPeerId();
+  const hostHealth = currentHostId ? peerHealth[currentHostId] : null;
+  const isHostLocal = currentHostId === state.localPeerId;
+
   return (
     <div className="mt-6 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-[#F5F5DC]/30 bg-[#1a1a1a] p-4 md:p-6">
       <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
@@ -598,6 +628,77 @@ const P2PSyncManager: React.FC = () => {
       </div>
 
       <div className="flex flex-col gap-4">
+        {/* Host Failover Status Section */}
+        <div className="flex flex-col gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <ShieldAlert size={18} className="text-yellow-500" />
+              <span className="text-sm font-bold text-[#F5F5DC]">{t('p2pSync.hostStatus')}</span>
+            </div>
+            {state.role === 'admin' && (
+              <button
+                onClick={handleManualFailover}
+                className="rounded bg-yellow-500/10 px-2 py-1 text-[10px] font-bold text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500/20 transition-colors"
+              >
+                {t('p2pSync.forceFailover')}
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider">
+                {t('p2pSync.currentHost')}:
+              </span>
+              <code className="text-xs font-mono text-yellow-400">{currentHostId || 'N/A'}</code>
+              {isHostLocal && (
+                <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-bold text-blue-400 border border-blue-500/30">
+                  LOCAL
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider">{t('p2pSync.status')}:</span>
+              <span
+                className={`flex items-center gap-1 text-xs font-medium ${
+                  isHostLocal || hostHealth?.status === 'healthy'
+                    ? 'text-green-400'
+                    : hostHealth?.status === 'stale'
+                      ? 'text-yellow-400'
+                      : 'text-red-400'
+                }`}
+              >
+                {isHostLocal || hostHealth?.status === 'healthy' ? (
+                  <CheckCircle2 size={12} />
+                ) : hostHealth?.status === 'stale' ? (
+                  <Clock size={12} />
+                ) : (
+                  <AlertCircle size={12} />
+                )}
+                {isHostLocal || hostHealth?.status === 'healthy'
+                  ? t('p2pSync.hostHealthy')
+                  : hostHealth?.status === 'stale'
+                    ? t('p2pSync.hostStale')
+                    : t('p2pSync.hostOffline')}
+              </span>
+              {!isHostLocal && hostHealth?.status === 'offline' && (
+                <span className="text-[10px] text-yellow-500 animate-pulse font-bold ml-1">
+                  ({t('p2pSync.failoverInProgress')})
+                </span>
+              )}
+            </div>
+            {hostHealth?.lastSeen && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider">
+                  {t('p2pSync.lastHeartbeat')}:
+                </span>
+                <span className="text-xs text-[#F5F5DC]/80 font-mono">
+                  {new Date(hostHealth.lastSeen).toLocaleTimeString()}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="flex w-full min-w-0 flex-col justify-between gap-2 rounded-md bg-[#121212] p-3 sm:flex-row sm:items-center">
           <div className="flex flex-col min-w-0 w-full">
             <div className="text-xs sm:text-sm flex flex-wrap items-center gap-1.5 min-w-0 w-full">
@@ -893,6 +994,13 @@ const P2PSyncManager: React.FC = () => {
                                 className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/30 hover:bg-purple-500/20 px-2 py-1 rounded cursor-pointer transition-colors"
                               >
                                 Actividad
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setShowHistoryForPeer(peer.id)}
+                                className="text-xs bg-orange-500/10 text-orange-400 border border-orange-500/30 hover:bg-orange-500/20 px-2 py-1 rounded cursor-pointer transition-colors"
+                              >
+                                {t('p2pSync.viewHistory')}
                               </button>
                               {peer.role !== 'admin' ? (
                                 <button
@@ -1226,6 +1334,95 @@ const P2PSyncManager: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Connection History Modal */}
+      {showHistoryForPeer && (
+        <div className={modalOverlayClass}>
+          <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-2xl sm:h-auto`}>
+            <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
+              <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
+                <History size={18} className="text-orange-400" />
+                Historial de Conexión
+              </h3>
+              <button onClick={() => setShowHistoryForPeer(null)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className={`${modalBodyClass} space-y-4`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#121212] p-3 rounded-md border border-[#F5F5DC]/10">
+                <div className="min-w-0">
+                  <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider block mb-0.5">Peer ID</span>
+                  <code className="text-yellow-400 text-xs font-mono break-all">{showHistoryForPeer}</code>
+                </div>
+                <div className="shrink-0 text-right">
+                  <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider block mb-0.5">Total</span>
+                  <span className="text-sm font-bold text-[#F5F5DC]">
+                    {t('p2pSync.eventsRegistered', { count: dbSync.getPeerHistory(showHistoryForPeer).length })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-lg border border-[#F5F5DC]/10 bg-black/20">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#121212] text-[#F5F5DC]/60 uppercase tracking-wider text-[10px]">
+                    <tr>
+                      <th className="px-4 py-2 font-bold">{t('sales.date')}</th>
+                      <th className="px-4 py-2 font-bold">{t('common.status')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#F5F5DC]/5">
+                    {[...dbSync.getPeerHistory(showHistoryForPeer)].reverse().map((event, idx) => {
+                      const iconMap: Record<string, any> = {
+                        connected: { color: 'text-green-400', icon: CheckCircle2 },
+                        verified: { color: 'text-blue-400', icon: ShieldAlert },
+                        offline: { color: 'text-red-400', icon: AlertCircle },
+                        disconnected: { color: 'text-red-400', icon: X },
+                        reconnected: { color: 'text-yellow-400', icon: RefreshCw },
+                      };
+                      const config = iconMap[event.eventType] || { color: 'text-gray-400', icon: Activity };
+                      const Icon = config.icon;
+
+                      return (
+                        <tr key={`${event.timestamp}-${idx}`} className="hover:bg-white/5 transition-colors">
+                          <td className="px-4 py-3 font-mono text-[#F5F5DC]/70 whitespace-nowrap">
+                            {new Date(event.timestamp).toLocaleString()}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center gap-1.5 font-medium ${config.color}`}>
+                              <Icon size={14} />
+                              {t(`p2pSync.eventTypes.${event.eventType}`)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {dbSync.getPeerHistory(showHistoryForPeer).length === 0 && (
+                      <tr>
+                        <td colSpan={2} className="px-4 py-8 text-center text-[#F5F5DC]/40 italic">
+                          No hay eventos registrados.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex items-start gap-2 p-3 rounded bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-300">
+                <Info size={14} className="shrink-0 mt-0.5" />
+                <p>{t('p2pSync.historyMemoryDisclaimer')}</p>
+              </div>
+            </div>
+            <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
+              <button
+                onClick={() => setShowHistoryForPeer(null)}
+                className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
+              >
+                {t('p2pSync.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Activity Log Modal */}
       {showLogsForPeer && (
