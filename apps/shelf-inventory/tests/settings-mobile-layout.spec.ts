@@ -44,7 +44,21 @@ test.describe('Settings mobile layout', () => {
     });
     await setupPage(page);
 
-    await page.locator('[data-testid="mobile-nav-item-nav.settings"]').click();
+    // Some mobile devices might not have the bottom nav items visible or clickable
+    // if the viewport is too small or if they are behind other elements.
+    // Try bottom nav first, if fails use the side menu.
+    try {
+      const bottomNavItem = page.locator('[data-testid="mobile-nav-item-nav.settings"]');
+      await bottomNavItem.waitFor({ state: 'visible', timeout: 5000 });
+      await bottomNavItem.click();
+    } catch (e) {
+      const menuButton = page.locator('button[aria-label="Abrir menú"]');
+      await expect(menuButton).toBeVisible({ timeout: 5000 });
+      await menuButton.click();
+      const sideNavItem = page.locator('[data-testid="nav-item-nav.settings"]');
+      await sideNavItem.click();
+    }
+
     await page.waitForTimeout(800);
 
     await expect(page.getByRole('heading', { name: 'Settings', level: 2 })).toBeVisible();

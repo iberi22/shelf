@@ -16,6 +16,8 @@ test('PDF Export should use iframe with srcdoc', async ({ page, context }) => {
   const [newPage] = await Promise.all([context.waitForEvent('page'), page.getByTestId('catalog-export-pdf').click()]);
 
   await newPage.waitForLoadState();
+  // Wait for iframe to be attached and visible
+  await newPage.waitForSelector('iframe', { state: 'attached', timeout: 10000 });
 
   // Verify that there is an iframe in the new page
   const iframeCount = await newPage.locator('iframe').count();

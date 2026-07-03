@@ -14,7 +14,7 @@ test.describe('Variant Catalog', () => {
 
     // Verify catalog page loaded — check for product table or list
     const productList = page.locator(
-      '[data-testid="product-list"], [data-testid="inventory-table"], [data-testid="empty-inventory-message"], table',
+      '[data-testid="catalog-grid"], [data-testid="product-list"], [data-testid="inventory-table"], [data-testid="empty-inventory-message"], table',
     );
     await expect(productList.first()).toBeVisible({ timeout: 10000 });
 

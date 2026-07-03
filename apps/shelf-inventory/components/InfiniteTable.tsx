@@ -47,7 +47,11 @@ export function InfiniteTable<T>({
   const endItem = Math.min(safePage * effectivePageSize, data.length);
 
   return (
-    <div className="glass-panel overflow-hidden flex flex-col" style={{ height, width: '100%' }}>
+    <div
+      data-testid="inventory-table"
+      className="glass-panel overflow-hidden flex flex-col"
+      style={{ height, width: '100%' }}
+    >
       <div className="overflow-x-auto overflow-y-auto no-scrollbar pb-[72px] md:pb-0">
         <table className="w-full text-left border-collapse">
           <thead className="bg-[#161616] border-b border-white/5 sticky top-0 z-10">{fixedHeaderContent()}</thead>
