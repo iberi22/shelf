@@ -66,16 +66,18 @@ test.describe('E2E: Product edit persists after page reload', () => {
     // --- ASSERT PERSISTENCE ---
     await expect(page.locator(`text=${updatedName}`).first()).toBeVisible({ timeout: 10000 });
 
-    await expect.poll(async () =>
-      page.evaluate((id) => {
-        const state = (window as any).__shelfAppStateForTest;
-        const product = state?.products?.find((p: any) => p.id === id);
-        return product ? { name: product.name, price: String(product.price) } : null;
-      }, productId)
-    ).toEqual({
-      name: updatedName,
-      price: updatedPrice
-    });
+    await expect
+      .poll(async () =>
+        page.evaluate((id) => {
+          const state = (window as any).__shelfAppStateForTest;
+          const product = state?.products?.find((p: any) => p.id === id);
+          return product ? { name: product.name, price: String(product.price) } : null;
+        }, productId),
+      )
+      .toEqual({
+        name: updatedName,
+        price: updatedPrice,
+      });
 
     // --- ASSERT NO DUPLICATES ---
     const finalProductCount = await page.evaluate(() => {

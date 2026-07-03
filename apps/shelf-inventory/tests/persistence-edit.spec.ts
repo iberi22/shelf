@@ -60,25 +60,30 @@ test.describe('Persistence: Product Edit', () => {
 
     // Check if we need to navigate back to inventory
     if (!(await page.getByTestId('add-product-button').isVisible())) {
-       await page.locator('[data-testid="nav-item-nav.inventory"]').last().click();
-       await dismissModals(page);
+      await page.locator('[data-testid="nav-item-nav.inventory"]').last().click();
+      await dismissModals(page);
     }
     await expect(page.getByTestId('add-product-button')).toBeVisible({ timeout: 10000 });
 
     // 4. Verify the edited values persist
     await expect(page.locator(`text=${updatedName}`).first()).toBeVisible({ timeout: 15000 });
 
-    await expect.poll(async () =>
-      page.evaluate((id) => {
-        const state = (window as any).__shelfAppStateForTest;
-        const product = state?.products?.find((item: any) => item.id === id);
-        return product ? { name: product.name, quantity: String(product.quantity), price: String(product.price) } : null;
-      }, productId),
-      { timeout: 15000 }
-    ).toEqual({
-      name: updatedName,
-      quantity: updatedQty,
-      price: updatedPrice
-    });
+    await expect
+      .poll(
+        async () =>
+          page.evaluate((id) => {
+            const state = (window as any).__shelfAppStateForTest;
+            const product = state?.products?.find((item: any) => item.id === id);
+            return product
+              ? { name: product.name, quantity: String(product.quantity), price: String(product.price) }
+              : null;
+          }, productId),
+        { timeout: 15000 },
+      )
+      .toEqual({
+        name: updatedName,
+        quantity: updatedQty,
+        price: updatedPrice,
+      });
   });
 });

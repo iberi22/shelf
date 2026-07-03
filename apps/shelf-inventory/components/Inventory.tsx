@@ -804,16 +804,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   const isEditing = product !== null;
   const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
 
-
   const getComboEntries = (colors: string[], sizes: string[]): string[] => {
-
     if (colors.length > 0 && sizes.length > 0) {
       return colors.flatMap((c) => sizes.map((s) => `${c}|${s}`));
     }
     return colors.map((c) => `color:${c}`).concat(sizes.map((s) => `size:${s}`));
-
   };
-
 
   // Update comboValues when selections change
   useEffect(() => {
@@ -827,16 +823,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
         return updated;
       });
     }
-  }, [
-    selectedColors.length,
-    selectedSizes.length,
-    isMultiMode,
-    selectedSizes,
-    cost,
-    price,
-    selectedColors,
-    isEditing,
-  ]);
+  }, [selectedColors.length, selectedSizes.length, isMultiMode, selectedSizes, cost, price, selectedColors, isEditing]);
 
   const productHistory = useMemo(() => {
     if (!product) return [];
@@ -2038,4 +2025,3 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
 };
 
 export default Inventory;
-
