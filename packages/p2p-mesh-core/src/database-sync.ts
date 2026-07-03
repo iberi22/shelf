@@ -20,6 +20,17 @@ import type {
 } from "./types";
 import { logger } from "./utils/logger";
 
+export type ConnectionEvent = {
+	peerId: string;
+	eventType:
+		| "connected"
+		| "verified"
+		| "offline"
+		| "disconnected"
+		| "reconnected";
+	timestamp: number;
+};
+
 type EntityRecord = {
 	id: string;
 	lastSeen?: string;
@@ -61,6 +72,7 @@ export class DatabaseSyncManager {
 	private pendingEdits: Y.Map<EntityEditProposal>;
 	private productChangeHistory: Y.Map<ProductChangeHistoryEntry>;
 	private ephemeralNodes: Map<string, Partial<LinkedNodeRecord>> = new Map();
+	private peerHistory: Map<string, ConnectionEvent[]> = new Map();
 	public localPeerId: string | null = null;
 	public activeBranchId: string | undefined = undefined;
 	private readyCallbacks: (() => void)[] = [];
@@ -555,6 +567,30 @@ export class DatabaseSyncManager {
 		}
 	}
 
+	private logConnectionEvent(
+		peerId: string,
+		eventType: ConnectionEvent["eventType"],
+	) {
+		const history = this.peerHistory.get(peerId) || [];
+		const event: ConnectionEvent = {
+			peerId,
+			eventType,
+			timestamp: Date.now(),
+		};
+
+		history.push(event);
+		if (history.length > 100) {
+			history.shift();
+		}
+		this.peerHistory.set(peerId, history);
+
+		logger.debug(`[SYNC] Logged connection event for ${peerId}: ${eventType}`);
+	}
+
+	public getPeerHistory(peerId: string): ConnectionEvent[] {
+		return this.peerHistory.get(peerId) || [];
+	}
+
 	public setInventoryConfig(config: InventoryConfig) {
 		if (!this.isLocalAuthority()) {
 
@@ -624,9 +660,26 @@ export class DatabaseSyncManager {
 		info: Partial<LinkedNodeRecord>,
 		authorityPeerId: string | null = this.localPeerId,
 	) {
+		const existing = this.linkedNodes.get(peerId);
+
+		if (info.status && info.status !== existing?.status) {
+			if (info.status === "verified") {
+				this.logConnectionEvent(peerId, "verified");
+			} else if (info.status === "offline") {
+				this.logConnectionEvent(peerId, "disconnected");
+				this.logConnectionEvent(peerId, "offline");
+			} else if (info.status === "connected") {
+				if (existing?.status === "offline") {
+					this.logConnectionEvent(peerId, "reconnected");
+				} else {
+					this.logConnectionEvent(peerId, "connected");
+				}
+			}
+		}
+
 		this.doc.transact(() => {
-			const existing = this.linkedNodes.get(peerId) || ({} as LinkedNodeRecord);
-			const { id: _existingId, ...existingWithoutId } = existing;
+			const existingRecord = existing || ({} as LinkedNodeRecord);
+			const { id: _existingId, ...existingWithoutId } = existingRecord;
 			const canEditPeerConfig = this.isPeerConfigMutationAllowed(
 				authorityPeerId,
 				peerId,
@@ -723,9 +776,25 @@ export class DatabaseSyncManager {
 	}
 
 	public updateEphemeralNode(peerId: string, info: Partial<LinkedNodeRecord>) {
-		const existing = this.ephemeralNodes.get(peerId) || {};
+		const existing = this.ephemeralNodes.get(peerId);
+
+		if (info.status && info.status !== existing?.status) {
+			if (info.status === "verified") {
+				this.logConnectionEvent(peerId, "verified");
+			} else if (info.status === "offline") {
+				this.logConnectionEvent(peerId, "disconnected");
+				this.logConnectionEvent(peerId, "offline");
+			} else if (info.status === "connected") {
+				if (existing?.status === "offline") {
+					this.logConnectionEvent(peerId, "reconnected");
+				} else {
+					this.logConnectionEvent(peerId, "connected");
+				}
+			}
+		}
+
 		this.ephemeralNodes.set(peerId, {
-			...existing,
+			...(existing || {}),
 			...info,
 			lastSeen: new Date().toISOString(),
 		});
