@@ -49,6 +49,8 @@ type LinkedNodeRecord = Omit<PeerInfo, "lastSeen"> & {
 	isMaster?: boolean;
 	lastSeen: string;
 	status?: "connected" | "verified" | "offline";
+	connectedAt?: string;
+	verifiedAt?: string;
 };
 
 /**
@@ -76,6 +78,11 @@ export class DatabaseSyncManager {
 	public localPeerId: string | null = null;
 	public activeBranchId: string | undefined = undefined;
 	private readyCallbacks: (() => void)[] = [];
+	private failoverHeartbeatTimer: ReturnType<typeof setInterval> | null = null;
+	private hostFailoverCallbacks: ((payload: {
+		successorId: string;
+		previousMasterId: string | null;
+	}) => void)[] = [];
 	/**
 	 * Guards against premature YJS_UPDATE broadcasts.
 	 * Set to true only after initWithState() completes.
@@ -493,6 +500,22 @@ export class DatabaseSyncManager {
 		for (const callback of this.readyCallbacks) {
 			callback();
 		}
+
+		// Start failover monitoring heartbeat (every 30s)
+		if (this.failoverHeartbeatTimer) {
+			clearInterval(this.failoverHeartbeatTimer);
+		}
+		this.failoverHeartbeatTimer = setInterval(() => {
+			if (this.localPeerId) {
+				// 1. Update our own lastSeen to signal we are active
+				this.updateLinkedNode(this.localPeerId, {
+					status: "verified", // If heartbeat is running, we are effectively active
+				});
+
+				// 2. Check if host has timed out and execute failover if needed
+				this.checkHostHealth();
+			}
+		}, 30000);
 	}
 
 	public onReady(callback: () => void) {
@@ -502,6 +525,20 @@ export class DatabaseSyncManager {
 		}
 		return () => {
 			this.readyCallbacks = this.readyCallbacks.filter((cb) => cb !== callback);
+		};
+	}
+
+	public onHostFailover(
+		callback: (payload: {
+			successorId: string;
+			previousMasterId: string | null;
+		}) => void,
+	) {
+		this.hostFailoverCallbacks.push(callback);
+		return () => {
+			this.hostFailoverCallbacks = this.hostFailoverCallbacks.filter(
+				(cb) => cb !== callback,
+			);
 		};
 	}
 
@@ -707,6 +744,15 @@ export class DatabaseSyncManager {
 						...rest
 					}) => rest)(info || {});
 
+			const nextConnectedAt = existing.connectedAt || new Date().toISOString();
+			let nextVerifiedAt = existing.verifiedAt;
+			if (
+				(info.status === "verified" || existing.status === "verified") &&
+				!nextVerifiedAt
+			) {
+				nextVerifiedAt = new Date().toISOString();
+			}
+
 			this.linkedNodes.set(peerId, {
 				...existingWithoutId,
 				...safeInfo,
@@ -715,6 +761,8 @@ export class DatabaseSyncManager {
 				role: nextRole,
 				isMaster: nextIsMaster,
 				lastSeen: new Date().toISOString(),
+				connectedAt: nextConnectedAt,
+				verifiedAt: nextVerifiedAt,
 			});
 		}, "local");
 	}
@@ -836,6 +884,120 @@ export class DatabaseSyncManager {
 		}, "local");
 	}
 
+
+	private selectSuccessor(): string | null {
+		const nodes = this.getLinkedNodes();
+		const currentMasterId = this.getMasterPeerId();
+
+		// Candidates must be online and not the current master
+		const candidates = nodes.filter(
+			(node) => node.id !== currentMasterId && node.status !== "offline",
+		);
+
+		if (candidates.length === 0) return null;
+
+		// Sort deterministically:
+		// 1. Status: Prefer 'verified' over 'connected'
+		// 2. verifiedAt: Earliest first (longest verified uptime)
+		// 3. connectedAt: Earliest first (longest connection)
+		// 4. id: Lexicographical fallback
+		candidates.sort((a, b) => {
+			if (a.status === "verified" && b.status !== "verified") return -1;
+			if (a.status !== "verified" && b.status === "verified") return 1;
+
+			if (a.verifiedAt && b.verifiedAt) {
+				const timeA = new Date(a.verifiedAt).getTime();
+				const timeB = new Date(b.verifiedAt).getTime();
+				if (timeA !== timeB) return timeA - timeB;
+			} else if (a.verifiedAt) {
+				return -1;
+			} else if (b.verifiedAt) {
+				return 1;
+			}
+
+			if (a.connectedAt && b.connectedAt) {
+				const timeA = new Date(a.connectedAt).getTime();
+				const timeB = new Date(b.connectedAt).getTime();
+				if (timeA !== timeB) return timeA - timeB;
+			}
+
+			return a.id.localeCompare(b.id);
+		});
+
+		return candidates[0].id;
+	}
+
+	private promoteSuccessor(successorId: string, previousMasterId: string | null) {
+		this.doc.transact(() => {
+			// Update global metadata
+			this.metadata.set("authorityPeerId", successorId);
+			this.metadata.set("masterPeerId", successorId);
+
+			// Update the successor's role and master status
+			const existingSuccessor =
+				this.linkedNodes.get(successorId) || ({} as LinkedNodeRecord);
+			this.linkedNodes.set(successorId, {
+				...existingSuccessor,
+				id: successorId,
+				isMaster: true,
+				role: "admin",
+				permissions: this.getDefaultPermissions("admin"),
+				lastSeen: new Date().toISOString(),
+			});
+
+			// Demote the previous master if present
+			if (previousMasterId && previousMasterId !== successorId) {
+				const existingOldMaster = this.linkedNodes.get(previousMasterId);
+				if (existingOldMaster) {
+					this.linkedNodes.set(previousMasterId, {
+						...existingOldMaster,
+						isMaster: false,
+						lastSeen: existingOldMaster.lastSeen,
+					});
+				}
+			}
+		}, "local");
+
+		logger.log(
+			`[FAILOVER] Host failover completed. New host: ${successorId} (Previous: ${previousMasterId})`,
+		);
+
+		// Emit event to local listeners
+		for (const cb of this.hostFailoverCallbacks) {
+			cb({ successorId, previousMasterId });
+		}
+	}
+
+	private checkHostHealth() {
+		const currentMasterId = this.getMasterPeerId();
+		if (!currentMasterId || currentMasterId === this.localPeerId) return;
+
+		const masterNode = this.linkedNodes.get(currentMasterId);
+		const lastSeenStr = masterNode?.lastSeen;
+
+		if (lastSeenStr) {
+			const lastSeen = new Date(lastSeenStr).getTime();
+			const now = Date.now();
+
+			if (now - lastSeen > 60000) {
+				logger.warn(
+					`[FAILOVER] Master ${currentMasterId} offline for ${now - lastSeen}ms. Initiating failover.`,
+				);
+
+				const successorId = this.selectSuccessor();
+				if (successorId) {
+					// We only trigger the promotion transaction if WE are the successor.
+					// This prevents transaction collision, though Yjs would handle it.
+					// Deterministic selection ensures only one peer (the successor) will act.
+					if (successorId === this.localPeerId) {
+						this.promoteSuccessor(successorId, currentMasterId);
+					}
+				} else {
+					logger.error("[FAILOVER] No suitable successor found for failover.");
+				}
+			}
+		}
+	}
 
 	public removeLinkedNode(
 		peerId: string,
