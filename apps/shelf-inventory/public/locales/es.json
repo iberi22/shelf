@@ -175,12 +175,16 @@
   },
   "reports": {
     "title": "Reportes y Análisis",
+    "typeSales": "Reporte de Ventas",
+    "typeConsolidatedMultiBranch": "Consolidado Multi-Sucursal",
     "description": "Analiza el rendimiento de tu negocio con reportes dinámicos y obtén respuestas de tu asistente de IA.",
     "aiAssistantTitle": "Asistente de Negocios IA",
     "proFeatureDescription": "Esta es una función Pro. Actualiza tu plan para obtener análisis inteligentes sobre tus datos.",
     "aiWelcome": "¡Hola! Soy StockBot. Pregúntame cualquier cosa sobre tu inventario o datos de ventas, como '¿Cuál fue mi producto más rentable el mes pasado?' o 'Muéstrame mis ingresos totales'.",
     "aiDisabledWelcome": "Este es tu Asistente de IA. Actualiza a un plan Pro para activarlo y obtener análisis inteligentes.",
     "aiThinking": "Pensando...",
+    "aiLoadingModel": "Cargando modelo de IA local ({{progress}}%)...",
+    "aiWebGpuNotSupported": "WebGPU no es compatible con tu navegador. La inferencia local de IA está desactivada.",
     "aiPlaceholder": "Haz una pregunta sobre tus datos...",
     "aiDisabledPlaceholder": "Actualiza a Pro para usar el Asistente de IA",
     "aiError": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
@@ -196,7 +200,10 @@
       "revenue": "Ingresos",
       "profit": "Ganancia",
       "sales": "Ventas",
-      "itemsSold": "Artículos Vendidos"
+      "itemsSold": "Artículos Vendidos",
+      "totalStock": "Stock Total",
+      "skus": "SKUs Únicos",
+      "total": "TOTAL"
     },
     "salesOverTime": "Ventas a lo largo del Tiempo",
     "topProducts": "Productos Top",
@@ -293,6 +300,25 @@
       "button": "Enviar Sugerencia",
       "success": "¡Gracias! Tu sugerencia ha sido enviada."
     },
+    "security": {
+      "title": "Seguridad",
+      "enable": "Activar",
+      "disable": "Desactivar",
+      "lockedNote": "La aplicación se bloqueará automáticamente al recargar."
+    },
+    "ai": {
+      "title": "Configuración de IA",
+      "description": "Configura el motor y las preferencias de tu asistente de IA.",
+      "engine": "Motor de IA",
+      "engineAuto": "Automático (Mejor disponible)",
+      "engineLocal": "Local (WebLLM - Offline)",
+      "engineGemini": "Gemini API (Nube)",
+      "engineNano": "Gemini Nano (Integrado)",
+      "localModel": "Modelo Local",
+      "modelSmall": "Pequeño (Phi-3 Mini)",
+      "modelMedium": "Mediano (Qwen 2.5 1.5B)",
+      "proxyUrl": "URL de Proxy Local (Opcional)"
+    },
     "branches": {
       "title": "Sucursales / Bodegas",
       "description": "Gestiona las ubicaciones físicas de tu inventario.",
@@ -301,17 +327,9 @@
       "edit": "Editar Sucursal",
       "nameLabel": "Nombre de la Sucursal/Bodega",
       "namePlaceholder": "Ej. Bodega Central o Sucursal Norte",
-      "addressLabel": "Dirección",
-      "addressPlaceholder": "Introduce la dirección de la sucursal",
-      "typeLabel": "Tipo",
-      "types": {
-        "sucursal": "Sucursal",
-        "bodega": "Bodega"
-      },
       "table": {
         "name": "Nombre",
         "id": "ID",
-        "type": "Tipo",
         "createdAt": "Fecha Creación",
         "actions": "Acciones"
       },
@@ -351,6 +369,10 @@
     "recoverAccount": "Recuperar cuenta",
     "or": "o",
     "loginGuest": "Entrar como Invitado (Modo Offline)",
+    "useLocalMode": "Usar modo local (sin cuenta)",
+    "continueAsGuest": "Continuar como Invitado",
+    "enter": "Entrar",
+    "enterToApp": "Entrar a la App",
     "error": {
       "generic": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
       "invalid-credential": "Correo o contraseña no válidos. Inténtalo de nuevo.",
@@ -527,6 +549,24 @@
     "linkedDevices": "Dispositivos Enlazados",
     "permissionsLink": "Permisos",
     "promoteLink": "Promover",
+    "viewHistory": "Ver historial",
+    "eventsRegistered": "{{count}} eventos registrados",
+    "historyMemoryDisclaimer": "El historial está en memoria y se pierde al recargar la página",
+    "currentHost": "Host actual",
+    "hostStatus": "Estado del Host",
+    "hostHealthy": "Saludable",
+    "hostStale": "Inestable",
+    "hostOffline": "Fuera de línea",
+    "failoverInProgress": "Failover automático en progreso...",
+    "forceFailover": "Forzar failover manual",
+    "lastHeartbeat": "Última detección de heartbeat",
+    "eventTypes": {
+      "connected": "Conectado",
+      "verified": "Verificado",
+      "offline": "Desconectado",
+      "reconnected": "Reconectado",
+      "disconnected": "Cerrado"
+    },
     "noDevices": "No hay dispositivos seguros enlazados.",
     "localPeerIdLabel": "Peer ID Local",
     "yourCurrentRole": "Tu Rol Actual:",

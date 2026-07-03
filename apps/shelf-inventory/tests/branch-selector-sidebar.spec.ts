@@ -46,8 +46,13 @@ test.describe('Branch Selector in Sidebar', () => {
 
     // 1. Add a branch (need to open settings first)
     // On mobile we might need to open the drawer first
-    await page.click('button[aria-label="Abrir menú"]');
-    await page.click('[data-testid="nav-item-nav.settings"]');
+    const menuButton = page.locator('button[aria-label="Abrir menú"]');
+    await expect(menuButton).toBeVisible({ timeout: 10000 });
+    await menuButton.click();
+
+    const settingsNavItem = page.locator('[data-testid="nav-item-nav.settings"]');
+    await expect(settingsNavItem).toBeVisible({ timeout: 10000 });
+    await settingsNavItem.click();
 
     // In Settings, add branch
     await page.click('[data-testid="add-branch-button"]');

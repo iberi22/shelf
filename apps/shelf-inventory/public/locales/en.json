@@ -175,12 +175,16 @@
   },
   "reports": {
     "title": "Reports & Insights",
+    "typeSales": "Sales Report",
+    "typeConsolidatedMultiBranch": "Consolidated Multi-Branch",
     "description": "Analyze your business performance with dynamic reports and get answers from your AI assistant.",
     "aiAssistantTitle": "AI Business Assistant",
     "proFeatureDescription": "This is a Pro feature. Upgrade your plan to get intelligent insights about your data.",
     "aiWelcome": "Hello! I'm StockBot. Ask me anything about your inventory or sales data, like 'What was my most profitable product last month?' or 'Show me my total revenue'.",
     "aiDisabledWelcome": "This is your AI Assistant. Upgrade to a Pro plan to activate it and get intelligent insights.",
     "aiThinking": "Thinking...",
+    "aiLoadingModel": "Loading Local AI Model ({{progress}}%)...",
+    "aiWebGpuNotSupported": "WebGPU is not supported in your browser. Local AI inference is disabled.",
     "aiPlaceholder": "Ask a question about your data...",
     "aiDisabledPlaceholder": "Upgrade to Pro to use the AI Assistant",
     "aiError": "An unexpected error occurred. Please try again.",
@@ -196,7 +200,10 @@
       "revenue": "Revenue",
       "profit": "Profit",
       "sales": "Sales",
-      "itemsSold": "Items Sold"
+      "itemsSold": "Items Sold",
+      "totalStock": "Total Stock",
+      "skus": "Unique SKUs",
+      "total": "TOTAL"
     },
     "salesOverTime": "Sales Over Time",
     "topProducts": "Top Products",
@@ -295,6 +302,25 @@
       "button": "Send Feedback",
       "success": "Thank you! Your feedback has been sent."
     },
+    "security": {
+      "title": "Security",
+      "enable": "Enable",
+      "disable": "Disable",
+      "lockedNote": "The application will be locked automatically upon reload."
+    },
+    "ai": {
+      "title": "AI Configuration",
+      "description": "Configure your AI assistant engine and preferences.",
+      "engine": "AI Engine",
+      "engineAuto": "Auto (Best Available)",
+      "engineLocal": "Local (WebLLM - Offline)",
+      "engineGemini": "Gemini API (Cloud)",
+      "engineNano": "Gemini Nano (Built-in)",
+      "localModel": "Local Model",
+      "modelSmall": "Small (Phi-3 Mini)",
+      "modelMedium": "Medium (Qwen 2.5 1.5B)",
+      "proxyUrl": "Local Proxy URL (Optional)"
+    },
     "branches": {
       "title": "Branches / Warehouses",
       "description": "Manage the physical locations of your inventory.",
@@ -303,17 +329,9 @@
       "edit": "Edit Branch",
       "nameLabel": "Branch/Warehouse Name",
       "namePlaceholder": "e.g. Central Warehouse or North Branch",
-      "addressLabel": "Address",
-      "addressPlaceholder": "Enter branch address",
-      "typeLabel": "Type",
-      "types": {
-        "sucursal": "Branch",
-        "bodega": "Warehouse"
-      },
       "table": {
         "name": "Name",
         "id": "ID",
-        "type": "Type",
         "createdAt": "Creation Date",
         "actions": "Actions"
       },
@@ -341,6 +359,10 @@
     "passwordMismatch": "Passwords do not match.",
     "or": "or",
     "loginGuest": "Enter as Guest (Offline Mode)",
+    "useLocalMode": "Use local mode (no account)",
+    "continueAsGuest": "Continue as Guest",
+    "enter": "Enter",
+    "enterToApp": "Enter App",
     "error": {
       "generic": "An unexpected error occurred. Please try again.",
       "invalid-credential": "Invalid email or password. Please try again.",

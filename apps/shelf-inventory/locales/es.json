@@ -300,6 +300,12 @@
       "button": "Enviar Sugerencia",
       "success": "¡Gracias! Tu sugerencia ha sido enviada."
     },
+    "security": {
+      "title": "Seguridad",
+      "enable": "Activar",
+      "disable": "Desactivar",
+      "lockedNote": "La aplicación se bloqueará automáticamente al recargar."
+    },
     "ai": {
       "title": "Configuración de IA",
       "description": "Configura el motor y las preferencias de tu asistente de IA.",

@@ -696,6 +696,7 @@ const Catalog: React.FC = () => {
           </div>
         ) : (
           <div
+            data-testid="catalog-grid"
             className="grid gap-4"
             style={{
               gridTemplateColumns: `repeat(${Math.max(1, Math.min(columns, 4))}, minmax(0, 1fr))`,

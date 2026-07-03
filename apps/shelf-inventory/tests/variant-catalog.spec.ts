@@ -13,7 +13,9 @@ test.describe('Variant Catalog', () => {
     await page.waitForTimeout(1500);
 
     // Verify catalog page loaded — check for product table or list
-    const productList = page.locator('[data-testid="product-list"], [data-testid="inventory-table"], table');
+    const productList = page.locator(
+      '[data-testid="catalog-grid"], [data-testid="product-list"], [data-testid="inventory-table"], table',
+    );
     await expect(productList.first()).toBeVisible({ timeout: 10000 });
 
     // Check for variant indicators in product rows

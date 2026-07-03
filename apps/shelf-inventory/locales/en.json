@@ -302,6 +302,12 @@
       "button": "Send Feedback",
       "success": "Thank you! Your feedback has been sent."
     },
+    "security": {
+      "title": "Security",
+      "enable": "Enable",
+      "disable": "Disable",
+      "lockedNote": "The application will be locked automatically upon reload."
+    },
     "ai": {
       "title": "AI Configuration",
       "description": "Configure your AI assistant engine and preferences.",
