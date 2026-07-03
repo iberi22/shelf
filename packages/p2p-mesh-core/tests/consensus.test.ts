@@ -12,64 +12,58 @@ describe('P2P Consensus', () => {
 
   it('creates a candidacy with correct initial values', () => {
     const peerId = 'peer-1';
-    const candidacy = createCandidacy(peerId);
+    const proposal = createCandidacy(peerId);
 
-    expect(candidacy.candidatePeerId).toBe(peerId);
-    expect(candidacy.status).toBe('pending');
-    expect(candidacy.votes instanceof Map).toBe(true);
-    expect(candidacy.votes.size).toBe(0);
-    expect(candidacy.expiresAt).toBe(candidacy.createdAt + 24 * 60 * 60 * 1000);
+    expect(proposal.targetPeerId).toBe(peerId);
+    expect(proposal.status).toBe('active');
+    expect(typeof proposal.votes).toBe('object');
+    expect(Object.keys(proposal.votes).length).toBe(0);
+    expect(proposal.expiresAt).toBe(proposal.createdAt + 5 * 60 * 1000);
   });
 
   it('records votes correctly', () => {
-    const candidacy = createCandidacy('peer-1');
-    vote(candidacy, 'voter-1', true);
-    vote(candidacy, 'voter-2', false);
+    const proposal = createCandidacy('peer-1');
+    vote(proposal, 'voter-1', true);
+    vote(proposal, 'voter-2', false, 'Not trusted');
 
-    expect(candidacy.votes.get('voter-1')).toBe(true);
-    expect(candidacy.votes.get('voter-2')).toBe(false);
-    expect(candidacy.votes.size).toBe(2);
+    expect(proposal.votes['voter-1'].value).toBe('approve');
+    expect(proposal.votes['voter-2'].value).toBe('reject');
+    expect(proposal.votes['voter-2'].reason).toBe('Not trusted');
+    expect(Object.keys(proposal.votes).length).toBe(2);
   });
 
-  it('evaluates candidacy as pending while not expired and no majority logic applied yet', () => {
-    const candidacy = createCandidacy('peer-1');
-    vote(candidacy, 'voter-1', true);
+  it('evaluates candidacy as pending/active while not expired and no majority', () => {
+    const proposal = createCandidacy('peer-1');
+    vote(proposal, 'voter-1', true);
 
-    expect(evaluateCandidacy(candidacy)).toBe('pending');
+    // totalActivePeers = 3, majority = ceil((3+1)/2) = 2. approveCount = 1.
+    expect(evaluateCandidacy(proposal, 3)).toBe('active');
   });
 
-  it('evaluates candidacy as approved when expired with majority positive votes', () => {
-    const candidacy = createCandidacy('peer-1');
-    vote(candidacy, 'voter-1', true);
-    vote(candidacy, 'voter-2', true);
-    vote(candidacy, 'voter-3', false);
+  it('evaluates candidacy as approved when majority positive votes reached', () => {
+    const proposal = createCandidacy('peer-1');
+    vote(proposal, 'voter-1', true);
+    vote(proposal, 'voter-2', true);
 
-    // Fast-forward 25 hours
-    vi.advanceTimersByTime(25 * 60 * 60 * 1000);
-
-    expect(evaluateCandidacy(candidacy)).toBe('approved');
+    // totalActivePeers = 3, majority = 2. approveCount = 2.
+    expect(evaluateCandidacy(proposal, 3)).toBe('approved');
   });
 
-  it('evaluates candidacy as rejected when expired with majority negative votes', () => {
-    const candidacy = createCandidacy('peer-1');
-    vote(candidacy, 'voter-1', true);
-    vote(candidacy, 'voter-2', false);
-    vote(candidacy, 'voter-3', false);
+  it('evaluates candidacy as rejected when any negative vote is cast', () => {
+    const proposal = createCandidacy('peer-1');
+    vote(proposal, 'voter-1', true);
+    vote(proposal, 'voter-2', false);
 
-    // Fast-forward 25 hours
-    vi.advanceTimersByTime(25 * 60 * 60 * 1000);
-
-    expect(evaluateCandidacy(candidacy)).toBe('rejected');
+    expect(evaluateCandidacy(proposal, 3)).toBe('rejected');
   });
 
-  it('evaluates candidacy as rejected when expired with tied votes', () => {
-    const candidacy = createCandidacy('peer-1');
-    vote(candidacy, 'voter-1', true);
-    vote(candidacy, 'voter-2', false);
+  it('evaluates candidacy as expired when time runs out without majority or rejection', () => {
+    const proposal = createCandidacy('peer-1');
+    vote(proposal, 'voter-1', true);
 
-    // Fast-forward 25 hours
-    vi.advanceTimersByTime(25 * 60 * 60 * 1000);
+    // Fast-forward 6 minutes
+    vi.advanceTimersByTime(6 * 60 * 1000);
 
-    expect(evaluateCandidacy(candidacy)).toBe('rejected');
+    expect(evaluateCandidacy(proposal, 3)).toBe('expired');
   });
 });

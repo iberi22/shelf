@@ -1,28 +1,23 @@
 
-import type { GovernanceProposal, GovernanceVote, GovernanceVoteValue } from 'edge-mesh';
+import type { GovernanceProposal, GovernanceVote, GovernanceVoteValue, GovernanceStatus } from 'edge-mesh';
 
-export type { GovernanceProposal, GovernanceVote, GovernanceVoteValue };
-
-export interface AdminCandidacy {
-	candidatePeerId: string;
-	createdAt: number;
-	expiresAt: number;
-	votes: Map<string, boolean>;
-	status: "pending" | "approved" | "rejected";
-}
+export type { GovernanceProposal, GovernanceVote, GovernanceVoteValue, GovernanceStatus };
 
 /**
- * Creates a new admin candidacy for a peer.
- * By default, the candidacy expires in 24 hours.
+ * Creates a new admin candidacy for a peer as a GovernanceProposal.
+ * By default, the candidacy expires in 5 minutes.
  */
-export function createCandidacy(peerId: string): AdminCandidacy {
+export function createCandidacy(peerId: string): GovernanceProposal {
 	const now = Date.now();
 	return {
-		candidatePeerId: peerId,
+		id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `prop-${now}-${Math.random().toString(36).slice(2, 9)}`,
+		targetPeerId: peerId,
+		proposedRole: 'admin',
+		createdBy: peerId,
 		createdAt: now,
-		expiresAt: now + 24 * 60 * 60 * 1000,
-		votes: new Map<string, boolean>(),
-		status: "pending",
+		expiresAt: now + 5 * 60 * 1000,
+		status: 'active',
+		votes: {},
 	};
 }
 
@@ -30,43 +25,43 @@ export function createCandidacy(peerId: string): AdminCandidacy {
  * Casts a vote for an admin candidacy.
  */
 export function vote(
-	candidacy: AdminCandidacy,
+	proposal: GovernanceProposal,
 	voterPeerId: string,
 	approve: boolean,
+	reason?: string
 ): void {
-	candidacy.votes.set(voterPeerId, approve);
+	proposal.votes[voterPeerId] = {
+		peerId: voterPeerId,
+		value: approve ? 'approve' : 'reject',
+		timestamp: Date.now(),
+		reason
+	};
 }
 
 /**
  * Evaluates the status of an admin candidacy based on cast votes and expiration.
- * If expired, it's approved if positive votes outnumber negative votes.
- * Otherwise, it remains pending unless a clear majority is reached (not implemented here
- * as total peer count is not available in the candidacy object alone).
  */
 export function evaluateCandidacy(
-	candidacy: AdminCandidacy,
-): "approved" | "rejected" | "pending" {
-	let positive = 0;
-	let negative = 0;
+	proposal: GovernanceProposal,
+	totalActivePeers: number
+): GovernanceStatus {
+	if (proposal.status !== 'active') return proposal.status;
 
-	for (const v of candidacy.votes.values()) {
-		if (v) {
-			positive++;
-		} else {
-			negative++;
-		}
-	}
+	const votes = Object.values(proposal.votes);
+	const approveCount = votes.filter((v) => v.value === 'approve').length;
+	const rejectCount = votes.filter((v) => v.value === 'reject').length;
+
+	// According to current policy: any rejection rejects the proposal
+	if (rejectCount > 0) return 'rejected';
+
+	// Majority logic: total active peers (including the candidate if they could vote, but usually they don't vote for themselves in this simplified UI)
+	// In Settings.tsx: const majority = Math.ceil((totalActivePeers + 1) / 2);
+	const majority = Math.ceil((totalActivePeers + 1) / 2);
+
+	if (approveCount >= majority) return 'approved';
 
 	const now = Date.now();
-	const isExpired = now >= candidacy.expiresAt;
+	if (now >= proposal.expiresAt) return 'expired';
 
-	if (isExpired) {
-		return positive > negative ? "approved" : "rejected";
-	}
-
-	// For non-expired candidacies, we could approve if positive > totalPeers / 2
-	// but since we don't have totalPeers here, we'll keep it pending.
-	return "pending";
+	return 'active';
 }
-
-
