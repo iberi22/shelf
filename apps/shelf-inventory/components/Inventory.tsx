@@ -389,7 +389,7 @@ const Inventory: React.FC = () => {
         </div>
       </div>
 
-      <div className="hidden sm:block">
+      <div className="hidden sm:block" data-testid="inventory-table">
         <InfiniteTable
           data={filteredProducts}
           height="calc(100vh - 200px)"
@@ -589,7 +589,7 @@ const Inventory: React.FC = () => {
         />
       </div>
 
-      <div className="sm:hidden flex flex-col gap-2.5">
+      <div className="sm:hidden flex flex-col gap-2.5" data-testid="product-list">
         {filteredProducts.length > 0 ? (
           filteredProducts.map((product) => (
             <div
