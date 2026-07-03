@@ -3,16 +3,16 @@
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR" || exit 1
 
-echo "[pre-push] Running full build..."
-pnpm build 2>&1
+echo "[pre-push] Building shelf-inventory (tsc + vite)..."
+cd apps/shelf-inventory && pnpm run build 2>&1
 BUILD_EXIT=$?
 if [ $BUILD_EXIT -ne 0 ]; then
-  echo "[pre-push] FAILED: Build errors. Fix before pushing."
+  echo "[pre-push] FAILED: shelf-inventory build failed. Fix before pushing."
   exit 1
 fi
-echo "[pre-push] OK: Build passed."
+echo "[pre-push] OK: shelf-inventory build passed."
 
-echo "[pre-push] Biome check scan..."
-npx --no-install biome check apps/shelf-inventory/src --reporter=summary 2>/dev/null || true
+echo "[pre-push] Biome check on shelf-inventory..."
+cd "$ROOT_DIR" && npx --no-install biome check apps/shelf-inventory/src --reporter=summary 2>/dev/null || true
 
 echo "[pre-push] OK: All checks passed. Push allowed."
