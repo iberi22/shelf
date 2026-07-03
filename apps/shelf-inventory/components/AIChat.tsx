@@ -1,11 +1,12 @@
-import { CreateMLCEngine } from '@mlc-ai/web-llm';
 import type { ChatMessage } from 'p2p-mesh-core';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useSubscription } from '../context/SubscriptionContext';
+import useLocalStorage from '../hooks/useLocalStorage';
+import { useWebLLM } from '../hooks/useWebLLM';
 
 const AIChat: React.FC = () => {
   const { t } = useI18n();
@@ -15,18 +16,19 @@ const AIChat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(false);
-  const [initProgress, setInitProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const engineRef = useRef<any>(null);
+
+  const [aiEngine, setAiEngine] = useLocalStorage<'auto' | 'local' | 'gemini' | 'nano'>('aiEngine', 'auto');
+  const [localAiModel] = useLocalStorage('localAiModel', 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC');
+
+  const {
+    isInitializing,
+    initProgress,
+    isSupported: isWebGpuSupported,
+    generateResponse,
+  } = useWebLLM({ modelId: localAiModel });
 
   const isAIDisabled = !isPro;
-
-  // Optional: Init WebLLM in the background if possible
-  useEffect(() => {
-    if (isAIDisabled || engineRef.current) return;
-    // We don't auto-init to save 1GB download unless needed or requested
-  }, [isAIDisabled]);
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading || isAIDisabled) return;
@@ -48,29 +50,70 @@ const AIChat: React.FC = () => {
     const contextString = JSON.stringify(contextData);
 
     try {
-      // Priority 1: Gemini Nano (window.ai) - Built-in Chrome feature
-      try {
-        if (window.ai && (await window.ai.canCreateTextSession()) === 'readily') {
-          const session = await window.ai.createTextSession();
-          const prompt = `You are an AI assistant for a business inventory app called Shelf. 
-          Below is the current inventory and sales data for context.
-          Data: ${contextString}
-          
-          User Question: ${input}`;
-
-          const result = await session.prompt(prompt);
-          const modelMessage: ChatMessage = { role: 'model', text: result };
-          setMessages((prev) => [...prev, modelMessage]);
-          setIsLoading(false);
-          session.destroy();
-          return;
+      // 1. Local AI (WebLLM) - Explicitly selected or Auto-fallback
+      if (aiEngine === 'local' || (aiEngine === 'auto' && !savedGeminiKey)) {
+        if (isWebGpuSupported === false) {
+          throw new Error(t('reports.aiWebGpuNotSupported'));
         }
-      } catch (geminiNanoErr) {
-        console.log('Gemini Nano not available:', geminiNanoErr);
+
+        try {
+          // Prepare a temporary assistant message for streaming
+          setMessages((prev) => [...prev, { role: 'model', text: '' }]);
+
+          await generateResponse(
+            [
+              { role: 'system', content: 'You are an inventory analyst for Shelf app.' },
+              { role: 'user', content: `Data: ${contextString}. User: ${input}` },
+            ],
+            (updatedText) => {
+              setMessages((prev) => {
+                const newMessages = [...prev];
+                if (newMessages.length > 0) {
+                  newMessages[newMessages.length - 1] = { role: 'model', text: updatedText };
+                }
+                return newMessages;
+              });
+            },
+          );
+
+          setIsLoading(false);
+          return;
+        } catch (webLlmErr) {
+          console.log('WebLLM failed:', webLlmErr);
+          if (aiEngine === 'local') throw webLlmErr;
+          // If auto, continue to other providers
+        }
       }
 
-      // Priority 2: Direct Gemini API (if key is provided)
-      if (savedGeminiKey) {
+      // 2. Gemini Nano (window.ai) - Explicitly selected or Auto-fallback
+      if (aiEngine === 'nano' || aiEngine === 'auto') {
+        try {
+          if (window.ai && (await window.ai.canCreateTextSession()) === 'readily') {
+            const session = await window.ai.createTextSession();
+            const prompt = `You are an AI assistant for a business inventory app called Shelf.
+            Below is the current inventory and sales data for context.
+            Data: ${contextString}
+
+            User Question: ${input}`;
+
+            const result = await session.prompt(prompt);
+            const modelMessage: ChatMessage = { role: 'model', text: result };
+            setMessages((prev) => [...prev, modelMessage]);
+            setIsLoading(false);
+            session.destroy();
+            return;
+          }
+        } catch (geminiNanoErr) {
+          console.log('Gemini Nano not available:', geminiNanoErr);
+          if (aiEngine === 'nano') throw geminiNanoErr;
+        }
+      }
+
+      // 3. Direct Gemini API
+      if (aiEngine === 'gemini' || (aiEngine === 'auto' && savedGeminiKey)) {
+        if (!savedGeminiKey) {
+          throw new Error('Gemini API key is required but not configured.');
+        }
         try {
           const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${savedGeminiKey}`,
@@ -101,35 +144,7 @@ const AIChat: React.FC = () => {
           }
         } catch (err) {
           console.error('Gemini API call failed:', err);
-        }
-      }
-
-      // Priority 3: WebLLM (100% Offline, heavy)
-      // Only try if no keys and Nano failed, or if specifically chosen
-      if (!savedGeminiKey && !savedOpenCodeGoKey) {
-        try {
-          if (!engineRef.current) {
-            setIsInitializing(true);
-            const engine = await CreateMLCEngine('Llama-3-8B-Instruct-q4f16_1-MLC', {
-              initProgressCallback: (report) => setInitProgress(Math.round(report.progress * 100)),
-            });
-            engineRef.current = engine;
-            setIsInitializing(false);
-          }
-
-          const reply = await engineRef.current.chat.completions.create({
-            messages: [
-              { role: 'system', content: 'You are an inventory analyst.' },
-              { role: 'user', content: `Data: ${contextString}. User: ${input}` },
-            ],
-          });
-          const text = reply.choices[0].message.content || '';
-          setMessages((prev) => [...prev, { role: 'model', text }]);
-          setIsLoading(false);
-          return;
-        } catch (webLlmErr) {
-          console.log('WebLLM failed or not supported:', webLlmErr);
-          setIsInitializing(false);
+          if (aiEngine === 'gemini') throw err;
         }
       }
 
@@ -193,15 +208,30 @@ const AIChat: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[50vh] md:h-[60vh] p-3 md:p-4">
-      <p className="text-[10px] text-[#F5F5DC]/40 text-center mb-2 px-4 italic">
-        {t('reports.aiPrivacyNote') ||
-          'Note: A limited subset of your inventory and sales data is used to provide context.'}
-      </p>
+      <div className="flex justify-between items-center mb-2 px-1">
+        <p className="text-[10px] text-[#F5F5DC]/40 italic">
+          {t('reports.aiPrivacyNote') ||
+            'Note: A limited subset of your inventory and sales data is used to provide context.'}
+        </p>
+        <select
+          value={aiEngine}
+          onChange={(e) => setAiEngine(e.target.value as any)}
+          className="text-[10px] bg-transparent border border-[#F5F5DC]/20 rounded px-1 py-0.5 text-[#F5F5DC]/60 focus:outline-none"
+        >
+          <option value="auto">Auto</option>
+          <option value="local">Local</option>
+          <option value="gemini">Gemini</option>
+          <option value="nano">Nano</option>
+        </select>
+      </div>
+
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         {isInitializing && (
           <div className="flex flex-col items-center justify-center h-full space-y-2">
             <div className="w-8 h-8 border-2 border-[#F5F5DC] border-t-transparent rounded-full animate-spin" />
-            <p className="text-xs text-[#F5F5DC]">Loading Local AI Model ({initProgress}%)...</p>
+            <p className="text-xs text-[#F5F5DC]">
+              {t('reports.aiLoadingModel').replace('{{progress}}', initProgress.toString())}
+            </p>
           </div>
         )}
         {messages.length === 0 && !isInitializing && (

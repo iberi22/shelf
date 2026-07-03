@@ -49,6 +49,8 @@ const Settings: React.FC = () => {
   const [showOpenCodeGoKey, setShowOpenCodeGoKey] = useState(false);
   const [openCodeGoModel, setOpenCodeGoModel] = useLocalStorage('openCodeGoModel', 'gpt-4o');
   const [aiProxyUrl, setAiProxyUrl] = useLocalStorage('aiProxyUrl', '');
+  const [aiEngine, setAiEngine] = useLocalStorage<'auto' | 'local' | 'gemini' | 'nano'>('aiEngine', 'auto');
+  const [localAiModel, setLocalAiModel] = useLocalStorage('localAiModel', 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC');
   const { currencyCode, setCurrencyCode, numberFormat, setNumberFormat } = useCurrency();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isInviteModalOpen, setInviteModalOpen] = useState(false);
@@ -1024,12 +1026,50 @@ const Settings: React.FC = () => {
 
           {/* AI Settings */}
           <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-            <h3 className="text-xl font-bold text-[#F5F5DC]">🤖 {t('settings.ai.title') || 'Configuración de IA'}</h3>
+            <h3 className="text-xl font-bold text-[#F5F5DC]">🤖 {t('settings.ai.title')}</h3>
             <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">
-              {t('settings.ai.description') || 'Configura tus propias llaves para el asistente de IA.'}
+              {t('settings.ai.description')}
             </p>
 
             <div className="space-y-4">
+              <div>
+                <label htmlFor="aiEngine" className="block text-sm font-medium text-[#F5F5DC]/90 mb-1">
+                  {t('settings.ai.engine')}
+                </label>
+                <select
+                  id="aiEngine"
+                  value={aiEngine}
+                  onChange={(e) => setAiEngine(e.target.value as any)}
+                  className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                >
+                  <option value="auto">{t('settings.ai.engineAuto')}</option>
+                  <option value="local">{t('settings.ai.engineLocal')}</option>
+                  <option value="gemini">{t('settings.ai.engineGemini')}</option>
+                  <option value="nano">{t('settings.ai.engineNano')}</option>
+                </select>
+              </div>
+
+              {aiEngine === 'local' && (
+                <div>
+                  <label htmlFor="localAiModel" className="block text-sm font-medium text-[#F5F5DC]/90 mb-1">
+                    {t('settings.ai.localModel')}
+                  </label>
+                  <select
+                    id="localAiModel"
+                    value={localAiModel}
+                    onChange={(e) => setLocalAiModel(e.target.value)}
+                    className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                  >
+                    <option value="Phi-3-mini-4k-instruct-q4f16_1-MLC">{t('settings.ai.modelSmall')}</option>
+                    <option value="Qwen2.5-1.5B-Instruct-q4f16_1-MLC">{t('settings.ai.modelMedium')}</option>
+                    <option value="Llama-3-8B-Instruct-q4f16_1-MLC">Large (Llama 3 8B - Heavy)</option>
+                  </select>
+                  <p className="mt-2 text-[10px] text-[#F5F5DC]/50 italic">
+                    * Los modelos locales se descargan al navegador y pueden ocupar entre 1GB y 5GB.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label htmlFor="geminiApiKey" className="block text-sm font-medium text-[#F5F5DC]/90">
@@ -1090,7 +1130,7 @@ const Settings: React.FC = () => {
 
               <div>
                 <label htmlFor="aiProxyUrl" className="block text-sm font-medium text-[#F5F5DC]/90">
-                  {t('settings.ai.proxyUrl') || 'URL del Proxy Local (Opcional)'}
+                  {t('settings.ai.proxyUrl')}
                 </label>
                 <input
                   id="aiProxyUrl"

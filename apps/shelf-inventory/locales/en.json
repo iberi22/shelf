@@ -183,6 +183,8 @@
     "aiWelcome": "Hello! I'm StockBot. Ask me anything about your inventory or sales data, like 'What was my most profitable product last month?' or 'Show me my total revenue'.",
     "aiDisabledWelcome": "This is your AI Assistant. Upgrade to a Pro plan to activate it and get intelligent insights.",
     "aiThinking": "Thinking...",
+    "aiLoadingModel": "Loading Local AI Model ({{progress}}%)...",
+    "aiWebGpuNotSupported": "WebGPU is not supported in your browser. Local AI inference is disabled.",
     "aiPlaceholder": "Ask a question about your data...",
     "aiDisabledPlaceholder": "Upgrade to Pro to use the AI Assistant",
     "aiError": "An unexpected error occurred. Please try again.",
@@ -299,6 +301,19 @@
       "placeholder": "Your message...",
       "button": "Send Feedback",
       "success": "Thank you! Your feedback has been sent."
+    },
+    "ai": {
+      "title": "AI Configuration",
+      "description": "Configure your AI assistant engine and preferences.",
+      "engine": "AI Engine",
+      "engineAuto": "Auto (Best Available)",
+      "engineLocal": "Local (WebLLM - Offline)",
+      "engineGemini": "Gemini API (Cloud)",
+      "engineNano": "Gemini Nano (Built-in)",
+      "localModel": "Local Model",
+      "modelSmall": "Small (Phi-3 Mini)",
+      "modelMedium": "Medium (Qwen 2.5 1.5B)",
+      "proxyUrl": "Local Proxy URL (Optional)"
     },
     "branches": {
       "title": "Branches / Warehouses",

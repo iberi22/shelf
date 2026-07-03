@@ -183,6 +183,8 @@
     "aiWelcome": "¡Hola! Soy StockBot. Pregúntame cualquier cosa sobre tu inventario o datos de ventas, como '¿Cuál fue mi producto más rentable el mes pasado?' o 'Muéstrame mis ingresos totales'.",
     "aiDisabledWelcome": "Este es tu Asistente de IA. Actualiza a un plan Pro para activarlo y obtener análisis inteligentes.",
     "aiThinking": "Pensando...",
+    "aiLoadingModel": "Cargando modelo de IA local ({{progress}}%)...",
+    "aiWebGpuNotSupported": "WebGPU no es compatible con tu navegador. La inferencia local de IA está desactivada.",
     "aiPlaceholder": "Haz una pregunta sobre tus datos...",
     "aiDisabledPlaceholder": "Actualiza a Pro para usar el Asistente de IA",
     "aiError": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
@@ -297,6 +299,19 @@
       "placeholder": "Tu mensaje...",
       "button": "Enviar Sugerencia",
       "success": "¡Gracias! Tu sugerencia ha sido enviada."
+    },
+    "ai": {
+      "title": "Configuración de IA",
+      "description": "Configura el motor y las preferencias de tu asistente de IA.",
+      "engine": "Motor de IA",
+      "engineAuto": "Automático (Mejor disponible)",
+      "engineLocal": "Local (WebLLM - Offline)",
+      "engineGemini": "Gemini API (Nube)",
+      "engineNano": "Gemini Nano (Integrado)",
+      "localModel": "Modelo Local",
+      "modelSmall": "Pequeño (Phi-3 Mini)",
+      "modelMedium": "Mediano (Qwen 2.5 1.5B)",
+      "proxyUrl": "URL de Proxy Local (Opcional)"
     },
     "branches": {
       "title": "Sucursales / Bodegas",
