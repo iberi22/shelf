@@ -655,6 +655,19 @@ export class DatabaseSyncManager {
 		return this.metadata.get("masterPeerId") || null;
 	}
 
+	public forceHostFailover() {
+		const currentMasterId = this.getMasterPeerId();
+		const successorId = this.selectSuccessor();
+		if (successorId) {
+			this.promoteSuccessor(successorId, currentMasterId);
+			logger.log(
+				`[FAILOVER] Manual host failover triggered. New host: ${successorId}`,
+			);
+		} else {
+			logger.error("[FAILOVER] No suitable successor found for manual failover.");
+		}
+	}
+
 	public setMasterPeerId(peerId: string) {
 		const currentMaster = this.getMasterPeerId();
 		if (currentMaster && currentMaster !== peerId) {
