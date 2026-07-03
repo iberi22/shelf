@@ -348,6 +348,10 @@
     "recoverAccount": "Recuperar cuenta",
     "or": "o",
     "loginGuest": "Entrar como Invitado (Modo Offline)",
+    "useLocalMode": "Usar modo local (sin cuenta)",
+    "continueAsGuest": "Continuar como Invitado",
+    "enter": "Entrar",
+    "enterToApp": "Entrar a la App",
     "error": {
       "generic": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
       "invalid-credential": "Correo o contraseña no válidos. Inténtalo de nuevo.",

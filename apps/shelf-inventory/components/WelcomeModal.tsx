@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import Modal from './Modal';
 
@@ -10,6 +11,7 @@ interface WelcomeModalProps {
 
 const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
   const { t } = useI18n();
+  const { loginAsGuest } = useAuth();
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const handleClose = () => {
@@ -17,6 +19,11 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
       localStorage.setItem('shelfWelcomeSeen', 'true');
     }
     onClose();
+  };
+
+  const handleGuestMode = async () => {
+    await loginAsGuest();
+    handleClose();
   };
 
   return (
@@ -76,11 +83,17 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Get Started Button */}
-        <div className="flex justify-center pt-2">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+          <button
+            onClick={handleGuestMode}
+            className="bg-[#F5F5DC]/10 border border-[#F5F5DC]/30 text-[#F5F5DC] font-bold py-3 px-8 rounded-lg hover:bg-[#F5F5DC]/20 transition-all active:scale-95"
+          >
+            {t('auth.continueAsGuest')}
+          </button>
           <button
             onClick={handleClose}
             data-testid="welcome-modal-get-started-button"
-            className="bg-foreground text-background font-bold py-3 px-8 rounded-lg hover:bg-opacity-80 transition-all transform hover:scale-105 active:scale-95"
+            className="bg-[#F5F5DC] text-[#121212] font-bold py-3 px-8 rounded-lg hover:bg-opacity-80 transition-all transform hover:scale-105 active:scale-95"
           >
             {t('welcome.getStarted')}
           </button>

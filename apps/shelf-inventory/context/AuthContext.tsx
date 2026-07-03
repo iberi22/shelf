@@ -85,8 +85,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const loginAsGuest = async () => {
+    let existingPeerId = localStorage.getItem('shelf_local_peer_id');
+    if (!existingPeerId) {
+      existingPeerId = `guest_${Math.random().toString(36).substring(2, 9)}`;
+      localStorage.setItem('shelf_local_peer_id', existingPeerId);
+    }
+
     const guestUser: User = {
-      uid: `guest_${Date.now()}`,
+      uid: existingPeerId,
       email: null,
       subscriptionTier: 'pyme', // Guests get full access for offline demo
       isGuest: true,
