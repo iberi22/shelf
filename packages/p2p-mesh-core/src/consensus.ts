@@ -1,3 +1,4 @@
+
 export interface AdminCandidacy {
 	candidatePeerId: string;
 	createdAt: number;
@@ -63,3 +64,5 @@ export function evaluateCandidacy(
 	// but since we don't have totalPeers here, we'll keep it pending.
 	return "pending";
 }
+
+
