@@ -25,6 +25,7 @@ test.describe('Persistence: Product Edit', () => {
     await page.getByTestId('product-name-input').fill(initialName);
     await page.getByTestId('product-quantity-input').fill(initialQty);
     await page.getByTestId('product-price-input').fill(initialPrice);
+    await page.getByTestId('product-cost-input').fill('50');
     await page.getByTestId('save-product-button').click();
 
     // Verify creation
