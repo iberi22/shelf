@@ -9,7 +9,7 @@ interface LocalLoginModalProps {
 }
 
 const LocalLoginModal: React.FC<LocalLoginModalProps> = ({ onClose, onSwitchToSignup, onSwitchToRecovery }) => {
-  const { loginLocal } = useAuth();
+  const { loginLocal, loginAsGuest } = useAuth();
   const { t } = useI18n();
 
   const [email, setEmail] = useState('');
@@ -103,9 +103,23 @@ const LocalLoginModal: React.FC<LocalLoginModalProps> = ({ onClose, onSwitchToSi
           </div>
         )}
 
-        <div className="mt-4 text-center">
-          <button onClick={onSwitchToSignup} className="text-[#F5F5DC]/70 hover:text-[#F5F5DC] text-sm">
+        <div className="mt-4 text-center space-y-3">
+          <button onClick={onSwitchToSignup} className="block w-full text-[#F5F5DC]/70 hover:text-[#F5F5DC] text-sm">
             {t('auth.noAccount')} <span className="underline">{t('auth.createAccount')}</span>
+          </button>
+          <div className="flex items-center gap-2 py-1">
+            <div className="flex-1 h-px bg-[#F5F5DC]/10" />
+            <span className="text-[10px] text-[#F5F5DC]/30 uppercase font-bold tracking-widest">{t('auth.or')}</span>
+            <div className="flex-1 h-px bg-[#F5F5DC]/10" />
+          </div>
+          <button
+            onClick={async () => {
+              await loginAsGuest();
+              onClose();
+            }}
+            className="text-[#F5F5DC]/60 hover:text-[#F5F5DC] text-xs transition-colors"
+          >
+            {t('auth.loginGuest')}
           </button>
         </div>
       </div>

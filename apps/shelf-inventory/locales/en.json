@@ -338,6 +338,10 @@
     "passwordMismatch": "Passwords do not match.",
     "or": "or",
     "loginGuest": "Enter as Guest (Offline Mode)",
+    "useLocalMode": "Use local mode (no account)",
+    "continueAsGuest": "Continue as Guest",
+    "enter": "Enter",
+    "enterToApp": "Enter App",
     "error": {
       "generic": "An unexpected error occurred. Please try again.",
       "invalid-credential": "Invalid email or password. Please try again.",

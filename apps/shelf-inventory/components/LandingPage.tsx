@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import WelcomeModal from './WelcomeModal';
 
@@ -11,7 +12,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   const { t } = useI18n();
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
+  const { loginAsGuest, user } = useAuth();
+
   const handleStartFree = () => {
+    if (user) {
+      onNavigate();
+      return;
+    }
+
     // Check if user has seen the welcome message before
     const hasSeenWelcome = localStorage.getItem('shelfWelcomeSeen') === 'true';
 
@@ -20,6 +28,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
     } else {
       onNavigate();
     }
+  };
+
+  const handleGuestLogin = async () => {
+    await loginAsGuest();
+    onNavigate();
   };
 
   const handleWelcomeClose = () => {
@@ -53,11 +66,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
           >
             Saber más
           </button>
+          {!user && (
+            <button
+              onClick={handleGuestLogin}
+              className="hidden lg:block text-sm font-semibold text-[#F5F5DC]/80 hover:text-[#F5F5DC] transition-colors"
+            >
+              {t('auth.useLocalMode')}
+            </button>
+          )}
           <button
             onClick={handleStartFree}
             className="hidden sm:block text-sm font-bold bg-yellow-500 text-black px-5 py-2 rounded-full hover:bg-yellow-400 transition-transform active:scale-95 shadow-[0_0_15px_rgba(234,179,8,0.3)]"
           >
-            Entrar
+            {user ? t('auth.enter') : t('auth.login')}
           </button>
         </div>
       </header>
@@ -87,11 +108,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 onClick={handleStartFree}
                 className="w-full sm:w-auto bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-bold py-3.5 px-8 rounded-xl text-lg hover:from-yellow-400 hover:to-yellow-500 transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(234,179,8,0.4)]"
               >
-                {t('landing.cta')}
+                {user ? t('auth.enterToApp') : t('landing.cta')}
               </button>
+              {!user && (
+                <button
+                  onClick={handleGuestLogin}
+                  className="w-full sm:w-auto bg-white/5 border border-white/10 text-white font-medium py-3.5 px-8 rounded-xl text-lg hover:bg-white/10 backdrop-blur-md transition-all"
+                >
+                  {t('auth.useLocalMode')}
+                </button>
+              )}
               <button
                 onClick={() => document.getElementById('governance')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-full sm:w-auto bg-white/5 border border-white/10 text-white font-medium py-3.5 px-8 rounded-xl text-lg hover:bg-white/10 backdrop-blur-md transition-all"
+                className="w-full sm:w-auto bg-transparent text-white/50 font-medium py-3.5 px-8 rounded-xl text-lg hover:text-white transition-all"
               >
                 Cómo funciona
               </button>
