@@ -1,4 +1,5 @@
 export * from './p2p';
+export * from './consensus';
 export * from './crypto-pqc';
 export * from './crypto';
 export * from './database-sync';
