@@ -219,15 +219,23 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }) => {
   const { t } = useI18n();
   const { isPro } = useSubscription();
+  const [isDesktop, setIsDesktop] = useState(window.matchMedia('(min-width: 768px)').matches);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const { state, dispatch } = useAppContext();
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const activeBranches = state.branches.filter((b) => b.isActive);
 
   const filteredNavItems = NAV_ITEMS.filter((item) => {
     const p = state.permissions;
-    if (!p || state.role === 'admin') return true;
+    if (!p || state.role === 'admin' || !state.role) return true;
     if (item.nameKey === 'nav.summary' && p.canViewDashboard === false) return false;
     if (item.nameKey === 'nav.inventory' && p.canViewProducts === false) return false;
     if (item.nameKey === 'nav.sales' && p.canViewSales === false) return false;
@@ -270,68 +278,71 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
 
   return (
     <>
-      {/* Mobile hamburger button */}
-      <button
-        onClick={() => setMobileMenuOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-30 bg-primary border border-foreground/20 rounded-lg p-2.5 shadow-lg active:scale-95"
-        aria-label="Abrir menú"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
+      {/* Mobile hamburger button — solo visible en mobile */}
+      {!isDesktop && (
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="md:hidden fixed top-4 left-4 z-30 bg-primary border border-foreground/20 rounded-lg p-2.5 shadow-lg active:scale-95"
+          aria-label="Abrir menú"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      )}
 
       {/* Mobile overlay */}
-      {mobileMenuOpen && (
+      {!isDesktop && mobileMenuOpen && (
         <div
           className="md:hidden fixed inset-0 z-20 bg-black/60 backdrop-blur-sm"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
-      {/* Mobile drawer */}
-      <div
-        ref={drawerRef}
-        className={`md:hidden fixed top-0 left-0 z-30 h-full w-72 bg-primary border-r border-foreground/20 shadow-2xl transition-transform duration-300 ease-in-out ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex items-center justify-between p-4 border-b border-foreground/20">
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold tracking-widest text-[#F5F5DC]">[ Shelf. ]</h1>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="p-2 text-foreground/60 hover:text-foreground hover:bg-foreground/10 rounded-lg transition-colors active:scale-95"
-              aria-label="Buscar"
-              title="Buscar (Ctrl+K)"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                focusable="false"
+      {/* Mobile drawer — solo se renderiza en viewport mobile y SOLO los nav-items mobile */}
+      {!isDesktop && (
+        <div
+          ref={drawerRef}
+          className={`md:hidden fixed top-0 left-0 z-30 h-full w-72 bg-primary border-r border-foreground/20 shadow-2xl transition-transform duration-300 ease-in-out ${
+            mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <div className="flex items-center justify-between p-4 border-b border-foreground/20">
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold tracking-widest text-[#F5F5DC]">[ Shelf. ]</h1>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="p-2 text-foreground/60 hover:text-foreground hover:bg-foreground/10 rounded-lg transition-colors active:scale-95"
+                aria-label="Buscar"
+                title="Buscar (Ctrl+K)"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </button>
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-2xl text-foreground/70 hover:text-foreground active:scale-95"
-              aria-label="Cerrar menú"
-            >
-              ✕
-            </button>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-2xl text-foreground/70 hover:text-foreground active:scale-95"
+                aria-label="Cerrar menú"
+              >
+                ✕
+              </button>
+            </div>
           </div>
-        </div>
 
         {/* Branch Selector (Mobile) */}
         {activeBranches.length > 0 && (
@@ -394,9 +405,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
           </div>
         </div>
       </div>
+      )}
 
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-[260px] bg-[#0A0A0A] border-r border-white/5 relative z-10">
+      {/* Desktop sidebar - solo se renderiza en desktop */}
+      {isDesktop && (
+        <aside className="flex flex-col w-[260px] bg-[#0A0A0A] border-r border-white/5 relative z-10">
         <div className="p-6 flex items-center justify-between mb-2">
           <div className="min-w-0">
             <h1 className="text-2xl font-bold tracking-widest text-white">[ Shelf. ]</h1>
@@ -485,7 +498,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
             v{__APP_VERSION__} • {__COMMIT_HASH__}
           </div>
         </div>
-      </aside>
+        </aside>
+      )}
 
       {/* Global Search Modal */}
       <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} onNavigate={setActiveComponent} />
