@@ -319,8 +319,7 @@
       "disable": "Desactivar",
       "lockedNote": "La aplicación se bloqueará automáticamente al recargar."
     },
-=======
->>>>>>> pr-266
+
     "branches": {
       "title": "Sucursales / Bodegas",
       "description": "Gestiona las ubicaciones físicas de tu inventario.",

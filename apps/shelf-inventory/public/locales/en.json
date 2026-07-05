@@ -321,8 +321,7 @@
       "disable": "Disable",
       "lockedNote": "The application will lock automatically on reload."
     },
-=======
->>>>>>> pr-266
+
     "branches": {
       "title": "Branches / Warehouses",
       "description": "Manage the physical locations of your inventory.",

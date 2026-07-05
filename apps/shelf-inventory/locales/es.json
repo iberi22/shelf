@@ -319,12 +319,7 @@
       "modelMedium": "Mediano (Qwen 2.5 1.5B)",
       "proxyUrl": "URL de Proxy Local (Opcional)"
     },
-    "security": {
-      "title": "Seguridad",
-      "enable": "Activar",
-      "disable": "Desactivar",
-      "lockedNote": "La aplicación se bloqueará automáticamente al recargar."
-    },
+
     "branches": {
       "title": "Sucursales / Bodegas",
       "description": "Gestiona las ubicaciones físicas de tu inventario.",

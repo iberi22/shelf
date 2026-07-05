@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
@@ -21,6 +22,78 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    {
+      name: 'shelf-features-api',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (!req.url) {
+            next();
+            return;
+          }
+
+          const url = new URL(req.url, 'http://localhost');
+          const featuresPath = resolve('../../.gitcore/features.json');
+
+          if (url.pathname === '/api/features') {
+            if (req.method === 'GET') {
+              if (!existsSync(featuresPath)) {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: 'features.json not found' }));
+                return;
+              }
+              const data = readFileSync(featuresPath, 'utf-8');
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json; charset=utf-8');
+              res.end(data);
+              return;
+            }
+
+            if (req.method === 'POST') {
+              let body = '';
+              req.on('data', (chunk) => {
+                body += chunk;
+              });
+              req.on('end', () => {
+                try {
+                  const updatedData = JSON.parse(body);
+                  if (!updatedData.features || !Array.isArray(updatedData.features)) {
+                    throw new Error('Invalid features format');
+                  }
+
+                  // Recalculate metadata stats
+                  const total = updatedData.features.length;
+                  const implemented = updatedData.features.filter(
+                    (f: any) => f.status === 'implemented' || f.status === 'validated',
+                  ).length;
+
+                  if (!updatedData.metadata) {
+                    updatedData.metadata = {};
+                  }
+                  updatedData.metadata.total_features = total;
+                  updatedData.metadata.features_implemented = implemented;
+                  updatedData.metadata.implementation_percentage =
+                    total > 0 ? Math.round((implemented / total) * 100) : 0;
+                  updatedData.metadata.updated = new Date().toISOString().split('T')[0];
+
+                  writeFileSync(featuresPath, JSON.stringify(updatedData, null, 2), 'utf-8');
+
+                  res.statusCode = 200;
+                  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+                  res.end(JSON.stringify({ success: true, metadata: updatedData.metadata }));
+                } catch (err: any) {
+                  res.statusCode = 400;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify({ error: err.message || 'Failed to update features' }));
+                }
+              });
+              return;
+            }
+          }
+          next();
+        });
+      },
+    },
     {
       name: 'shelf-version-endpoint',
       configureServer(server) {

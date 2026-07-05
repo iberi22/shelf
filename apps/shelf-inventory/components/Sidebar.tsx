@@ -5,6 +5,7 @@ import { NAV_ITEMS } from '../constants';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import { useSubscription } from '../context/SubscriptionContext';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
 import GlobalSearch from './GlobalSearch';
 
 const NavIcon = ({ nameKey, className = 'w-5 h-5' }: { nameKey: string; className?: string }) => {
@@ -223,6 +224,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const { state, dispatch } = useAppContext();
+  const { isEnabled } = useFeatureFlags();
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)');
@@ -234,6 +236,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
   const activeBranches = state.branches.filter((b) => b.isActive);
 
   const filteredNavItems = NAV_ITEMS.filter((item) => {
+    // Feature Gating
+    if (item.nameKey === 'nav.purchases' && !isEnabled('SRC-FUN-005')) return false;
+    if (item.nameKey === 'nav.reports' && !isEnabled('SRC-FUN-012')) return false;
+    if (item.nameKey === 'nav.arqueo' && !isEnabled('SRC-FUN-007')) return false;
+    if (item.nameKey === 'nav.inventory' && !isEnabled('SRC-FUN-001')) return false;
+    if (item.nameKey === 'nav.sales' && !isEnabled('SRC-FUN-002')) return false;
+    if (item.nameKey === 'nav.clients' && !isEnabled('SRC-FUN-004')) return false;
+    if (item.nameKey === 'nav.suppliers' && !isEnabled('SRC-FUN-004')) return false;
+
+    // Permissions Gating
     const p = state.permissions;
     if (!p || state.role === 'admin' || !state.role) return true;
     if (item.nameKey === 'nav.summary' && p.canViewDashboard === false) return false;
@@ -344,160 +356,166 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
             </div>
           </div>
 
-        {/* Branch Selector (Mobile) */}
-        {activeBranches.length > 0 && (
-          <div className="px-6 py-4 border-b border-foreground/10">
-            <label className="text-[10px] uppercase tracking-wider text-foreground/40 font-bold mb-2 block">
-              Sucursal Activa
-            </label>
-            <div className="relative">
-              <select
-                value={state.activeBranchId || 'global'}
-                onChange={(e) =>
-                  dispatch({ type: 'SET_ACTIVE_BRANCH', payload: e.target.value === 'global' ? null : e.target.value })
-                }
-                className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl py-2.5 px-3 pl-10 text-sm text-[#F5F5DC] appearance-none focus:outline-none focus:ring-1 focus:ring-[#4ADE80]/50"
-                data-testid="mobile-branch-selector"
-              >
-                <option value="global">🌍 Global / Principal</option>
-                {activeBranches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    📍 {branch.name}
-                  </option>
-                ))}
-              </select>
-              <Building2 className="absolute left-3 top-3 h-4 w-4 text-foreground/40" />
+          {/* Branch Selector (Mobile) */}
+          {activeBranches.length > 0 && (
+            <div className="px-6 py-4 border-b border-foreground/10">
+              <label className="text-[10px] uppercase tracking-wider text-foreground/40 font-bold mb-2 block">
+                Sucursal Activa
+              </label>
+              <div className="relative">
+                <select
+                  value={state.activeBranchId || 'global'}
+                  onChange={(e) =>
+                    dispatch({
+                      type: 'SET_ACTIVE_BRANCH',
+                      payload: e.target.value === 'global' ? null : e.target.value,
+                    })
+                  }
+                  className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl py-2.5 px-3 pl-10 text-sm text-[#F5F5DC] appearance-none focus:outline-none focus:ring-1 focus:ring-[#4ADE80]/50"
+                  data-testid="mobile-branch-selector"
+                >
+                  <option value="global">🌍 Global / Principal</option>
+                  {activeBranches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      📍 {branch.name}
+                    </option>
+                  ))}
+                </select>
+                <Building2 className="absolute left-3 top-3 h-4 w-4 text-foreground/40" />
+              </div>
+            </div>
+          )}
+
+          <nav className="flex-1 px-3 py-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+            <ul>
+              {filteredNavItems.map((item) => (
+                <li key={item.nameKey}>
+                  <button
+                    data-testid={`nav-item-${item.nameKey}`}
+                    onClick={() => handleNavClick(item.nameKey)}
+                    className={`w-full text-left flex items-center gap-3 px-4 py-3 my-1 rounded-xl transition-all duration-300 ease-in-out active:scale-95 transform min-h-[44px] ${
+                      activeComponent === item.nameKey
+                        ? 'bg-[#1A251A] text-[#4ADE80] font-bold border border-[#4ADE80]/30 glow-text-green shadow-[0_0_15px_rgba(74,222,128,0.1)]'
+                        : 'text-neutral-400 hover:bg-white/5 hover:text-white hover:translate-x-1'
+                    }`}
+                  >
+                    <NavIcon nameKey={item.nameKey} className="w-5 h-5 flex-shrink-0" />
+                    <span>{t(item.nameKey)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-foreground/20 space-y-3 bg-primary">
+            <div className="flex items-center justify-center gap-2">
+              <div
+                className={`w-2 h-2 rounded-full ${isPro ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500'}`}
+              />
+              <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">
+                {isPro ? t('sync.cloudSynced') : t('sync.localOnly')}
+              </p>
+            </div>
+            <div className="text-center text-[10px] text-foreground/40 font-mono mt-2">
+              v{__APP_VERSION__} • {__COMMIT_HASH__}
             </div>
           </div>
-        )}
-
-        <nav className="flex-1 px-3 py-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
-          <ul>
-            {filteredNavItems.map((item) => (
-              <li key={item.nameKey}>
-                <button
-                  data-testid={`nav-item-${item.nameKey}`}
-                  onClick={() => handleNavClick(item.nameKey)}
-                  className={`w-full text-left flex items-center gap-3 px-4 py-3 my-1 rounded-xl transition-all duration-300 ease-in-out active:scale-95 transform min-h-[44px] ${
-                    activeComponent === item.nameKey
-                      ? 'bg-[#1A251A] text-[#4ADE80] font-bold border border-[#4ADE80]/30 glow-text-green shadow-[0_0_15px_rgba(74,222,128,0.1)]'
-                      : 'text-neutral-400 hover:bg-white/5 hover:text-white hover:translate-x-1'
-                  }`}
-                >
-                  <NavIcon nameKey={item.nameKey} className="w-5 h-5 flex-shrink-0" />
-                  <span>{t(item.nameKey)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-foreground/20 space-y-3 bg-primary">
-          <div className="flex items-center justify-center gap-2">
-            <div
-              className={`w-2 h-2 rounded-full ${isPro ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500'}`}
-            />
-            <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">
-              {isPro ? t('sync.cloudSynced') : t('sync.localOnly')}
-            </p>
-          </div>
-          <div className="text-center text-[10px] text-foreground/40 font-mono mt-2">
-            v{__APP_VERSION__} • {__COMMIT_HASH__}
-          </div>
         </div>
-      </div>
       )}
 
       {/* Desktop sidebar - solo se renderiza en desktop */}
       {isDesktop && (
         <aside className="flex flex-col w-[260px] bg-[#0A0A0A] border-r border-white/5 relative z-10">
-        <div className="p-6 flex items-center justify-between mb-2">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-widest text-white">[ Shelf. ]</h1>
-          </div>
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="p-2 text-foreground/60 hover:text-foreground hover:bg-foreground/10 rounded-lg transition-colors active:scale-95"
-            aria-label="Buscar"
-            title="Buscar (Ctrl+K)"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              focusable="false"
+          <div className="p-6 flex items-center justify-between mb-2">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold tracking-widest text-white">[ Shelf. ]</h1>
+            </div>
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="p-2 text-foreground/60 hover:text-foreground hover:bg-foreground/10 rounded-lg transition-colors active:scale-95"
+              aria-label="Buscar"
+              title="Buscar (Ctrl+K)"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </button>
-        </div>
-
-        {/* Branch Selector (Desktop) */}
-        {activeBranches.length > 0 && (
-          <div className="px-6 mb-6">
-            <label className="text-[10px] uppercase tracking-wider text-foreground/40 font-bold mb-2 block">
-              Sucursal Activa
-            </label>
-            <div className="relative">
-              <select
-                value={state.activeBranchId || 'global'}
-                onChange={(e) =>
-                  dispatch({ type: 'SET_ACTIVE_BRANCH', payload: e.target.value === 'global' ? null : e.target.value })
-                }
-                className="w-full bg-[#141414] border border-white/10 rounded-xl py-2.5 px-4 pl-10 text-sm text-[#F5F5DC] appearance-none focus:outline-none focus:ring-1 focus:ring-[#4ADE80]/50 transition-all hover:bg-[#1A1A1A] cursor-pointer"
-                data-testid="host-branch-selector"
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
               >
-                <option value="global">🌍 Global / Principal</option>
-                {activeBranches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    📍 {branch.name}
-                  </option>
-                ))}
-              </select>
-              <Building2 className="absolute left-3.5 top-3 h-4 w-4 text-foreground/40 pointer-events-none" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Branch Selector (Desktop) */}
+          {activeBranches.length > 0 && (
+            <div className="px-6 mb-6">
+              <label className="text-[10px] uppercase tracking-wider text-foreground/40 font-bold mb-2 block">
+                Sucursal Activa
+              </label>
+              <div className="relative">
+                <select
+                  value={state.activeBranchId || 'global'}
+                  onChange={(e) =>
+                    dispatch({
+                      type: 'SET_ACTIVE_BRANCH',
+                      payload: e.target.value === 'global' ? null : e.target.value,
+                    })
+                  }
+                  className="w-full bg-[#141414] border border-white/10 rounded-xl py-2.5 px-4 pl-10 text-sm text-[#F5F5DC] appearance-none focus:outline-none focus:ring-1 focus:ring-[#4ADE80]/50 transition-all hover:bg-[#1A1A1A] cursor-pointer"
+                  data-testid="host-branch-selector"
+                >
+                  <option value="global">🌍 Global / Principal</option>
+                  {activeBranches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      📍 {branch.name}
+                    </option>
+                  ))}
+                </select>
+                <Building2 className="absolute left-3.5 top-3 h-4 w-4 text-foreground/40 pointer-events-none" />
+              </div>
+            </div>
+          )}
+
+          <nav className="flex-1 px-4 py-2">
+            <ul>
+              {filteredNavItems.map((item) => (
+                <li key={item.nameKey}>
+                  <button
+                    data-testid={`nav-item-${item.nameKey}`}
+                    onClick={() => setActiveComponent(item.nameKey)}
+                    className={`w-full text-left flex items-center gap-3 px-4 py-3 my-1 rounded-xl transition-all duration-300 ease-in-out active:scale-95 transform min-h-[44px] ${
+                      activeComponent === item.nameKey
+                        ? 'bg-[#1A251A] text-[#4ADE80] font-bold border border-[#4ADE80]/30 glow-text-green shadow-[0_0_15px_rgba(74,222,128,0.1)]'
+                        : 'text-neutral-400 hover:bg-white/5 hover:text-white hover:translate-x-1'
+                    }`}
+                  >
+                    <NavIcon nameKey={item.nameKey} className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-sm font-medium">{t(item.nameKey)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className="p-4 border-t border-foreground/20 space-y-4">
+            <div className="flex items-center justify-center gap-2">
+              <div
+                className={`w-2 h-2 rounded-full ${isPro ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500'}`}
+              />
+              <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">
+                {isPro ? t('sync.cloudSynced') : t('sync.localOnly')}
+              </p>
+            </div>
+            <div className="text-center text-[10px] text-foreground/40 font-mono mt-2">
+              v{__APP_VERSION__} • {__COMMIT_HASH__}
             </div>
           </div>
-        )}
-
-        <nav className="flex-1 px-4 py-2">
-          <ul>
-            {filteredNavItems.map((item) => (
-              <li key={item.nameKey}>
-                <button
-                  data-testid={`nav-item-${item.nameKey}`}
-                  onClick={() => setActiveComponent(item.nameKey)}
-                  className={`w-full text-left flex items-center gap-3 px-4 py-3 my-1 rounded-xl transition-all duration-300 ease-in-out active:scale-95 transform min-h-[44px] ${
-                    activeComponent === item.nameKey
-                      ? 'bg-[#1A251A] text-[#4ADE80] font-bold border border-[#4ADE80]/30 glow-text-green shadow-[0_0_15px_rgba(74,222,128,0.1)]'
-                      : 'text-neutral-400 hover:bg-white/5 hover:text-white hover:translate-x-1'
-                  }`}
-                >
-                  <NavIcon nameKey={item.nameKey} className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-sm font-medium">{t(item.nameKey)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <div className="p-4 border-t border-foreground/20 space-y-4">
-          <div className="flex items-center justify-center gap-2">
-            <div
-              className={`w-2 h-2 rounded-full ${isPro ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500'}`}
-            />
-            <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">
-              {isPro ? t('sync.cloudSynced') : t('sync.localOnly')}
-            </p>
-          </div>
-          <div className="text-center text-[10px] text-foreground/40 font-mono mt-2">
-            v{__APP_VERSION__} • {__COMMIT_HASH__}
-          </div>
-        </div>
         </aside>
       )}
 
@@ -513,10 +531,21 @@ export const MobileBottomNav: React.FC<{ activeComponent: string; setActiveCompo
 }) => {
   const { t } = useI18n();
   const { state } = useAppContext();
+  const { isEnabled } = useFeatureFlags();
 
   const filteredNavItems = NAV_ITEMS.filter((item) => {
+    // Feature Gating
+    if (item.nameKey === 'nav.purchases' && !isEnabled('SRC-FUN-005')) return false;
+    if (item.nameKey === 'nav.reports' && !isEnabled('SRC-FUN-012')) return false;
+    if (item.nameKey === 'nav.arqueo' && !isEnabled('SRC-FUN-007')) return false;
+    if (item.nameKey === 'nav.inventory' && !isEnabled('SRC-FUN-001')) return false;
+    if (item.nameKey === 'nav.sales' && !isEnabled('SRC-FUN-002')) return false;
+    if (item.nameKey === 'nav.clients' && !isEnabled('SRC-FUN-004')) return false;
+    if (item.nameKey === 'nav.suppliers' && !isEnabled('SRC-FUN-004')) return false;
+
+    // Permissions Gating
     const p = state.permissions;
-    if (!p || state.role === 'admin') return true;
+    if (!p || state.role === 'admin' || !state.role) return true;
     if (item.nameKey === 'nav.summary' && p.canViewDashboard === false) return false;
     if (item.nameKey === 'nav.inventory' && p.canViewProducts === false) return false;
     if (item.nameKey === 'nav.sales' && p.canViewSales === false) return false;

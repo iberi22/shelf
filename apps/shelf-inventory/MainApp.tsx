@@ -15,6 +15,7 @@ import Sidebar, { MobileBottomNav } from './components/Sidebar';
 import Suppliers from './components/Suppliers';
 import { useAppContext } from './context/AppContext';
 import { useSubscription } from './context/SubscriptionContext';
+import { useFeatureFlags } from './hooks/useFeatureFlags';
 
 const AccessDenied = () => (
   <div className="flex flex-col items-center justify-center h-full text-center">
@@ -28,6 +29,7 @@ const MainApp: React.FC = () => {
   const [activeComponent, setActiveComponent] = useState('nav.summary');
   const { isFree } = useSubscription();
   const { state, dispatch } = useAppContext();
+  const { isEnabled } = useFeatureFlags();
   const showAds = isFree; // No ads if pro/pyme (always true now)
 
   if (state.isExpelled) {
@@ -62,21 +64,21 @@ const MainApp: React.FC = () => {
       case 'nav.summary':
         return canView(p?.canViewDashboard) ? <Dashboard /> : <AccessDenied />;
       case 'nav.inventory':
-        return canView(p?.canViewProducts) ? <Inventory /> : <AccessDenied />;
+        return isEnabled('SRC-FUN-001') && canView(p?.canViewProducts) ? <Inventory /> : <AccessDenied />;
       case 'nav.sales':
-        return canView(p?.canViewSales) ? <Sales /> : <AccessDenied />;
+        return isEnabled('SRC-FUN-002') && canView(p?.canViewSales) ? <Sales /> : <AccessDenied />;
       case 'nav.clients':
-        return canView(p?.canViewClients) ? <Clients /> : <AccessDenied />;
+        return isEnabled('SRC-FUN-004') && canView(p?.canViewClients) ? <Clients /> : <AccessDenied />;
       case 'nav.suppliers':
-        return canView(p?.canViewSuppliers) ? <Suppliers /> : <AccessDenied />;
+        return isEnabled('SRC-FUN-004') && canView(p?.canViewSuppliers) ? <Suppliers /> : <AccessDenied />;
       case 'nav.purchases':
-        return canView(p?.canViewPurchaseOrders) ? <PurchaseOrders /> : <AccessDenied />;
+        return isEnabled('SRC-FUN-005') && canView(p?.canViewPurchaseOrders) ? <PurchaseOrders /> : <AccessDenied />;
       case 'nav.catalog':
         return <Catalog />;
       case 'nav.arqueo':
-        return canView(p?.canViewArqueo) ? <Arqueo /> : <AccessDenied />;
+        return isEnabled('SRC-FUN-007') && canView(p?.canViewArqueo) ? <Arqueo /> : <AccessDenied />;
       case 'nav.reports':
-        return canView(p?.canViewReports) ? <Reports /> : <AccessDenied />;
+        return isEnabled('SRC-FUN-012') && canView(p?.canViewReports) ? <Reports /> : <AccessDenied />;
       case 'nav.settings':
         return <Settings />;
       default:

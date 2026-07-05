@@ -321,12 +321,7 @@
       "modelMedium": "Medium (Qwen 2.5 1.5B)",
       "proxyUrl": "Local Proxy URL (Optional)"
     },
-    "security": {
-      "title": "Security",
-      "enable": "Enable",
-      "disable": "Disable",
-      "lockedNote": "The application will lock automatically on reload."
-    },
+
     "branches": {
       "title": "Branches / Warehouses",
       "description": "Manage the physical locations of your inventory.",

@@ -9,6 +9,7 @@ import UpdateNotification from './components/UpdateNotification';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { FeatureFlagProvider } from './context/FeatureFlagContext';
 import { I18nProvider } from './context/I18nContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
 import { UIProvider, useUI } from './context/UIContext';
@@ -111,20 +112,22 @@ const AppContainer = () => {
 };
 
 const App = () => (
-  <I18nProvider>
-    <UIProvider>
-      <AuthProvider>
-        <CurrencyProvider>
-          <SubscriptionProvider>
-            <AppProvider>
-              <AppContainer />
-              <UpdateNotification />
-            </AppProvider>
-          </SubscriptionProvider>
-        </CurrencyProvider>
-      </AuthProvider>
-    </UIProvider>
-  </I18nProvider>
+  <FeatureFlagProvider>
+    <I18nProvider>
+      <UIProvider>
+        <AuthProvider>
+          <CurrencyProvider>
+            <SubscriptionProvider>
+              <AppProvider>
+                <AppContainer />
+                <UpdateNotification />
+              </AppProvider>
+            </SubscriptionProvider>
+          </CurrencyProvider>
+        </AuthProvider>
+      </UIProvider>
+    </I18nProvider>
+  </FeatureFlagProvider>
 );
 
 export default App;
