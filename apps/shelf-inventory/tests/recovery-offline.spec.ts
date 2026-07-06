@@ -134,7 +134,7 @@ test.describe('Recovery Flow & Offline Resilience', () => {
 
   test('Purchase Orders page loads successfully', async ({ page }) => {
     await dismissModals(page);
-    await page.locator('[data-testid="nav-item-nav.purchase_orders"]').last().click();
+    await page.locator('[data-testid="nav-item-nav.purchases"]').last().click();
     await dismissModals(page);
     await page.waitForTimeout(500);
 

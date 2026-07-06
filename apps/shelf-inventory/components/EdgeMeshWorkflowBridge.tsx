@@ -219,15 +219,16 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
           : {};
         return { ...globalState, ...branchState };
       },
-      applyRemoteUpdate: (peerId: string, update: number[], namespace?: string) => {
-        const targetAdapter =
-          namespace && namespace !== SHELF_EDGE_NAMESPACE ? mesh?.getNamespace(namespace) : globalAdapter;
+      applyRemoteUpdate: (peerId: string, update: number[], collection?: ShelfEdgeCollection) => {
+        const isBranch = collection && SHELF_EDGE_BRANCH_COLLECTIONS.includes(collection as any);
+        const targetAdapter = isBranch ? branchAdapter : globalAdapter;
         targetAdapter?.applyUpdate(new Uint8Array(update), { type: 'remote', peerId });
       },
-      getUpdate: (namespace?: string) => {
-        const targetAdapter =
-          namespace && namespace !== SHELF_EDGE_NAMESPACE ? mesh?.getNamespace(namespace) : globalAdapter;
-        return Array.from(targetAdapter?.getUpdate() || []);
+      getUpdate: (collection?: ShelfEdgeCollection) => {
+        const isBranch = collection && SHELF_EDGE_BRANCH_COLLECTIONS.includes(collection as any);
+        const targetAdapter = isBranch ? branchAdapter : globalAdapter;
+        const update = (targetAdapter as any)?.getLocalUpdate?.() || (targetAdapter as any)?.getUpdate?.() || [];
+        return Array.from(update);
       },
       remove: (collection: ShelfEdgeCollection, id: string) => {
         const isBranch = SHELF_EDGE_BRANCH_COLLECTIONS.includes(collection as any);
@@ -252,7 +253,7 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
     return () => {
       delete (window as unknown as { __shelfEdgeMeshForTest?: unknown }).__shelfEdgeMeshForTest;
     };
-  }, [globalAdapter, branchAdapter, mesh]);
+  }, [globalAdapter, branchAdapter]);
 
   useEffect(() => {
     if (!globalAdapter || !isLoaded) {

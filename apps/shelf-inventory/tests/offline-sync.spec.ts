@@ -63,6 +63,7 @@ test.describe('Offline Product Creation and Sync', () => {
 
     await pageB.getByTestId('add-product-button').click();
     await expect(pageB.getByTestId('product-form')).toBeVisible();
+    await pageB.waitForTimeout(500); // Stabilize DOM after modal open
 
     await pageB.getByTestId('product-name-input').fill('Offline Product');
     await pageB.getByTestId('product-sku-input').fill('OFFLINE-001');

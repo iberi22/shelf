@@ -197,20 +197,24 @@ export async function upsertEdgeMeshEntity(page: Page, collection: EdgeCollectio
   );
 }
 
-export async function exportEdgeMeshUpdate(page: Page): Promise<number[]> {
+export async function exportEdgeMeshUpdate(page: Page, collection = 'products'): Promise<number[]> {
   await expectEdgeMeshReady(page);
-  return page.evaluate(() => {
-    return (window as unknown as TestWindow).__shelfEdgeMeshForTest?.getUpdate() || [];
-  });
+  return page.evaluate(
+    ({ col }) => {
+      const update = (window as unknown as TestWindow).__shelfEdgeMeshForTest?.getUpdate(col as any);
+      return update ? Array.from(update) : [];
+    },
+    { col: collection },
+  );
 }
 
-export async function applyRemoteEdgeMeshUpdate(page: Page, peerId: string, update: number[]) {
+export async function applyRemoteEdgeMeshUpdate(page: Page, peerId: string, update: number[], collection = 'products') {
   await expectEdgeMeshReady(page);
   await page.evaluate(
-    ({ remotePeerId, remoteUpdate }) => {
-      (window as unknown as TestWindow).__shelfEdgeMeshForTest?.applyRemoteUpdate(remotePeerId, remoteUpdate);
+    ({ pId, data, col }) => {
+      (window as unknown as TestWindow).__shelfEdgeMeshForTest?.applyRemoteUpdate(pId, data, col as any);
     },
-    { remotePeerId: peerId, remoteUpdate: update },
+    { pId: peerId, data: Array.from(update), col: collection },
   );
 }
 

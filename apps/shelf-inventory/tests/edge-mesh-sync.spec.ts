@@ -36,28 +36,27 @@ test.describe('Edge Mesh workflow synchronization and data security', () => {
     await openSettingsWithEdgeMesh(targetPage);
 
     const targetPeerId = await getPeerId(targetPage);
-    const product = {
-      id: 'edge-product-001',
-      name: 'Edge Mesh Product',
-      sku: 'EDGE-001',
-      quantity: 12,
-      price: 42,
-      cost: 21,
+    const client = {
+      id: 'edge-client-001',
+      name: 'Edge Mesh Client',
+      email: 'edge@example.com',
+      phone: '555-0000',
       isActive: true,
       updatedAt: new Date().toISOString(),
       updatedBy: targetPeerId,
       updatedByRole: 'admin',
     };
 
-    await upsertEdgeMeshEntity(sourcePage, 'products', product.id, product);
-    const update = await exportEdgeMeshUpdate(sourcePage);
-    await applyRemoteEdgeMeshUpdate(targetPage, targetPeerId, update);
+    await upsertEdgeMeshEntity(sourcePage, 'clients', client.id, client);
+    const update = await exportEdgeMeshUpdate(sourcePage, 'clients');
+    console.log(`Edge Mesh CRDT Update Size: ${update.length} bytes`);
+    await applyRemoteEdgeMeshUpdate(targetPage, targetPeerId, update, 'clients');
 
-    await expectEdgeMeshEntity(targetPage, 'products', (items) =>
-      items.some((item) => item.id === product.id && item.name === product.name),
+    await expectEdgeMeshEntity(targetPage, 'clients', (items) =>
+      items.some((item) => item.id === client.id && item.name === client.name),
     );
-    await expectAppStateEntity(targetPage, 'products', (items) =>
-      items.some((item) => item.id === product.id && item.name === product.name),
+    await expectAppStateEntity(targetPage, 'clients', (items) =>
+      items.some((item) => item.id === client.id && item.name === client.name),
     );
 
     const status = await targetPage.evaluate(() => (window as any).__shelfEdgeMeshStatus);

@@ -1,7 +1,7 @@
 import { Box, History, Images, Layers3, Package2, PencilLine, RotateCcw, Ruler, Trash2 } from 'lucide-react';
 import type { InventoryConfig, Product } from 'p2p-mesh-core';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
@@ -804,12 +804,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   const isEditing = product !== null;
   const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
 
-  const getComboEntries = (colors: string[], sizes: string[]): string[] => {
+  const getComboEntries = useCallback((colors: string[], sizes: string[]): string[] => {
     if (colors.length > 0 && sizes.length > 0) {
       return colors.flatMap((c) => sizes.map((s) => `${c}|${s}`));
     }
     return colors.map((c) => `color:${c}`).concat(sizes.map((s) => `size:${s}`));
-  };
+  }, []);
 
   // Update comboValues when selections change
   useEffect(() => {
@@ -1000,9 +1000,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
       const value = getFieldValue(field.key).trim();
 
       if (field.key === 'color') {
-        basePayload.color = value || undefined;
+        basePayload.color =
+          value || (!isEditing && !isMultiMode && selectedColors.length === 1 ? selectedColors[0] : undefined);
       } else if (field.key === 'dimensions') {
-        basePayload.dimensions = value || undefined;
+        basePayload.dimensions =
+          value || (!isEditing && !isMultiMode && selectedSizes.length === 1 ? selectedSizes[0] : undefined);
       } else if (field.key === 'capacity') {
         basePayload.capacity = value || undefined;
       } else if (field.key === 'material') {
@@ -1160,6 +1162,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
       onSave({
         name,
         sku,
+        ...configuredFields,
         colors: selectedColors,
         sizes: selectedSizes,
         supplierId: supplierId || undefined,
@@ -1435,10 +1438,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
               </div>
             )}
 
-            {!isEditing && !isMultiMode && (
+            {!isEditing && (
               <div className="space-y-4">
                 <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
-                  <label className="block text-xs text-[#F5F5DC]/60">Colores</label>
+                  <label className="block text-xs text-[#F5F5DC]/60">
+                    Colores (Selecciona o escribe varios para crear variantes)
+                  </label>
                   <div className="flex flex-wrap gap-2">
                     {PRESET_COLORS.map((preset) => {
                       const selected = selectedColors.includes(preset.name);
@@ -1463,12 +1468,72 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       );
                     })}
                   </div>
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      type="text"
+                      placeholder="Color personalizado (ej. Azul marino)"
+                      className="flex-1 p-1.5 text-xs bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = e.currentTarget.value.trim();
+                          if (val && !selectedColors.includes(val)) {
+                            setSelectedColors((prev) => [...prev, val]);
+                            e.currentTarget.value = '';
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 rounded transition-colors text-[#F5F5DC]"
+                      onClick={(e) => {
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                        const val = input.value.trim();
+                        if (val && !selectedColors.includes(val)) {
+                          setSelectedColors((prev) => [...prev, val]);
+                          input.value = '';
+                        }
+                      }}
+                    >
+                      Añadir
+                    </button>
+                  </div>
                   {selectedColors.length > 0 && (
-                    <div className="text-xs text-[#F5F5DC]/60">Seleccionados: {selectedColors.join(', ')}</div>
+                    <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-[#0f0f0f] rounded border border-[#F5F5DC]/5">
+                      <span className="text-xs text-[#F5F5DC]/50 mr-1">Seleccionados:</span>
+                      {selectedColors.map((c) => {
+                        const preset = PRESET_COLORS.find((p) => p.name === c);
+                        return (
+                          <div
+                            key={`selc-${c}`}
+                            className="flex items-center gap-1 bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded-full pl-2 pr-1 py-1"
+                          >
+                            {preset && <div className="w-3 h-3 rounded-full" style={{ backgroundColor: preset.hex }} />}
+                            <span className="text-xs text-[#F5F5DC]">{c}</span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedColors((prev) => prev.filter((x) => x !== c))}
+                              className="w-4 h-4 rounded-full hover:bg-red-500/20 text-[#F5F5DC]/50 hover:text-red-300 flex items-center justify-center transition-colors"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedColors([])}
+                        className="text-xs text-red-300 hover:text-red-200 ml-auto px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
                   )}
                 </div>
+
                 <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
-                  <label className="block text-xs text-[#F5F5DC]/60">Medidas</label>
+                  <label className="block text-xs text-[#F5F5DC]/60">Medidas (Selecciona o escribe varias)</label>
                   <div className="flex flex-wrap gap-1.5">
                     {inventoryConfig.measureOptions.map((suggestion) => {
                       const selected = selectedSizes.includes(suggestion);
@@ -1492,12 +1557,64 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       );
                     })}
                   </div>
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      type="text"
+                      placeholder="Medida personalizada (ej. 35CM)"
+                      className="flex-1 p-1.5 text-xs bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded uppercase"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = e.currentTarget.value.trim().toUpperCase();
+                          if (val && !selectedSizes.includes(val)) {
+                            setSelectedSizes((prev) => [...prev, val]);
+                            e.currentTarget.value = '';
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 rounded transition-colors text-[#F5F5DC]"
+                      onClick={(e) => {
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                        const val = input.value.trim().toUpperCase();
+                        if (val && !selectedSizes.includes(val)) {
+                          setSelectedSizes((prev) => [...prev, val]);
+                          input.value = '';
+                        }
+                      }}
+                    >
+                      Añadir
+                    </button>
+                  </div>
                   {selectedSizes.length > 0 && (
-                    <div className="text-xs text-[#F5F5DC]/60">Seleccionados: {selectedSizes.join(', ')}</div>
+                    <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-[#0f0f0f] rounded border border-[#F5F5DC]/5">
+                      <span className="text-xs text-[#F5F5DC]/50 mr-1">Seleccionadas:</span>
+                      {selectedSizes.map((s) => (
+                        <div
+                          key={`sels-${s}`}
+                          className="flex items-center gap-1 bg-[#1e1e1e] border border-[#EAB308]/30 rounded-full pl-2 pr-1 py-1"
+                        >
+                          <span className="text-xs text-[#EAB308] font-medium">{s}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSizes((prev) => prev.filter((x) => x !== s))}
+                            className="w-4 h-4 rounded-full hover:bg-red-500/20 text-[#F5F5DC]/50 hover:text-red-300 flex items-center justify-center transition-colors"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSizes([])}
+                        className="text-xs text-red-300 hover:text-red-200 ml-auto px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
                   )}
-                </div>
-                <div className="text-xs text-[#F5F5DC]/50 text-center">
-                  Selecciona varios colores o medidas para crear combinaciones autom&aacute;ticas
                 </div>
               </div>
             )}
@@ -1712,6 +1829,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   const fieldValue = getFieldValue(field.key);
                   const isColorField = field.type === 'color';
                   const isMeasureField = field.type === 'measure';
+
+                  if (!isEditing && (isColorField || isMeasureField)) return null;
+
                   const testId = LEGACY_FIELD_KEYS.has(field.key)
                     ? `product-${field.key}-input`
                     : `product-custom-${field.key}-input`;
@@ -1823,59 +1943,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
               </>
             ) : (
               <>
-                <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
-                  <label className="block text-xs text-[#F5F5DC]/60">Colores seleccionados</label>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedColors.map((c) => {
-                      const preset = PRESET_COLORS.find((p) => p.name === c);
-                      return (
-                        <button
-                          key={`selc-${c}`}
-                          type="button"
-                          onClick={() => setSelectedColors((prev) => prev.filter((x) => x !== c))}
-                          className={
-                            'w-8 h-8 rounded-full border-2 transition-all active:scale-90 border-white ring-2 ring-white/30'
-                          }
-                          style={{ backgroundColor: preset?.hex || '#888' }}
-                          title={`Quitar ${c}`}
-                        />
-                      );
-                    })}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedColors([])}
-                      className="text-xs text-red-300 hover:text-red-200 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20"
-                    >
-                      Limpiar
-                    </button>
-                  </div>
-                </div>
-
-                {selectedSizes.length > 0 && (
-                  <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
-                    <label className="block text-xs text-[#F5F5DC]/60">Medidas seleccionadas</label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedSizes.map((s) => (
-                        <button
-                          key={`sels-${s}`}
-                          type="button"
-                          onClick={() => setSelectedSizes((prev) => prev.filter((x) => x !== s))}
-                          className="rounded-full border border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308] px-2.5 py-1 text-[11px]"
-                        >
-                          {s}
-                        </button>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedSizes([])}
-                        className="text-xs text-red-300 hover:text-red-200 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20"
-                      >
-                        Limpiar
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-[#F5F5DC]">
