@@ -566,7 +566,7 @@ export class DatabaseSyncManager {
 				resolvedRole = "collaborator";
 			}
 		} else {
-			resolvedRole = "collaborator";
+			resolvedRole = "admin";
 		}
 
 		return {

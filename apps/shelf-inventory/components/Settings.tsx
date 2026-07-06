@@ -127,7 +127,9 @@ const Settings: React.FC = () => {
 
   const handlePostulate = () => {
     if (!state.localPeerId) return;
-    const proposalId = crypto.randomUUID();
+    const proposalId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' 
+      ? crypto.randomUUID() 
+      : Math.random().toString(36).substring(2, 15);
     const proposal: GovernanceProposal = {
       id: proposalId,
       targetPeerId: state.localPeerId,
@@ -151,7 +153,7 @@ const Settings: React.FC = () => {
     if (!state.localPeerId) return;
     const proposalsMap = dbSync.doc.getMap('proposals');
     const proposal = proposalsMap.get(proposalId) as GovernanceProposal | undefined;
-    if (!proposal || proposal.status !== 'active') return;
+    if (proposal?.status !== 'active') return;
 
     const vote: GovernanceVote = {
       peerId: state.localPeerId,
@@ -164,7 +166,7 @@ const Settings: React.FC = () => {
         ...proposal,
         votes: {
           ...proposal.votes,
-          [state.localPeerId!]: vote,
+          [state.localPeerId || '']: vote,
         },
       };
 
@@ -181,7 +183,7 @@ const Settings: React.FC = () => {
       } else if (approveCount >= majority) {
         updatedProposal.status = 'approved';
         // Auto-promote if approved
-        dbSync.updatePeerConfig(updatedProposal.targetPeerId, 'admin', undefined, state.localPeerId!);
+        dbSync.updatePeerConfig(updatedProposal.targetPeerId, 'admin', undefined, state.localPeerId || undefined);
       }
 
       proposalsMap.set(proposalId, updatedProposal as any);
@@ -472,6 +474,12 @@ const Settings: React.FC = () => {
 
     if (window.confirm(t('settings.branches.deleteConfirm'))) {
       dispatch({ type: 'DELETE_BRANCH', payload: branchId });
+      
+      const branchToUpdate = state.branches.find(b => b.id === branchId);
+      if (branchToUpdate) {
+        dbSync.upsertEntity('branches', { ...branchToUpdate, isActive: false });
+      }
+      
       showNotification(t('settings.branches.successDelete'), 'success');
     }
   };
@@ -480,19 +488,18 @@ const Settings: React.FC = () => {
     if (!branchName.trim()) return;
 
     if (editingBranch) {
-      dispatch({
-        type: 'UPDATE_BRANCH',
-        payload: {
-          ...editingBranch,
-          name: branchName.trim(),
-          address: branchAddress.trim(),
-          type: branchType,
-        },
-      });
+      const updatedBranch = {
+        ...editingBranch,
+        name: branchName.trim(),
+        address: branchAddress.trim(),
+        type: branchType,
+      };
+      dispatch({ type: 'UPDATE_BRANCH', payload: updatedBranch });
+      dbSync.upsertEntity('branches', updatedBranch);
       showNotification(t('settings.branches.successUpdate'), 'success');
     } else {
       const newBranch = {
-        id: crypto.randomUUID(),
+        id: typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
         name: branchName.trim(),
         address: branchAddress.trim(),
         type: branchType,
@@ -500,6 +507,7 @@ const Settings: React.FC = () => {
         createdAt: Date.now(),
       };
       dispatch({ type: 'ADD_BRANCH', payload: newBranch as Branch });
+      dbSync.upsertEntity('branches', newBranch);
       showNotification(t('settings.branches.successAdd'), 'success');
     }
     setIsBranchModalOpen(false);

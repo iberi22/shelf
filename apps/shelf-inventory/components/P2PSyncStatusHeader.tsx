@@ -105,6 +105,7 @@ const P2PSyncStatusHeader: React.FC = () => {
         {/* Compact Status Indicator Button */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
+          data-testid="p2p-status-toggle"
           className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 shadow-md border focus:outline-none active:scale-95 cursor-pointer ${
             syncStatus === 'synced'
               ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20 shadow-[0_0_12px_rgba(34,197,94,0.15)]'
@@ -201,7 +202,7 @@ const P2PSyncStatusHeader: React.FC = () => {
                 </div>
                 {state.localPeerId ? (
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[10px] text-[#F5F5DC]/50 font-mono select-all truncate max-w-[200px] sm:max-w-xs">
+                    <span className="text-[10px] text-[#F5F5DC]/50 font-mono select-all truncate max-w-[200px] sm:max-w-xs" data-testid="local-peer-id-display">
                       {t('p2pSync.topBar.localNode') || 'Nodo Local'}: {state.localPeerId}
                     </span>
                     <button

@@ -334,7 +334,7 @@ const P2PSyncManager: React.FC = () => {
       unsubscribePeerHealth();
       // NOTE: For a full fix, p2pManager should expose offMessage
     };
-  }, [dispatch, showNotification]);
+  }, [dispatch, showNotification, state.inventoryConfig.useEdgeMeshSync]);
 
   useEffect(() => {
     if (syncProgress >= 100) {
@@ -841,6 +841,7 @@ const P2PSyncManager: React.FC = () => {
         <div className="mt-1 grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 max-[420px]:grid-cols-1">
           <input
             type="text"
+            data-testid="manual-peer-id-input"
             placeholder={t('p2pSync.placeholderManual') || 'O ingresa el Peer ID manualmente...'}
             value={manualPeerId}
             onChange={(e) => setManualPeerId(e.target.value)}
@@ -848,6 +849,7 @@ const P2PSyncManager: React.FC = () => {
           />
           <button
             type="button"
+            data-testid="manual-connect-button"
             onClick={handleManualConnect}
             disabled={!manualPeerId.trim()}
             className="min-h-[44px] rounded-lg bg-[#F5F5DC] px-4 py-2.5 text-sm font-bold text-[#1a1a1a] transition-colors hover:bg-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 max-[420px]:w-full"

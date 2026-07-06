@@ -58,7 +58,7 @@ export function createMockPeer(overrides: MockPeer): PeerInfo {
 }
 
 export async function getLocalPeerId(page: Page): Promise<string> {
-  const peerIdLocator = page.locator('span.font-mono.text-yellow-400').first();
+  const peerIdLocator = page.locator('span.font-mono.text-yellow-400, code.font-mono.text-yellow-400').first();
   await peerIdLocator.waitFor({ state: 'visible' });
   await expect(peerIdLocator).not.toHaveText('Initializing...', { timeout: 15000 });
 
