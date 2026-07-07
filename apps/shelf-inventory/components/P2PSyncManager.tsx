@@ -30,6 +30,7 @@ import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
 import { buildPeerInviteLink, buildPeerInviteMessage, buildPwaInstallLink } from '../lib/share-links';
+import { telemetry } from '../lib/telemetry';
 import { isBiometricsSupported } from '../lib/webauthn';
 import { useEdgeMeshWorkflowStatus } from './EdgeMeshWorkflowBridge';
 import QRScannerModal from './QRScannerModal';
@@ -253,6 +254,10 @@ const P2PSyncManager: React.FC = () => {
       if (peers.length > 0) {
         setShowSyncModal(true);
         setSyncProgress(100);
+        telemetry.trackEvent('p2p_connection_established', {
+          peer_count: peers.length,
+          is_host: dbSync.getMasterPeerId() === p2pManager.localPeerId,
+        });
       }
     });
 
@@ -365,6 +370,9 @@ const P2PSyncManager: React.FC = () => {
     */
 
     p2pManager.connect(peerId);
+    telemetry.trackEvent('p2p_connection_initiated', {
+      is_host: isLocalHostAuthority,
+    });
   };
 
   const prepareConfiguredConnect = (peerId: string) => {

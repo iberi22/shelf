@@ -1,16 +1,5 @@
-import {
-  Building2,
-  Pencil,
-  Plus,
-  Save,
-  SlidersHorizontal,
-  Trash2,
-} from 'lucide-react';
-import type {
-  Branch,
-  InventoryConfig,
-  InventoryFieldDefinition,
-} from 'p2p-mesh-core';
+import { Building2, Pencil, Plus, Save, SlidersHorizontal, Trash2 } from 'lucide-react';
+import type { Branch, InventoryConfig, InventoryFieldDefinition } from 'p2p-mesh-core';
 import { dbSync } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
@@ -43,10 +32,10 @@ const BranchConfig: React.FC = () => {
   const [branchAddress, setBranchAddress] = useState('');
   const [branchType, setBranchType] = useState<'sucursal' | 'bodega'>('sucursal');
 
-  const team = useMemo(() => [
-    { id: 'owner', email: user?.email ?? 'owner@example.com', role: 'owner' as const },
-    ...state.teamMembers,
-  ], [user?.email, state.teamMembers]);
+  const team = useMemo(
+    () => [{ id: 'owner', email: user?.email ?? 'owner@example.com', role: 'owner' as const }, ...state.teamMembers],
+    [user?.email, state.teamMembers],
+  );
 
   const isAdmin = state.role === 'admin' || team.find((m) => m.email === user?.email)?.role === 'owner';
 
@@ -205,7 +194,7 @@ const BranchConfig: React.FC = () => {
     if (window.confirm(t('settings.branches.deleteConfirm'))) {
       dispatch({ type: 'DELETE_BRANCH', payload: branchId });
 
-      const branchToUpdate = state.branches.find(b => b.id === branchId);
+      const branchToUpdate = state.branches.find((b) => b.id === branchId);
       if (branchToUpdate) {
         dbSync.upsertEntity('branches', { ...branchToUpdate, isActive: false });
       }
@@ -308,8 +297,8 @@ const BranchConfig: React.FC = () => {
                   Aplicar actualizaciones automáticamente
                 </span>
                 <span className="mt-1 block text-xs text-[#F5F5DC]/55">
-                  Si está activo, los cambios de producto con permiso se aplican sin revisión manual y se conserva
-                  una versión anterior para restaurar.
+                  Si está activo, los cambios de producto con permiso se aplican sin revisión manual y se conserva una
+                  versión anterior para restaurar.
                 </span>
               </span>
             </label>
@@ -482,9 +471,7 @@ const BranchConfig: React.FC = () => {
                 <tr className="border-b border-[#F5F5DC]/10 text-[#F5F5DC]/50 text-xs uppercase tracking-wider">
                   <th className="py-3 px-4 font-semibold">{t('settings.branches.table.name')}</th>
                   <th className="py-3 px-4 font-semibold">{t('settings.branches.table.type')}</th>
-                  <th className="py-3 px-4 font-semibold hidden md:table-cell">
-                    {t('settings.branches.table.id')}
-                  </th>
+                  <th className="py-3 px-4 font-semibold hidden md:table-cell">{t('settings.branches.table.id')}</th>
                   <th className="py-3 px-4 font-semibold">{t('settings.branches.table.createdAt')}</th>
                   <th className="py-3 px-4 font-semibold text-right">{t('settings.branches.table.actions')}</th>
                 </tr>

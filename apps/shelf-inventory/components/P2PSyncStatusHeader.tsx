@@ -202,7 +202,10 @@ const P2PSyncStatusHeader: React.FC = () => {
                 </div>
                 {state.localPeerId ? (
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[10px] text-[#F5F5DC]/50 font-mono select-all truncate max-w-[200px] sm:max-w-xs" data-testid="local-peer-id-display">
+                    <span
+                      className="text-[10px] text-[#F5F5DC]/50 font-mono select-all truncate max-w-[200px] sm:max-w-xs"
+                      data-testid="local-peer-id-display"
+                    >
                       {t('p2pSync.topBar.localNode') || 'Nodo Local'}: {state.localPeerId}
                     </span>
                     <button

@@ -23,6 +23,15 @@
   <!-- Google Drive API Scripts -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
+
+  <!-- Google Analytics 4 (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=%VITE_GA_MEASUREMENT_ID%"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '%VITE_GA_MEASUREMENT_ID%');
+  </script>
 </head>
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>

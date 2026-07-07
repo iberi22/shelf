@@ -384,7 +384,6 @@ const appReducer = (state: AppState, action: Action): AppState => {
       // CRDT mutation actions are now handled reactively via SYNC_ENTITIES
       return state;
 
-
     case 'SET_LOCAL_PEER_ID':
       return { ...state, localPeerId: action.payload };
 
@@ -1021,7 +1020,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     },
     [rawDispatch, isLoaded],
   );
-
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

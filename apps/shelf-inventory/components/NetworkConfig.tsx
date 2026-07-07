@@ -1,12 +1,8 @@
-import {
-  Fingerprint,
-  Languages,
-  Lock,
-} from 'lucide-react';
-import { decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
+import { Fingerprint, Languages, Lock } from 'lucide-react';
 import type { RestoreStatePayload } from 'p2p-mesh-core';
+import { decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
 import type React from 'react';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -69,10 +65,10 @@ const NetworkConfig: React.FC = () => {
   const [newPin, setNewPin] = useState('');
   const [biometricsSupported, setBiometricsSupported] = useState(false);
 
-  const team = useMemo(() => [
-    { id: 'owner', email: user?.email ?? 'owner@example.com', role: 'owner' as const },
-    ...state.teamMembers,
-  ], [user?.email, state.teamMembers]);
+  const team = useMemo(
+    () => [{ id: 'owner', email: user?.email ?? 'owner@example.com', role: 'owner' as const }, ...state.teamMembers],
+    [user?.email, state.teamMembers],
+  );
 
   const isAdmin = state.role === 'admin' || team.find((m) => m.email === user?.email)?.role === 'owner';
 
@@ -357,8 +353,8 @@ const NetworkConfig: React.FC = () => {
               <div className="min-w-0">
                 <label className="block text-sm font-medium text-[#F5F5DC]/90">OCR de Facturas Local</label>
                 <p className="mt-1 text-xs text-[#F5F5DC]/60">
-                  Usa Tesseract.js para procesar facturas 100% offline. Si está desactivado, se usará la API de
-                  Gemini (requiere internet y API Key).
+                  Usa Tesseract.js para procesar facturas 100% offline. Si está desactivado, se usará la API de Gemini
+                  (requiere internet y API Key).
                 </p>
               </div>
               <button
@@ -516,9 +512,7 @@ const NetworkConfig: React.FC = () => {
           <div className="rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <label className="block text-sm font-medium text-[#F5F5DC]/90">
-                  Contraseña o PIN de la aplicación
-                </label>
+                <label className="block text-sm font-medium text-[#F5F5DC]/90">Contraseña o PIN de la aplicación</label>
                 <p className="text-xs text-[#F5F5DC]/60">
                   {hasAppLock ? 'Protegido con contraseña/PIN' : 'Sin contraseña local'}
                 </p>
