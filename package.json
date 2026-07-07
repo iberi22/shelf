@@ -10,7 +10,9 @@
         "prepare": "husky"
     },
     "devDependencies": {
+        "@firebase/rules-unit-testing": "^5.0.1",
         "esbuild": "^0.25.4",
+        "firebase-tools": "^15.22.4",
         "husky": "^9.1.7",
         "turbo": "^2.10.3"
     },
