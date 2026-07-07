@@ -92,7 +92,7 @@ export function parseShopifyProduct(shopifyProduct: ShopifyProduct, peerId: stri
     isActive: shopifyProduct.status !== 'archived',
     updatedBy: peerId,
     updatedAt: new Date().toISOString(),
-    variants: shopifyProduct.variants.map(v => ({
+    variants: shopifyProduct.variants.map((v) => ({
       id: `shopify-variant-${v.id}`,
       label: v.title,
       sku: v.sku,
@@ -107,12 +107,12 @@ export function parseShopifyProduct(shopifyProduct: ShopifyProduct, peerId: stri
       isActive: true,
       updatedBy: peerId,
       updatedAt: new Date().toISOString(),
-    }))
+    })),
   };
 }
 
 export function parseShopifyOrder(shopifyOrder: ShopifyOrder, peerId: string): Sale {
-  const items: SaleItem[] = shopifyOrder.line_items.map(item => ({
+  const items: SaleItem[] = shopifyOrder.line_items.map((item) => ({
     productId: `shopify-${item.product_id}`,
     productVariantId: `shopify-variant-${item.variant_id}`,
     productName: item.title,
@@ -130,7 +130,9 @@ export function parseShopifyOrder(shopifyOrder: ShopifyOrder, peerId: string): S
     totalPrice,
     profit: totalPrice, // Simplified
     clientId: shopifyOrder.customer ? `shopify-customer-${shopifyOrder.customer.id}` : undefined,
-    clientName: shopifyOrder.customer ? `${shopifyOrder.customer.first_name} ${shopifyOrder.customer.last_name}` : undefined,
+    clientName: shopifyOrder.customer
+      ? `${shopifyOrder.customer.first_name} ${shopifyOrder.customer.last_name}`
+      : undefined,
     isActive: true,
     updatedBy: peerId,
     updatedAt: new Date().toISOString(),
@@ -186,7 +188,7 @@ export function parseWooProduct(wooProduct: WooProduct, peerId: string): Product
 }
 
 export function parseWooOrder(wooOrder: WooOrder, peerId: string): Sale {
-  const items: SaleItem[] = wooOrder.line_items.map(item => ({
+  const items: SaleItem[] = wooOrder.line_items.map((item) => ({
     productId: `woo-${item.product_id}`,
     productVariantId: item.variation_id ? `woo-variant-${item.variation_id}` : undefined,
     productName: item.name,

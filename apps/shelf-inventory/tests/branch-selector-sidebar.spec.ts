@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupPage } from './helpers';
 
 test.describe('Branch Selector in Sidebar', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    // Wait for the app to load
-    await page.waitForSelector('text=[ Shelf. ]');
+    await setupPage(page);
   });
 
   test('should show branch selector in sidebar when branches are active', async ({ page }) => {

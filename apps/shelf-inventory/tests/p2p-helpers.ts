@@ -265,3 +265,28 @@ export async function expectAppStateEntity<T = unknown>(
     })
     .toBe(true);
 }
+
+export async function connectPeers(sourcePage: Page, targetPeerId: string, timeout = 30000) {
+  // 1. Trigger connection once
+  await sourcePage.evaluate((targetId) => {
+    const p2pManager = (window as any)._p2pManagerForTest;
+    if (p2pManager && !p2pManager.isPeerConnected(targetId)) {
+      try {
+        p2pManager.connect(targetId);
+      } catch (e) {}
+    }
+  }, targetPeerId);
+
+  // 2. Wait for connection to succeed
+  await expect
+    .poll(
+      async () => {
+        return sourcePage.evaluate((targetId) => {
+          const p2pManager = (window as any)._p2pManagerForTest;
+          return p2pManager ? Boolean(p2pManager.isPeerConnected(targetId)) : false;
+        }, targetPeerId);
+      },
+      { timeout }
+    )
+    .toBe(true);
+}

@@ -14,8 +14,18 @@ try {
   console.warn('Could not retrieve commit hash');
 }
 
+/// <reference types="vitest" />
 // https://vitejs.dev/config/
 export default defineConfig({
+  test: {
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/cypress/**',
+      '**/tests/**',
+      '**/.{idea,git,cache,output,temp}/**',
+    ],
+  },
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
     __COMMIT_HASH__: JSON.stringify(commitHash),

@@ -50,13 +50,15 @@ test.describe('Arqueo (Cash Count), Catalog, Reports', () => {
     const addBtn = page.getByTestId('add-product-button');
     if (await addBtn.isVisible().catch(() => false)) {
       await addBtn.click();
-      await dismissModals(page);
       await page.getByTestId('product-name-input').fill('Catalog Test Item');
       await page.getByTestId('product-quantity-input').fill('10');
       await page.getByTestId('product-price-input').fill('100');
       await page.getByTestId('product-cost-input').fill('50');
       await page.getByTestId('save-product-button').click();
-      await expect(page.locator('text=Catalog Test Item').first()).toBeVisible({ timeout: 5000 });
+      // Wait for modal to disappear
+      await expect(page.getByTestId('save-product-button')).not.toBeVisible({ timeout: 5000 });
+      // Now wait for the product in the grid
+      await expect(page.locator('text=Catalog Test Item').first()).toBeVisible({ timeout: 10000 });
     }
 
     // Navigate to Catalog

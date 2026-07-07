@@ -17,9 +17,9 @@ describe('Webhook Parsers', () => {
             price: '29.99',
             inventory_quantity: 10,
             title: 'Default Variant',
-          }
+          },
         ],
-        images: [{ src: 'https://example.com/image.jpg' }]
+        images: [{ src: 'https://example.com/image.jpg' }],
       };
 
       const parsed = parseShopifyProduct(shopifyProduct as any, peerId);
@@ -42,15 +42,15 @@ describe('Webhook Parsers', () => {
             title: 'Test Shopify Product',
             quantity: 2,
             price: '29.99',
-            sku: 'SKU-789'
-          }
+            sku: 'SKU-789',
+          },
         ],
         customer: {
           id: 555,
           first_name: 'John',
           last_name: 'Doe',
-          email: 'john@example.com'
-        }
+          email: 'john@example.com',
+        },
       };
 
       const parsed = parseShopifyOrder(shopifyOrder as any, peerId);
@@ -70,7 +70,7 @@ describe('Webhook Parsers', () => {
         price: '15.50',
         stock_quantity: 5,
         status: 'publish',
-        images: [{ src: 'https://example.com/woo.jpg' }]
+        images: [{ src: 'https://example.com/woo.jpg' }],
       };
 
       const parsed = parseWooProduct(wooProduct as any, peerId);
@@ -92,14 +92,14 @@ describe('Webhook Parsers', () => {
             name: 'Test Woo Product',
             quantity: 2,
             price: 15.5,
-            sku: 'WOO-SKU'
-          }
+            sku: 'WOO-SKU',
+          },
         ],
         billing: {
           first_name: 'Jane',
           last_name: 'Smith',
-          email: 'jane@example.com'
-        }
+          email: 'jane@example.com',
+        },
       };
 
       const parsed = parseWooOrder(wooOrder as any, peerId);

@@ -46,6 +46,7 @@ export type SyncMessage =
 				ciphertext: string;
 				signature: string;
 				responderChallenge: string;
+				dsaPublicKey?: string;
 			};
 	  }
 	| {
@@ -172,7 +173,7 @@ class P2PManager {
 	private lastMessageTime = new Map<string, number>();
 	private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 	private pendingConnectionRequests = new Set<string>();
-	private pendingChallenges: Map<string, string> = new Map();
+	private pendingChallenges: Map<string, Set<string>> = new Map();
 	private peerDsaKeys: Map<string, string> = new Map();
 
 	// PQC Keypairs
@@ -364,7 +365,7 @@ class P2PManager {
 					?.env?.NODE_ENV === "development");
 		const peerOptions = isDev
 			? {
-					host: "localhost",
+					host: "127.0.0.1",
 					port: 9000,
 					path: "/",
 					secure: false,
@@ -540,7 +541,9 @@ class P2PManager {
 			// Start PQC Handshake deterministically to avoid both sides sending it
 			if (this.localPeerId && this.localPeerId > conn.peer) {
 				const challenge = toHex(crypto.getRandomValues(new Uint8Array(32)));
-				this.pendingChallenges.set(conn.peer, challenge);
+				const peerChallenges = this.pendingChallenges.get(conn.peer) || new Set<string>();
+				peerChallenges.add(challenge);
+				this.pendingChallenges.set(conn.peer, peerChallenges);
 				conn.send({
 					type: "PQC_HANDSHAKE",
 					payload: {
@@ -586,7 +589,9 @@ class P2PManager {
 					const responderChallenge = toHex(
 						crypto.getRandomValues(new Uint8Array(32)),
 					);
-					this.pendingChallenges.set(conn.peer, responderChallenge);
+					const peerChallenges = this.pendingChallenges.get(conn.peer) || new Set<string>();
+					peerChallenges.add(responderChallenge);
+					this.pendingChallenges.set(conn.peer, peerChallenges);
 
 					this.setupEncryption(conn.peer, sharedSecret).then(() => {
 						logger.log(`PQC encryption ready for ${conn.peer}`);
@@ -598,6 +603,7 @@ class P2PManager {
 							ciphertext: toHex(ciphertext),
 							signature,
 							responderChallenge,
+							dsaPublicKey: toHex(this.dsaKeyPair.publicKey),
 						},
 					});
 					return;
@@ -610,26 +616,34 @@ class P2PManager {
 					);
 					this.sharedSecrets.set(conn.peer, sharedSecret);
 
-					const challenge = this.pendingChallenges.get(conn.peer);
-					if (!challenge) {
+					const peerChallenges = this.pendingChallenges.get(conn.peer);
+					if (!peerChallenges || peerChallenges.size === 0) {
 						logger.error(`No pending challenge for peer ${conn.peer}`);
 						return;
 					}
 
 					// Wait for encryption setup before verifying? Not strictly necessary but cleaner
 					this.setupEncryption(conn.peer, sharedSecret).then(() => {
-						// Verify responder signature
+						if (message.payload.dsaPublicKey) {
+							this.peerDsaKeys.set(conn.peer, message.payload.dsaPublicKey);
+						}
+						// Verify responder signature against any of our sent challenges
 						const dsaPubKey = message.payload.signature
-							? this.peerDsaKeys.get(conn.peer)
+							? (message.payload.dsaPublicKey || this.peerDsaKeys.get(conn.peer))
 							: null;
-						if (
-							dsaPubKey &&
-							this.verify(
-								fromHex(message.payload.signature),
-								fromHex(challenge),
-								dsaPubKey,
-							)
-						) {
+						
+						let verifiedChallenge: string | null = null;
+						if (dsaPubKey) {
+							for (const challenge of peerChallenges) {
+								if (this.verify(fromHex(message.payload.signature), fromHex(challenge), dsaPubKey)) {
+									verifiedChallenge = challenge;
+									break;
+								}
+							}
+						}
+
+						if (verifiedChallenge) {
+							peerChallenges.delete(verifiedChallenge);
 							logger.log(`PQC Handshake verified responder ${conn.peer}`);
 
 							// Sign their challenge
@@ -643,7 +657,7 @@ class P2PManager {
 
 							dbSync.updateEphemeralNode(conn.peer, {
 								status: "verified",
-								dsaPublicKey: dsaPubKey,
+								dsaPublicKey: dsaPubKey || undefined,
 							});
 							this.health.markPong(conn.peer);
 							this.updatePeerList(conn.peer, "collaborator");
@@ -660,18 +674,21 @@ class P2PManager {
 				}
 
 				if (message.type === "PQC_KEM_REPLY_ACK") {
-					const challenge = this.pendingChallenges.get(conn.peer);
+					const peerChallenges = this.pendingChallenges.get(conn.peer);
 					const dsaPubKey = this.peerDsaKeys.get(conn.peer);
 
-					if (
-						challenge &&
-						dsaPubKey &&
-						this.verify(
-							fromHex(message.payload.signature),
-							fromHex(challenge),
-							dsaPubKey,
-						)
-					) {
+					let verifiedChallenge: string | null = null;
+					if (peerChallenges && dsaPubKey) {
+						for (const challenge of peerChallenges) {
+							if (this.verify(fromHex(message.payload.signature), fromHex(challenge), dsaPubKey)) {
+								verifiedChallenge = challenge;
+								break;
+							}
+						}
+					}
+
+					if (verifiedChallenge && dsaPubKey) {
+						peerChallenges?.delete(verifiedChallenge);
 						logger.log(`PQC Handshake verified initiator ${conn.peer}`);
 						dbSync.updateEphemeralNode(conn.peer, {
 							status: "verified",

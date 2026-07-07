@@ -11,13 +11,7 @@ async function verifyShopifySignature(req: Request, secret: string): Promise<boo
   const keyData = encoder.encode(secret);
   const bodyData = encoder.encode(body);
 
-  const key = await crypto.subtle.importKey(
-    'raw',
-    keyData,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
+  const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
 
   const signature = await crypto.subtle.sign('HMAC', key, bodyData);
   const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)));

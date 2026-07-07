@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { dismissModals, setupPage } from './helpers';
-import { expectProductSync, getLocalPeerId } from './p2p-helpers';
+import { expectProductSync, getLocalPeerId, connectPeers } from './p2p-helpers';
 
 test.describe('Data Integrity and Conflict Resolution', () => {
   test.setTimeout(120000);
@@ -54,21 +54,7 @@ test.describe('Data Integrity and Conflict Resolution', () => {
     const collabId = await getLocalPeerId(collabPage);
 
     // Connect peers
-    await adminPage.evaluate((targetPeerId: string) => {
-      (window as any)._p2pManagerForTest?.connect(targetPeerId);
-    }, collabId);
-
-    // Wait for connection
-    await expect
-      .poll(
-        async () => {
-          return adminPage.evaluate((targetId) => {
-            return (window as any)._p2pManagerForTest?.isPeerConnected(targetId);
-          }, collabId);
-        },
-        { timeout: 20000 },
-      )
-      .toBe(true);
+    await connectPeers(adminPage, collabId);
 
     // Step 1: Admin creates a product
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
@@ -90,7 +76,7 @@ test.describe('Data Integrity and Conflict Resolution', () => {
     });
 
     // Step 2: Wait for sync to collab
-    await expectProductSync(adminPage, collabPage, 'Integrity Test Product');
+    await expectProductSync(collabPage, adminPage, 'Integrity Test Product');
 
     const productId = await adminPage.evaluate(() => {
       const dbSync = (window as any)._dbSyncForTest;
@@ -196,18 +182,7 @@ test.describe('Data Integrity and Conflict Resolution', () => {
     const _idC = await getLocalPeerId(pageC);
 
     // Connect A and B, leave C isolated
-    await pageA.evaluate((targetId: string) => (window as any)._p2pManagerForTest?.connect(targetId), idB);
-
-    await expect
-      .poll(
-        async () => {
-          return pageA.evaluate((targetId) => {
-            return (window as any)._p2pManagerForTest?.isPeerConnected(targetId);
-          }, idB);
-        },
-        { timeout: 20000 },
-      )
-      .toBe(true);
+    await connectPeers(pageA, idB);
 
     // Page A creates Product 1
     await pageA.locator('[data-testid="nav-item-nav.inventory"]').last().click();
@@ -227,7 +202,7 @@ test.describe('Data Integrity and Conflict Resolution', () => {
     });
 
     // Verify A and B are synced
-    await expectProductSync(pageA, pageB, 'Product A');
+    await expectProductSync(pageB, pageA, 'Product A');
 
     // Page C (isolated) creates Product C
     await pageC.locator('[data-testid="nav-item-nav.inventory"]').last().click();
@@ -247,18 +222,7 @@ test.describe('Data Integrity and Conflict Resolution', () => {
     });
 
     // Now connect C to A
-    await pageC.evaluate((targetId: string) => (window as any)._p2pManagerForTest?.connect(targetId), idA);
-
-    await expect
-      .poll(
-        async () => {
-          return pageC.evaluate((targetId) => {
-            return (window as any)._p2pManagerForTest?.isPeerConnected(targetId);
-          }, idA);
-        },
-        { timeout: 20000 },
-      )
-      .toBe(true);
+    await connectPeers(pageC, idA);
 
     // Wait for all to converge
     await expect

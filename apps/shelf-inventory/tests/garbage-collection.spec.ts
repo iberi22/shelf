@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('Garbage Collection & Data Purge', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to local environment to initialize the store
-    await page.goto('http://localhost:5173/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
   });
 

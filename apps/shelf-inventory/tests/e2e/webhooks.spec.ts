@@ -14,9 +14,9 @@ test.describe('Webhook E2E', () => {
           title: 'E2E Test Product',
           quantity: 1,
           price: '100.00',
-          sku: 'E2E-SKU'
-        }
-      ]
+          sku: 'E2E-SKU',
+        },
+      ],
     };
 
     const shopifySecret = 'test_secret';
@@ -47,12 +47,12 @@ test.describe('Webhook E2E', () => {
           productName: item.title,
           quantity: item.quantity,
           price: parseFloat(item.price),
-          cost: 0
+          cost: 0,
         })),
         totalPrice: parseFloat(order.total_price),
         isActive: true,
         updatedBy: 'shopify-webhook-bot',
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       harness.upsert('sales', sale.id, sale);
