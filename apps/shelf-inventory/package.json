@@ -25,6 +25,8 @@
     "@google/genai": "^2.0.0",
     "@mlc-ai/web-llm": "^0.2.83",
     "@noble/post-quantum": "^0.6.1",
+    "@sentry/browser": "^10.63.0",
+    "@sentry/react": "^10.63.0",
     "chart.js": "^4.5.1",
     "cypress-downloadfile": "^1.2.4",
     "edge-mesh": "workspace:*",
