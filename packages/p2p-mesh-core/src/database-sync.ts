@@ -1200,22 +1200,20 @@ export class DatabaseSyncManager {
 			if (!yMap) return null;
 
 			const observer = (event: Y.YMapEvent<EntityRecord>) => {
-				if (event.transaction.origin !== "local") {
-					const items: EntityRecord[] = [];
-					const deletedIds: string[] = [];
+				const items: EntityRecord[] = [];
+				const deletedIds: string[] = [];
 
-					event.changes.keys.forEach((change, key) => {
-						if (change.action === "add" || change.action === "update") {
-							const item = yMap.get(key);
-							if (item) items.push(item);
-						} else if (change.action === "delete") {
-							deletedIds.push(key);
-						}
-					});
-
-					if (items.length > 0 || deletedIds.length > 0) {
-						callback(col, items, deletedIds);
+				event.changes.keys.forEach((change, key) => {
+					if (change.action === "add" || change.action === "update") {
+						const item = yMap.get(key);
+						if (item) items.push(item);
+					} else if (change.action === "delete") {
+						deletedIds.push(key);
 					}
+				});
+
+				if (items.length > 0 || deletedIds.length > 0) {
+					callback(col, items, deletedIds);
 				}
 			};
 
