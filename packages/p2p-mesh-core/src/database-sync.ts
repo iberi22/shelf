@@ -138,17 +138,22 @@ export class DatabaseSyncManager {
 		}
 
 		const node = this.linkedNodes.get(peerId);
+		const ephem = this.ephemeralNodes.get(peerId);
+		const isVerified = ephem?.status === "verified";
 		const isMasterPeer = this.isAuthorityPeer(peerId) || !!node?.isMaster;
 
 		if (!node) {
 			return {
 				role: (this.metadata.get("role") || "collaborator") as P2PRole,
 				permissions: undefined,
-				isMaster: isMasterPeer,
+				isMaster: isMasterPeer && (peerId === this.localPeerId || isVerified),
 			};
 		}
 
-		if (isMasterPeer) {
+		// Security: Admin/Master roles REQUIRE cryptographic verification
+		const canAssumePrivilegedRole = peerId === this.localPeerId || (isVerified && ephem?.dsaPublicKey === node.dsaPublicKey);
+
+		if (isMasterPeer && canAssumePrivilegedRole) {
 			return {
 				role: "admin" as P2PRole,
 				permissions: node.permissions,
@@ -156,10 +161,10 @@ export class DatabaseSyncManager {
 			};
 		}
 
-		if (node.role === "admin") {
+		if (node.role === "admin" && canAssumePrivilegedRole) {
 			return {
-				role: "collaborator" as P2PRole,
-				permissions: this.getDefaultPermissions("collaborator"),
+				role: "admin" as P2PRole,
+				permissions: node.permissions,
 				isMaster: false,
 			};
 		}
@@ -742,6 +747,10 @@ export class DatabaseSyncManager {
 				canEditPeerConfig && info.permissions
 					? info.permissions
 					: existingRecord.permissions || this.getDefaultPermissions(nextRole);
+			const nextDsaPublicKey =
+				canEditPeerConfig && info.dsaPublicKey
+					? info.dsaPublicKey
+					: existingRecord.dsaPublicKey;
 			const nextIsMaster =
 				peerId === authorityPeerId
 					? typeof info.isMaster === "boolean"
@@ -772,6 +781,7 @@ export class DatabaseSyncManager {
 				id: peerId,
 				permissions: nextPermissions,
 				role: nextRole,
+				dsaPublicKey: nextDsaPublicKey,
 				isMaster: nextIsMaster,
 				lastSeen: new Date().toISOString(),
 				connectedAt: nextConnectedAt,

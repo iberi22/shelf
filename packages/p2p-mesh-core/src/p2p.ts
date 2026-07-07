@@ -34,9 +34,26 @@ export type SyncMessage =
 	| { type: "PEER_LIST_UPDATE"; payload: PeerInfo[] }
 	| {
 			type: "PQC_HANDSHAKE";
-			payload: { kemPublicKey: string; dsaPublicKey: string };
+			payload: {
+				kemPublicKey: string;
+				dsaPublicKey: string;
+				challenge: string;
+			};
 	  }
-	| { type: "PQC_KEM_REPLY"; payload: { ciphertext: string } }
+	| {
+			type: "PQC_KEM_REPLY";
+			payload: {
+				ciphertext: string;
+				signature: string;
+				responderChallenge: string;
+			};
+	  }
+	| {
+			type: "PQC_KEM_REPLY_ACK";
+			payload: {
+				signature: string;
+			};
+	  }
 	| {
 			type: "PQC_HANDSHAKE_REQUEST";
 			payload: { kemPubKey: string; dsaPubKey: string; deviceName: string };
@@ -155,10 +172,36 @@ class P2PManager {
 	private lastMessageTime = new Map<string, number>();
 	private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 	private pendingConnectionRequests = new Set<string>();
+	private pendingChallenges: Map<string, string> = new Map();
+	private peerDsaKeys: Map<string, string> = new Map();
 
 	// PQC Keypairs
-	private kemKeyPair = generateKEMKeyPair();
-	private dsaKeyPair = generateDSAKeyPair();
+	private kemKeyPair: { publicKey: Uint8Array; secretKey: Uint8Array } =
+		this.loadOrGenerateKeys("kem");
+	private dsaKeyPair: { publicKey: Uint8Array; secretKey: Uint8Array } =
+		this.loadOrGenerateKeys("dsa");
+
+	private loadOrGenerateKeys(type: "kem" | "dsa") {
+		if (typeof localStorage !== "undefined") {
+			const pubKey = localStorage.getItem(`shelf_${type}_public_key`);
+			const secKey = localStorage.getItem(`shelf_${type}_secret_key`);
+			if (pubKey && secKey) {
+				return {
+					publicKey: fromHex(pubKey),
+					secretKey: fromHex(secKey),
+				};
+			}
+		}
+
+		const keys = type === "kem" ? generateKEMKeyPair() : generateDSAKeyPair();
+
+		if (typeof localStorage !== "undefined") {
+			localStorage.setItem(`shelf_${type}_public_key`, toHex(keys.publicKey));
+			localStorage.setItem(`shelf_${type}_secret_key`, toHex(keys.secretKey));
+		}
+
+		return keys;
+	}
 
 	public sign(message: Uint8Array): Uint8Array {
 		return ml_dsa65.sign(message, this.dsaKeyPair.secretKey);
@@ -363,6 +406,7 @@ class P2PManager {
 						role: "admin",
 						isMaster: true,
 						status: "verified",
+						dsaPublicKey: toHex(this.dsaKeyPair.publicKey),
 					},
 					id,
 				);
@@ -371,18 +415,29 @@ class P2PManager {
 				this.updatePeerList(id, "admin");
 				this.notifyConnectionChange();
 			} else if (currentMaster === id) {
-				this.role = "admin";
-				dbSync.updateLinkedNode(
-					id,
-					{
-						role: "admin",
-						isMaster: true,
-						status: "verified",
-					},
-					id,
-				);
-				this.updatePeerList(id, "admin");
-				this.notifyConnectionChange();
+				const existingNode = dbSync.getLinkedNodes().find((n) => n.id === id);
+				const dsaPubKey = toHex(this.dsaKeyPair.publicKey);
+
+				if (!existingNode || existingNode.dsaPublicKey === dsaPubKey) {
+					this.role = "admin";
+					dbSync.updateLinkedNode(
+						id,
+						{
+							role: "admin",
+							isMaster: true,
+							status: "verified",
+							dsaPublicKey: dsaPubKey,
+						},
+						id,
+					);
+					this.updatePeerList(id, "admin");
+					this.notifyConnectionChange();
+				} else {
+					logger.error(
+						"[SECURITY] Local DSA key does not match master key in CRDT. Fallback to collaborator.",
+					);
+					this.role = "collaborator";
+				}
 			}
 
 			this.flushPendingConnections();
@@ -484,13 +539,19 @@ class P2PManager {
 
 			// Start PQC Handshake deterministically to avoid both sides sending it
 			if (this.localPeerId && this.localPeerId > conn.peer) {
+				const challenge = toHex(crypto.getRandomValues(new Uint8Array(32)));
+				this.pendingChallenges.set(conn.peer, challenge);
 				conn.send({
 					type: "PQC_HANDSHAKE",
 					payload: {
 						kemPublicKey: toHex(this.kemKeyPair.publicKey),
 						dsaPublicKey: toHex(this.dsaKeyPair.publicKey),
+						challenge,
 					},
 				});
+			} else {
+				// We still want to know their dsaPubKey if they initiate
+				// It will be set when we receive PQC_HANDSHAKE
 			}
 
 			conn.on("data", (data) => {
@@ -517,24 +578,28 @@ class P2PManager {
 						fromHex(message.payload.kemPublicKey),
 					);
 					this.sharedSecrets.set(conn.peer, sharedSecret);
-					this.setupEncryption(conn.peer, sharedSecret).then(() => {
-						// Update status in ephemeralNodes map
-						dbSync.updateEphemeralNode(conn.peer, {
-							status: "verified",
-						});
-						this.health.markPong(conn.peer);
-						// Update local peer list
-						this.updatePeerList(conn.peer, "collaborator");
-						this.notifyConnectionChange();
+					this.peerDsaKeys.set(conn.peer, message.payload.dsaPublicKey);
 
-						this.requestYjsSync(conn.peer);
+					const signature = toHex(
+						this.sign(fromHex(message.payload.challenge)),
+					);
+					const responderChallenge = toHex(
+						crypto.getRandomValues(new Uint8Array(32)),
+					);
+					this.pendingChallenges.set(conn.peer, responderChallenge);
+
+					this.setupEncryption(conn.peer, sharedSecret).then(() => {
+						logger.log(`PQC encryption ready for ${conn.peer}`);
 					});
 
 					conn.send({
 						type: "PQC_KEM_REPLY",
-						payload: { ciphertext: toHex(ciphertext) },
+						payload: {
+							ciphertext: toHex(ciphertext),
+							signature,
+							responderChallenge,
+						},
 					});
-					logger.log(`PQC Handshake established with ${conn.peer}`);
 					return;
 				}
 
@@ -544,18 +609,84 @@ class P2PManager {
 						this.kemKeyPair.secretKey,
 					);
 					this.sharedSecrets.set(conn.peer, sharedSecret);
-					this.setupEncryption(conn.peer, sharedSecret).then(() => {
-						logger.log(`PQC Shared secret recovered from ${conn.peer}`);
 
+					const challenge = this.pendingChallenges.get(conn.peer);
+					if (!challenge) {
+						logger.error(`No pending challenge for peer ${conn.peer}`);
+						return;
+					}
+
+					// Wait for encryption setup before verifying? Not strictly necessary but cleaner
+					this.setupEncryption(conn.peer, sharedSecret).then(() => {
+						// Verify responder signature
+						const dsaPubKey = message.payload.signature
+							? this.peerDsaKeys.get(conn.peer)
+							: null;
+						if (
+							dsaPubKey &&
+							this.verify(
+								fromHex(message.payload.signature),
+								fromHex(challenge),
+								dsaPubKey,
+							)
+						) {
+							logger.log(`PQC Handshake verified responder ${conn.peer}`);
+
+							// Sign their challenge
+							const signature = toHex(
+								this.sign(fromHex(message.payload.responderChallenge)),
+							);
+							conn.send({
+								type: "PQC_KEM_REPLY_ACK",
+								payload: { signature },
+							});
+
+							dbSync.updateEphemeralNode(conn.peer, {
+								status: "verified",
+								dsaPublicKey: dsaPubKey,
+							});
+							this.health.markPong(conn.peer);
+							this.updatePeerList(conn.peer, "collaborator");
+							this.notifyConnectionChange();
+							this.requestYjsSync(conn.peer);
+						} else {
+							logger.error(
+								`[SECURITY] PQC Handshake verification failed for ${conn.peer}`,
+							);
+							conn.close();
+						}
+					});
+					return;
+				}
+
+				if (message.type === "PQC_KEM_REPLY_ACK") {
+					const challenge = this.pendingChallenges.get(conn.peer);
+					const dsaPubKey = this.peerDsaKeys.get(conn.peer);
+
+					if (
+						challenge &&
+						dsaPubKey &&
+						this.verify(
+							fromHex(message.payload.signature),
+							fromHex(challenge),
+							dsaPubKey,
+						)
+					) {
+						logger.log(`PQC Handshake verified initiator ${conn.peer}`);
 						dbSync.updateEphemeralNode(conn.peer, {
 							status: "verified",
+							dsaPublicKey: dsaPubKey,
 						});
 						this.health.markPong(conn.peer);
 						this.updatePeerList(conn.peer, "collaborator");
 						this.notifyConnectionChange();
-
 						this.requestYjsSync(conn.peer);
-					});
+					} else {
+						logger.error(
+							`[SECURITY] PQC Handshake ACK verification failed for ${conn.peer}`,
+						);
+						conn.close();
+					}
 					return;
 				}
 
