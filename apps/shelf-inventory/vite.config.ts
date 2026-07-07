@@ -144,7 +144,7 @@ export default defineConfig({
       },
     },
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'android-chrome-192x192.png', 'android-chrome-512x512.png'],
       manifest: {
         name: 'Shelf - Gesti├│n de Inventario',

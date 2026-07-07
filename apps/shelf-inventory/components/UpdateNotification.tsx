@@ -20,7 +20,7 @@ const UpdateNotification: React.FC = () => {
       console.log('Service Worker registrado correctamente');
       if (r) {
         window.setTimeout(() => r.update(), 3000);
-        const intervalId = window.setInterval(() => r.update(), 5 * 60 * 1000);
+        const intervalId = window.setInterval(() => r.update(), 60 * 60 * 1000); // Check for updates every 60 minutes
         window.addEventListener(
           'beforeunload',
           () => {
