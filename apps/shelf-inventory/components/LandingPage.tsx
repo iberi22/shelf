@@ -2,6 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
+import DocumentationModal from './DocumentationModal';
 import WelcomeModal from './WelcomeModal';
 
 interface LandingPageProps {
@@ -11,6 +12,7 @@ interface LandingPageProps {
 const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   const { t } = useI18n();
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [showDocs, setShowDocs] = useState(false);
 
   const { loginAsGuest, user } = useAuth();
 
@@ -65,6 +67,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             className="text-sm md:text-base font-semibold text-white/70 hover:text-white transition-colors"
           >
             Saber más
+          </button>
+          <button
+            onClick={() => setShowDocs(true)}
+            className="text-sm md:text-base font-semibold text-yellow-500/80 hover:text-yellow-400 transition-colors hidden sm:block"
+          >
+            Guías / Docs
           </button>
           {!user && (
             <button
@@ -288,6 +296,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
 
       {/* Welcome Modal */}
       <WelcomeModal isOpen={showWelcomeModal} onClose={handleWelcomeClose} />
+
+      {/* Documentation Modal */}
+      <DocumentationModal isOpen={showDocs} onClose={() => setShowDocs(false)} />
 
       {/* Inline styles for custom animations */}
       <style>{`

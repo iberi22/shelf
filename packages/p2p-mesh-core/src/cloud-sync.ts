@@ -136,9 +136,6 @@ export class CloudSyncManager {
 	 * Helper to convert Uint8Array to Base64 string
 	 */
 	private toBase64(array: Uint8Array): string {
-		if (typeof Buffer !== "undefined") {
-			return Buffer.from(array).toString("base64");
-		}
 		let binary = "";
 		const len = array.byteLength;
 		for (let i = 0; i < len; i++) {
@@ -151,9 +148,6 @@ export class CloudSyncManager {
 	 * Helper to convert Base64 string to Uint8Array
 	 */
 	private fromBase64(base64: string): Uint8Array {
-		if (typeof Buffer !== "undefined") {
-			return new Uint8Array(Buffer.from(base64, "base64"));
-		}
 		const binaryString = atob(base64);
 		const len = binaryString.length;
 		const bytes = new Uint8Array(len);

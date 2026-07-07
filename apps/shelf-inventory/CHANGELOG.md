@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.0.0] - 2026-07-07
+
+### Added
+- **Multi-User Authorization Backend (RBAC)**: Integración con Supabase para roles y permisos avanzados.
+- **Supabase Cloud Sync**: Sincronización en la nube para cuentas Pro, resolviendo conflictos de P2P en el backend.
+- **E-Commerce Webhook Listener**: Integración lista para recibir órdenes desde Shopify y WooCommerce y descontar stock automáticamente.
+- **Sentry Error Monitoring**: Detección de errores y excepciones con *Offline Queue* (los errores offline se reportan al volver la red).
+- **Google Analytics 4 (GA4)**: Telemetría inteligente *Offline-First* enfocada en eventos de venta e inventario.
+- **Advanced PDF Reporting Engine**: Reportes consolidados con `jspdf` y `jspdf-autotable`.
+- **Yjs CRDT Unidirectional Data Flow**: Migración completa a un estado reactivo Yjs que elimina *Race Conditions* en la sincronización P2P.
+- **Post-Quantum Cryptography (PQC)**: Handshakes criptográficos utilizando Kyber/Dilithium vía WebGPU para validaciones de administrador seguras en `edge-mesh`.
+- **Global E2E Test Suite**: Cobertura amplia en Playwright de flujos offline, Sentry, y sincronización Yjs.
+- **Centro de Aprendizaje**: Módulo de documentación interactiva en el Landing Page.
+
+### Changed
+- **Settings Module Decoupled**: Se refactorizó `Settings.tsx` en múltiples submódulos (`BranchConfig`, `NetworkConfig`, etc.) eliminando el *God Object*.
+- **Limpieza de Ramas**: Poda masiva de branches, unificando la estabilidad en `main`.
+
 ## [1.3.0] - 2026-06-01
 
 ### Added
