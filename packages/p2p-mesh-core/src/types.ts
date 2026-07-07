@@ -163,6 +163,8 @@ export interface PeerInfo {
 	isMaster?: boolean;
 	permissions?: PeerPermissions;
 	status?: "connected" | "verified" | "offline";
+	dsaPublicKey?: string;
+	isVerified?: boolean;
 }
 
 export interface AuditEntry {
