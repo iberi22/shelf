@@ -380,7 +380,6 @@ const appReducer = (state: AppState, action: Action): AppState => {
     case 'ADD_OCR_RESULT':
     case 'UPDATE_OCR_RESULT':
     case 'RECOVER_ITEM':
-    case 'RESTORE_PRODUCT_VERSION':
       // CRDT mutation actions are now handled reactively via SYNC_ENTITIES
       return state;
 
@@ -527,9 +526,6 @@ const appReducer = (state: AppState, action: Action): AppState => {
         [collection]: [...filteredExisting, ...nextItems],
       };
     }
-
-    case 'RECOVER_ITEM':
-      return state;
 
     case 'SET_ACTIVE_BRANCH':
       dbSync.activeBranchId = action.payload || undefined;

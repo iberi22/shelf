@@ -1,3 +1,4 @@
+import { Info } from 'lucide-react';
 import type { ChatMessage } from 'p2p-mesh-core';
 import type React from 'react';
 import { useState } from 'react';
@@ -9,7 +10,7 @@ import useLocalStorage from '../hooks/useLocalStorage';
 import { useWebLLM } from '../hooks/useWebLLM';
 
 const AIChat: React.FC = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { state } = useAppContext();
   const { getIdToken } = useAuth();
   const { isPro } = useSubscription();
@@ -17,6 +18,7 @@ const AIChat: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const [aiEngine, setAiEngine] = useLocalStorage<'auto' | 'local' | 'gemini' | 'nano'>('aiEngine', 'auto');
   const [localAiModel] = useLocalStorage('localAiModel', 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC');
@@ -43,11 +45,45 @@ const AIChat: React.FC = () => {
     setInput('');
     setIsLoading(true);
 
+    const isLocalModel = aiEngine === 'local' || aiEngine === 'nano';
+    const productLimit = isLocalModel ? 50 : 300;
+    const saleLimit = isLocalModel ? 20 : 100;
+    const logLimit = isLocalModel ? 10 : 50;
+
     const contextData = {
-      products: state.products.slice(0, 30).map((p) => ({ name: p.name, quantity: p.quantity, price: p.price })),
-      sales: state.sales.slice(0, 20).map((s) => ({ date: s.date, total: s.totalPrice })),
+      products: state.products.slice(0, productLimit).map((p) => ({
+        name: p.name,
+        sku: p.sku,
+        quantity: p.quantity,
+        price: p.price,
+        cost: p.cost,
+        colors: p.colors || (p.color ? [p.color] : []),
+        sizes: p.sizes,
+        dimensions: p.dimensions,
+        material: p.material,
+        capacity: p.capacity,
+        customFields: p.customFields,
+        variants: p.variants?.map((v) => ({
+          label: v.label,
+          sku: v.sku,
+          quantity: v.quantity,
+          attributes: v.attributes,
+        })),
+      })),
+      sales: state.sales.slice(0, saleLimit).map((s) => ({
+        date: s.date,
+        total: s.totalPrice,
+        items: s.items.map((i) => ({ name: i.productName, variant: i.variantLabel, quantity: i.quantity })),
+      })),
+      logs: state.auditLogs.slice(0, logLimit).map((l) => ({
+        action: l.action,
+        entityType: l.entityType,
+        timestamp: l.timestamp,
+      })),
     };
     const contextString = JSON.stringify(contextData);
+
+    const systemPrompt = `You are an inventory analyst for Shelf app. You must respond in the language of this locale code: ${locale}, or match the user's input language. Be helpful and analyze the provided data accurately.`;
 
     try {
       // 1. Local AI (WebLLM) - Explicitly selected or Auto-fallback
@@ -62,7 +98,7 @@ const AIChat: React.FC = () => {
 
           await generateResponse(
             [
-              { role: 'system', content: 'You are an inventory analyst for Shelf app.' },
+              { role: 'system', content: systemPrompt },
               { role: 'user', content: `Data: ${contextString}. User: ${input}` },
             ],
             (updatedText) => {
@@ -90,7 +126,7 @@ const AIChat: React.FC = () => {
         try {
           if (window.ai && (await window.ai.canCreateTextSession()) === 'readily') {
             const session = await window.ai.createTextSession();
-            const prompt = `You are an AI assistant for a business inventory app called Shelf.
+            const prompt = `${systemPrompt}
             Below is the current inventory and sales data for context.
             Data: ${contextString}
 
@@ -125,7 +161,7 @@ const AIChat: React.FC = () => {
                   {
                     parts: [
                       {
-                        text: `You are an AI assistant for Shelf. Context:
+                        text: `${systemPrompt} Context:
                   Data: ${contextString}
                   User: ${input}`,
                       },
@@ -160,7 +196,7 @@ const AIChat: React.FC = () => {
             body: JSON.stringify({
               model: savedOpenCodeGoModel,
               messages: [
-                { role: 'system', content: 'You are an AI assistant for an inventory app.' },
+                { role: 'system', content: systemPrompt },
                 { role: 'user', content: `Context: ${contextString}. User: ${input}` },
               ],
             }),
@@ -187,7 +223,8 @@ const AIChat: React.FC = () => {
         },
         body: JSON.stringify({
           prompt: input,
-          inventoryData: { products: state.products.slice(0, 50), sales: state.sales.slice(0, 50) },
+          systemPrompt,
+          inventoryData: contextData,
         }),
       });
 
@@ -235,11 +272,46 @@ const AIChat: React.FC = () => {
           </div>
         )}
         {messages.length === 0 && !isInitializing && (
-          <div className="flex justify-start">
-            <div className="max-w-xs md:max-w-md p-3 rounded-lg bg-[#F5F5DC]/10">
-              <p className="text-sm whitespace-pre-wrap">
-                {isAIDisabled ? t('reports.aiDisabledWelcome') : t('reports.aiWelcome')}
-              </p>
+          <div className="flex flex-col gap-3 max-w-md w-full">
+            <div className="flex justify-start">
+              <div className="p-3 rounded-lg bg-[#F5F5DC]/10 w-full">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-sm whitespace-pre-wrap font-bold">
+                    {isAIDisabled ? t('reports.aiDisabledWelcome') : t('reports.aiWelcome')}
+                  </p>
+                  <button
+                    onClick={() => setShowHelp(!showHelp)}
+                    className="text-[#F5F5DC]/60 hover:text-[#F5F5DC] transition-colors"
+                    title="How it works"
+                  >
+                    <Info className="w-4 h-4" />
+                  </button>
+                </div>
+                {showHelp && (
+                  <div className="text-xs text-[#F5F5DC]/80 space-y-2 mt-3 border-t border-[#F5F5DC]/10 pt-2">
+                    <p>
+                      <strong>¿Cómo funciona?</strong> Puedes preguntarme sobre tus inventarios, ventas recientes o
+                      pedirme análisis (ej. "¿Cuáles son los productos con bajo stock?"). Analizaré tus datos y
+                      responderé.
+                    </p>
+                    <p>
+                      <strong>Modelos Locales (Local / Nano):</strong> Tienen la gran ventaja de que tus datos nunca
+                      salen de tu dispositivo, garantizando total privacidad. Además,{' '}
+                      <strong>no tienen costo extra</strong> por consumo de API.
+                    </p>
+                    <p>
+                      <strong>WEBGPU:</strong> Si eliges 'Local', estamos utilizando WebGPU (si tu navegador lo soporta)
+                      a través de WebLLM para acelerar la inteligencia artificial usando la tarjeta gráfica de tu
+                      dispositivo.
+                    </p>
+                    <p>
+                      <strong>Teléfonos Celulares:</strong> Sí, puedes ejecutar modelos locales en celulares modernos
+                      que soporten WebGPU (como Chrome en Android o Safari 18+ en iOS). Si tu teléfono es muy antiguo o
+                      no soporta WebGPU, el sistema usará automáticamente los modelos en la nube.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
