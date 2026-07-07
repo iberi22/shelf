@@ -28,6 +28,9 @@ importers:
       '@firebase/rules-unit-testing':
         specifier: ^5.0.1
         version: 5.0.1(firebase@12.15.0)
+      esbuild:
+        specifier: ^0.25.4
+        version: 0.25.12
       firebase-tools:
         specifier: ^15.22.4
         version: 15.22.4(@types/node@26.1.0)

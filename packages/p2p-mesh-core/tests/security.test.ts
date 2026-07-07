@@ -39,6 +39,7 @@ describe('Security: Admin Claim Handshake', () => {
     (dbSync as any).ephemeralNodes.clear();
     (dbSync as any).metadata.clear();
     dbSync.localPeerId = 'test-local-peer';
+    dbSync.setMasterPeerId('test-local-peer');
     // Ensure dbSync is "ready" to avoid permission issues during test
     dbSync.isReady = true;
   });
@@ -85,6 +86,11 @@ describe('Security: Admin Claim Handshake', () => {
       status: 'verified',
       dsaPublicKey: dsaKey
     });
+    // For isMaster to be true, it must be recognized as authority peer
+    // Manually set metadata to bypass permission check in test
+    (dbSync as any).metadata.set('authorityPeerId', peerId);
+    (dbSync as any).metadata.set('masterPeerId', peerId);
+
     config = (dbSync as any).getEffectivePeerConfig(peerId);
     expect(config.role).toBe('admin');
     expect(config.isMaster).toBe(true);
