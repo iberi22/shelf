@@ -37,6 +37,7 @@
     "supplier": "Supplier",
     "status": "Status",
     "items": "Items",
+    "branch": "Branch",
     "notAvailable": "N/A",
     "exportCsv": "Export CSV",
     "dimensions": "Dimensions",
@@ -209,7 +210,14 @@
     "topProducts": "Top Products",
     "byRevenue": "By Revenue",
     "byProfit": "By Profit",
-    "noDataForPeriod": "No sales data available for the selected period."
+    "noDataForPeriod": "No sales data available for the selected period.",
+    "exportPdf": "Export PDF",
+    "inventoryValuation": "Inventory Valuation",
+    "lowStockReport": "Low Stock Report",
+    "valuation": {
+      "totalValue": "Total Value",
+      "grandTotal": "Grand Total"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -302,6 +310,12 @@
       "button": "Send Feedback",
       "success": "Thank you! Your feedback has been sent."
     },
+    "security": {
+      "title": "Security",
+      "enable": "Enable",
+      "disable": "Disable",
+      "lockedNote": "The application will be locked automatically upon reload."
+    },
     "ai": {
       "title": "AI Configuration",
       "description": "Configure your AI assistant engine and preferences.",
@@ -314,12 +328,6 @@
       "modelSmall": "Small (Phi-3 Mini)",
       "modelMedium": "Medium (Qwen 2.5 1.5B)",
       "proxyUrl": "Local Proxy URL (Optional)"
-    },
-    "security": {
-      "title": "Security",
-      "enable": "Enable",
-      "disable": "Disable",
-      "lockedNote": "The application will lock automatically on reload."
     },
 
     "branches": {
