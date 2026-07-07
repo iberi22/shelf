@@ -15,6 +15,7 @@ import { SubscriptionProvider } from './context/SubscriptionContext';
 import { UIProvider, useUI } from './context/UIContext';
 import useErrorMonitoring from './hooks/useErrorMonitoring';
 import useLocalStorage from './hooks/useLocalStorage';
+import { telemetry } from './lib/telemetry';
 import MainApp from './MainApp';
 
 interface PendingRecoveryRequest {
@@ -30,6 +31,14 @@ const AppContainer = () => {
   const [pendingRecoveryRequest, setPendingRecoveryRequest] = useState<PendingRecoveryRequest | null>(null);
   const { isLoading, loadingMessage, notification, hideNotification, showNotification } = useUI();
   const { isLocked, isLocalAccount, user } = useAuth();
+
+  // Track app init
+  useEffect(() => {
+    telemetry.trackEvent('app_init', {
+      is_pwa: window.matchMedia('(display-mode: standalone)').matches,
+      viewport_width: window.innerWidth,
+    });
+  }, []);
 
   // Handle invitation links
   useEffect(() => {

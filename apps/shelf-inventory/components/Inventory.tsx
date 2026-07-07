@@ -11,6 +11,7 @@ import { useSortableTable } from '../hooks/useSortableTable';
 import { compressImage } from '../lib/imageCompression';
 import { DEFAULT_INVENTORY_CONFIG, getInventoryFieldValue, normalizeInventoryConfig } from '../lib/inventoryConfig';
 import { createVariantDraft, summarizeVariantValues, type VariantDraft } from '../lib/productVariants';
+import { telemetry } from '../lib/telemetry';
 import BarcodeScanner from './BarcodeScanner';
 import { InfiniteTable } from './InfiniteTable';
 import Modal from './Modal';
@@ -212,6 +213,11 @@ const Inventory: React.FC = () => {
           isActive: true,
           updatedAt: timestamp,
         } as Product,
+      });
+      telemetry.trackEvent('product_created', {
+        branch_id: state.activeBranchId || 'global',
+        has_variants: Boolean(productData.variantAttributes?.length),
+        has_image: Boolean(productData.imageUrl),
       });
     }
     handleCloseModal();

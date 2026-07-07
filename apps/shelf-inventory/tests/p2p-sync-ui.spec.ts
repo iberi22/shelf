@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { setupPage, dismissModals } from './helpers';
+import { expect, test } from '@playwright/test';
+import { dismissModals, setupPage } from './helpers';
 import { getLocalPeerId } from './p2p-helpers';
 
 test.describe('P2P UI Sync Features', () => {
@@ -29,7 +29,7 @@ test.describe('P2P UI Sync Features', () => {
 
     // Navigate to Settings on Device 2
     await page2.getByTestId('nav-item-nav.settings').last().click();
-    
+
     // Connect to Admin via UI
     await page2.getByTestId('manual-peer-id-input').fill(adminPeerId);
     await page2.getByTestId('manual-connect-button').click();

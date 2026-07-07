@@ -1,13 +1,5 @@
-import {
-  Timer,
-  UserCheck,
-  Vote,
-} from 'lucide-react';
-import type {
-  GovernanceProposal,
-  GovernanceVote,
-  GovernanceVoteValue,
-} from 'p2p-mesh-core';
+import { Timer, UserCheck, Vote } from 'lucide-react';
+import type { GovernanceProposal, GovernanceVote, GovernanceVoteValue } from 'p2p-mesh-core';
 import { dbSync } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
