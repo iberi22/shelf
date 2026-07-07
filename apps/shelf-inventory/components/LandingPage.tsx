@@ -194,14 +194,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   {t('landing.governance.description')}
                 </p>
 
-                <a
-                  href="https://github.com/iberi22/shelf/tree/main/apps/docs"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => setShowDocs(true)}
                   className="inline-flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-sm font-semibold text-yellow-300 transition-colors hover:bg-yellow-500/15 hover:text-yellow-200"
                 >
                   {t('landing.governance.learnMore')}
-                </a>
+                </button>
 
                 <ul className="space-y-4">
                   {(Array.isArray(t('landing.governance.points', { returnObjects: true }))
@@ -284,14 +282,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
         <p>
           &copy; {new Date().getFullYear()} {t('appName')} {t('landing.footer')}
         </p>
-        <a
-          href="https://github.com/iberi22"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 inline-block text-neutral-600 hover:text-white transition-colors"
-        >
-          github.com/iberi22
-        </a>
       </footer>
 
       {/* Welcome Modal */}

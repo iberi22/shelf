@@ -400,15 +400,15 @@
       "description": "Atualize para o Pro para sincronizar seus dados em todos os seus dispositivos, mantendo-os seguros e atualizados."
     },
     "governance": {
-      "title": "Governan?a de dados distribu?da",
+      "title": "Governança de dados distribuída",
       "highlight": "Controle total.",
-      "description": "O Shelf usa uma arquitetura peer-to-peer offline-first. Seus dados ficam locais e sincronizam diretamente entre dispositivos confi?veis, sem um servidor central decidindo quem controla seu invent?rio.",
+      "description": "O Shelf usa uma arquitetura peer-to-peer offline-first. Seus dados ficam locais e sincronizam diretamente entre dispositivos confiáveis, sem um servidor central decidindo quem controla seu inventário.",
       "learnMore": "Saber mais",
       "points": [
-        "Gest?o unificada de v?rias filiais e dep?sitos.",
+        "Gestão unificada de várias filiais e depósitos.",
         "Dados particionados local-first, coordenados pelo host autorizado.",
-        "Relat?rios consolidados que podem combinar estoques remotos.",
-        "Seguran?a criptogr?fica p?s-qu?ntica com permiss?es verific?veis por n?."
+        "Relatórios consolidados que podem combinar estoques remotos.",
+        "Segurança criptográfica pós-quântica com permissões verificáveis por nó."
       ]
     }
   },
