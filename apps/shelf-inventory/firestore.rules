@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function getRole(orgId) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.role;
+    }
+
+    function isMember(orgId) {
+      return exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid));
+    }
+
+    // User profiles - every user has a profile
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Organizations - the root of multi-tenancy
+    match /organizations/{orgId} {
+      // Members can read organization metadata
+      allow read: if isAuthenticated() && isMember(orgId);
+      // Only admins can create/edit organization metadata
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && getRole(orgId) == 'admin';
+
+      // Members subcollection - stores roles for each user in the org
+      match /members/{memberId} {
+        allow read: if isAuthenticated() && isMember(orgId);
+        // Only admins can manage members
+        allow write: if isAuthenticated() && getRole(orgId) == 'admin';
+      }
+
+      // Products collection - Role Based Access
+      match /products/{productId} {
+        allow read: if isAuthenticated() && isMember(orgId);
+        // Admins and Editors can write products
+        allow write: if isAuthenticated() && (getRole(orgId) == 'admin' || getRole(orgId) == 'editor');
+      }
+
+      // Sales collection
+      match /sales/{saleId} {
+        allow read: if isAuthenticated() && isMember(orgId);
+        allow write: if isAuthenticated() && (getRole(orgId) == 'admin' || getRole(orgId) == 'editor');
+      }
+
+      // Clients and Suppliers
+      match /clients/{clientId} {
+        allow read: if isAuthenticated() && isMember(orgId);
+        allow write: if isAuthenticated() && (getRole(orgId) == 'admin' || getRole(orgId) == 'editor');
+      }
+
+      match /suppliers/{supplierId} {
+        allow read: if isAuthenticated() && isMember(orgId);
+        allow write: if isAuthenticated() && (getRole(orgId) == 'admin' || getRole(orgId) == 'editor');
+      }
+
+      // Purchase Orders, Arqueo, and OCR
+      match /purchaseOrders/{orderId} {
+        allow read: if isAuthenticated() && isMember(orgId);
+        allow write: if isAuthenticated() && (getRole(orgId) == 'admin' || getRole(orgId) == 'editor');
+      }
+
+      match /arqueoSessions/{sessionId} {
+        allow read: if isAuthenticated() && isMember(orgId);
+        allow write: if isAuthenticated() && (getRole(orgId) == 'admin' || getRole(orgId) == 'editor');
+      }
+
+      match /ocrResults/{resultId} {
+        allow read: if isAuthenticated() && isMember(orgId);
+        allow write: if isAuthenticated() && (getRole(orgId) == 'admin' || getRole(orgId) == 'editor');
+      }
+
+      // Audit Logs - usually append only for editors, full access for admins
+      match /auditLogs/{logId} {
+        allow read: if isAuthenticated() && isMember(orgId);
+        allow create: if isAuthenticated() && (getRole(orgId) == 'admin' || getRole(orgId) == 'editor');
+        allow update, delete: if isAuthenticated() && getRole(orgId) == 'admin';
+      }
+
+      // Branches
+      match /branches/{branchId} {
+        allow read: if isAuthenticated() && isMember(orgId);
+        allow write: if isAuthenticated() && getRole(orgId) == 'admin';
+      }
+    }
+
+    // Invitations - used to join organizations
+    match /invitations/{invitationId} {
+      // Anyone can read an invitation if they have the ID (to accept it)
+      allow read: if true;
+      // Only admins can create invitations
+      allow create: if isAuthenticated() && getRole(request.resource.data.organizationId) == 'admin';
+      // Only admins can delete/update
+      allow update, delete: if isAuthenticated() && getRole(resource.data.organizationId) == 'admin';
+    }
+  }
+}

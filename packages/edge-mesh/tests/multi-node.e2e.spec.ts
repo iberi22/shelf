@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const EDGE_MESH_BUNDLE_PATH = path.join(__dirname, 'dist', 'edge-mesh.js');
+const EDGE_MESH_BUNDLE_PATH = path.join(__dirname, '..', 'dist', 'edge-mesh.bundle.js');
 const EDGE_MESH_BUNDLE = fs.readFileSync(EDGE_MESH_BUNDLE_PATH, 'utf-8');
 
 async function setupNode(page: Page, peerId: string) {
@@ -82,6 +82,8 @@ async function setupNode(page: Page, peerId: string) {
       localPeerId: id,
       transport: transport
     });
+    // Trigger initial hello for discovery
+    transport.sayHello();
     (window as any).shelf = (window as any).mesh.getNamespace('shelf');
   }, peerId);
 }

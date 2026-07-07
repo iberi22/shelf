@@ -161,19 +161,17 @@ export class DatabaseSyncManager {
 			};
 		}
 
-		if (node.role === "admin" && canAssumePrivilegedRole) {
-			return {
-				role: "admin" as P2PRole,
-				permissions: node.permissions,
-				isMaster: false,
-			};
-		}
+		const rawRole = node.role || "collaborator";
+		const effectiveRole =
+			rawRole === "admin" && !canAssumePrivilegedRole
+				? "collaborator"
+				: rawRole;
 
 		return {
-			role: (node.role || "collaborator") as P2PRole,
+			role: effectiveRole as P2PRole,
 			permissions:
 				node.permissions ||
-				this.getDefaultPermissions(node.role || "collaborator"),
+				this.getDefaultPermissions(effectiveRole as P2PRole),
 			isMaster: false,
 		};
 	}
