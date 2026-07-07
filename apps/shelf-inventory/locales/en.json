@@ -37,6 +37,7 @@
     "supplier": "Supplier",
     "status": "Status",
     "items": "Items",
+    "branch": "Branch",
     "notAvailable": "N/A",
     "exportCsv": "Export CSV",
     "dimensions": "Dimensions",
@@ -209,7 +210,14 @@
     "topProducts": "Top Products",
     "byRevenue": "By Revenue",
     "byProfit": "By Profit",
-    "noDataForPeriod": "No sales data available for the selected period."
+    "noDataForPeriod": "No sales data available for the selected period.",
+    "exportPdf": "Export PDF",
+    "inventoryValuation": "Inventory Valuation",
+    "lowStockReport": "Low Stock Report",
+    "valuation": {
+      "totalValue": "Total Value",
+      "grandTotal": "Grand Total"
+    }
   },
   "settings": {
     "title": "Settings",

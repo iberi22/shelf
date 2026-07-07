@@ -37,6 +37,7 @@
     "supplier": "Proveedor",
     "status": "Estado",
     "items": "Ítems",
+    "branch": "Sucursal",
     "notAvailable": "N/D",
     "exportCsv": "Exportar CSV",
     "dimensions": "Medidas",
@@ -209,7 +210,14 @@
     "topProducts": "Productos Top",
     "byRevenue": "Por Ingresos",
     "byProfit": "Por Ganancia",
-    "noDataForPeriod": "No hay datos de ventas disponibles para el período seleccionado."
+    "noDataForPeriod": "No hay datos de ventas disponibles para el período seleccionado.",
+    "exportPdf": "Exportar PDF",
+    "inventoryValuation": "Valuación de Inventario",
+    "lowStockReport": "Reporte de Stock Bajo",
+    "valuation": {
+      "totalValue": "Valor Total",
+      "grandTotal": "Total General"
+    }
   },
   "settings": {
     "title": "Configuración",
@@ -300,6 +308,12 @@
       "button": "Enviar Sugerencia",
       "success": "¡Gracias! Tu sugerencia ha sido enviada."
     },
+    "security": {
+      "title": "Seguridad",
+      "enable": "Activar",
+      "disable": "Desactivar",
+      "lockedNote": "La aplicación se bloqueará automáticamente al recargar."
+    },
     "ai": {
       "title": "Configuración de IA",
       "description": "Configura el motor y las preferencias de tu asistente de IA.",
@@ -312,12 +326,6 @@
       "modelSmall": "Pequeño (Phi-3 Mini)",
       "modelMedium": "Mediano (Qwen 2.5 1.5B)",
       "proxyUrl": "URL de Proxy Local (Opcional)"
-    },
-    "security": {
-      "title": "Seguridad",
-      "enable": "Activar",
-      "disable": "Desactivar",
-      "lockedNote": "La aplicación se bloqueará automáticamente al recargar."
     },
 
     "branches": {

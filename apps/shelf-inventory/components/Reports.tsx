@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from 'chart.js';
 import { useEdgeMesh } from 'edge-mesh-react';
-import { Building2 } from 'lucide-react';
+import { Building2, Download } from 'lucide-react';
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import { Line } from 'react-chartjs-2';
@@ -19,6 +19,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useUI } from '../context/UIContext';
+import useLocalStorage from '../hooks/useLocalStorage';
 import AIChat from './AIChat';
 import StatCard from './StatCard';
 
@@ -31,6 +32,7 @@ const Reports: React.FC = () => {
   const { isFree } = useSubscription();
   const { openSubscriptionModal } = useUI();
   const { formatCurrency } = useCurrency();
+  const [lowStockThreshold] = useLocalStorage('lowStockThreshold', 5);
 
   // Filters State
   const today = new Date();
@@ -241,6 +243,87 @@ const Reports: React.FC = () => {
     ],
   };
 
+  const generateInventoryValuationPDF = async () => {
+    const { jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
+
+    const doc = new jsPDF();
+    const title = t('reports.inventoryValuation');
+    doc.setFontSize(18);
+    doc.text(title, 14, 22);
+
+    const tableColumn = [
+      t('common.product'),
+      t('common.sku'),
+      t('common.branch'),
+      t('common.stock'),
+      t('common.cost'),
+      t('reports.valuation.totalValue'),
+    ];
+
+    let grandTotal = 0;
+    const tableRows = consolidatedData.products
+      .filter((p) => p.isActive)
+      .map((p: any) => {
+        const totalValue = p.quantity * p.cost;
+        grandTotal += totalValue;
+        return [
+          p.name,
+          p.sku || '-',
+          p.branchName || 'Local',
+          p.quantity,
+          formatCurrency(p.cost),
+          formatCurrency(totalValue),
+        ];
+      });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 30,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [26, 26, 26] },
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY || 30;
+    doc.setFontSize(12);
+    doc.text(`${t('reports.valuation.grandTotal')}: ${formatCurrency(grandTotal)}`, 14, finalY + 10);
+
+    doc.save(`inventory_valuation_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const generateLowStockPDF = async () => {
+    const { jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
+
+    const doc = new jsPDF();
+    const title = t('reports.lowStockReport');
+    doc.setFontSize(18);
+    doc.text(title, 14, 22);
+
+    const tableColumn = [
+      t('common.product'),
+      t('common.sku'),
+      t('common.branch'),
+      t('common.stock'),
+      t('settings.lowStockThreshold'),
+    ];
+
+    const tableRows = consolidatedData.products
+      .filter((p) => p.isActive && p.quantity <= lowStockThreshold)
+      .map((p: any) => [p.name, p.sku || '-', p.branchName || 'Local', p.quantity, lowStockThreshold]);
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 30,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [26, 26, 26] },
+    });
+
+    doc.save(`low_stock_report_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -249,6 +332,29 @@ const Reports: React.FC = () => {
           <p className="text-sm md:text-base text-foreground/80">{t('reports.description')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          {!isFree && (
+            <div className="flex gap-2 mr-2">
+              <button
+                onClick={generateInventoryValuationPDF}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border bg-transparent text-[#F5F5DC] border-[#F5F5DC]/30 hover:bg-[#F5F5DC]/5"
+                data-testid="export-inventory-valuation-pdf"
+                title={t('reports.inventoryValuation')}
+              >
+                <Download className="h-3.5 w-3.5" />
+                {t('reports.inventoryValuation')}
+              </button>
+              <button
+                onClick={generateLowStockPDF}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border bg-transparent text-[#F5F5DC] border-[#F5F5DC]/30 hover:bg-[#F5F5DC]/5"
+                data-testid="export-low-stock-pdf"
+                title={t('reports.lowStockReport')}
+              >
+                <Download className="h-3.5 w-3.5" />
+                {t('reports.lowStockReport')}
+              </button>
+            </div>
+          )}
+
           {state.branches.filter((b) => b.isActive).length > 0 && reportType === 'sales' && (
             <button
               onClick={() => setIsConsolidated(!isConsolidated)}
