@@ -115,6 +115,71 @@ const createAuditEntry = (
   details,
 });
 
+const createAuditEntryFromAction = (state: AppState, action: Action): AuditEntry => {
+  const typeStr = action.type;
+  let details: unknown;
+
+  if (typeStr.includes('IMPORT') || typeStr.includes('BATCH')) {
+    details = (action as any).payload;
+  } else if (typeStr.startsWith('UPDATE_') && hasPayloadWithId(action)) {
+    const typeMap: Record<string, keyof AppState> = {
+      UPDATE_PRODUCT: 'products',
+      UPDATE_SALE: 'sales',
+      UPDATE_CLIENT: 'clients',
+      UPDATE_SUPPLIER: 'suppliers',
+      UPDATE_PURCHASE_ORDER: 'purchaseOrders',
+      UPDATE_ARQUEO_SESSION: 'arqueoSessions',
+      UPDATE_OCR_RESULT: 'ocrResults',
+    };
+    const stateKey = typeMap[typeStr as keyof typeof typeMap];
+    if (stateKey) {
+      const collection = getCollection(state, stateKey) as Array<Record<string, unknown>>;
+      const oldItem = collection.find((i) => i.id === (action.payload as any).id);
+      if (oldItem && 'id' in oldItem) {
+        const diff: Record<string, { old: unknown; new: unknown }> = {};
+        const payload = action.payload as Record<string, unknown>;
+        const oldRecord = oldItem as Record<string, unknown>;
+        for (const key in payload) {
+          if (payload[key] !== oldRecord[key] && key !== 'updatedAt' && key !== 'updatedBy') {
+            diff[key] = { old: oldRecord[key], new: payload[key] };
+          }
+        }
+        details = { diff };
+      } else {
+        details = { payload: action.payload };
+      }
+    } else {
+      details = { payload: action.payload };
+    }
+  } else if (typeStr.startsWith('ADD_') || typeStr.startsWith('DELETE_')) {
+    details = { payload: (action as any).payload };
+  }
+
+  const entityId = hasPayloadWithId(action)
+    ? (action.payload as any).id
+    : hasStringPayload(action)
+      ? action.payload
+      : undefined;
+
+  return createAuditEntry(
+    state,
+    typeStr,
+    entityId,
+    typeStr.toLowerCase().includes('product')
+      ? 'product'
+      : typeStr.toLowerCase().includes('sale')
+        ? 'sale'
+        : typeStr.toLowerCase().includes('client')
+          ? 'client'
+          : typeStr.toLowerCase().includes('supplier')
+            ? 'supplier'
+            : typeStr.toLowerCase().includes('purchase')
+              ? 'purchaseOrder'
+              : undefined,
+    details,
+  );
+};
+
 const enrich = <T,>(state: AppState, item: T) => ({
   isActive: true,
   updatedAt: new Date().toISOString(),
@@ -286,359 +351,39 @@ const mergeCollections = <T extends { id: string }>(local: T[], remote: T[] | un
 };
 
 const appReducer = (state: AppState, action: Action): AppState => {
-  let newState: AppState;
-
   switch (action.type) {
-    case 'ADD_PRODUCT': {
-      const enriched = enrich(state, normalizeProduct(action.payload));
-      newState = { ...state, products: [...state.products, enriched] };
-      break;
-    }
-    case 'UPDATE_PRODUCT': {
-      const previousProduct = state.products.find((p) => p.id === action.payload.id);
-      const enriched = enrich(state, normalizeProduct(action.payload));
-      newState = {
-        ...state,
-        products: state.products.map((p) => (p.id === action.payload.id ? enriched : p)),
-        productChangeHistory: previousProduct
-          ? pushProductHistory(
-              state,
-              state.productChangeHistory,
-              createProductHistoryEntry(state, previousProduct, 'UPDATE_PRODUCT'),
-            )
-          : state.productChangeHistory,
-      };
-      break;
-    }
-    case 'DELETE_PRODUCT': {
-      const previousProduct = state.products.find((p) => p.id === action.payload);
-      const deletedItem = {
-        ...previousProduct,
-        isActive: false,
-        updatedAt: new Date().toISOString(),
-        updatedBy: state.localPeerId || 'local',
-      };
-      newState = {
-        ...state,
-        products: state.products.map((p) => (p.id === action.payload ? (deletedItem as Product) : p)),
-        productChangeHistory: previousProduct
-          ? pushProductHistory(
-              state,
-              state.productChangeHistory,
-              createProductHistoryEntry(state, previousProduct, 'DELETE_PRODUCT'),
-            )
-          : state.productChangeHistory,
-      };
-      break;
-    }
-
-    case 'BATCH_UPDATE_PRODUCTS': {
-      const { toAdd, toUpdate } = action.payload;
-      const enrichedToAdd = toAdd.map((p) => enrich(state, normalizeProduct(p)));
-      const enrichedToUpdate = toUpdate.map((p) => enrich(state, normalizeProduct(p)));
-      const updatedIds = new Set(enrichedToUpdate.map((p) => p.id));
-      const updatedProducts = state.products.map((p) => {
-        if (updatedIds.has(p.id)) {
-          return enrichedToUpdate.find((up) => up.id === p.id) || p;
-        }
-        return p;
-      });
-      const nextHistory = toUpdate.reduce((history, product) => {
-        const previousProduct = state.products.find((p) => p.id === product.id);
-        return previousProduct
-          ? pushProductHistory(
-              state,
-              history,
-              createProductHistoryEntry(state, previousProduct, 'BATCH_UPDATE_PRODUCTS'),
-            )
-          : history;
-      }, state.productChangeHistory);
-      newState = { ...state, products: [...updatedProducts, ...enrichedToAdd], productChangeHistory: nextHistory };
-      break;
-    }
-
-    case 'IMPORT_PRODUCTS': {
-      const { products: newProductsData, strategy } = action.payload;
-      const existingSkus = new Map<string, Product>();
-      state.products.forEach((p) => {
-        if (p.sku) existingSkus.set(p.sku, p);
-      });
-
-      const productsToAdd: Product[] = [];
-      const productsToUpdate: Map<string, Product> = new Map();
-
-      newProductsData.forEach((newProductData) => {
-        const sku = newProductData.sku;
-        if (sku && existingSkus.has(sku)) {
-          if (strategy === 'update') {
-            const existingProduct = existingSkus.get(sku);
-            if (existingProduct) {
-              const updatedProduct = enrich(state, normalizeProduct({ ...existingProduct, ...newProductData }));
-              productsToUpdate.set(updatedProduct.id, updatedProduct);
-            }
-          }
-        } else {
-          const productId = `${new Date().toISOString()}_${Math.random()}`;
-          productsToAdd.push(
-            enrich(
-              state,
-              normalizeProduct({
-                id: productId,
-                isActive: true,
-                updatedBy: state.localPeerId || 'local',
-                updatedAt: new Date().toISOString(),
-                ...newProductData,
-              } as Product),
-            ) as Product,
-          );
-        }
-      });
-
-      let nextHistory = state.productChangeHistory;
-      const updatedProductList = state.products.map((p) => {
-        if (productsToUpdate.has(p.id)) {
-          const updated = productsToUpdate.get(p.id);
-          nextHistory = pushProductHistory(state, nextHistory, createProductHistoryEntry(state, p, 'IMPORT_PRODUCTS'));
-          return updated || p;
-        }
-        return p;
-      });
-
-      newState = { ...state, products: [...updatedProductList, ...productsToAdd], productChangeHistory: nextHistory };
-      break;
-    }
-
-    case 'UPDATE_SALE': {
-      const oldSale = state.sales.find((s) => s.id === action.payload.id);
-      if (!oldSale) {
-        return state;
-      }
-
-      // Restore quantities from old sale items
-      let updatedProducts = state.products;
-      for (const oldItem of oldSale.items) {
-        updatedProducts = updateInventoryQuantity(
-          state,
-          updatedProducts,
-          oldItem.productId,
-          oldItem.productVariantId,
-          oldItem.quantity,
-        );
-      }
-
-      // Deduct quantities from new sale items
-      for (const newItem of action.payload.items) {
-        updatedProducts = updateInventoryQuantity(
-          state,
-          updatedProducts,
-          newItem.productId,
-          newItem.productVariantId,
-          -newItem.quantity,
-        );
-      }
-
-      const salePayload = enrich(state, action.payload);
-      if (salePayload.clientId) {
-        const client = state.clients.find((c) => c.id === salePayload.clientId);
-        if (client) {
-          salePayload.clientName = client.name;
-        }
-      }
-
-      newState = {
-        ...state,
-        products: updatedProducts,
-        sales: state.sales.map((s) => (s.id === action.payload.id ? salePayload : s)),
-      };
-      break;
-    }
-
-    case 'DELETE_SALE': {
-      const deletedSale = state.sales.find((s) => s.id === action.payload);
-      let productsAfterDelete = state.products;
-
-      // Restore quantities when soft-deleting a sale
-      if (deletedSale) {
-        for (const item of deletedSale.items) {
-          productsAfterDelete = updateInventoryQuantity(
-            state,
-            productsAfterDelete,
-            item.productId,
-            item.productVariantId,
-            item.quantity,
-          );
-        }
-      }
-
-      newState = {
-        ...state,
-        products: productsAfterDelete,
-        sales: state.sales.map((s) =>
-          s.id === action.payload
-            ? { ...s, isActive: false, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' }
-            : s,
-        ),
-      };
-      break;
-    }
-
-    case 'ADD_SALE': {
-      let newProducts = [...state.products];
-      for (const item of action.payload.items) {
-        newProducts = updateInventoryQuantity(
-          state,
-          newProducts,
-          item.productId,
-          item.productVariantId,
-          -item.quantity,
-        );
-      }
-
-      const salePayload = enrich(state, action.payload);
-      if (salePayload.clientId) {
-        const client = state.clients.find((c) => c.id === salePayload.clientId);
-        if (client) {
-          salePayload.clientName = client.name;
-        }
-      }
-
-      newState = {
-        ...state,
-        products: newProducts,
-        sales: [...state.sales, salePayload],
-      };
-      break;
-    }
-
+    case 'ADD_PRODUCT':
+    case 'UPDATE_PRODUCT':
+    case 'DELETE_PRODUCT':
+    case 'BATCH_UPDATE_PRODUCTS':
+    case 'IMPORT_PRODUCTS':
+    case 'UPDATE_SALE':
+    case 'DELETE_SALE':
+    case 'ADD_SALE':
     case 'ADD_CLIENT':
-      newState = { ...state, clients: [...state.clients, enrich(state, action.payload)] };
-      break;
     case 'UPDATE_CLIENT':
-      newState = {
-        ...state,
-        clients: state.clients.map((c) => (c.id === action.payload.id ? enrich(state, action.payload) : c)),
-      };
-      break;
     case 'DELETE_CLIENT':
-      newState = {
-        ...state,
-        clients: state.clients.map((c) =>
-          c.id === action.payload
-            ? { ...c, isActive: false, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' }
-            : c,
-        ),
-      };
-      break;
-
     case 'ADD_SUPPLIER':
-      newState = { ...state, suppliers: [...state.suppliers, enrich(state, action.payload)] };
-      break;
     case 'UPDATE_SUPPLIER':
-      newState = {
-        ...state,
-        suppliers: state.suppliers.map((s) => (s.id === action.payload.id ? enrich(state, action.payload) : s)),
-      };
-      break;
     case 'DELETE_SUPPLIER':
-      newState = {
-        ...state,
-        suppliers: state.suppliers.map((s) =>
-          s.id === action.payload
-            ? { ...s, isActive: false, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' }
-            : s,
-        ),
-      };
-      break;
-
     case 'ADD_PURCHASE_ORDER':
-      newState = { ...state, purchaseOrders: [...state.purchaseOrders, enrich(state, action.payload)] };
-      break;
-    case 'UPDATE_PURCHASE_ORDER': {
-      const oldPO = state.purchaseOrders.find((po) => po.id === action.payload.id);
-      const newPO = action.payload;
-      let products = state.products;
-
-      if (oldPO?.status === 'pending' && newPO.status === 'received') {
-        products = [...state.products];
-        for (const poItem of newPO.items) {
-          products = updateInventoryQuantity(
-            state,
-            products,
-            poItem.productId,
-            poItem.productVariantId,
-            poItem.quantity,
-          );
-        }
-      }
-
-      newState = {
-        ...state,
-        products,
-        purchaseOrders: state.purchaseOrders.map((po) => (po.id === newPO.id ? enrich(state, newPO) : po)),
-      };
-      break;
-    }
+    case 'UPDATE_PURCHASE_ORDER':
     case 'DELETE_PURCHASE_ORDER':
-      newState = {
-        ...state,
-        purchaseOrders: state.purchaseOrders.map((po) =>
-          po.id === action.payload
-            ? { ...po, isActive: false, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' }
-            : po,
-        ),
-      };
-      break;
-
     case 'ADD_TEAM_MEMBER':
-      newState = { ...state, teamMembers: [...state.teamMembers, action.payload] };
-      break;
     case 'UPDATE_TEAM_MEMBER':
-      newState = {
-        ...state,
-        teamMembers: state.teamMembers.map((m) => (m.id === action.payload.id ? action.payload : m)),
-      };
-      break;
     case 'DELETE_TEAM_MEMBER':
-      newState = {
-        ...state,
-        teamMembers: state.teamMembers.filter((m) => m.id !== action.payload),
-      };
-      break;
     case 'ADD_BRANCH':
-      newState = { ...state, branches: [...state.branches, enrich(state, action.payload)] };
-      break;
     case 'UPDATE_BRANCH':
-      newState = {
-        ...state,
-        branches: state.branches.map((b) => (b.id === action.payload.id ? enrich(state, action.payload) : b)),
-      };
-      break;
     case 'DELETE_BRANCH':
-      newState = {
-        ...state,
-        branches: state.branches.map((b) => (b.id === action.payload ? { ...b, isActive: false } : b)),
-      };
-      break;
     case 'ADD_ARQUEO_SESSION':
-      newState = { ...state, arqueoSessions: [...state.arqueoSessions, enrich(state, action.payload)] };
-      break;
     case 'UPDATE_ARQUEO_SESSION':
-      newState = {
-        ...state,
-        arqueoSessions: state.arqueoSessions.map((s) =>
-          s.id === action.payload.id ? enrich(state, action.payload) : s,
-        ),
-      };
-      break;
     case 'ADD_OCR_RESULT':
-      newState = { ...state, ocrResults: [...state.ocrResults, enrich(state, action.payload)] };
-      break;
     case 'UPDATE_OCR_RESULT':
-      newState = {
-        ...state,
-        ocrResults: state.ocrResults.map((r) => (r.id === action.payload.id ? enrich(state, action.payload) : r)),
-      };
-      break;
+    case 'RECOVER_ITEM':
+    case 'RESTORE_PRODUCT_VERSION':
+      // CRDT mutation actions are now handled reactively via SYNC_ENTITIES
+      return state;
+
 
     case 'SET_LOCAL_PEER_ID':
       return { ...state, localPeerId: action.payload };
@@ -784,30 +529,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
     }
 
-    case 'RECOVER_ITEM': {
-      const { type, id } = action.payload;
-      const metadata = { isActive: true, updatedAt: new Date().toISOString(), updatedBy: state.localPeerId || 'local' };
-      switch (type) {
-        case 'product':
-          newState = { ...state, products: state.products.map((p) => (p.id === id ? { ...p, ...metadata } : p)) };
-          break;
-        case 'client':
-          newState = { ...state, clients: state.clients.map((c) => (c.id === id ? { ...c, ...metadata } : c)) };
-          break;
-        case 'supplier':
-          newState = { ...state, suppliers: state.suppliers.map((s) => (s.id === id ? { ...s, ...metadata } : s)) };
-          break;
-        case 'purchaseOrder':
-          newState = {
-            ...state,
-            purchaseOrders: state.purchaseOrders.map((po) => (po.id === id ? { ...po, ...metadata } : po)),
-          };
-          break;
-        default:
-          return state;
-      }
-      break;
-    }
+    case 'RECOVER_ITEM':
+      return state;
 
     case 'SET_ACTIVE_BRANCH':
       dbSync.activeBranchId = action.payload || undefined;
@@ -839,75 +562,6 @@ const appReducer = (state: AppState, action: Action): AppState => {
     default:
       return state;
   }
-
-  // Audit Logging for state-mutating actions
-  const mutationActions = ['ADD', 'UPDATE', 'DELETE', 'IMPORT', 'BATCH', 'RECOVER', 'RESTORE_PRODUCT'];
-  if (mutationActions.some((prefix) => action.type.startsWith(prefix))) {
-    let details: unknown;
-
-    if (action.type.includes('IMPORT') || action.type.includes('BATCH')) {
-      details = action.payload;
-    } else if (action.type.startsWith('UPDATE_') && hasPayloadWithId(action)) {
-      const typeMap: Record<string, keyof AppState> = {
-        UPDATE_PRODUCT: 'products',
-        UPDATE_SALE: 'sales',
-        UPDATE_CLIENT: 'clients',
-        UPDATE_SUPPLIER: 'suppliers',
-        UPDATE_PURCHASE_ORDER: 'purchaseOrders',
-        UPDATE_ARQUEO_SESSION: 'arqueoSessions',
-        UPDATE_OCR_RESULT: 'ocrResults',
-      };
-      const stateKey = typeMap[action.type];
-      if (stateKey) {
-        const collection = getCollection(state, stateKey) as Array<Record<string, unknown>>;
-        const oldItem = collection.find((i) => i.id === action.payload.id);
-        if (oldItem && 'id' in oldItem) {
-          const diff: Record<string, { old: unknown; new: unknown }> = {};
-          const payload = action.payload as Record<string, unknown>;
-          const oldRecord = oldItem as Record<string, unknown>;
-          for (const key in payload) {
-            if (payload[key] !== oldRecord[key] && key !== 'updatedAt' && key !== 'updatedBy') {
-              diff[key] = { old: oldRecord[key], new: payload[key] };
-            }
-          }
-          details = { diff };
-        } else {
-          details = { payload: action.payload };
-        }
-      } else {
-        details = { payload: action.payload };
-      }
-    } else if (action.type.startsWith('ADD_') || action.type.startsWith('DELETE_')) {
-      details = { payload: action.payload };
-    }
-
-    const entityId = hasPayloadWithId(action)
-      ? action.payload.id
-      : hasStringPayload(action)
-        ? action.payload
-        : undefined;
-
-    const auditEntry = createAuditEntry(
-      state,
-      action.type,
-      entityId,
-      action.type.toLowerCase().includes('product')
-        ? 'product'
-        : action.type.toLowerCase().includes('sale')
-          ? 'sale'
-          : action.type.toLowerCase().includes('client')
-            ? 'client'
-            : action.type.toLowerCase().includes('supplier')
-              ? 'supplier'
-              : action.type.toLowerCase().includes('purchase')
-                ? 'purchaseOrder'
-                : undefined,
-      details,
-    );
-    newState.auditLogs = [auditEntry, ...newState.auditLogs].slice(0, 1000);
-  }
-
-  return newState;
 };
 
 interface AppContextType {
@@ -969,19 +623,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
 
     // Listen for CRDT updates from other peers (metadata & expulsion)
-    dbSync.onChange((_update, origin) => {
-      if (origin !== 'local') {
-        const remoteState = dbSync.getState(dbSync.localPeerId);
-        // Only dispatch metadata updates here; entities are handled granularly by onObserve
-        rawDispatch({
-          type: 'SYNC_STATE',
-          payload: {
-            inventoryConfig: remoteState.inventoryConfig,
-            role: remoteState.role,
-            permissions: remoteState.permissions,
-          },
-        });
-      }
+    dbSync.onChange((_update, _origin) => {
+      const remoteState = dbSync.getState(dbSync.localPeerId);
+      // Only dispatch metadata updates here; entities are handled granularly by onObserve
+      rawDispatch({
+        type: 'SYNC_STATE',
+        payload: {
+          inventoryConfig: remoteState.inventoryConfig,
+          role: remoteState.role,
+          permissions: remoteState.permissions,
+        },
+      });
 
       // Expulsion check — with grace period to avoid false positives during init
       if (dbSync.localPeerId && isSyncInitialized.current) {
@@ -1054,18 +706,66 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Intercept dispatches to surgically update CRDT without massive JSON.stringify
   const dispatch = useCallback(
     (action: Action) => {
-      // 1. Update local React state
-      rawDispatch(action);
+      // 1. Synchronize to CRDT surgically
+      if (!isLoaded) {
+        rawDispatch(action);
+        return;
+      }
 
-      // 2. Synchronize to CRDT surgically
-      if (!isLoaded) return;
-      if (action.type === 'SYNC_STATE' || action.type === 'SYNC_ENTITIES' || action.type === 'RESET_DATA') return;
+      if (
+        action.type === 'SYNC_STATE' ||
+        action.type === 'SYNC_ENTITIES' ||
+        action.type === 'RESET_DATA' ||
+        action.type === 'RESTORE_STATE'
+      ) {
+        rawDispatch(action);
+        return;
+      }
 
       const typeStr = action.type;
       const payload = 'payload' in action ? (action as { payload: unknown }).payload : undefined;
       type Payload = unknown;
       const p = payload as Payload;
       const currentState = stateRef.current;
+
+      // Unidirectional Pattern: CRDT-bound actions should NOT use rawDispatch directly.
+      // They rely on onObserve/onChange to update React state reactively.
+      const mutationActions = ['ADD', 'UPDATE', 'DELETE', 'IMPORT', 'BATCH', 'RECOVER', 'RESTORE_PRODUCT'];
+      const isCrdtAction = mutationActions.some((prefix) => typeStr.startsWith(prefix));
+      const isLocalOnly = [
+        'SET_LOCAL_PEER_ID',
+        'UPDATE_PEERS',
+        'SET_ROLE',
+        'SET_EXPELLED',
+        'UPDATE_PEER_PERMISSIONS',
+        'UPDATE_PEER_CONFIG',
+        'SET_ACTIVE_BRANCH',
+      ].includes(typeStr);
+
+      if (isLocalOnly) {
+        rawDispatch(action);
+      }
+
+      // Metadata handling
+      if (typeStr === 'UPDATE_INVENTORY_CONFIG') {
+        dbSync.setInventoryConfig(normalizeInventoryConfig(p as InventoryConfig));
+        return;
+      }
+
+      if (typeStr === 'SET_ACTIVE_BRANCH') {
+        const branchId = p as string | null;
+        if (branchId !== undefined) {
+          p2pManager.setActiveBranch(branchId || '');
+        }
+        return;
+      }
+
+      if (!isCrdtAction) return;
+
+      // Audit Log Generation
+      const auditEntry = createAuditEntryFromAction(currentState, action);
+      dbSync.upsertEntity('auditLogs', auditEntry);
+
       const syncProductHistoryEntry = (product: Product | undefined, sourceAction: string) => {
         if (!product) return;
         dbSync.upsertEntity('productChangeHistory', createProductHistoryEntry(currentState, product, sourceAction));
@@ -1317,25 +1017,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
           }
         }
-      } else if (typeStr === 'SET_ACTIVE_BRANCH') {
-        const branchId = p as string | null;
-        if (branchId !== undefined) {
-          p2pManager.setActiveBranch(branchId || '');
-        }
       }
     },
     [rawDispatch, isLoaded],
   );
 
-  // Sync Audit Logs optimally (O(1) comparison on the first element)
-  useEffect(() => {
-    if (!isLoaded || state.auditLogs.length === 0) return;
-    const latestLocal = state.auditLogs[0];
-    const latestCRDT = dbSync.getState().auditLogs?.[0];
-    if (!latestCRDT || latestLocal.id !== latestCRDT.id) {
-      dbSync.upsertEntity('auditLogs', latestLocal);
-    }
-  }, [state.auditLogs, isLoaded]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
