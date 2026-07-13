@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import http from 'http';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,6 +89,29 @@ async function setupNode(page: Page, peerId: string) {
   }, peerId);
 }
 
+let server: http.Server;
+let port: number;
+
+test.beforeAll(async () => {
+  server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end('<!DOCTYPE html><html><head></head><body></body></html>');
+  });
+  await new Promise<void>((resolve) => {
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      port = typeof address === 'string' ? 0 : address?.port || 0;
+      resolve();
+    });
+  });
+});
+
+test.afterAll(async () => {
+  if (server) {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+});
+
 test.describe('Multi-node CRDT Convergence E2E', () => {
   test('3 nodes converge after concurrent edits', async ({ browser }) => {
     const context = await browser.newContext();
@@ -95,10 +119,10 @@ test.describe('Multi-node CRDT Convergence E2E', () => {
     const pageB = await context.newPage();
     const pageC = await context.newPage();
 
-    // Use about:blank to have a clean environment
-    await pageA.goto('about:blank');
-    await pageB.goto('about:blank');
-    await pageC.goto('about:blank');
+    // Use local HTTP origin for BroadcastChannel compatibility
+    await pageA.goto(`http://127.0.0.1:${port}/`);
+    await pageB.goto(`http://127.0.0.1:${port}/`);
+    await pageC.goto(`http://127.0.0.1:${port}/`);
 
     await setupNode(pageA, 'node-a');
     await setupNode(pageB, 'node-b');
@@ -144,8 +168,8 @@ test.describe('Multi-node CRDT Convergence E2E', () => {
     const pageA = await context.newPage();
     const pageB = await context.newPage();
 
-    await pageA.goto('about:blank');
-    await pageB.goto('about:blank');
+    await pageA.goto(`http://127.0.0.1:${port}/`);
+    await pageB.goto(`http://127.0.0.1:${port}/`);
 
     await setupNode(pageA, 'node-a');
     await setupNode(pageB, 'node-b');

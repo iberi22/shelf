@@ -6,7 +6,7 @@
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
     "updated": "2026-06-28",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "sdlc_phase": "production",
     "total_features": 21,
     "features_implemented": 21,
