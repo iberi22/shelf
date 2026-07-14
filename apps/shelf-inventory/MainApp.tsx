@@ -95,7 +95,7 @@ const MainApp: React.FC = () => {
         <div className="flex flex-1 overflow-hidden relative">
           <Sidebar activeComponent={activeComponent} setActiveComponent={setActiveComponent} />
           {/* Add pt-16 on mobile to push content below the fixed hamburger menu */}
-          <main className="flex-1 min-w-0 p-4 pt-16 sm:p-6 md:p-8 overflow-y-auto pb-20 md:pb-8">
+          <main id="main-scroll-area" className="flex-1 min-w-0 p-4 pt-16 sm:p-6 md:p-8 overflow-y-auto pb-24 md:pb-8">
             <P2PSyncStatusHeader />
             {renderComponent()}
           </main>

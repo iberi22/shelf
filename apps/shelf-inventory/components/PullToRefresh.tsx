@@ -18,9 +18,13 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
 
   useEffect(() => {
     const handleTouchStart = (e: TouchEvent) => {
-      if (window.scrollY === 0) {
+      const main = document.getElementById('main-scroll-area');
+      // Solo activamos pull-to-refresh si estamos en la parte superior del scroll
+      if (!main || main.scrollTop <= 0) {
         startY.current = e.touches[0].clientY;
         isPulling.current = true;
+      } else {
+        isPulling.current = false;
       }
     };
 
@@ -30,7 +34,10 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
       currentY.current = e.touches[0].clientY;
       const distance = currentY.current - startY.current;
 
-      if (distance > 0 && window.scrollY === 0) {
+      const main = document.getElementById('main-scroll-area');
+      const isAtTop = !main || main.scrollTop <= 0;
+
+      if (distance > 0 && isAtTop) {
         // Prevent default browser bounce when pulling down at the top
         if (e.cancelable) {
           e.preventDefault();
@@ -90,7 +97,7 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
   };
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden">
+    <div className="relative w-full h-full">
       {/* Indicator */}
       <div
         className="absolute top-[-50px] left-0 right-0 flex justify-center items-center z-50 pointer-events-none"
