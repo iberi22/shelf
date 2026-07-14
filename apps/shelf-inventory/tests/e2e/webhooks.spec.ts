@@ -39,7 +39,7 @@ test.describe('Webhook E2E', () => {
           const idx = state[collection].findIndex((i: any) => i.id === id);
           if (idx >= 0) state[collection][idx] = item;
           else state[collection].push(item);
-        }
+        },
       };
     });
 

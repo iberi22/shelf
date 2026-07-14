@@ -37,7 +37,7 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
     const handleTouchStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
       const scrollParent = getScrollParent(target);
-      
+
       // If inner scrollable element is not at top, ignore
       if (scrollParent && scrollParent.id !== 'main-scroll-area' && scrollParent.scrollTop > 0) {
         isPulling.current = false;

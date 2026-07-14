@@ -22,20 +22,20 @@ test.describe('P2P Advanced Synchronization', () => {
 
     // Admin connects to collab — dismiss modals before typing, then wait for modal to stabilize
     await dismissModals(adminPage);
-    const manualInput = adminPage.getByPlaceholder(/ingresa el Peer ID|enter Peer ID/i);
+    const manualInput = adminPage.getByTestId('manual-peer-id-input');
     await expect(manualInput).toBeVisible();
     await manualInput.fill(collabId);
     await adminPage.waitForTimeout(500);
 
-    // Click Connect — dismiss modals right before to avoid overlay interference
+    // Click Connect
     await dismissModals(adminPage);
-    const connectButton = adminPage.getByRole('button', { name: /^Conectar$|^Connect$/i });
+    const connectButton = adminPage.getByTestId('manual-connect-button');
     await connectButton.click({ timeout: 5000 }).catch(async () => {
       // Fallback: force click if the button got detached
       await connectButton.click({ force: true, timeout: 3000 });
     });
 
-    // Wait for the confirm connection modal to appear — use the role selection buttons as indicator
+    // Verify roles and handle optional dropdown (admin/collaborator) appear — use the role selection buttons as indicator
     // (Do NOT call dismissModals here — the modal itself is what we want to see)
     const roleBtn = adminPage.getByRole('button', { name: /Admin|Vendedor|Personalizado/i }).first();
     await expect(roleBtn).toBeVisible({ timeout: 10000 });
@@ -52,12 +52,10 @@ test.describe('P2P Advanced Synchronization', () => {
     }
     // Default role is 'Vendedor' which maps to 'collaborator'
 
-    // Click the confirm/proceed button to initiate the handshake ("Synchronize & Connect" / "Sincronizar y Conectar")
-    await adminPage.waitForTimeout(300);
-    const proceedBtn = adminPage.getByRole('button', { name: /Synchronize|Sincronizar|Sync|Conectar/i }).last();
-    await proceedBtn.click({ timeout: 5000 }).catch(async () => {
-      await proceedBtn.click({ force: true, timeout: 3000 });
-    });
+    // Accept the confirmation modal
+    const confirmButton = adminPage.locator('button', { hasText: /Synchronize|Sincronizar|Sync|Conectar/i }).filter({ hasText: /Connect|Conectar/i }).first();
+    await expect(confirmButton).toBeVisible();
+    await confirmButton.click();
 
     // Wait for connection (En línea status)
     await expect(adminPage.locator('text=/En línea|Online/i').first()).toBeVisible({ timeout: 20000 });

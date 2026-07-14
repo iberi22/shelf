@@ -108,7 +108,7 @@ test.describe('P2P Invite Link, Pairing, and Permission Enforcement', () => {
 
     // Get the actual invite link from the Admin's UI
     const inviteLinkLocator = adminPage.locator('[data-testid="p2p-invite-link"]');
-    await inviteLinkLocator.waitFor({ state: 'visible' });
+    await inviteLinkLocator.waitFor({ state: 'attached' });
     const inviteUrl = await inviteLinkLocator.getAttribute('href');
     if (!inviteUrl) {
       throw new Error('Failed to find invite link on Admin settings page');

@@ -23,7 +23,7 @@ import {
   p2pManager,
   type SyncMessage,
 } from 'p2p-mesh-core';
-import { QRCodeCanvas } from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
@@ -100,9 +100,9 @@ const permissionOptions: { key: keyof PeerPermissions; label: string }[] = [
 ];
 
 const modalOverlayClass =
-  'fixed inset-0 z-50 flex h-[var(--app-height,100vh)] items-start justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm sm:items-center sm:p-4';
+  'fixed inset-0 z-50 flex h-[var(--app-height,100vh)] items-center justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm sm:p-4';
 const modalPanelClass =
-  'flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full flex-col overflow-hidden rounded-t-2xl border border-[#F5F5DC]/30 bg-[#1a1a1a] shadow-2xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg';
+  'flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full flex-col overflow-hidden rounded-2xl border border-[#F5F5DC]/30 bg-[#1a1a1a] shadow-2xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg';
 const modalBodyClass = 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 text-sm text-[#F5F5DC]/80 sm:p-5';
 
 const P2PSyncManager: React.FC = () => {
@@ -835,7 +835,7 @@ const P2PSyncManager: React.FC = () => {
                     const linkToCopy = peerInviteLink || window.location.origin;
                     await navigator.clipboard.writeText(linkToCopy);
                     showNotification('Enlace del nodo copiado al portapapeles.', 'success');
-                  } catch (e) {
+                  } catch (_e) {
                     showNotification('Error al copiar el enlace.', 'error');
                   }
                 }}
@@ -919,6 +919,7 @@ const P2PSyncManager: React.FC = () => {
           <div className="flex items-center gap-2 rounded-xl border border-[#F5F5DC]/20 bg-[#1a1a1a] p-1.5 shadow-sm">
             <div className="flex-1 flex items-center bg-[#121212] rounded-lg border border-transparent focus-within:border-yellow-400/50 px-3 transition-colors">
               <input
+                data-testid="manual-peer-id-input"
                 type="text"
                 placeholder="Ingresa Peer ID..."
                 value={manualPeerId}
@@ -927,6 +928,7 @@ const P2PSyncManager: React.FC = () => {
               />
               {manualPeerId.trim() && (
                 <button
+                  data-testid="manual-connect-button"
                   onClick={handleManualConnect}
                   className="text-yellow-400 font-bold text-xs px-2 hover:text-yellow-300 transition-colors"
                 >
@@ -1452,7 +1454,7 @@ const P2PSyncManager: React.FC = () => {
             <div className={`${modalBodyClass} flex flex-col items-center gap-4 text-center`}>
               <div className="rounded-xl bg-white p-4">
                 {state.localPeerId ? (
-                  <QRCodeCanvas value={state.localPeerId} size={180} level="H" includeMargin={false} />
+                  <QRCodeSVG value={state.localPeerId} size={180} level="H" includeMargin={false} />
                 ) : (
                   <div className="flex h-[180px] w-[180px] items-center justify-center bg-gray-200 text-gray-500 animate-pulse">
                     Loading...

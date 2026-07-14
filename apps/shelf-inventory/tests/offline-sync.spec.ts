@@ -54,19 +54,23 @@ test.describe('Offline Product Creation and Sync', () => {
       )
       .toBeGreaterThanOrEqual(1);
 
+    // Pre-navigate to Inventory to ensure Vite loads the chunk before going offline
+    await pageB.locator('[data-testid="nav-item-nav.inventory"]').last().click();
+    await dismissModals(pageB);
+    await pageB.waitForTimeout(1000);
+
     // 4. Take Admin B offline
     await contextB.setOffline(true);
 
     // 5. Admin B creates a product via the UI
-    await pageB.locator('[data-testid="nav-item-nav.inventory"]').last().click();
-    await dismissModals(pageB);
-
     await pageB.getByTestId('add-product-button').click();
     await expect(pageB.getByTestId('product-form')).toBeVisible();
     await pageB.waitForTimeout(500); // Stabilize DOM after modal open
 
     await pageB.getByTestId('product-name-input').fill('Offline Product');
     await pageB.getByTestId('product-sku-input').fill('OFFLINE-001');
+    // We must select a category because it is required!
+    await pageB.locator('select').first().selectOption({ index: 1 });
     await pageB.getByTestId('product-price-input').fill('100');
     await pageB.getByTestId('product-quantity-input').fill('50');
     await pageB.getByTestId('save-product-button').click();

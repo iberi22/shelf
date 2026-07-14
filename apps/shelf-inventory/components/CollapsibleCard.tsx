@@ -24,7 +24,10 @@ const CollapsibleCard: React.FC<CollapsibleCardProps> = ({
   // Auto-open in test environments (Playwright, Cypress, etc.)
   const isTestEnvironment =
     typeof window !== 'undefined' &&
-    ((window as any).__E2E_TEST__ || window.navigator.webdriver || (window as any).Cypress || import.meta.env.MODE === 'test');
+    ((window as any).__E2E_TEST__ ||
+      window.navigator.webdriver ||
+      (window as any).Cypress ||
+      import.meta.env.MODE === 'test');
 
   const [isOpen, setIsOpen] = useState(defaultOpen || isTestEnvironment);
 
