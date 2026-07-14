@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.2](https://github.com/iberi22/shelf/compare/v2.0.1...v2.0.2) (2026-07-14)
+
+
+### Bug Fixes
+
+* **ui:** prevent pull to refresh from shifting fixed bottom nav ([e68d174](https://github.com/iberi22/shelf/commit/e68d17431fd957a06addb249508f2c3b9f33dd66))
+
 ### [2.0.1](https://github.com/iberi22/shelf/compare/v2.0.0...v2.0.1) (2026-07-14)
 
 
