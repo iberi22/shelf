@@ -843,6 +843,12 @@ const P2PSyncManager: React.FC = () => {
               >
                 <Link2 size={14} /> Link Nodo
               </button>
+              {/* Hidden anchor for tests to read the invite link */}
+              {(window as any).__E2E_TEST__ && peerInviteLink && (
+                <a href={peerInviteLink} data-testid="p2p-invite-link" style={{ display: 'none' }}>
+                  Invite Link Test
+                </a>
+              )}
               <a
                 href={pwaInstallLink || window.location.origin}
                 target="_blank"
@@ -1053,7 +1059,7 @@ const P2PSyncManager: React.FC = () => {
                             </span>
                           )}
                           {canManagePeer && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => setShowPermissions(showPermissions === peer.id ? null : peer.id)}
