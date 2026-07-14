@@ -53,7 +53,10 @@ test.describe('P2P Advanced Synchronization', () => {
     // Default role is 'Vendedor' which maps to 'collaborator'
 
     // Accept the confirmation modal
-    const confirmButton = adminPage.locator('button', { hasText: /Synchronize|Sincronizar|Sync|Conectar/i }).filter({ hasText: /Connect|Conectar/i }).first();
+    const confirmButton = adminPage
+      .locator('button', { hasText: /Synchronize|Sincronizar|Sync|Conectar/i })
+      .filter({ hasText: /Connect|Conectar/i })
+      .first();
     await expect(confirmButton).toBeVisible();
     await confirmButton.click();
 
