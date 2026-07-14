@@ -499,22 +499,11 @@ const Catalog: React.FC = () => {
 
     // Use srcdoc instead of document.write for safe DOM injection
     // All product data is escaped via escapeHtml() in buildPrintableDocument
-    // In modern browsers, window.open('') takes a tick to fully initialize.
-    // Writing a basic skeleton ensures the document is ready.
-    printWindow.document.write('<!DOCTYPE html><html><head><title>Imprimir Catálogo</title></head><body style="margin:0;padding:0;"></body></html>');
+    const encodedHtml = html.replace(/"/g, '&quot;');
+    printWindow.document.write(
+      `<iframe srcdoc="${encodedHtml}" style="width:100%;height:100vh;border:none;"></iframe>`,
+    );
     printWindow.document.close();
-
-    // Use a small timeout to let the new window parse the skeleton before appending the iframe
-    setTimeout(() => {
-      const iframe = printWindow.document.createElement('iframe');
-      iframe.srcdoc = html;
-      iframe.style.width = '100%';
-      iframe.style.height = '100%';
-      iframe.style.border = 'none';
-      iframe.style.display = 'block';
-      printWindow.document.body.appendChild(iframe);
-      printWindow.focus();
-    }, 50);
   };
 
   return (

@@ -90,9 +90,12 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
         } catch (err) {
           console.warn('P2P sync failed during pull to refresh', err);
         } finally {
-          // Instead of a forced reload which bypasses warnings, we gently ask the browser to reload
-          // This allows beforeunload events to trigger properly.
-          window.location.reload();
+          // Simply hide the spinner after a short delay instead of a hard reload
+          // which was causing accidental disruption to the user's flow.
+          setTimeout(() => {
+            setIsRefreshing(false);
+            setPullDistance(0);
+          }, 800);
         }
       } else {
         // Reset if threshold not reached

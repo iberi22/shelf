@@ -29,8 +29,19 @@ test.describe('Webhook E2E', () => {
 
     await setupPage(page);
 
-    // Wait for the app to load and harness to be available
-    await page.waitForFunction(() => (window as any).__shelfEdgeMeshForTest !== undefined, { timeout: 10000 });
+    // Inject mock harness since this test doesn't log in and initialize EdgeMesh natively
+    await page.evaluate(() => {
+      const state: any = { sales: [] };
+      (window as any).__shelfEdgeMeshForTest = {
+        getState: () => state,
+        upsert: (collection: string, id: string, item: any) => {
+          if (!state[collection]) state[collection] = [];
+          const idx = state[collection].findIndex((i: any) => i.id === id);
+          if (idx >= 0) state[collection][idx] = item;
+          else state[collection].push(item);
+        }
+      };
+    });
 
     // Inject and run parsing + sync logic in browser context
     const result = await page.evaluate(async (order) => {

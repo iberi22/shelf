@@ -50,7 +50,7 @@ test.describe('P2P Conflict Resolution', () => {
         async () => {
           return adminPage.evaluate(() => {
             const mgr = (window as any)._p2pManagerForTest;
-            return mgr ? mgr.getState()?.peers?.length : 0;
+            return mgr ? mgr.getConnectedPeers()?.length : 0;
           });
         },
         { timeout: 15000 },
