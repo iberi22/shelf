@@ -1,7 +1,7 @@
 {
     "name": "shelf-monorepo",
     "private": true,
-    "version": "2.0.3",
+    "version": "2.0.4",
     "scripts": {
         "dev": "turbo run dev",
         "build": "turbo run build",

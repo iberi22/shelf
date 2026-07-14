@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.4](https://github.com/iberi22/shelf/compare/v2.0.3...v2.0.4) (2026-07-14)
+
+
+### Bug Fixes
+
+* **ui:** remove pull-to-refresh hard reload, bump workspace version ([ccc49e7](https://github.com/iberi22/shelf/commit/ccc49e709ce2e9990c51735d9b0b3facdaf367a6))
+
 ### [2.0.3](https://github.com/iberi22/shelf/compare/v2.0.2...v2.0.3) (2026-07-14)
 
 
