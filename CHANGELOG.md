@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.3](https://github.com/iberi22/shelf/compare/v2.0.2...v2.0.3) (2026-07-14)
+
+
+### Bug Fixes
+
+* **pwa:** prevent update notification freeze due to hanging dynamic import ([ec76f6c](https://github.com/iberi22/shelf/commit/ec76f6c80bdd6886c9f482e71e9f391e84a1e13d))
+* **ui:** robust pull to refresh with internal scroll support and flex layout fix ([3abb7e3](https://github.com/iberi22/shelf/commit/3abb7e3d4f7c130a4f87acbf9daef90636074b8a))
+
 ### [2.0.2](https://github.com/iberi22/shelf/compare/v2.0.1...v2.0.2) (2026-07-14)
 
 
