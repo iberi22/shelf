@@ -132,16 +132,21 @@ const UpdateNotification: React.FC = () => {
     }
 
     // Opcional: forzar un sync P2P si p2pManager está disponible
-    try {
-      const { p2pManager } = await import('p2p-mesh-core');
-      if (p2pManager && typeof p2pManager.requestFullSync === 'function') {
-        p2pManager.requestFullSync();
-      }
-    } catch (err) {
-      // Ignore if it fails
-    }
+    import('p2p-mesh-core')
+      .then(({ p2pManager }) => {
+        if (p2pManager && typeof p2pManager.requestFullSync === 'function') {
+          p2pManager.requestFullSync();
+        }
+      })
+      .catch(() => {
+        // Ignore if it fails
+      });
 
-    updateServiceWorker(true);
+    try {
+      updateServiceWorker(true);
+    } catch (err) {
+      console.warn('Error invoking updateServiceWorker:', err);
+    }
 
     // Fallback: reload anyway after 1.5s if controllerchange doesn't fire
     setTimeout(() => {
