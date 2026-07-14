@@ -47,7 +47,7 @@ export default function QRScannerModal({ onScan, onClose }: QRScannerModalProps)
 
     return () => {
       mounted = false;
-      if (scannerRef.current && scannerRef.current.isScanning) {
+      if (scannerRef.current?.isScanning) {
         scannerRef.current
           .stop()
           .then(() => scannerRef.current?.clear())

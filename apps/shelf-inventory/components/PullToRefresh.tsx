@@ -16,8 +16,34 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
   const MAX_PULL_DISTANCE = 100;
   const THRESHOLD = 70;
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    // Helper to find closest scrollable parent
+    const getScrollParent = (node: HTMLElement | null): HTMLElement | null => {
+      if (!node || node === document.body || node === document.documentElement) return null;
+      if (node.scrollHeight > node.clientHeight) {
+        const style = window.getComputedStyle(node);
+        if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+          return node;
+        }
+      }
+      return getScrollParent(node.parentElement);
+    };
+
     const handleTouchStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      const scrollParent = getScrollParent(target);
+      
+      // If inner scrollable element is not at top, ignore
+      if (scrollParent && scrollParent.id !== 'main-scroll-area' && scrollParent.scrollTop > 0) {
+        isPulling.current = false;
+        return;
+      }
+
       const main = document.getElementById('main-scroll-area');
       // Solo activamos pull-to-refresh si estamos en la parte superior del scroll
       if (!main || main.scrollTop <= 0) {
@@ -64,7 +90,8 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
         } catch (err) {
           console.warn('P2P sync failed during pull to refresh', err);
         } finally {
-          // Hard reload to get new assets and state
+          // Instead of a forced reload which bypasses warnings, we gently ask the browser to reload
+          // This allows beforeunload events to trigger properly.
           window.location.reload();
         }
       } else {
@@ -73,15 +100,15 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
       }
     };
 
-    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    el.addEventListener('touchstart', handleTouchStart, { passive: true });
     // touchmove must not be passive so we can call preventDefault()
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+    el.addEventListener('touchmove', handleTouchMove, { passive: false });
+    el.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
+      el.removeEventListener('touchstart', handleTouchStart);
+      el.removeEventListener('touchmove', handleTouchMove);
+      el.removeEventListener('touchend', handleTouchEnd);
     };
   }, [pullDistance, isRefreshing]);
 
@@ -97,7 +124,7 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div ref={containerRef} className="relative w-full h-full flex flex-col flex-1 min-w-0">
       {/* Indicator */}
       <div
         className="absolute top-[-50px] left-0 right-0 flex justify-center items-center z-50 pointer-events-none"
@@ -107,6 +134,7 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
           className={`bg-[#1a1a1a] border border-yellow-400 p-2 rounded-full shadow-lg ${isRefreshing ? 'animate-spin' : ''}`}
         >
           <svg
+            aria-hidden="true"
             className="w-6 h-6 text-yellow-400"
             fill="none"
             stroke="currentColor"
@@ -124,7 +152,7 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
       </div>
 
       {/* Content */}
-      <div style={containerStyle} className="w-full h-full">
+      <div style={containerStyle} className="w-full h-full flex flex-col flex-1 min-w-0">
         {children}
       </div>
     </div>

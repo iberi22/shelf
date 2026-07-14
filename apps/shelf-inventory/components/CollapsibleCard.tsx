@@ -40,6 +40,7 @@ const CollapsibleCard: React.FC<CollapsibleCardProps> = ({
       data-testid={testId}
       className={`w-full min-w-0 max-w-full rounded-lg border border-[#F5F5DC]/30 bg-[#1a1a1a] transition-all duration-200 ${className}`}
     >
+      {/* biome-ignore lint/a11y/useSemanticElements: We intentionally use div to avoid nested button hydration errors */}
       <div
         role="button"
         tabIndex={0}

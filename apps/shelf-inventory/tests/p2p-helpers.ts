@@ -273,7 +273,7 @@ export async function connectPeers(sourcePage: Page, targetPeerId: string, timeo
     if (p2pManager && !p2pManager.isPeerConnected(targetId)) {
       try {
         p2pManager.connect(targetId);
-      } catch (e) {}
+      } catch (_e) {}
     }
   }, targetPeerId);
 

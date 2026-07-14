@@ -814,7 +814,7 @@ const P2PSyncManager: React.FC = () => {
 
           {/* Share Actions - Minimalist Row */}
           {state.localPeerId && (
-            <div className="mt-3 flex items-center gap-2 pt-3 border-t border-white/5 overflow-x-auto pb-1">
+            <div className="mt-3 flex flex-wrap items-center gap-2 pt-3 border-t border-white/5 pb-1">
               <button
                 onClick={() => setShowMyQrModal(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white transition-colors whitespace-nowrap"
@@ -829,14 +829,20 @@ const P2PSyncManager: React.FC = () => {
               >
                 <MessageCircle size={14} /> WhatsApp
               </button>
-              <a
-                href={peerInviteLink || window.location.origin}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 text-xs transition-colors whitespace-nowrap"
+              <button
+                onClick={async () => {
+                  try {
+                    const linkToCopy = peerInviteLink || window.location.origin;
+                    await navigator.clipboard.writeText(linkToCopy);
+                    showNotification('Enlace del nodo copiado al portapapeles.', 'success');
+                  } catch (e) {
+                    showNotification('Error al copiar el enlace.', 'error');
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 text-xs transition-colors whitespace-nowrap cursor-pointer"
               >
                 <Link2 size={14} /> Link Nodo
-              </a>
+              </button>
               <a
                 href={pwaInstallLink || window.location.origin}
                 target="_blank"

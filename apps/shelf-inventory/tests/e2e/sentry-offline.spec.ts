@@ -24,7 +24,7 @@ test.describe('Sentry Offline Queue & Error Boundary', () => {
     // Wait, the app is in test mode during Playwright (`MODE === 'test'`), so Sentry might be skipped.
     // Let's just assert that the app loads fine, meaning our index.tsx changes didn't break it.
     const title = await page.title();
-    expect(title).toBe('Shelf Inventory');
+    expect(title).toBe('Shelf - Gestión de Inventario');
 
     // Note: To fully test the ErrorBoundary, one would usually create a hidden
     // button (e.g., hidden query param `?crash=true`) that throws a React error.

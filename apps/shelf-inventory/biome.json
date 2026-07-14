@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**/*", "!!**/dist", "!!**/functions/lib", "!!**/playwright-report", "!!**/test-results"]
+    "includes": [
+      "**/*",
+      "!!**/dist",
+      "!!**/functions/lib",
+      "!!**/playwright-report",
+      "!!**/test-results",
+      "!!**/stats.html"
+    ]
   },
   "formatter": {
     "enabled": true,
