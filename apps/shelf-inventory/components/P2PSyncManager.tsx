@@ -752,7 +752,7 @@ const P2PSyncManager: React.FC = () => {
             title={t('p2pSync.infoTitle')}
           >
             <Info size={16} />
-          </span>
+          </button>
         </div>
       }
       icon={<RadioTower className="h-5 w-5" />}
