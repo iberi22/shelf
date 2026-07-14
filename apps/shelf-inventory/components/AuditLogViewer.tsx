@@ -1,6 +1,8 @@
+import { History } from 'lucide-react';
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
+import CollapsibleCard from './CollapsibleCard';
 
 const LogDetails: React.FC<{ details: any; action: string }> = ({ details, action }) => {
   if (!details) return <span className="text-[#F5F5DC]/40 italic text-xs">-</span>;
@@ -103,9 +105,11 @@ const AuditLogViewer: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg mt-6 overflow-hidden flex flex-col h-full">
+    <CollapsibleCard title="Audit Logs" icon={<History className="h-5 w-5" />} testId="settings-audit-logs-card">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-        <h3 className="text-xl font-bold text-[#F5F5DC]">Audit Logs</h3>
+        <span className="text-xs text-[#F5F5DC]/60">
+          Historial detallado de todas las mutaciones locales y remotas.
+        </span>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           <select
@@ -123,15 +127,17 @@ const AuditLogViewer: React.FC = () => {
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
+              type="button"
               onClick={handleClearOldLogs}
-              className="flex-1 sm:flex-none text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/30 px-3 py-1.5 rounded transition-colors whitespace-nowrap"
+              className="flex-1 sm:flex-none text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/30 px-3 py-1.5 rounded transition-colors whitespace-nowrap cursor-pointer"
               title="Recomendado: Limpiar logs de meses anteriores"
             >
               Limpiar &gt; 30 días
             </button>
             <button
+              type="button"
               onClick={handleClearLogs}
-              className="flex-1 sm:flex-none text-xs bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 px-3 py-1.5 rounded transition-colors whitespace-nowrap"
+              className="flex-1 sm:flex-none text-xs bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 px-3 py-1.5 rounded transition-colors whitespace-nowrap cursor-pointer"
             >
               Limpiar Todo
             </button>
@@ -202,7 +208,7 @@ const AuditLogViewer: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </CollapsibleCard>
   );
 };
 

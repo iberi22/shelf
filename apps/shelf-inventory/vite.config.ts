@@ -9,7 +9,11 @@ import { VitePWA } from 'vite-plugin-pwa';
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
 let commitHash = 'unknown';
 try {
-  commitHash = execSync('git rev-parse --short HEAD').toString().trim();
+  if (process.env.VERCEL_GIT_COMMIT_SHA) {
+    commitHash = process.env.VERCEL_GIT_COMMIT_SHA.substring(0, 7);
+  } else {
+    commitHash = execSync('git rev-parse --short HEAD').toString().trim();
+  }
 } catch (_e) {
   console.warn('Could not retrieve commit hash');
 }
@@ -182,6 +186,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
         globIgnores: ['version.json'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // Increase to 10MB for large assets

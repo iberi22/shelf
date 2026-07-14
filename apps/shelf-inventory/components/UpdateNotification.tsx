@@ -113,8 +113,30 @@ const UpdateNotification: React.FC = () => {
     updateInProgressRef.current = false;
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     updateInProgressRef.current = true;
+
+    // Vaciar caches agresivamente
+    if ('caches' in window) {
+      try {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((name) => caches.delete(name)));
+        console.log('Cachés limpiados exitosamente');
+      } catch (err) {
+        console.warn('Error limpiando cachés', err);
+      }
+    }
+
+    // Opcional: forzar un sync P2P si p2pManager está disponible
+    try {
+      const { p2pManager } = await import('p2p-mesh-core');
+      if (p2pManager && typeof p2pManager.requestFullSync === 'function') {
+        p2pManager.requestFullSync();
+      }
+    } catch (err) {
+      // Ignore if it fails
+    }
+
     updateServiceWorker(true);
   };
 

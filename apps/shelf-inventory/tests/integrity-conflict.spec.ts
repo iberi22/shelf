@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { dismissModals, setupPage } from './helpers';
-import { expectProductSync, getLocalPeerId, connectPeers } from './p2p-helpers';
+import { connectPeers, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
 test.describe('Data Integrity and Conflict Resolution', () => {
   test.setTimeout(120000);

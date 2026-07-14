@@ -286,7 +286,7 @@ export async function connectPeers(sourcePage: Page, targetPeerId: string, timeo
           return p2pManager ? Boolean(p2pManager.isPeerConnected(targetId)) : false;
         }, targetPeerId);
       },
-      { timeout }
+      { timeout },
     )
     .toBe(true);
 }

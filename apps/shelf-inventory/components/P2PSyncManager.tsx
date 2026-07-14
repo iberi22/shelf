@@ -216,7 +216,12 @@ const P2PSyncManager: React.FC = () => {
     }
 
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && wakeLockStartedRef.current !== null && wakeLockRef.current === null && 'wakeLock' in navigator) {
+      if (
+        document.visibilityState === 'visible' &&
+        wakeLockStartedRef.current !== null &&
+        wakeLockRef.current === null &&
+        'wakeLock' in navigator
+      ) {
         await acquireWakeLock();
       }
     };
@@ -656,7 +661,6 @@ const P2PSyncManager: React.FC = () => {
 
   const { counts, sizeStr } = getDbStats();
 
-
   const handleChangePeerRole = (peerId: string, newRole: string) => {
     if (isLocalHostAuthority) {
       const peer = state.peers.find((p) => p.id === peerId);
@@ -847,44 +851,44 @@ const P2PSyncManager: React.FC = () => {
         </div>
 
         {/* Wake Lock Card - Always visible in main UI */}
-        <div className={`flex flex-col gap-2 p-3 rounded-xl border transition-colors shadow-sm ${
-          wakeLockActive
-            ? 'border-green-400/60 bg-green-500/10'
-            : 'border-green-500/30 bg-green-500/5'
-        }`}>
+        <div
+          className={`flex flex-col gap-2 p-3 rounded-xl border transition-colors shadow-sm ${
+            wakeLockActive ? 'border-green-400/60 bg-green-500/10' : 'border-green-500/30 bg-green-500/5'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${
-                wakeLockActive ? 'bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.7)]' : 'bg-gray-600'
-              }`} />
-              <span className={`text-xs font-bold uppercase tracking-wider ${
-                wakeLockActive ? 'text-green-300' : 'text-green-400'
-              }`}>
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${
+                  wakeLockActive ? 'bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.7)]' : 'bg-gray-600'
+                }`}
+              />
+              <span
+                className={`text-xs font-bold uppercase tracking-wider ${
+                  wakeLockActive ? 'text-green-300' : 'text-green-400'
+                }`}
+              >
                 Nodo Keep-Alive (24/7)
               </span>
               {wakeLockActive && (
                 <span className="text-[10px] bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-full font-mono">
-                  {(wakeLockUptime >= 3600
+                  {wakeLockUptime >= 3600
                     ? `${(wakeLockUptime / 3600).toFixed(1)}h`
                     : wakeLockUptime >= 60
                       ? `${Math.floor(wakeLockUptime / 60)}m ${wakeLockUptime % 60}s`
-                      : `${wakeLockUptime}s`)} activo
+                      : `${wakeLockUptime}s`}{' '}
+                  activo
                 </span>
               )}
             </span>
             <label className="relative inline-flex items-center cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={wakeLockActive}
-                onChange={toggleWakeLock}
-                className="sr-only peer"
-              />
+              <input type="checkbox" checked={wakeLockActive} onChange={toggleWakeLock} className="sr-only peer" />
               <div className="w-8 h-4.5 bg-[#121212] border border-[#F5F5DC]/25 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-[#121212] peer-checked:after:border-[#121212]"></div>
             </label>
           </div>
           <p className="text-[10px] text-green-400/80 leading-relaxed">
-            Previene la suspensión de pantalla/dispositivo para que la app sirva de nodo de sincronización activo
-            e ininterrumpido.
+            Previene la suspensión de pantalla/dispositivo para que la app sirva de nodo de sincronización activo e
+            ininterrumpido.
           </p>
           {wakeLockActive && (
             <div className="flex items-center gap-3 text-[10px] text-green-400/60 pt-1">
@@ -892,14 +896,8 @@ const P2PSyncManager: React.FC = () => {
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />
                 Heartbeat activo (30s)
               </span>
-              {wakeLockRetries > 0 && (
-                <span className="text-yellow-400/70">
-                  Reintentos: {wakeLockRetries}
-                </span>
-              )}
-              <span className="text-[9px] text-green-400/40">
-                Persiste al recargar
-              </span>
+              {wakeLockRetries > 0 && <span className="text-yellow-400/70">Reintentos: {wakeLockRetries}</span>}
+              <span className="text-[9px] text-green-400/40">Persiste al recargar</span>
             </div>
           )}
           {!('wakeLock' in navigator) && (
@@ -1323,28 +1321,35 @@ const P2PSyncManager: React.FC = () => {
               </div>
 
               {/* Wake Lock */}
-              <div className={`flex flex-col gap-2 p-3 rounded-lg border transition-colors ${
-                wakeLockActive
-                  ? 'border-green-400/60 bg-green-500/10'
-                  : 'border-green-500/30 bg-green-500/5'
-              }`}>
+              <div
+                className={`flex flex-col gap-2 p-3 rounded-lg border transition-colors ${
+                  wakeLockActive ? 'border-green-400/60 bg-green-500/10' : 'border-green-500/30 bg-green-500/5'
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${
-                      wakeLockActive ? 'bg-green-400 animate-pulse shadow-[0_0_6px_rgba(74,222,128,0.6)]' : 'bg-gray-600'
-                    }`} />
-                    <span className={`text-xs font-bold uppercase tracking-wider ${
-                      wakeLockActive ? 'text-green-300' : 'text-green-400'
-                    }`}>
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        wakeLockActive
+                          ? 'bg-green-400 animate-pulse shadow-[0_0_6px_rgba(74,222,128,0.6)]'
+                          : 'bg-gray-600'
+                      }`}
+                    />
+                    <span
+                      className={`text-xs font-bold uppercase tracking-wider ${
+                        wakeLockActive ? 'text-green-300' : 'text-green-400'
+                      }`}
+                    >
                       Nodo Keep-Alive (24/7)
                     </span>
                     {wakeLockActive && (
                       <span className="text-[10px] bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-full font-mono">
-                        {(wakeLockUptime >= 3600
+                        {wakeLockUptime >= 3600
                           ? `${(wakeLockUptime / 3600).toFixed(1)}h`
                           : wakeLockUptime >= 60
                             ? `${Math.floor(wakeLockUptime / 60)}m ${wakeLockUptime % 60}s`
-                            : `${wakeLockUptime}s`)} activo
+                            : `${wakeLockUptime}s`}{' '}
+                        activo
                       </span>
                     )}
                   </span>
@@ -1368,14 +1373,8 @@ const P2PSyncManager: React.FC = () => {
                       <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />
                       Heartbeat activo (30s)
                     </span>
-                    {wakeLockRetries > 0 && (
-                      <span className="text-yellow-400/70">
-                        Reintentos: {wakeLockRetries}
-                      </span>
-                    )}
-                    <span className="text-[9px] text-green-400/40">
-                      Persiste al recargar
-                    </span>
+                    {wakeLockRetries > 0 && <span className="text-yellow-400/70">Reintentos: {wakeLockRetries}</span>}
+                    <span className="text-[9px] text-green-400/40">Persiste al recargar</span>
                   </div>
                 )}
                 {!('wakeLock' in navigator) && (

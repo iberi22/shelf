@@ -12,8 +12,16 @@ export const initSentry = () => {
     return; // Don't init during unit tests
   }
 
+  const dsn = import.meta.env.VITE_SENTRY_DSN;
+
+  // No inicializar si no hay DSN o si es el de ejemplo para evitar spam en consola
+  if (!dsn || dsn.includes('sentry.example.com')) {
+    console.log('[Sentry] Disabled (No valid DSN configured)');
+    return;
+  }
+
   Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN || 'https://public@sentry.example.com/1',
+    dsn,
     integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
     // Tracing
     tracesSampleRate: 1.0,
