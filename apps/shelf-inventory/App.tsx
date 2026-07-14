@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import LandingPage from './components/LandingPage';
 import LockScreen from './components/LockScreen';
 import Notification from './components/Notification';
-import PullToRefresh from './components/PullToRefresh';
 import RecoveryApprovalModal from './components/RecoveryApprovalModal';
 import SubscriptionModal from './components/SubscriptionModal';
 import UpdateNotification from './components/UpdateNotification';
@@ -99,9 +98,7 @@ const AppContainer = () => {
 
   return (
     <>
-      <PullToRefresh>
-        <MainApp />
-      </PullToRefresh>
+      <MainApp />
 
       {/* P2P recovery approval (shown on master device when a request arrives) */}
       {pendingRecoveryRequest && (

@@ -40,9 +40,16 @@ const CollapsibleCard: React.FC<CollapsibleCardProps> = ({
       data-testid={testId}
       className={`w-full min-w-0 max-w-full rounded-lg border border-[#F5F5DC]/30 bg-[#1a1a1a] transition-all duration-200 ${className}`}
     >
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }
+        }}
         className="w-full flex items-center justify-between p-4 md:p-6 text-left hover:bg-white/5 transition-colors focus:outline-none cursor-pointer"
         data-testid={testId ? `${testId}-toggle` : undefined}
       >
@@ -60,7 +67,7 @@ const CollapsibleCard: React.FC<CollapsibleCardProps> = ({
         <span className="text-[#F5F5DC]/70 ml-4 shrink-0">
           {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
         </span>
-      </button>
+      </div>
       {isOpen && <div className="p-4 md:p-6 border-t border-[#F5F5DC]/10 bg-[#121212]/20">{children}</div>}
     </div>
   );
