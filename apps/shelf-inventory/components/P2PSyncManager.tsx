@@ -3,7 +3,6 @@ import {
   Activity,
   AlertCircle,
   CheckCircle2,
-  Clock,
   Download,
   History,
   Info,
@@ -25,13 +24,14 @@ import {
   type SyncMessage,
 } from 'p2p-mesh-core';
 import { QRCodeCanvas } from 'qrcode.react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
 import { buildPeerInviteLink, buildPeerInviteMessage, buildPwaInstallLink } from '../lib/share-links';
 import { telemetry } from '../lib/telemetry';
 import { isBiometricsSupported } from '../lib/webauthn';
+import CollapsibleCard from './CollapsibleCard';
 import { useEdgeMeshWorkflowStatus } from './EdgeMeshWorkflowBridge';
 import QRScannerModal from './QRScannerModal';
 
@@ -122,6 +122,124 @@ const P2PSyncManager: React.FC = () => {
   const [showLogsForPeer, setShowLogsForPeer] = useState<string | null>(null);
   const [showHistoryForPeer, setShowHistoryForPeer] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [wakeLockActive, setWakeLockActive] = useState(() => {
+    return localStorage.getItem('shelf:wakeLockPref') === 'true';
+  });
+  const wakeLockRef = useRef<any>(null);
+  const [wakeLockUptime, setWakeLockUptime] = useState(0);
+  const wakeLockStartedRef = useRef<number | null>(null);
+  const [wakeLockRetries, setWakeLockRetries] = useState(0);
+
+  const acquireWakeLock = useCallback(async (): Promise<boolean> => {
+    try {
+      if (!('wakeLock' in navigator)) {
+        showNotification('Wake Lock API no soportado en este navegador.', 'error');
+        return false;
+      }
+      const lock = await navigator.wakeLock.request('screen');
+      wakeLockRef.current = lock;
+      setWakeLockActive(true);
+      localStorage.setItem('shelf:wakeLockPref', 'true');
+
+      if (!wakeLockStartedRef.current) {
+        wakeLockStartedRef.current = Date.now();
+      }
+
+      lock.addEventListener('release', () => {
+        wakeLockRef.current = null;
+        // Don't setWakeLockActive(false) here — the retry loop will handle re-acquisition
+        // Only mark inactive if we're not the one who released it intentionally
+        if (wakeLockRef.current === null && wakeLockStartedRef.current !== null) {
+          console.warn('[Keep-Alive] Wake Lock released by system, will retry...');
+          setWakeLockRetries((r) => r + 1);
+          // Auto-retry in 2 seconds
+          setTimeout(() => {
+            if (wakeLockStartedRef.current !== null) {
+              acquireWakeLock();
+            }
+          }, 2000);
+        }
+      });
+
+      return true;
+    } catch (err) {
+      console.error('Wake Lock error:', err);
+      return false;
+    }
+  }, [showNotification]);
+
+  const releaseWakeLock = async () => {
+    wakeLockStartedRef.current = null;
+    setWakeLockUptime(0);
+    setWakeLockRetries(0);
+    if (wakeLockRef.current) {
+      try {
+        await wakeLockRef.current.release();
+      } catch (err) {
+        console.error('Failed to release wake lock:', err);
+      }
+      wakeLockRef.current = null;
+    }
+    setWakeLockActive(false);
+    localStorage.setItem('shelf:wakeLockPref', 'false');
+  };
+
+  const toggleWakeLock = async () => {
+    if (wakeLockActive || wakeLockStartedRef.current !== null) {
+      await releaseWakeLock();
+      showNotification('Nodo Keep-Alive desactivado.', 'info');
+    } else {
+      const ok = await acquireWakeLock();
+      if (ok) {
+        showNotification('Nodo Keep-Alive activado. Pantalla encendida.', 'success');
+      } else {
+        showNotification('Error al activar Wake Lock. Tu navegador podría no soportarlo.', 'error');
+      }
+    }
+  };
+
+  // Uptime counter
+  useEffect(() => {
+    const startedAt = wakeLockStartedRef.current;
+    if (!wakeLockActive || !startedAt) return;
+    const interval = setInterval(() => {
+      setWakeLockUptime(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [wakeLockActive]);
+
+  // Auto-restore on mount and visibility changes
+  useEffect(() => {
+    const savedPref = localStorage.getItem('shelf:wakeLockPref') === 'true';
+    if (savedPref && 'wakeLock' in navigator) {
+      acquireWakeLock();
+    }
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && wakeLockStartedRef.current !== null && wakeLockRef.current === null && 'wakeLock' in navigator) {
+        await acquireWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // Don't release on unmount if pref is saved — let the PWA stay alive
+    };
+  }, [acquireWakeLock]);
+
+  // Heartbeat P2P mientras wakeLock esté activo
+  useEffect(() => {
+    if (!wakeLockActive) return;
+    const interval = setInterval(() => {
+      try {
+        p2pManager.broadcast({ type: 'KEEPALIVE_PING', payload: { ts: Date.now() } } as any);
+      } catch {
+        // silencioso
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [wakeLockActive]);
   const [isForcingSync, setIsForcingSync] = useState(false);
   const [branchInput, setBranchInput] = useState(state.activeBranch || '');
   const [selectedRole, setSelectedRole] = useState<P2PRole>('collaborator');
@@ -537,8 +655,7 @@ const P2PSyncManager: React.FC = () => {
   };
 
   const { counts, sizeStr } = getDbStats();
-  const edgeMeshLastSync = edgeMeshStatus.lastRemoteSyncAt || edgeMeshStatus.lastLocalSyncAt;
-  const edgeMeshLastSyncLabel = edgeMeshLastSync ? new Date(edgeMeshLastSync).toLocaleTimeString() : 'pendiente';
+
 
   const handleChangePeerRole = (peerId: string, newRole: string) => {
     if (isLocalHostAuthority) {
@@ -621,290 +738,230 @@ const P2PSyncManager: React.FC = () => {
   const isHostLocal = currentHostId === state.localPeerId;
 
   return (
-    <div className="mt-6 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-[#F5F5DC]/30 bg-[#1a1a1a] p-4 md:p-6">
-      <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-2">
-          <h3 className="min-w-0 text-xl font-bold text-[#F5F5DC]">Secure P2P Sync (Post-Quantum)</h3>
+    <CollapsibleCard
+      title="Secure P2P Sync (Post-Quantum)"
+      description={
+        <div className="flex items-center gap-1.5">
+          <span>Sincronización segura y descentralizada.</span>
           <button
-            onClick={() => setShowInfoModal(true)}
-            className="shrink-0 text-[#F5F5DC]/60 transition-colors hover:text-[#F5F5DC]"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowInfoModal(true);
+            }}
+            className="text-[#F5F5DC]/60 transition-colors hover:text-[#F5F5DC] cursor-pointer inline-flex items-center bg-transparent border-none p-0"
             title={t('p2pSync.infoTitle')}
           >
-            <Info size={20} />
-          </button>
+            <Info size={16} />
+          </span>
         </div>
-      </div>
-
+      }
+      icon={<RadioTower className="h-5 w-5" />}
+      testId="settings-p2p-sync-card"
+    >
       <div className="flex flex-col gap-4">
-        {/* Host Failover Status Section */}
-        <div className="flex flex-col gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-3">
-          <div className="flex items-center justify-between gap-2">
+        {/* Local Node Summary Card */}
+        <div className="flex flex-col gap-3 rounded-xl border border-[#F5F5DC]/10 bg-[#121212] p-4 shadow-sm relative overflow-hidden">
+          <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <ShieldAlert size={18} className="text-yellow-500" />
-              <span className="text-sm font-bold text-[#F5F5DC]">{t('p2pSync.hostStatus')}</span>
+              <RadioTower size={18} className={edgeMeshStatus.enabled ? 'text-cyan-400' : 'text-[#F5F5DC]/50'} />
+              <span className="text-sm font-bold text-[#F5F5DC]">Mi Nodo (Edge Mesh)</span>
             </div>
-            {state.role === 'admin' && (
-              <button
-                onClick={handleManualFailover}
-                className="rounded bg-yellow-500/10 px-2 py-1 text-[10px] font-bold text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500/20 transition-colors"
-              >
-                {t('p2pSync.forceFailover')}
-              </button>
-            )}
+            <button
+              onClick={() => setShowConfigModal(true)}
+              className="p-1.5 text-[#F5F5DC]/50 hover:text-white bg-white/5 rounded-md transition-colors"
+              title="Configuración Avanzada"
+            >
+              <Settings size={14} />
+            </button>
           </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider">
-                {t('p2pSync.currentHost')}:
-              </span>
-              <code className="text-xs font-mono text-yellow-400">{currentHostId || 'N/A'}</code>
-              {isHostLocal && (
-                <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-bold text-blue-400 border border-blue-500/30">
-                  LOCAL
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider">{t('p2pSync.status')}:</span>
-              <span
-                className={`flex items-center gap-1 text-xs font-medium ${
-                  isHostLocal || hostHealth?.status === 'healthy'
-                    ? 'text-green-400'
-                    : hostHealth?.status === 'stale'
-                      ? 'text-yellow-400'
-                      : 'text-red-400'
-                }`}
-              >
-                {isHostLocal || hostHealth?.status === 'healthy' ? (
-                  <CheckCircle2 size={12} />
-                ) : hostHealth?.status === 'stale' ? (
-                  <Clock size={12} />
-                ) : (
-                  <AlertCircle size={12} />
-                )}
-                {isHostLocal || hostHealth?.status === 'healthy'
-                  ? t('p2pSync.hostHealthy')
-                  : hostHealth?.status === 'stale'
-                    ? t('p2pSync.hostStale')
-                    : t('p2pSync.hostOffline')}
-              </span>
-              {!isHostLocal && hostHealth?.status === 'offline' && (
-                <span className="text-[10px] text-yellow-500 animate-pulse font-bold ml-1">
-                  ({t('p2pSync.failoverInProgress')})
-                </span>
-              )}
-            </div>
-            {hostHealth?.lastSeen && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider">
-                  {t('p2pSync.lastHeartbeat')}:
-                </span>
-                <span className="text-xs text-[#F5F5DC]/80 font-mono">
-                  {new Date(hostHealth.lastSeen).toLocaleTimeString()}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
 
-        <div className="flex w-full min-w-0 flex-col justify-between gap-2 rounded-md bg-[#121212] p-3 sm:flex-row sm:items-center">
-          <div className="flex flex-col min-w-0 w-full">
-            <div className="text-xs sm:text-sm flex flex-wrap items-center gap-1.5 min-w-0 w-full">
-              <span className="shrink-0">{t('p2pSync.peerId') || 'Peer ID'}:</span>
-              <button
-                type="button"
-                onClick={copyLocalPeerId}
-                onPointerUp={copyLocalPeerId}
-                disabled={!state.localPeerId}
-                className="group min-w-0 flex-1 text-left disabled:cursor-default"
-                title={state.localPeerId ? 'Tocar o hacer click para copiar el Peer ID' : 'Inicializando Peer ID...'}
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <span
-                    className={`font-mono text-yellow-400 break-all min-w-0 ${state.localPeerId ? 'group-hover:underline group-active:opacity-80' : 'opacity-60'}`}
-                  >
-                    {state.localPeerId || 'Initializing...'}
-                  </span>
-                  {state.localPeerId && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-[#F5F5DC]/20 text-[#F5F5DC]/60 group-hover:text-[#F5F5DC]/90 group-active:scale-95 transition">
-                      Copiar
-                    </span>
-                  )}
-                </span>
-              </button>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider">Peer ID:</span>
+            <button
+              onClick={copyLocalPeerId}
+              disabled={!state.localPeerId}
+              className="flex items-center gap-2 group min-w-0"
+            >
+              <code className="text-xs font-mono text-yellow-400 truncate">
+                {state.localPeerId || 'Initializing...'}
+              </code>
               {state.localPeerId && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-[#F5F5DC]/60 group-hover:text-white transition">
+                  Copiar
+                </span>
+              )}
+            </button>
+            {copyStatus === 'copied' && <span className="text-[10px] text-green-400 ml-1">¡Copiado!</span>}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#F5F5DC]/60">
+            <span className="flex items-center gap-1">
+              <CheckCircle2
+                size={12}
+                className={isHostLocal || hostHealth?.status === 'healthy' ? 'text-green-400' : 'text-gray-500'}
+              />
+              {isHostLocal ? 'Host Principal' : 'Conectado a Host'}
+            </span>
+            <span>•</span>
+            <span className="font-mono">{edgeMeshStatus.totalItems} entidades</span>
+            <span>•</span>
+            <span className="capitalize text-cyan-200">Rol: {state.role}</span>
+          </div>
+
+          {/* Share Actions - Minimalist Row */}
+          {state.localPeerId && (
+            <div className="mt-3 flex items-center gap-2 pt-3 border-t border-white/5 overflow-x-auto pb-1">
+              <button
+                onClick={() => setShowMyQrModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white transition-colors whitespace-nowrap"
+              >
+                <QrCode size={14} /> QR
+              </button>
+              <button
+                onClick={() => {
+                  window.open(`https://wa.me/?text=${encodeURIComponent(inviteMessage)}`, '_blank');
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 text-xs transition-colors whitespace-nowrap"
+              >
+                <MessageCircle size={14} /> WhatsApp
+              </button>
+              <a
+                href={peerInviteLink || window.location.origin}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 text-xs transition-colors whitespace-nowrap"
+              >
+                <Link2 size={14} /> Link Nodo
+              </a>
+              <a
+                href={pwaInstallLink || window.location.origin}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F5F5DC]/10 text-[#F5F5DC] hover:bg-[#F5F5DC]/20 text-xs transition-colors whitespace-nowrap"
+                title="PWA"
+              >
+                <Download size={14} /> PWA
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Wake Lock Card - Always visible in main UI */}
+        <div className={`flex flex-col gap-2 p-3 rounded-xl border transition-colors shadow-sm ${
+          wakeLockActive
+            ? 'border-green-400/60 bg-green-500/10'
+            : 'border-green-500/30 bg-green-500/5'
+        }`}>
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${
+                wakeLockActive ? 'bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.7)]' : 'bg-gray-600'
+              }`} />
+              <span className={`text-xs font-bold uppercase tracking-wider ${
+                wakeLockActive ? 'text-green-300' : 'text-green-400'
+              }`}>
+                Nodo Keep-Alive (24/7)
+              </span>
+              {wakeLockActive && (
+                <span className="text-[10px] bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-full font-mono">
+                  {(wakeLockUptime >= 3600
+                    ? `${(wakeLockUptime / 3600).toFixed(1)}h`
+                    : wakeLockUptime >= 60
+                      ? `${Math.floor(wakeLockUptime / 60)}m ${wakeLockUptime % 60}s`
+                      : `${wakeLockUptime}s`)} activo
+                </span>
+              )}
+            </span>
+            <label className="relative inline-flex items-center cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={wakeLockActive}
+                onChange={toggleWakeLock}
+                className="sr-only peer"
+              />
+              <div className="w-8 h-4.5 bg-[#121212] border border-[#F5F5DC]/25 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-[#121212] peer-checked:after:border-[#121212]"></div>
+            </label>
+          </div>
+          <p className="text-[10px] text-green-400/80 leading-relaxed">
+            Previene la suspensión de pantalla/dispositivo para que la app sirva de nodo de sincronización activo
+            e ininterrumpido.
+          </p>
+          {wakeLockActive && (
+            <div className="flex items-center gap-3 text-[10px] text-green-400/60 pt-1">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />
+                Heartbeat activo (30s)
+              </span>
+              {wakeLockRetries > 0 && (
+                <span className="text-yellow-400/70">
+                  Reintentos: {wakeLockRetries}
+                </span>
+              )}
+              <span className="text-[9px] text-green-400/40">
+                Persiste al recargar
+              </span>
+            </div>
+          )}
+          {!('wakeLock' in navigator) && (
+            <p className="text-[10px] text-red-400/80 mt-1">
+              ⚠️ Wake Lock API no disponible en este navegador. Actualiza Chrome/Edge o usa PWA.
+            </p>
+          )}
+        </div>
+
+        {/* Connect / Scanner Unified Input */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-bold text-[#F5F5DC]/70 px-1">Conectar a un Nodo</span>
+          <div className="flex items-center gap-2 rounded-xl border border-[#F5F5DC]/20 bg-[#1a1a1a] p-1.5 shadow-sm">
+            <div className="flex-1 flex items-center bg-[#121212] rounded-lg border border-transparent focus-within:border-yellow-400/50 px-3 transition-colors">
+              <input
+                type="text"
+                placeholder="Ingresa Peer ID..."
+                value={manualPeerId}
+                onChange={(e) => setManualPeerId(e.target.value)}
+                className="w-full bg-transparent py-2.5 text-sm text-[#F5F5DC] placeholder-[#F5F5DC]/40 focus:outline-none"
+              />
+              {manualPeerId.trim() && (
                 <button
-                  onClick={() => setShowMyQrModal(true)}
-                  className="text-[#F5F5DC]/60 hover:text-[#F5F5DC] transition-colors shrink-0"
-                  title={t('p2pSync.myQrTitle')}
+                  onClick={handleManualConnect}
+                  className="text-yellow-400 font-bold text-xs px-2 hover:text-yellow-300 transition-colors"
                 >
-                  <QrCode size={14} />
+                  CONECTAR
                 </button>
               )}
             </div>
-            <span className="text-[10px] text-[#F5F5DC]/50 mt-1">
-              {t('p2pSync.encryptedTunnelActive') || 'Encrypted Tunnel: ACTIVE (ML-KEM-768 via P2PManager)'}
-            </span>
-            <div className="mt-2 flex flex-col gap-2 p-2 rounded border border-purple-500/30 bg-purple-500/5">
-              <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Branch Isolation</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="ID de Rama (vacio para Global)..."
-                  value={branchInput}
-                  onChange={(e) => setBranchInput(e.target.value)}
-                  className="flex-1 bg-black/40 border border-[#F5F5DC]/20 rounded px-2 py-1 text-xs text-purple-200 focus:outline-none focus:border-purple-500/50"
-                />
-                <button
-                  onClick={handleBranchSwitch}
-                  className="bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold px-2 py-1 rounded transition-colors"
-                >
-                  Switch
-                </button>
-              </div>
-              <span className="text-[9px] text-purple-400/70">
-                Current: <span className="font-mono text-purple-300">{state.activeBranch || 'Global (None)'}</span>
-              </span>
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-[#F5F5DC]/65">
-              <span
-                className={`inline-flex items-center gap-1.5 rounded border px-2 py-1 ${
-                  edgeMeshStatus.enabled
-                    ? 'border-cyan-400/30 bg-cyan-400/10 text-cyan-200'
-                    : 'border-[#F5F5DC]/15 bg-[#F5F5DC]/5'
-                }`}
-                title="Runtime CRDT de colecciones Shelf sobre edge-mesh"
-              >
-                <RadioTower size={12} />
-                Edge Mesh {edgeMeshStatus.enabled ? 'activo' : 'esperando'}
-              </span>
-              <span className="font-mono">
-                {edgeMeshStatus.totalItems} entidades / sync {edgeMeshLastSyncLabel}
-              </span>
-            </div>
-            {copyStatus !== 'idle' && state.localPeerId && (
-              <span className={`mt-1 text-[10px] ${copyStatus === 'copied' ? 'text-green-400' : 'text-red-400'}`}>
-                {copyStatus === 'copied' ? 'Peer ID copiado al portapapeles' : 'No se pudo copiar el Peer ID'}
-              </span>
-            )}
-            {state.localPeerId && (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <div className="bg-white p-1 rounded-md inline-flex shrink-0">
-                  <QRCodeCanvas value={state.localPeerId} size={48} level="M" includeMargin={false} />
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() => setShowMyQrModal(true)}
-                    className="min-h-9 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 text-[#F5F5DC] border border-[#F5F5DC]/30 px-3 py-1.5 rounded-lg transition-colors font-medium"
-                  >
-                    {t('p2pSync.shareQrButton') || 'Compartir QR'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      window.open(`https://wa.me/?text=${encodeURIComponent(inviteMessage)}`, '_blank');
-                    }}
-                    className="flex min-h-9 items-center gap-1.5 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-400 transition-colors hover:bg-green-500/20"
-                  >
-                    <MessageCircle size={14} aria-hidden="true" />
-                    WhatsApp
-                  </button>
-                  <a
-                    href={pwaInstallLink || window.location.origin}
-                    target="_blank"
-                    rel="noreferrer"
-                    data-testid="p2p-pwa-link"
-                    className="flex min-h-9 items-center gap-1.5 rounded-lg border border-[#F5F5DC]/30 bg-[#F5F5DC]/10 px-3 py-1.5 text-xs font-medium text-[#F5F5DC] transition-colors hover:bg-[#F5F5DC]/20"
-                    title="Abrir o instalar la PWA"
-                  >
-                    <Download size={14} />
-                    PWA
-                  </a>
-                  <a
-                    href={peerInviteLink || window.location.origin}
-                    target="_blank"
-                    rel="noreferrer"
-                    data-testid="p2p-invite-link"
-                    className="flex min-h-9 items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-300 transition-colors hover:bg-blue-500/20"
-                    title="Abrir enlace de invitación del nodo"
-                  >
-                    <Link2 size={14} />
-                    Nodo
-                  </a>
-                </div>
-              </div>
-            )}
+            <button
+              onClick={() => setShowScannerModal(true)}
+              className="p-2.5 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-colors shrink-0"
+              title="Escanear QR"
+            >
+              <QrCode size={18} />
+            </button>
           </div>
-          <div className="flex flex-col items-start gap-1 sm:items-end">
-            <span className="text-xs sm:text-sm font-semibold capitalize px-2 py-0.5 rounded-full bg-foreground/10 w-fit">
-              {t('p2pSync.roleLabel') || 'Role'}: {state.role}
-            </span>
-            {state.peers.length > 0 && (
-              <span className="text-xs text-green-400">
-                {t('p2pSync.syncLabel') || 'Sync'}: {syncProgress}%
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-1 grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 max-[420px]:grid-cols-1">
-          <input
-            type="text"
-            data-testid="manual-peer-id-input"
-            placeholder={t('p2pSync.placeholderManual') || 'O ingresa el Peer ID manualmente...'}
-            value={manualPeerId}
-            onChange={(e) => setManualPeerId(e.target.value)}
-            className="w-full min-w-0 rounded-lg border border-[#F5F5DC]/30 bg-[#121212] px-3 py-2.5 text-sm text-[#F5F5DC] placeholder-[#F5F5DC]/30 transition-colors focus:outline-none focus:border-[#F5F5DC]/60"
-          />
-          <button
-            type="button"
-            data-testid="manual-connect-button"
-            onClick={handleManualConnect}
-            disabled={!manualPeerId.trim()}
-            className="min-h-[44px] rounded-lg bg-[#F5F5DC] px-4 py-2.5 text-sm font-bold text-[#1a1a1a] transition-colors hover:bg-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 max-[420px]:w-full"
-          >
-            {t('p2pSync.connect') || 'Conectar'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowScannerModal(true)}
-            className="min-h-[44px] rounded-lg border border-[#F5F5DC]/30 bg-[#121212] p-2.5 text-[#F5F5DC]/80 transition-colors hover:text-[#F5F5DC] hover:border-[#F5F5DC]/60 max-[420px]:w-full"
-            title={t('p2pSync.scanQrTitle')}
-          >
-            <QrCode size={20} />
-          </button>
         </div>
 
         {isBiometricAvailable && (
-          <div className="p-2 bg-green-500/10 border border-green-500/30 rounded text-[10px] text-green-400 text-center">
-            🛡️ Biometric hardware detected (WebAuthn/TPM)
+          <div className="text-[10px] text-green-400/70 text-center flex items-center justify-center gap-1.5">
+            <ShieldAlert size={12} /> Biometría habilitada (WebAuthn/TPM)
           </div>
         )}
 
-        <div className="mt-4">
-          <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <h4 className="font-bold text-[#F5F5DC] text-sm">{t('p2pSync.linkedDevices') || 'Linked Devices'}</h4>
-            <div className="flex flex-wrap items-center gap-2">
+        <div className="mt-2">
+          <div className="mb-3 flex items-center justify-between">
+            <h4 className="font-bold text-[#F5F5DC] text-sm">
+              {t('p2pSync.linkedDevices') || 'Dispositivos Enlazados'}
+            </h4>
+            {state.peers.length > 0 && (
               <button
                 type="button"
                 onClick={handleForceSync}
-                disabled={state.peers.length === 0 || isForcingSync}
-                data-testid="p2p-force-sync-button"
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1.5 text-xs font-semibold text-cyan-200 transition-colors hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-45"
-                title="Solicitar resincronizacion CRDT con state vectors"
+                disabled={isForcingSync}
+                className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-xs font-semibold text-cyan-200 transition-colors hover:bg-cyan-400/20 disabled:opacity-50"
               >
-                <RefreshCw size={14} className={isForcingSync ? 'animate-spin' : ''} />
-                Forzar sync
+                <RefreshCw size={12} className={isForcingSync ? 'animate-spin' : ''} />
+                Sync
               </button>
-              {state.peers.length > 0 && (
-                <button
-                  onClick={() => setShowConfigModal(true)}
-                  className="min-h-9 rounded-md border border-[#F5F5DC]/30 bg-[#121212] p-1.5 text-[#F5F5DC]/60 transition-colors hover:text-[#F5F5DC] hover:border-[#F5F5DC]/60"
-                  title={t('p2pSync.configTitle')}
-                >
-                  <Settings size={16} />
-                </button>
-              )}
-            </div>
+            )}
           </div>
           {state.peers.length > 0 ? (
             <div className="space-y-2">
@@ -1235,30 +1292,128 @@ const P2PSyncManager: React.FC = () => {
         </div>
       )}
 
-      {/* Config Modal */}
+      {/* Advanced Config Modal */}
       {showConfigModal && (
         <div className={modalOverlayClass}>
           <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-md sm:h-auto`}>
             <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
               <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
                 <Settings size={18} className="text-yellow-400" />
-                {t('p2pSync.configTitle')}
+                Configuración Avanzada
               </h3>
               <button onClick={() => setShowConfigModal(false)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
                 <X size={20} />
               </button>
             </div>
-            <div className={`${modalBodyClass} space-y-4`}>
-              <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10">
-                <p className="mb-2 text-xs opacity-70">{t('p2pSync.localPeerIdLabel') || 'Peer ID local'}</p>
-                <code className="font-mono text-yellow-400 break-all select-all">{state.localPeerId}</code>
+            <div className={`${modalBodyClass} space-y-5`}>
+              {/* Host Status & Failover */}
+              <div className="flex flex-col gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-[#F5F5DC]">Host Principal</span>
+                  {state.role === 'admin' && !isHostLocal && (
+                    <button
+                      onClick={handleManualFailover}
+                      className="rounded bg-yellow-500/10 px-2 py-1 text-[10px] font-bold text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500/20 transition-colors"
+                    >
+                      Forzar Failover
+                    </button>
+                  )}
+                </div>
+                <div className="text-xs font-mono text-yellow-400 break-all">{currentHostId || 'N/A'}</div>
               </div>
-              <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <span>{t('p2pSync.yourCurrentRole') || 'Tu Rol Actual:'}</span>
+
+              {/* Wake Lock */}
+              <div className={`flex flex-col gap-2 p-3 rounded-lg border transition-colors ${
+                wakeLockActive
+                  ? 'border-green-400/60 bg-green-500/10'
+                  : 'border-green-500/30 bg-green-500/5'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${
+                      wakeLockActive ? 'bg-green-400 animate-pulse shadow-[0_0_6px_rgba(74,222,128,0.6)]' : 'bg-gray-600'
+                    }`} />
+                    <span className={`text-xs font-bold uppercase tracking-wider ${
+                      wakeLockActive ? 'text-green-300' : 'text-green-400'
+                    }`}>
+                      Nodo Keep-Alive (24/7)
+                    </span>
+                    {wakeLockActive && (
+                      <span className="text-[10px] bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-full font-mono">
+                        {(wakeLockUptime >= 3600
+                          ? `${(wakeLockUptime / 3600).toFixed(1)}h`
+                          : wakeLockUptime >= 60
+                            ? `${Math.floor(wakeLockUptime / 60)}m ${wakeLockUptime % 60}s`
+                            : `${wakeLockUptime}s`)} activo
+                      </span>
+                    )}
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={wakeLockActive}
+                      onChange={toggleWakeLock}
+                      className="sr-only peer"
+                    />
+                    <div className="w-8 h-4.5 bg-[#121212] border border-[#F5F5DC]/25 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-[#121212] peer-checked:after:border-[#121212]"></div>
+                  </label>
+                </div>
+                <p className="text-[10px] text-green-400/80 leading-relaxed">
+                  Previene la suspensión de pantalla/dispositivo para que la app sirva de nodo de sincronización activo
+                  e ininterrumpido.
+                </p>
+                {wakeLockActive && (
+                  <div className="flex items-center gap-3 text-[10px] text-green-400/60 pt-1">
+                    <span className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />
+                      Heartbeat activo (30s)
+                    </span>
+                    {wakeLockRetries > 0 && (
+                      <span className="text-yellow-400/70">
+                        Reintentos: {wakeLockRetries}
+                      </span>
+                    )}
+                    <span className="text-[9px] text-green-400/40">
+                      Persiste al recargar
+                    </span>
+                  </div>
+                )}
+                {!('wakeLock' in navigator) && (
+                  <p className="text-[10px] text-red-400/80 mt-1">
+                    ⚠️ Wake Lock API no disponible en este navegador. Actualiza Chrome/Edge o usa PWA.
+                  </p>
+                )}
+              </div>
+
+              {/* Branch Isolation */}
+              <div className="flex flex-col gap-2 p-3 rounded-lg border border-purple-500/30 bg-purple-500/5">
+                <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Branch Isolation</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="ID de Rama (vacio para Global)..."
+                    value={branchInput}
+                    onChange={(e) => setBranchInput(e.target.value)}
+                    className="flex-1 bg-black/40 border border-[#F5F5DC]/20 rounded px-2 py-1.5 text-xs text-purple-200 focus:outline-none focus:border-purple-500/50"
+                  />
+                  <button
+                    onClick={handleBranchSwitch}
+                    className="bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold px-3 py-1.5 rounded transition-colors"
+                  >
+                    Switch
+                  </button>
+                </div>
+                <span className="text-[10px] text-purple-400/70">
+                  Current: <span className="font-mono text-purple-300">{state.activeBranch || 'Global (None)'}</span>
+                </span>
+              </div>
+
+              <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 flex flex-col gap-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-[#F5F5DC]/70">Rol Actual:</span>
                   <span className="font-bold text-green-400 capitalize">{state.role}</span>
                 </div>
-                <p className="text-xs text-[#F5F5DC]/55">
+                <p className="text-[10px] text-[#F5F5DC]/50">
                   Solo el host original puede conceder permisos o promover nodos. Los nodos compartidos fuera del host
                   quedan en modo comprador/portafolio.
                 </p>
@@ -1267,9 +1422,9 @@ const P2PSyncManager: React.FC = () => {
             <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
               <button
                 onClick={() => setShowConfigModal(false)}
-                className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
+                className="rounded bg-[#333] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#444]"
               >
-                {t('p2pSync.close')}
+                Cerrar
               </button>
             </div>
           </div>
@@ -1484,7 +1639,7 @@ const P2PSyncManager: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </CollapsibleCard>
   );
 };
 
