@@ -1,5 +1,6 @@
 import { type CameraDevice, Html5Qrcode } from 'html5-qrcode';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface QRScannerModalProps {
   onScan: (decodedText: string) => void;
@@ -47,11 +48,17 @@ export default function QRScannerModal({ onScan, onClose }: QRScannerModalProps)
 
     return () => {
       mounted = false;
-      if (scannerRef.current?.isScanning) {
-        scannerRef.current
-          .stop()
-          .then(() => scannerRef.current?.clear())
-          .catch(console.error);
+      if (scannerRef.current) {
+        try {
+          if (scannerRef.current.isScanning) {
+            scannerRef.current
+              .stop()
+              .then(() => scannerRef.current?.clear())
+              .catch(console.error);
+          }
+        } catch (err) {
+          console.error('Sync error on stop:', err);
+        }
       }
     };
   }, []);
@@ -119,7 +126,7 @@ export default function QRScannerModal({ onScan, onClose }: QRScannerModalProps)
     setActiveCameraId(e.target.value);
   };
 
-  return (
+  const content = (
     <div className="fixed inset-0 z-[100] flex h-[var(--app-height,100vh)] items-end justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm sm:items-center sm:p-4">
       <div className="flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-t-2xl bg-[#1a1a1a] border border-[#F5F5DC]/20 shadow-2xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:max-w-md sm:rounded-lg">
         <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4">
@@ -171,4 +178,6 @@ export default function QRScannerModal({ onScan, onClose }: QRScannerModalProps)
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }

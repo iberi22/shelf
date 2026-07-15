@@ -1,6 +1,7 @@
 import { Html5Qrcode, type Html5QrcodeResult } from 'html5-qrcode';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useI18n } from '../context/I18nContext';
 
 interface BarcodeScannerProps {
@@ -13,6 +14,13 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
   const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Use a ref to hold the latest onScan callback to avoid stale closures
+  // without needing to restart the scanner on every parent render.
+  const onScanRef = useRef(onScan);
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
 
   useEffect(() => {
     const startScanner = async () => {
@@ -28,11 +36,10 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
           const config = {
             fps: 10,
             qrbox: { width: 250, height: 250 },
-            rememberLastUsedCamera: true,
           };
 
           const handleScanSuccess = (decodedText: string, _decodedResult: Html5QrcodeResult) => {
-            onScan(decodedText);
+            onScanRef.current(decodedText);
             stopScanner();
           };
 
@@ -57,10 +64,16 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
     };
 
     const stopScanner = () => {
-      if (scannerRef.current?.isScanning) {
-        scannerRef.current.stop().catch((err) => {
-          console.error('Failed to stop the scanner.', err);
-        });
+      if (scannerRef.current) {
+        try {
+          if (scannerRef.current.isScanning) {
+            scannerRef.current.stop().catch((err) => {
+              console.error('Failed to stop the scanner.', err);
+            });
+          }
+        } catch (err) {
+          console.error('Synchronous error stopping the scanner.', err);
+        }
       }
     };
 
@@ -69,9 +82,9 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
     return () => {
       stopScanner();
     };
-  }, [onScan, t]);
+  }, [t]);
 
-  return (
+  const content = (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
       <div className="bg-[#1e1e1e] p-4 md:p-6 rounded-lg shadow-xl border border-[#F5F5DC]/30 max-w-md w-full m-4">
         <h3 className="text-lg font-bold mb-4 text-center text-[#F5F5DC]">{t('scanner.title')}</h3>
@@ -99,6 +112,8 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 };
 
 export default BarcodeScanner;
