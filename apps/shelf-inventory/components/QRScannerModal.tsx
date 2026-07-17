@@ -102,10 +102,16 @@ export default function QRScannerModal({ onScan, onClose }: QRScannerModalProps)
             // ignore background scan errors
           },
         );
-        if (mounted) {
-          setIsScanning(true);
-          setError('');
+        
+        if (!mounted) {
+          if (scannerRef.current?.isScanning) {
+            scannerRef.current.stop().then(() => scannerRef.current?.clear()).catch(console.error);
+          }
+          return;
         }
+
+        setIsScanning(true);
+        setError('');
       } catch (err: any) {
         console.error('Error starting scanner:', err);
         if (mounted) {

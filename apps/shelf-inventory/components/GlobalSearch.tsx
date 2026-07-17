@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
 
 interface SearchResult {
@@ -180,7 +181,7 @@ const GlobalSearch: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/60 backdrop-blur-sm"
       onClick={onClose}
@@ -318,7 +319,8 @@ const GlobalSearch: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
           </span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

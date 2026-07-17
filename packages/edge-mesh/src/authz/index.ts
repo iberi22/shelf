@@ -1,62 +1,228 @@
-export type Capability = string;
+import { generarNonce } from "../protocol/utils.js";
+import type { NamespaceCapabilityGrant, NodoId } from "../types/index.js";
 
-export interface SignedCapability {
-	capability: Capability;
-	issuer: string;
-	subject: string;
-	signature: Uint8Array;
-	expiresAt?: number;
+// ─── CONSTANTS ─────────────────────────────────────────────────────────────
+
+const EXPIRACION_POR_DEFECTO_MS = 86_400_000; // 24h
+
+export const CAPACIDAD_ESTANDAR = {
+	LEER: "read",
+	ESCRIBIR: "write",
+	ADMIN: "admin",
+	SINC: "sync",
+	PRESENCIA: "presence",
+	GOBERNANZA: "governance",
+} as const;
+
+export type CapacidadEstandar =
+	(typeof CAPACIDAD_ESTANDAR)[keyof typeof CAPACIDAD_ESTANDAR];
+
+// ─── NAMESPACE AUTHORIZER ──────────────────────────────────────────────────
+
+export interface AuthzEventMap {
+	capacidadConcedida: CustomEvent<{ readonly grant: NamespaceCapabilityGrant }>;
+	capacidadRevocada: CustomEvent<{
+		readonly id: string;
+		readonly espacio: string;
+		readonly sujeto: NodoId;
+	}>;
+	autorizacionFallida: CustomEvent<{
+		readonly espacio: string;
+		readonly sujeto: NodoId;
+		readonly capacidad: string;
+		readonly razon: string;
+	}>;
 }
 
-export class AuthzManager {
-	private capabilities: Map<string, SignedCapability[]> = new Map();
+export class NamespaceAuthorizer {
+	readonly eventTarget: EventTarget;
+	private readonly grants: Map<string, NamespaceCapabilityGrant>;
+	private readonly reglasLocales: Map<string, Set<string>>;
 
-	public addCapability(signedCap: SignedCapability) {
-		const userCaps = this.capabilities.get(signedCap.subject) || [];
-		userCaps.push(signedCap);
-		this.capabilities.set(signedCap.subject, userCaps);
+	constructor() {
+		this.eventTarget = new EventTarget();
+		this.grants = new Map();
+		this.reglasLocales = new Map();
 	}
 
-	public hasCapability(
-		subject: string,
-		requiredCap: Capability,
-		verifyFn?:
-			| ((signature: Uint8Array, message: Uint8Array, issuer: string) => boolean)
-			| null,
+	// ─── GRANTS ──────────────────────────────────────────────────────────
+
+	concederCapacidad(
+		espacio: string,
+		sujeto: NodoId,
+		capacidad: string,
+		expiracionMs: number = EXPIRACION_POR_DEFECTO_MS,
+		firma?: Uint8Array,
+	): NamespaceCapabilityGrant {
+		const grant: NamespaceCapabilityGrant = {
+			id: generarNonce(),
+			espacio,
+			sujeto,
+			capacidad,
+			fechaEmision: Date.now(),
+			fechaExpiracion: Date.now() + expiracionMs,
+			firma: firma ?? new Uint8Array(0),
+		};
+
+		const clave = this.crearClave(espacio, sujeto, capacidad);
+		this.grants.set(clave, grant);
+
+		this.emit("capacidadConcedida", { grant });
+		return grant;
+	}
+
+	revocarCapacidad(
+		espacio: string,
+		sujeto: NodoId,
+		capacidad: string,
 	): boolean {
-		const userCaps = this.capabilities.get(subject);
-		if (!userCaps) return false;
+		const clave = this.crearClave(espacio, sujeto, capacidad);
+		const grant = this.grants.get(clave);
+		if (grant === undefined) return false;
 
-		const now = Date.now();
-		return userCaps.some((cap) => {
-			if (cap.expiresAt && cap.expiresAt < now) return false;
+		this.grants.delete(clave);
 
-			// Verification is REQUIRED unless explicitly waived by passing null
-			if (verifyFn !== null) {
-				if (!verifyFn) {
-					console.warn(
-						`[SECURITY] hasCapability called without verifyFn for ${subject}. Rejecting by default.`,
-					);
-					return false;
-				}
-
-				const message = new TextEncoder().encode(
-					`${cap.capability}:${cap.issuer}:${cap.subject}`,
-				);
-				if (!verifyFn(cap.signature, message, cap.issuer)) return false;
-			}
-
-			return this.checkCapabilityMatch(cap.capability, requiredCap);
+		this.emit("capacidadRevocada", {
+			id: grant.id,
+			espacio,
+			sujeto,
 		});
+		return true;
 	}
 
-	private checkCapabilityMatch(granted: string, required: string): boolean {
-		if (granted === '*') return true;
-		if (granted === required) return true;
-		if (granted.endsWith(':*')) {
-			const prefix = granted.slice(0, -2);
-			return required.startsWith(prefix);
-		}
-		return false;
+	verificarCapacidad(
+		espacio: string,
+		sujeto: NodoId,
+		capacidad: string,
+	): boolean {
+		// Siempre verificar admin
+		if (this.verificarGrant(espacio, sujeto, "admin")) return true;
+
+		return this.verificarGrant(espacio, sujeto, capacidad);
 	}
+
+	private verificarGrant(
+		espacio: string,
+		sujeto: NodoId,
+		capacidad: string,
+	): boolean {
+		const clave = this.crearClave(espacio, sujeto, capacidad);
+		const grant = this.grants.get(clave);
+
+		if (grant === undefined) {
+			this.emit("autorizacionFallida", {
+				espacio,
+				sujeto,
+				capacidad,
+				razon: "Sin permiso concedido",
+			});
+			return false;
+		}
+
+		if (Date.now() > grant.fechaExpiracion) {
+			this.grants.delete(clave);
+			this.emit("autorizacionFallida", {
+				espacio,
+				sujeto,
+				capacidad,
+				razon: "Permiso expirado",
+			});
+			return false;
+		}
+
+		return true;
+	}
+
+	// ─── REGLAS LOCALES ──────────────────────────────────────────────────
+
+	agregarReglaLocal(espacio: string, regla: string): void {
+		const reglas = this.reglasLocales.get(espacio) ?? new Set();
+		reglas.add(regla);
+		this.reglasLocales.set(espacio, reglas);
+	}
+
+	removerReglaLocal(espacio: string, regla: string): boolean {
+		const reglas = this.reglasLocales.get(espacio);
+		if (reglas === undefined) return false;
+		const resultado = reglas.delete(regla);
+		if (reglas.size === 0) {
+			this.reglasLocales.delete(espacio);
+		}
+		return resultado;
+	}
+
+	verificarReglaLocal(espacio: string, regla: string): boolean {
+		return this.reglasLocales.get(espacio)?.has(regla) ?? false;
+	}
+
+	// ─── CONSULTAS ───────────────────────────────────────────────────────
+
+	obtenerGrantsDeNodo(sujeto: NodoId): readonly NamespaceCapabilityGrant[] {
+		return Array.from(this.grants.values()).filter((g) => g.sujeto === sujeto);
+	}
+
+	obtenerGrantsDeEspacio(espacio: string): readonly NamespaceCapabilityGrant[] {
+		return Array.from(this.grants.values()).filter(
+			(g) => g.espacio === espacio,
+		);
+	}
+
+	obtenerTodosLosGrants(): readonly NamespaceCapabilityGrant[] {
+		return Array.from(this.grants.values());
+	}
+
+	limpiarGrantsExpirados(): number {
+		const ahora = Date.now();
+		let eliminados = 0;
+		for (const [clave, grant] of this.grants) {
+			if (ahora > grant.fechaExpiracion) {
+				this.grants.delete(clave);
+				eliminados++;
+			}
+		}
+		return eliminados;
+	}
+
+	// ─── EVENTOS ─────────────────────────────────────────────────────────
+
+	on<K extends keyof AuthzEventMap>(
+		tipo: K,
+		handler: (ev: AuthzEventMap[K]) => void,
+	): void {
+		this.eventTarget.addEventListener(tipo as string, handler as EventListener);
+	}
+
+	off<K extends keyof AuthzEventMap>(
+		tipo: K,
+		handler: (ev: AuthzEventMap[K]) => void,
+	): void {
+		this.eventTarget.removeEventListener(
+			tipo as string,
+			handler as EventListener,
+		);
+	}
+
+	private emit<K extends keyof AuthzEventMap>(
+		tipo: K,
+		detalle: AuthzEventMap[K]["detail"],
+	): void {
+		const evento = new CustomEvent(tipo as string, { detail: detalle });
+		this.eventTarget.dispatchEvent(evento);
+	}
+
+	// ─── UTILIDADES ──────────────────────────────────────────────────────
+
+	private crearClave(
+		espacio: string,
+		sujeto: NodoId,
+		capacidad: string,
+	): string {
+		return `${espacio}::${sujeto}::${capacidad}`;
+	}
+}
+
+// ─── FACTORY ───────────────────────────────────────────────────────────────
+
+export function createNamespaceAuthorizer(): NamespaceAuthorizer {
+	return new NamespaceAuthorizer();
 }

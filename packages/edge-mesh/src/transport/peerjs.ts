@@ -1,78 +1,226 @@
-import { type DataConnection, Peer } from 'peerjs';
-import type { ITransport } from './types';
+import Peer, { type DataConnection } from "peerjs";
+import { createEnvelope, MessageDeduplicator } from "../protocol/index.js";
+import type { Envolvente, NodoId, TipoMensaje, TipoTransporte } from "../types/index.js";
+import { TIPO_MENSAJE, TIPO_TRANSPORTE } from "../types/index.js";
+import type { ITransport, TransportEventMap } from "./types.js";
+
+// ─── TYPES ─────────────────────────────────────────────────────────────────
+
+export interface PeerJSTransportOptions {
+	readonly peerId: string;
+	readonly host?: string;
+	readonly port?: number;
+	readonly path?: string;
+	readonly key?: string;
+	readonly debug?: number;
+	readonly config?: RTCConfiguration;
+}
+
+export type { TransportEventMap };
+
+// ─── PEERJS TRANSPORT ──────────────────────────────────────────────────────
 
 export class PeerJSTransport implements ITransport {
-	private peer: Peer;
-	private connections: Map<string, DataConnection> = new Map();
-	private onMessageCb?: (peerId: string, data: Uint8Array) => void;
-	private onConnectCb?: (peerId: string) => void;
-	private onDisconnectCb?: (peerId: string) => void;
+	readonly tipo: TipoTransporte = TIPO_TRANSPORTE.PEERJS;
+	readonly eventTarget: EventTarget;
+	readonly nodoId: NodoId;
+	private readonly peer: Peer;
+	private readonly conexiones: Map<string, DataConnection>;
+	private readonly deduplicator: MessageDeduplicator;
+	private conectado: boolean = false;
 
-	constructor(peerId?: string, options?: any) {
-		this.peer = peerId ? new Peer(peerId, options) : new Peer(options);
-		this.peer.on('connection', (conn) => this.handleConnection(conn));
+	constructor(nodoId: NodoId, options: PeerJSTransportOptions) {
+		this.nodoId = nodoId;
+		this.eventTarget = new EventTarget();
+		this.conexiones = new Map();
+		this.deduplicator = new MessageDeduplicator();
+
+		this.peer = new Peer(options.peerId, {
+			host: options.host,
+			port: options.port,
+			path: options.path,
+			key: options.key,
+			debug: options.debug,
+			config: options.config,
+		});
+
+		this.peer.on("open", () => {
+			this.conectado = true;
+			this.emit("conectado", { nodoId: this.nodoId });
+		});
+
+		this.peer.on("connection", (conn: DataConnection) => {
+			this.manejarConexion(conn);
+		});
+
+		this.peer.on("disconnected", () => {
+			this.conectado = false;
+			this.emit("desconectado", { nodoId: this.nodoId });
+		});
+
+		this.peer.on("error", (error: Error) => {
+			this.emit("error", { mensaje: error.message, error });
+		});
 	}
 
-	private handleConnection(conn: DataConnection) {
-		conn.on('open', () => {
-			this.connections.set(conn.peer, conn);
-			this.onConnectCb?.(conn.peer);
-		});
+	// ─── EVENTOS ───────────────────────────────────────────────────────────
 
-		conn.on('data', (data) => {
-			if (data instanceof Uint8Array) {
-				this.onMessageCb?.(conn.peer, data);
-			}
-		});
-
-		conn.on('close', () => {
-			this.connections.delete(conn.peer);
-			this.onDisconnectCb?.(conn.peer);
-		});
+	on<K extends keyof TransportEventMap>(
+		tipo: K,
+		handler: (ev: TransportEventMap[K]) => void,
+	): void {
+		this.eventTarget.addEventListener(tipo as string, handler as EventListener);
 	}
 
-	public async send(peerId: string, data: Uint8Array): Promise<void> {
-		const conn = this.connections.get(peerId);
-		if (conn?.open) {
-			conn.send(data);
+	off<K extends keyof TransportEventMap>(
+		tipo: K,
+		handler: (ev: TransportEventMap[K]) => void,
+	): void {
+		this.eventTarget.removeEventListener(
+			tipo as string,
+			handler as EventListener,
+		);
+	}
+
+	private emit<K extends keyof TransportEventMap>(
+		tipo: K,
+		detalle: TransportEventMap[K]["detail"],
+	): void {
+		const evento = new CustomEvent(tipo as string, { detail: detalle });
+		this.eventTarget.dispatchEvent(evento);
+	}
+
+	// ─── CONEXION ──────────────────────────────────────────────────────────
+
+	private manejarConexion(conn: DataConnection): void {
+		const nodoRemoto = conn.peer as NodoId;
+		this.conexiones.set(nodoRemoto, conn);
+
+		conn.on("data", (datos: unknown) => {
+			this.manejarDatos(datos);
+		});
+
+		conn.on("close", () => {
+			this.conexiones.delete(nodoRemoto);
+			this.emit("desconectado", { nodoId: nodoRemoto });
+		});
+
+		conn.on("error", (error: Error) => {
+			this.emit("error", {
+				mensaje: `Conexion error con ${nodoRemoto}`,
+				error,
+			});
+		});
+
+		this.emit("conectado", { nodoId: nodoRemoto });
+	}
+
+	private manejarDatos(datos: unknown): void {
+		if (!esEnvolvente(datos)) return;
+
+		if (this.deduplicator.esDuplicado(datos)) return;
+
+		this.emit("mensaje", { envolvente: datos });
+	}
+
+	// ─── ENVIO ─────────────────────────────────────────────────────────────
+
+	async enviar(
+		destino: NodoId,
+		payload: unknown,
+		tipoMensaje: string = TIPO_MENSAJE.SYNC,
+	): Promise<void> {
+		const conn = this.conexiones.get(destino);
+		if (conn === undefined) {
+			throw new Error(`No hay conexion con el nodo ${destino}`);
 		}
-	}
 
-	public async broadcast(data: Uint8Array): Promise<void> {
-		for (const conn of this.connections.values()) {
-			if (conn.open) {
-				conn.send(data);
-			}
+		// If caller already built an envelope, forward as-is.
+		if (esEnvolvente(payload)) {
+			conn.send(payload);
+			return;
 		}
+
+		const env = createEnvelope(
+			tipoMensaje as TipoMensaje,
+			this.nodoId,
+			destino,
+			payload,
+		);
+
+		conn.send(env);
 	}
 
-	public onMessage(callback: (peerId: string, data: Uint8Array) => void): void {
-		this.onMessageCb = callback;
+	async transmitir(
+		payload: unknown,
+		tipoMensaje: string = TIPO_MENSAJE.SYNC,
+	): Promise<void> {
+		const env = esEnvolvente(payload)
+			? payload
+			: createEnvelope(
+					tipoMensaje as TipoMensaje,
+					this.nodoId,
+					"*",
+					payload,
+				);
+
+		const promesas: Promise<void>[] = [];
+		for (const conn of this.conexiones.values()) {
+			promesas.push(
+				new Promise<void>((resolve) => {
+					try {
+						conn.send(env);
+					} catch {
+						// Ignorar errores individuales en broadcast
+					}
+					resolve();
+				}),
+			);
+		}
+
+		await Promise.all(promesas);
 	}
 
-	public onConnect(callback: (peerId: string) => void): void {
-		this.onConnectCb = callback;
+	async conectarRemoto(remotoId: string): Promise<void> {
+		const conn = this.peer.connect(remotoId, {
+			reliable: true,
+			serialization: "json",
+		});
+		this.manejarConexion(conn);
 	}
 
-	public onDisconnect(callback: (peerId: string) => void): void {
-		this.onDisconnectCb = callback;
+	// ─── ESTADO ────────────────────────────────────────────────────────────
+
+	estaConectado(): boolean {
+		return this.conectado;
 	}
 
-	public async connect(peerId: string): Promise<void> {
-		if (this.connections.has(peerId)) return;
-		const conn = this.peer.connect(peerId);
-		this.handleConnection(conn);
+	obtenerConexiones(): readonly string[] {
+		return Array.from(this.conexiones.keys());
 	}
 
-	public async disconnect(): Promise<void> {
-		for (const conn of this.connections.values()) {
+	async cerrar(): Promise<void> {
+		for (const conn of this.conexiones.values()) {
 			conn.close();
 		}
-		this.connections.clear();
+		this.conexiones.clear();
 		this.peer.destroy();
+		this.conectado = false;
+		this.deduplicator.reiniciar();
 	}
+}
 
-	public get id(): string {
-		return this.peer.id;
-	}
+// ─── TYPE GUARD ────────────────────────────────────────────────────────────
+
+function esEnvolvente(valor: unknown): valor is Envolvente {
+	if (typeof valor !== "object" || valor === null) return false;
+	const candidate = valor as Record<string, unknown>;
+	return (
+		typeof candidate.id === "string" &&
+		typeof candidate.tipo === "string" &&
+		typeof candidate.origen === "string" &&
+		typeof candidate.destino === "string" &&
+		typeof candidate.timestamp === "number" &&
+		candidate.payload !== undefined
+	);
 }

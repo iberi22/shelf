@@ -2,6 +2,7 @@ import { Image as ImageIcon, X } from 'lucide-react';
 import type { Product, Sale, SaleItem } from 'p2p-mesh-core';
 import type React from 'react';
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
@@ -678,42 +679,44 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
         </div>
       </div>
 
-      {previewImage && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
-          onClick={() => setPreviewImage(null)}
-        >
+      {previewImage &&
+        createPortal(
           <div
-            className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#111111] p-3 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+            onClick={() => setPreviewImage(null)}
           >
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-[#F5F5DC]">{previewImage.label}</p>
-                <p className="text-xs text-[#F5F5DC]/50">
-                  {t('inventory.form.previewImage') || 'Vista previa de la imagen'}
-                </p>
+            <div
+              className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#111111] p-3 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-[#F5F5DC]">{previewImage.label}</p>
+                  <p className="text-xs text-[#F5F5DC]/50">
+                    {t('inventory.form.previewImage') || 'Vista previa de la imagen'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImage(null)}
+                  className="rounded-full border border-white/10 bg-white/5 p-2 text-[#F5F5DC]/80 hover:bg-white/10"
+                  aria-label={t('modal.close')}
+                >
+                  <X size={16} />
+                </button>
               </div>
               <button
                 type="button"
                 onClick={() => setPreviewImage(null)}
-                className="rounded-full border border-white/10 bg-white/5 p-2 text-[#F5F5DC]/80 hover:bg-white/10"
-                aria-label={t('modal.close')}
+                className="block w-full overflow-hidden rounded-xl border border-white/10 bg-black/30"
+                aria-label={previewImage.label}
               >
-                <X className="h-4 w-4" aria-hidden="true" />
+                <img src={previewImage.url} alt={previewImage.label} className="max-h-[72vh] w-full object-contain" />
               </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setPreviewImage(null)}
-              className="block w-full overflow-hidden rounded-xl border border-white/10 bg-black/30"
-              aria-label={previewImage.label}
-            >
-              <img src={previewImage.url} alt={previewImage.label} className="max-h-[72vh] w-full object-contain" />
-            </button>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </form>
   );
 };

@@ -1,4 +1,4 @@
-import { createCrdtSyncLayer } from 'edge-mesh';
+
 import {
   Activity,
   AlertCircle,
@@ -415,44 +415,10 @@ const P2PSyncManager: React.FC = () => {
     const interval = setInterval(() => {
       if (p2pManager.localPeerId) {
         dispatch({ type: 'SET_LOCAL_PEER_ID', payload: p2pManager.localPeerId });
-
-        if (!dbSync.syncLayer) {
-          const syncLayer = createCrdtSyncLayer({
-            namespace: 'shelf-inventory',
-            doc: dbSync.doc,
-            identity: {
-              peerId: p2pManager.localPeerId,
-            },
-          });
-          syncLayer.load().then(() => {
-            dbSync.setSyncLayer(syncLayer);
-          });
-        }
-
         clearInterval(interval);
       }
     }, 1000);
 
-    // Initialize CrdtSyncLayer if enabled
-    if (p2pManager.localPeerId && state.inventoryConfig.useEdgeMeshSync) {
-      const syncLayer = createCrdtSyncLayer({
-        namespace: 'shelf-sync',
-        identity: {
-          peerId: p2pManager.localPeerId,
-          sign: (msg) => p2pManager.sign(msg),
-          verify: (sig, msg, id) => p2pManager.verify(sig, msg, id),
-        },
-      });
-
-      dbSync.setSyncLayer(syncLayer);
-      dbSync.onEnvelope((envelope) => {
-        p2pManager.broadcast({ type: 'CRDT_SYNC_ENVELOPE', payload: { envelope } });
-      });
-
-      syncLayer.load().then(() => {
-        console.log('[P2P] CrdtSyncLayer loaded');
-      });
-    }
 
     return () => {
       // Cleanup interval if component unmounts before it fires

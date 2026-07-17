@@ -1129,6 +1129,26 @@ export class DatabaseSyncManager {
 	 */
 	public syncLayer: any = null;
 
+	/** Security origin used when surgically reverting unauthorized remote keys. */
+	private static readonly SECURITY_REVERT_ORIGIN = "p2p-security-revert";
+
+	/** Entity maps that participate in remote mutation authz. */
+	private static readonly SECURED_COLLECTIONS = [
+		"products",
+		"sales",
+		"clients",
+		"suppliers",
+		"purchaseOrders",
+		"arqueoSessions",
+		"ocrResults",
+		"teamMembers",
+		"branches",
+		"auditLogs",
+		"productChangeHistory",
+		"pendingEdits",
+		"linkedNodes",
+	] as const;
+
 	public setSyncLayer(layer: any) {
 		this.syncLayer = layer;
 	}
@@ -1137,9 +1157,188 @@ export class DatabaseSyncManager {
 		// This is a placeholder for the callback used in P2PSyncManager
 	}
 
+	/**
+	 * True when the origin represents a remote peer (string peer id).
+	 * Local/system origins (null, undefined, objects, security revert) are trusted.
+	 */
+	private isRemotePeerOrigin(origin: unknown): origin is string {
+		if (typeof origin !== "string") return false;
+		if (origin === DatabaseSyncManager.SECURITY_REVERT_ORIGIN) return false;
+		if (this.localPeerId && origin === this.localPeerId) return false;
+		// Common local Yjs origins used by the app
+		if (
+			origin === "local" ||
+			origin === "shelf-edge-workflow" ||
+			origin === "shelf-edge-security-revert" ||
+			origin === "shelf-edge-e2e"
+		) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Check whether a remote peer may mutate a collection (mirrors local checkPermissions).
+	 */
+	private checkRemotePermissions(
+		peerId: string,
+		collectionName: string,
+		item?: Partial<EntityRecord>,
+	): boolean {
+		const effective = this.getEffectivePeerConfig(peerId);
+		if (effective.role === "admin" || effective.isMaster) return true;
+
+		// Unknown / unverified peers: deny mutations on secured collections
+		const node = this.linkedNodes.get(peerId);
+		const ephem = this.ephemeralNodes.get(peerId);
+		if (!node && !this.isAuthorityPeer(peerId)) {
+			if (collectionName === "auditLogs") {
+				if (
+					item?.action &&
+					typeof item.action === "string" &&
+					item.action.includes("PRIVILEGE")
+				) {
+					return false;
+				}
+				// Still deny audit appends from fully unknown peers
+				return false;
+			}
+			return false;
+		}
+
+		// Prefer verified ephemeral status when present
+		if (ephem && ephem.status !== "verified" && !effective.isMaster) {
+			// Allow connected-but-not-verified only if already linked with matching key path
+			// getEffectivePeerConfig already collapses unverified admin claims.
+		}
+
+		const perms: Partial<PeerPermissions> = effective.permissions || {};
+		switch (collectionName) {
+			case "products":
+			case "productChangeHistory":
+				return !!perms.canEditProducts;
+			case "sales":
+				return !!perms.canEditSales;
+			case "clients":
+				return !!perms.canEditClients;
+			case "suppliers":
+				return !!perms.canEditSuppliers;
+			case "purchaseOrders":
+			case "ocrResults":
+				return !!perms.canEditPurchaseOrders;
+			case "teamMembers":
+			case "linkedNodes":
+			case "pendingEdits":
+				return false;
+			case "branches":
+				// admin already returned true above; remaining roles need master flag
+				return !!effective.isMaster;
+			case "arqueoSessions":
+				return !!perms.canViewArqueo;
+			case "auditLogs":
+				if (
+					item?.action &&
+					typeof item.action === "string" &&
+					item.action.includes("PRIVILEGE")
+				) {
+					return false;
+				}
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	private snapshotCollectionMaps(): Map<
+		string,
+		Map<string, unknown>
+	> {
+		const snap = new Map<string, Map<string, unknown>>();
+		for (const name of DatabaseSyncManager.SECURED_COLLECTIONS) {
+			const yMap = this.doc.getMap(name);
+			const copy = new Map<string, unknown>();
+			yMap.forEach((value: unknown, key: string) => {
+				copy.set(key, value);
+			});
+			snap.set(name, copy);
+		}
+		return snap;
+	}
+
+	/**
+	 * After a remote applyUpdate, surgically restore any keys the peer was not
+	 * allowed to change. Uses SECURITY_REVERT_ORIGIN so observers can ignore it.
+	 */
+	private revertUnauthorizedRemoteChanges(
+		peerId: string,
+		before: Map<string, Map<string, unknown>>,
+	): string[] {
+		const revertedCollections: string[] = [];
+
+		this.doc.transact(() => {
+			for (const name of DatabaseSyncManager.SECURED_COLLECTIONS) {
+				const yMap = this.doc.getMap(name);
+				const prev = before.get(name) ?? new Map<string, unknown>();
+				let touched = false;
+
+				// Keys currently in map
+				for (const key of Array.from(yMap.keys())) {
+					const current = yMap.get(key);
+					const previous = prev.get(key);
+					const changed =
+						previous === undefined ||
+						JSON.stringify(previous) !== JSON.stringify(current);
+
+					if (!changed) continue;
+
+					const item =
+						current && typeof current === "object"
+							? (current as Partial<EntityRecord>)
+							: undefined;
+
+					if (!this.checkRemotePermissions(peerId, name, item)) {
+						if (previous === undefined) {
+							yMap.delete(key);
+						} else {
+							yMap.set(key, previous);
+						}
+						touched = true;
+					}
+				}
+
+				// Keys deleted by remote
+				for (const [key, previous] of prev) {
+					if (!yMap.has(key)) {
+						if (!this.checkRemotePermissions(peerId, name, previous as Partial<EntityRecord>)) {
+							yMap.set(key, previous);
+							touched = true;
+						}
+					}
+				}
+
+				if (touched) revertedCollections.push(name);
+			}
+		}, DatabaseSyncManager.SECURITY_REVERT_ORIGIN);
+
+		return revertedCollections;
+	}
+
 	public applyUpdate(update: Uint8Array, origin?: unknown) {
 		if (update.length === 0) return;
+
+		if (!this.isRemotePeerOrigin(origin)) {
+			Y.applyUpdate(this.doc, update, origin);
+			return;
+		}
+
+		const before = this.snapshotCollectionMaps();
 		Y.applyUpdate(this.doc, update, origin);
+		const reverted = this.revertUnauthorizedRemoteChanges(origin, before);
+		if (reverted.length > 0) {
+			logger.warn(
+				`[SECURITY] Reverted unauthorized remote mutations from ${origin} on: ${reverted.join(", ")}`,
+			);
+		}
 	}
 
 	/**

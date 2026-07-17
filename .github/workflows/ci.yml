@@ -37,6 +37,56 @@ jobs:
       - name: Build
         run: pnpm build
 
+  test-components:
+    name: Cypress Component Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.12.0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Run Component Tests
+        run: pnpm test:ct
+        working-directory: apps/shelf-inventory
+
+  test-e2e:
+    name: Playwright E2E & Visual
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.12.0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Run Playwright Tests
+        run: pnpm test:e2e
+        working-directory: apps/shelf-inventory
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: apps/shelf-inventory/playwright-report/
+          retention-days: 30
+
   functions:
     name: Functions (build)
     runs-on: ubuntu-latest

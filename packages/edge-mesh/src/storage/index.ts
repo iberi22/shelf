@@ -1,84 +1,217 @@
-import { type IDBPDatabase, openDB } from 'idb';
-import * as Y from 'yjs';
-import type { MeshStorage } from '../types';
+import { type IDBPDatabase, openDB } from "idb";
+import type { StorageEntry, StorageFilter } from "../types/index.js";
 
-export class StorageManager {
-	private dbName: string;
-	private dbPromise: Promise<IDBPDatabase>;
+// ─── STORAGE INTERFACE ─────────────────────────────────────────────────────
 
-	constructor(dbName = 'edge-mesh-db') {
-		this.dbName = dbName;
-		this.dbPromise = openDB(this.dbName, 1, {
-			upgrade(db) {
-				if (!db.objectStoreNames.contains('updates')) {
-					db.createObjectStore('updates', { autoIncrement: true });
-				}
-				if (!db.objectStoreNames.contains('snapshots')) {
-					db.createObjectStore('snapshots');
-				}
-			},
-		});
-	}
+export interface IStorage {
+	get<T>(key: string): Promise<StorageEntry<T> | null>;
+	set<T>(key: string, valor: T): Promise<void>;
+	delete(key: string): Promise<boolean>;
+	list(filter?: StorageFilter): Promise<readonly StorageEntry<unknown>[]>;
+	clear(prefijo?: string): Promise<void>;
+	size(): Promise<number>;
+}
 
-	public async saveUpdate(update: Uint8Array) {
-		const db = await this.dbPromise;
-		await db.add('updates', update);
-	}
+// ─── ERROR TYPES ───────────────────────────────────────────────────────────
 
-	public async loadUpdates(): Promise<Uint8Array[]> {
-		const db = await this.dbPromise;
-		return await db.getAll('updates');
-	}
-
-	public async saveSnapshot(name: string, snapshot: Uint8Array) {
-		const db = await this.dbPromise;
-		await db.put('snapshots', snapshot, name);
-	}
-
-	public async loadSnapshot(name: string): Promise<Uint8Array | undefined> {
-		const db = await this.dbPromise;
-		return await db.get('snapshots', name);
-	}
-
-	public async clearUpdates() {
-		const db = await this.dbPromise;
-		await db.clear('updates');
-	}
-
-	public async persistDoc(doc: Y.Doc) {
-		const update = Y.encodeStateAsUpdate(doc);
-		await this.saveSnapshot('main', update);
-		await this.clearUpdates();
-	}
-
-	public async loadIntoDoc(doc: Y.Doc) {
-		const snapshot = await this.loadSnapshot('main');
-		if (snapshot) {
-			Y.applyUpdate(doc, snapshot);
-		}
-		const updates = await this.loadUpdates();
-		for (const update of updates) {
-			Y.applyUpdate(doc, update);
-		}
+export class StorageError extends Error {
+	readonly codigo: string;
+	constructor(mensaje: string, codigo: string = "STORAGE_ERROR") {
+		super(mensaje);
+		this.name = "StorageError";
+		this.codigo = codigo;
 	}
 }
 
-export class InMemoryStorage implements MeshStorage {
-	private data = new Map<string, unknown>();
+// ─── IN-MEMORY STORAGE ─────────────────────────────────────────────────────
 
-	async get<T = unknown>(key: string): Promise<T> {
-		return this.data.get(key) as T;
+export class InMemoryStorage implements IStorage {
+	private readonly datos: Map<string, StorageEntry<unknown>>;
+
+	constructor() {
+		this.datos = new Map();
 	}
 
-	async set<T = unknown>(key: string, value: T): Promise<void> {
-		this.data.set(key, value);
+	async get<T>(key: string): Promise<StorageEntry<T> | null> {
+		const entry = this.datos.get(key);
+		if (entry === undefined) return null;
+		return entry as StorageEntry<T>;
 	}
 
-	async delete(key: string): Promise<void> {
-		this.data.delete(key);
+	async set<T>(key: string, valor: T): Promise<void> {
+		const existente = this.datos.get(key);
+		this.datos.set(key, {
+			key,
+			valor,
+			timestamp: Date.now(),
+			version: (existente?.version ?? 0) + 1,
+		});
 	}
 
-	async clear(): Promise<void> {
-		this.data.clear();
+	async delete(key: string): Promise<boolean> {
+		return this.datos.delete(key);
+	}
+
+	async list(
+		filter?: StorageFilter,
+	): Promise<readonly StorageEntry<unknown>[]> {
+		let entries = Array.from(this.datos.values());
+
+		if (filter?.prefijo !== undefined) {
+			entries = entries.filter((e) => e.key.startsWith(filter.prefijo!));
+		}
+		if (filter?.desde !== undefined) {
+			entries = entries.filter((e) => e.timestamp >= filter.desde!);
+		}
+		if (filter?.hasta !== undefined) {
+			entries = entries.filter((e) => e.timestamp <= filter.hasta!);
+		}
+
+		entries.sort((a, b) => a.timestamp - b.timestamp);
+
+		if (filter?.limite !== undefined && filter.limite > 0) {
+			entries = entries.slice(0, filter.limite);
+		}
+
+		return entries;
+	}
+
+	async clear(prefijo?: string): Promise<void> {
+		if (prefijo === undefined) {
+			this.datos.clear();
+			return;
+		}
+		for (const key of this.datos.keys()) {
+			if (key.startsWith(prefijo)) {
+				this.datos.delete(key);
+			}
+		}
+	}
+
+	async size(): Promise<number> {
+		return this.datos.size;
+	}
+}
+
+// ─── INDEXEDDB STORAGE MANAGER ─────────────────────────────────────────────
+
+export interface StorageManagerConfig {
+	readonly dbName: string;
+	readonly storeName: string;
+	readonly version: number;
+}
+
+const CONFIG_POR_DEFECTO: StorageManagerConfig = {
+	dbName: "edge-mesh",
+	storeName: "kv",
+	version: 1,
+} as const;
+
+export class StorageManager implements IStorage {
+	private readonly config: StorageManagerConfig;
+	private db: IDBPDatabase | null = null;
+	private readonly initPromise: Promise<IDBPDatabase>;
+
+	constructor(config: Partial<StorageManagerConfig> = {}) {
+		this.config = { ...CONFIG_POR_DEFECTO, ...config };
+		this.initPromise = this.inicializar();
+	}
+
+	private async inicializar(): Promise<IDBPDatabase> {
+		const storeName = this.config.storeName;
+		const db = await openDB(this.config.dbName, this.config.version, {
+			upgrade(db) {
+				if (!db.objectStoreNames.contains(storeName)) {
+					db.createObjectStore(storeName, { keyPath: "key" });
+				}
+			},
+		});
+		this.db = db;
+		return db;
+	}
+
+	private async obtenerDb(): Promise<IDBPDatabase> {
+		if (this.db !== null) return this.db;
+		return this.initPromise;
+	}
+
+	async get<T>(key: string): Promise<StorageEntry<T> | null> {
+		const db = await this.obtenerDb();
+		const result = await db.get(this.config.storeName, key);
+		if (result === undefined) return null;
+		return result as StorageEntry<T>;
+	}
+
+	async set<T>(key: string, valor: T): Promise<void> {
+		const db = await this.obtenerDb();
+		const existente = await this.get<T>(key);
+		const entry: StorageEntry<T> = {
+			key,
+			valor,
+			timestamp: Date.now(),
+			version: (existente?.version ?? 0) + 1,
+		};
+		await db.put(this.config.storeName, entry as never);
+	}
+
+	async delete(key: string): Promise<boolean> {
+		const db = await this.obtenerDb();
+		const existente = await this.get(key);
+		if (existente === null) return false;
+		await db.delete(this.config.storeName, key);
+		return true;
+	}
+
+	async list(
+		filter?: StorageFilter,
+	): Promise<readonly StorageEntry<unknown>[]> {
+		const db = await this.obtenerDb();
+		const all = await db.getAll(this.config.storeName);
+		let entries = all as StorageEntry<unknown>[];
+
+		if (filter?.prefijo !== undefined) {
+			entries = entries.filter((e) => e.key.startsWith(filter.prefijo!));
+		}
+		if (filter?.desde !== undefined) {
+			entries = entries.filter((e) => e.timestamp >= filter.desde!);
+		}
+		if (filter?.hasta !== undefined) {
+			entries = entries.filter((e) => e.timestamp <= filter.hasta!);
+		}
+
+		entries.sort((a, b) => a.timestamp - b.timestamp);
+
+		if (filter?.limite !== undefined && filter.limite > 0) {
+			entries = entries.slice(0, filter.limite);
+		}
+
+		return entries;
+	}
+
+	async clear(prefijo?: string): Promise<void> {
+		const db = await this.obtenerDb();
+		if (prefijo === undefined) {
+			await db.clear(this.config.storeName);
+			return;
+		}
+		const all = await db.getAll(this.config.storeName);
+		for (const entry of all as StorageEntry[]) {
+			if (entry.key.startsWith(prefijo)) {
+				await db.delete(this.config.storeName, entry.key);
+			}
+		}
+	}
+
+	async size(): Promise<number> {
+		const db = await this.obtenerDb();
+		const all = await db.getAll(this.config.storeName);
+		return all.length;
+	}
+
+	async cerrar(): Promise<void> {
+		if (this.db !== null) {
+			this.db.close();
+			this.db = null;
+		}
 	}
 }

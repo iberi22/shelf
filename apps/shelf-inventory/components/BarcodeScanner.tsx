@@ -23,6 +23,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
   }, [onScan]);
 
   useEffect(() => {
+    let isMounted = true;
     const startScanner = async () => {
       setIsLoading(true);
       setError(null);
@@ -48,10 +49,18 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
           };
 
           await qrCodeScanner.start({ facingMode: 'environment' }, config, handleScanSuccess, handleScanError);
+          
+          if (!isMounted) {
+            if (scannerRef.current?.isScanning) {
+              scannerRef.current.stop().then(() => scannerRef.current?.clear()).catch(console.error);
+            }
+            return;
+          }
         } else {
-          setError(t('scanner.noCameras'));
+          if (isMounted) setError(t('scanner.noCameras'));
         }
       } catch (err: any) {
+        if (!isMounted) return;
         if (err.name === 'NotAllowedError') {
           setError(t('scanner.permissionDenied'));
         } else {
@@ -59,7 +68,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
           console.error('Scanner init error:', err);
         }
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
@@ -80,6 +89,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
     startScanner();
 
     return () => {
+      isMounted = false;
       stopScanner();
     };
   }, [t]);

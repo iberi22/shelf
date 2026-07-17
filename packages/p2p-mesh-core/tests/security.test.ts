@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import * as Y from 'yjs';
 import { dbSync } from '../src/database-sync';
 import { p2pManager } from '../src/p2p';
 import { toHex } from '../src/crypto-pqc';
@@ -42,6 +43,21 @@ describe('Security: Admin Claim Handshake', () => {
     dbSync.setMasterPeerId('test-local-peer');
     // Ensure dbSync is "ready" to avoid permission issues during test
     dbSync.isReady = true;
+    // Clear secured entity maps between tests
+    for (const name of [
+      'products',
+      'sales',
+      'clients',
+      'suppliers',
+      'teamMembers',
+      'auditLogs',
+    ]) {
+      const map = (dbSync as any).doc?.getMap?.(name);
+      if (map) {
+        const keys = Array.from(map.keys()) as string[];
+        for (const k of keys) map.delete(k);
+      }
+    }
   });
 
   it('should not grant admin role to unverified peer', () => {
@@ -131,5 +147,101 @@ describe('Security: Admin Claim Handshake', () => {
 
     openHandler();
     expect(p2p.role).toBe('collaborator');
+  });
+});
+
+describe('Security: Remote applyUpdate authz', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    (dbSync as any).linkedNodes.clear();
+    (dbSync as any).ephemeralNodes.clear();
+    (dbSync as any).metadata.clear();
+    dbSync.localPeerId = 'victim-peer';
+    dbSync.setMasterPeerId('victim-peer');
+    dbSync.isReady = true;
+    // Seed victim as master/admin locally
+    dbSync.updateLinkedNode(
+      'victim-peer',
+      { role: 'admin', isMaster: true, dsaPublicKey: 'victim-key' },
+      'victim-peer',
+    );
+  });
+
+  it('reverts product mutations from an unauthorized remote peer', () => {
+    // Attacker is a linked collaborator WITHOUT product edit rights
+    dbSync.updateLinkedNode(
+      'attacker-peer',
+      {
+        role: 'collaborator',
+        isMaster: false,
+        dsaPublicKey: 'attacker-key',
+        permissions: {
+          canEditProducts: false,
+          canEditSales: false,
+          canEditClients: false,
+          canEditSuppliers: false,
+          canEditPurchaseOrders: false,
+          canViewArqueo: false,
+        },
+      },
+      'victim-peer',
+    );
+    dbSync.updateEphemeralNode('attacker-peer', {
+      status: 'verified',
+      dsaPublicKey: 'attacker-key',
+    });
+
+    // Attacker crafts a Yjs update that inserts a product
+    const attackerDoc = new Y.Doc();
+    attackerDoc.getMap('products').set('evil-product', {
+      id: 'evil-product',
+      name: 'Injected',
+      quantity: 99,
+      price: 1,
+    });
+    const update = Y.encodeStateAsUpdate(attackerDoc);
+
+    dbSync.applyUpdate(update, 'attacker-peer');
+
+    const products = (dbSync as any).doc.getMap('products');
+    expect(products.get('evil-product')).toBeUndefined();
+  });
+
+  it('accepts product mutations from a peer with canEditProducts', () => {
+    dbSync.updateLinkedNode(
+      'editor-peer',
+      {
+        role: 'collaborator',
+        isMaster: false,
+        dsaPublicKey: 'editor-key',
+        permissions: {
+          canEditProducts: true,
+          canEditSales: false,
+          canEditClients: false,
+          canEditSuppliers: false,
+          canEditPurchaseOrders: false,
+          canViewArqueo: false,
+        },
+      },
+      'victim-peer',
+    );
+    dbSync.updateEphemeralNode('editor-peer', {
+      status: 'verified',
+      dsaPublicKey: 'editor-key',
+    });
+
+    const editorDoc = new Y.Doc();
+    editorDoc.getMap('products').set('ok-product', {
+      id: 'ok-product',
+      name: 'Legit',
+      quantity: 1,
+      price: 10,
+    });
+    const update = Y.encodeStateAsUpdate(editorDoc);
+
+    dbSync.applyUpdate(update, 'editor-peer');
+
+    const products = (dbSync as any).doc.getMap('products');
+    expect(products.get('ok-product')).toMatchObject({ id: 'ok-product', name: 'Legit' });
   });
 });
