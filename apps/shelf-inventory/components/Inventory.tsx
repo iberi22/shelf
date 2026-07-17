@@ -2,6 +2,7 @@ import { Box, History, Images, Layers3, Package2, PencilLine, RotateCcw, Ruler, 
 import type { InventoryConfig, Product } from 'p2p-mesh-core';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';

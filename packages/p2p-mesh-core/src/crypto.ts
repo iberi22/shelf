@@ -49,11 +49,29 @@ export const importPQCSharedSecret = async (secretHex: string): Promise<CryptoKe
 
 let sessionKeyCache: CryptoKey | null = null;
 
+/**
+ * Device-local entropy for at-rest encryption when the user has not set an app lock PIN.
+ * Prefer appLockPin; never use a hard-coded shared default.
+ */
+const getOrCreateDeviceEntropy = (): string => {
+  const existing = localStorage.getItem('shelf_device_entropy');
+  if (existing && existing.length >= 16) return existing;
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const entropy = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  localStorage.setItem('shelf_device_entropy', entropy);
+  return entropy;
+};
+
 export const getSessionKey = async (): Promise<CryptoKey> => {
   if (sessionKeyCache) return sessionKeyCache;
-  const pin = localStorage.getItem('appLockPin') || 'default_secure_pin_123';
+  const pin = localStorage.getItem('appLockPin') || getOrCreateDeviceEntropy();
   sessionKeyCache = await deriveKey(pin);
   return sessionKeyCache;
+};
+
+/** Clear cached session key (call after PIN change). */
+export const clearSessionKeyCache = (): void => {
+  sessionKeyCache = null;
 };
 
 /**

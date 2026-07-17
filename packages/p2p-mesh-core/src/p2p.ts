@@ -976,11 +976,18 @@ class P2PManager {
 	}
 
 	private isSensitive(message: SyncMessage): boolean {
+		// Encrypt inventory CRDT + authority/recovery once ML-KEM handshake produced a peer key.
+		// When no key is available yet, sendTo falls back to plaintext (WebRTC DTLS still applies).
 		return [
 			"PROMOTE_ADMIN",
 			"CHANGE_ROLE",
 			"UPDATE_PEER_PERMISSIONS",
 			"RECOVERY_APPROVED",
+			"YJS_UPDATE",
+			"YJS_SYNC_REQUEST",
+			"EDGE_MESH_ENVELOPE",
+			"EDGE_MESH_SYNC",
+			"CRDT_SYNC_ENVELOPE",
 		].includes(message.type);
 	}
 
