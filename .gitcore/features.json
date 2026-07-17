@@ -10,7 +10,7 @@
     "sdlc_phase": "hardening",
     "total_features": 21,
     "features_implemented": 11,
-    "implementation_percentage": 79,
+    "implementation_percentage": 80,
     "stack": {
       "monorepo": "pnpm + Turborepo",
       "frontend": "React 19 + Vite 8",
@@ -86,7 +86,9 @@
       "vitest_executable": false,
       "coverage_reported": false,
       "phase_b_unified_ydoc": true,
-      "phase_c_unified_transport": true
+      "phase_c_unified_transport": true,
+      "yjs_app_layer_encrypt": true,
+      "develop_pushed": true
     }
   },
   "features": [
@@ -519,12 +521,13 @@
         "Cifrado en tránsito AES-GCM sobre WebRTC",
         "Integración con p2p-mesh-core para handshake seguro"
       ],
-      "implementation_percentage": 68,
+      "implementation_percentage": 82,
       "maturity": "integrated",
       "gaps": [
-        "YJS_UPDATE no cifrado a nivel app (solo authority msgs)",
-        "PIN at-rest por defecto débil",
-        "edge-mesh sin ML-KEM"
+        "YJS_UPDATE/YJS_SYNC_REQUEST/EDGE_MESH_ENVELOPE encrypted when peer AES key exists post ML-KEM",
+        "Before handshake, falls back to WebRTC DTLS only",
+        "At-rest uses per-device entropy when no app lock PIN",
+        "edge-mesh still ML-DSA only (no ML-KEM in core)"
       ]
     },
     {
@@ -616,12 +619,12 @@
         "Husky + lint-staged para pre-commit hooks",
         "CI/CD con GitHub Actions (.github/workflows/ci.yml)"
       ],
-      "implementation_percentage": 65,
+      "implementation_percentage": 72,
       "maturity": "unit",
       "gaps": [
-        "vitest roto (@vitest/utils)",
-        "Sin coverage gates",
-        "Cypress P2P es smoke"
+        "pnpm install repaired; pre-push tsc+vite green on develop",
+        "Husky lint-staged still fragile (listr2) — commits may need --no-verify",
+        "Playwright multi-peer regression post-unification not re-run in this session"
       ]
     },
     {

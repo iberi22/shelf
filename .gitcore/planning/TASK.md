@@ -6,7 +6,7 @@
 |--------|---|
 | **Producto inventario (ponderado)** | ~79% |
 | **P2P / Edge / PQC / GPU (ponderado)** | ~62% |
-| **features.json promedio** | **77%** (recalibrado 2026-07-17) |
+| **features.json promedio** | **~80%** (recalibrado 2026-07-17) |
 | **Production hardened (mesh)** | en curso |
 
 > **Nota 2026-07-17:** el 100% previo era incorrecto. Ver `.gitcore/features.json` (`status`, `maturity`, `gaps`) y `.gitcore/planning/PLAN-P2P-UNIFICATION.md`.
@@ -33,7 +33,10 @@
 | D0 | Roadmap PHASE-D + CI skeleton edge-mesh | ✅ |
 | D1 | p2p-mesh-core sin PeerJS | ⏳ deferred |
 | D2 | Maloca package split | ⏳ deferred |
-| D3 | Hardened + coverage + YJS→envelope único | ⏳ pending |
+| D3a | YJS encrypt post-handshake | ✅ |
+| D3b | Device entropy at-rest | ✅ |
+| D3c | develop pushed both repos | ✅ |
+| D3d | Coverage gates + YJS-only-envelope | ⏳ pending |
 
 ---
 
