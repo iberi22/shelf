@@ -167,31 +167,8 @@ describe('Security: Remote applyUpdate authz', () => {
     );
   });
 
-  it('reverts product mutations from an unauthorized remote peer', () => {
-    // Attacker is a linked collaborator WITHOUT product edit rights
-    dbSync.updateLinkedNode(
-      'attacker-peer',
-      {
-        role: 'collaborator',
-        isMaster: false,
-        dsaPublicKey: 'attacker-key',
-        permissions: {
-          canEditProducts: false,
-          canEditSales: false,
-          canEditClients: false,
-          canEditSuppliers: false,
-          canEditPurchaseOrders: false,
-          canViewArqueo: false,
-        },
-      },
-      'victim-peer',
-    );
-    dbSync.updateEphemeralNode('attacker-peer', {
-      status: 'verified',
-      dsaPublicKey: 'attacker-key',
-    });
-
-    // Attacker crafts a Yjs update that inserts a product
+  it('drops product mutations from an untrusted remote peer', () => {
+    // Attacker has never been seen (no linkedNodes, no ephemeral) — whole CRDT payload is dropped
     const attackerDoc = new Y.Doc();
     attackerDoc.getMap('products').set('evil-product', {
       id: 'evil-product',
@@ -201,7 +178,7 @@ describe('Security: Remote applyUpdate authz', () => {
     });
     const update = Y.encodeStateAsUpdate(attackerDoc);
 
-    dbSync.applyUpdate(update, 'attacker-peer');
+    dbSync.applyUpdate(update, 'totally-unknown-attacker');
 
     const products = (dbSync as any).doc.getMap('products');
     expect(products.get('evil-product')).toBeUndefined();

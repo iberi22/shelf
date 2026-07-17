@@ -72,7 +72,63 @@ describe('DatabaseSyncManager lifecycle sync', () => {
 				products: [product('sku-1', 'Coffee')],
 			}),
 		);
-		target.initWithState(baseState());
+		// Target is ready and trusts the source as a verified product editor (remote authz path).
+		target.initWithState(
+			baseState({
+				localPeerId: 'target-peer',
+				peers: [
+					{
+						id: 'source-peer',
+						role: 'collaborator',
+						lastSeen: '2026-06-14T00:00:00.000Z',
+						permissions: {
+							canViewProducts: true,
+							canEditProducts: true,
+							canViewSales: true,
+							canEditSales: true,
+							canViewClients: true,
+							canEditClients: true,
+							canViewSuppliers: true,
+							canEditSuppliers: true,
+							canViewPurchaseOrders: true,
+							canEditPurchaseOrders: true,
+							canViewReports: true,
+							canViewArqueo: true,
+							canViewDashboard: true,
+						},
+					},
+				],
+			}),
+		);
+		target.localPeerId = 'target-peer';
+		target.updateLinkedNode(
+			'source-peer',
+			{
+				role: 'collaborator',
+				isMaster: false,
+				dsaPublicKey: 'source-key',
+				permissions: {
+					canViewProducts: true,
+					canEditProducts: true,
+					canViewSales: true,
+					canEditSales: true,
+					canViewClients: true,
+					canEditClients: true,
+					canViewSuppliers: true,
+					canEditSuppliers: true,
+					canViewPurchaseOrders: true,
+					canEditPurchaseOrders: true,
+					canViewReports: true,
+					canViewArqueo: true,
+					canViewDashboard: true,
+				},
+			},
+			'target-peer',
+		);
+		target.updateEphemeralNode('source-peer', {
+			status: 'verified',
+			dsaPublicKey: 'source-key',
+		});
 
 		const diff = source.getDiff(target.getStateVector());
 		target.applyUpdate(diff, 'source-peer');
@@ -80,6 +136,25 @@ describe('DatabaseSyncManager lifecycle sync', () => {
 		expect(target.getState().products).toEqual([
 			expect.objectContaining({ id: 'sku-1', name: 'Coffee' }),
 		]);
+	});
+
+	it('rejects product catch-up from an unauthorized remote peer', () => {
+		const source = new DatabaseSyncManager();
+		const target = new DatabaseSyncManager();
+
+		source.initWithState(
+			baseState({
+				products: [product('sku-evil', 'Hack')],
+			}),
+		);
+		target.initWithState(baseState({ localPeerId: 'victim' }));
+		target.localPeerId = 'victim';
+		target.setMasterPeerId('victim');
+
+		const diff = source.getDiff(target.getStateVector());
+		target.applyUpdate(diff, 'attacker-peer');
+
+		expect(target.getState().products).toEqual([]);
 	});
 
 	it('lets collaborators apply clean product updates directly', () => {

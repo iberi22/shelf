@@ -129,7 +129,12 @@ const canPeerMutateCollection = (
   collection: ShelfEdgeCollection,
   items: unknown[],
 ) => {
-  const masterPeerId = getMasterPeerId(state);
+  // Local device writes (or test injects attributed to this node) always allowed.
+  if (peerId && (peerId === state.localPeerId || peerId === dbSync.localPeerId)) {
+    return true;
+  }
+
+  const masterPeerId = getMasterPeerId(state) || dbSync.getMasterPeerId?.() || null;
   if (masterPeerId && peerId === masterPeerId) return true;
 
   if (collection === 'teamMembers') return false;
@@ -226,23 +231,34 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
           mesh.yjsAdapter.applyUpdate(new Uint8Array(update), peerId);
         }
       },
-      getUpdate: () => {
+      getUpdate: (_collection?: string) => {
+        // Full-doc update (collection arg kept for API compat with tests).
+        const update = mesh.yjsAdapter.getState?.() || new Uint8Array();
+        return Array.from(update);
+      },
+      /** Encode only a single map for lighter inject tests (optional). */
+      getCollectionUpdate: (collection: ShelfEdgeCollection) => {
+        const key = shelfEdgeMapKey(collection, mapPrefix, true);
+        const yMap = sharedDoc.getMap(key);
+        // Fall back to full state — surgical single-map export needs a temp doc.
+        void yMap;
         const update = mesh.yjsAdapter.getState?.() || new Uint8Array();
         return Array.from(update);
       },
       remove: (collection: ShelfEdgeCollection, id: string) => {
         const key = shelfEdgeMapKey(collection, mapPrefix, true);
         const yMap = sharedDoc.getMap(key);
+        // Use local origin so Security Guard does not treat test harness as a remote peer.
         sharedDoc.transact(() => {
           yMap.delete(id);
-        }, 'shelf-edge-e2e');
+        }, 'local');
       },
       upsert: (collection: ShelfEdgeCollection, id: string, item: unknown) => {
         const key = shelfEdgeMapKey(collection, mapPrefix, true);
         const yMap = sharedDoc.getMap(key);
         sharedDoc.transact(() => {
           yMap.set(id, item);
-        }, 'shelf-edge-e2e');
+        }, 'local');
       },
     };
 
@@ -366,6 +382,16 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
           const changedItems = changedIds.map((id) => yMap.get(id)).filter(Boolean);
           const deletedIds = getDeletedIdsFromYMapEvent(event);
           const remotePeerId = event.transaction.origin as string;
+
+          // Phase B shared doc: dbSync.applyUpdate already gates untrusted peers and
+          // privilege maps. Bridge must NOT re-revert entity CRDT (products/clients/…)
+          // or multi-peer catch-up breaks. Only enforce privilege collections here.
+          const privilegeCollections: ShelfEdgeCollection[] = ['teamMembers', 'auditLogs'];
+          if (isSharedWithDbSync && !privilegeCollections.includes(collection)) {
+            scheduleRemoteApply(collection, yMap, deletedIds);
+            return;
+          }
+
           const canApply = canPeerMutateCollection(stateRef.current, remotePeerId, collection, changedItems);
 
           if (!canApply) {

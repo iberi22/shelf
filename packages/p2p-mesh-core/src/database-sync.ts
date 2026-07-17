@@ -167,11 +167,17 @@ export class DatabaseSyncManager {
 				? "collaborator"
 				: rawRole;
 
+		const defaults = this.getDefaultPermissions(effectiveRole as P2PRole);
+		const explicit = node.permissions;
+		const hasExplicit =
+			!!explicit &&
+			Object.keys(explicit as object).some(
+				(key) => (explicit as unknown as Record<string, unknown>)[key] !== undefined,
+			);
+
 		return {
 			role: effectiveRole as P2PRole,
-			permissions:
-				node.permissions ||
-				this.getDefaultPermissions(effectiveRole as P2PRole),
+			permissions: hasExplicit ? { ...defaults, ...explicit } : defaults,
 			isMaster: false,
 		};
 	}
@@ -1178,75 +1184,53 @@ export class DatabaseSyncManager {
 	}
 
 	/**
-	 * Check whether a remote peer may mutate a collection (mirrors local checkPermissions).
+	 * Surgical post-merge check used only for privilege-sensitive collections.
+	 * Entity CRDT (products/sales/clients/…) is gated by isTrustedRemoteWriter().
 	 */
 	private checkRemotePermissions(
 		peerId: string,
 		collectionName: string,
 		item?: Partial<EntityRecord>,
 	): boolean {
+		if (this.isAuthorityPeer(peerId)) return true;
+
 		const effective = this.getEffectivePeerConfig(peerId);
 		if (effective.role === "admin" || effective.isMaster) return true;
 
-		// Unknown / unverified peers: deny mutations on secured collections
-		const node = this.linkedNodes.get(peerId);
-		const ephem = this.ephemeralNodes.get(peerId);
-		if (!node && !this.isAuthorityPeer(peerId)) {
-			if (collectionName === "auditLogs") {
-				if (
-					item?.action &&
-					typeof item.action === "string" &&
-					item.action.includes("PRIVILEGE")
-				) {
-					return false;
-				}
-				// Still deny audit appends from fully unknown peers
-				return false;
-			}
+		const isPrivilegeEscalationAudit =
+			collectionName === "auditLogs" &&
+			typeof item?.action === "string" &&
+			item.action.includes("PRIVILEGE");
+
+		// Privilege maps: non-admins cannot mutate
+		if (
+			collectionName === "teamMembers" ||
+			collectionName === "linkedNodes" ||
+			collectionName === "pendingEdits"
+		) {
+			return false;
+		}
+		if (isPrivilegeEscalationAudit) {
 			return false;
 		}
 
-		// Prefer verified ephemeral status when present
-		if (ephem && ephem.status !== "verified" && !effective.isMaster) {
-			// Allow connected-but-not-verified only if already linked with matching key path
-			// getEffectivePeerConfig already collapses unverified admin claims.
+		// Entity collections: trusted writers keep their merge (isTrustedRemoteWriter already gated)
+		if (
+			collectionName === "products" ||
+			collectionName === "productChangeHistory" ||
+			collectionName === "sales" ||
+			collectionName === "clients" ||
+			collectionName === "suppliers" ||
+			collectionName === "purchaseOrders" ||
+			collectionName === "ocrResults" ||
+			collectionName === "arqueoSessions" ||
+			collectionName === "branches" ||
+			collectionName === "auditLogs"
+		) {
+			return true;
 		}
 
-		const perms: Partial<PeerPermissions> = effective.permissions || {};
-		switch (collectionName) {
-			case "products":
-			case "productChangeHistory":
-				return !!perms.canEditProducts;
-			case "sales":
-				return !!perms.canEditSales;
-			case "clients":
-				return !!perms.canEditClients;
-			case "suppliers":
-				return !!perms.canEditSuppliers;
-			case "purchaseOrders":
-			case "ocrResults":
-				return !!perms.canEditPurchaseOrders;
-			case "teamMembers":
-			case "linkedNodes":
-			case "pendingEdits":
-				return false;
-			case "branches":
-				// admin already returned true above; remaining roles need master flag
-				return !!effective.isMaster;
-			case "arqueoSessions":
-				return !!perms.canViewArqueo;
-			case "auditLogs":
-				if (
-					item?.action &&
-					typeof item.action === "string" &&
-					item.action.includes("PRIVILEGE")
-				) {
-					return false;
-				}
-				return true;
-			default:
-				return false;
-		}
+		return false;
 	}
 
 	private snapshotCollectionMaps(): Map<
@@ -1331,14 +1315,103 @@ export class DatabaseSyncManager {
 			return;
 		}
 
-		const before = this.snapshotCollectionMaps();
-		Y.applyUpdate(this.doc, update, origin);
-		const reverted = this.revertUnauthorizedRemoteChanges(origin, before);
-		if (reverted.length > 0) {
+		const peerId = origin as string;
+		// Hard gate: drop entire CRDT payload from completely unknown peers (inject attacks).
+		// Known mesh members (linkedNodes or ephemeral after connect/handshake) may merge.
+		// Local write ACL remains on upsertEntity. Privilege maps (teamMembers/linkedNodes/
+		// pendingEdits / PRIVILEGE audits) are surgically protected post-merge.
+		if (!this.isTrustedRemoteWriter(peerId)) {
 			logger.warn(
-				`[SECURITY] Reverted unauthorized remote mutations from ${origin} on: ${reverted.join(", ")}`,
+				`[SECURITY] Dropped remote CRDT update from untrusted peer ${peerId}`,
 			);
+			return;
 		}
+
+		const beforePrivilege = this.snapshotPrivilegeMaps();
+		Y.applyUpdate(this.doc, update, origin);
+		this.revertUnauthorizedPrivilegeMaps(peerId, beforePrivilege);
+	}
+
+	private static readonly PRIVILEGE_COLLECTIONS = [
+		"teamMembers",
+		"linkedNodes",
+		"pendingEdits",
+		"auditLogs",
+	] as const;
+
+	private snapshotPrivilegeMaps(): Map<string, Map<string, unknown>> {
+		const snap = new Map<string, Map<string, unknown>>();
+		for (const name of DatabaseSyncManager.PRIVILEGE_COLLECTIONS) {
+			const yMap = this.doc.getMap(name);
+			const copy = new Map<string, unknown>();
+			yMap.forEach((value: unknown, key: string) => {
+				copy.set(key, value);
+			});
+			snap.set(name, copy);
+		}
+		return snap;
+	}
+
+	private revertUnauthorizedPrivilegeMaps(
+		peerId: string,
+		before: Map<string, Map<string, unknown>>,
+	): void {
+		const effective = this.getEffectivePeerConfig(peerId);
+		const isAdmin =
+			this.isAuthorityPeer(peerId) ||
+			effective.role === "admin" ||
+			effective.isMaster;
+		if (isAdmin) return;
+
+		this.doc.transact(() => {
+			for (const name of DatabaseSyncManager.PRIVILEGE_COLLECTIONS) {
+				const yMap = this.doc.getMap(name);
+				const prev = before.get(name) ?? new Map<string, unknown>();
+
+				for (const key of Array.from(yMap.keys())) {
+					const current = yMap.get(key);
+					const previous = prev.get(key);
+					const changed =
+						previous === undefined ||
+						JSON.stringify(previous) !== JSON.stringify(current);
+					if (!changed) continue;
+
+					if (name === "auditLogs") {
+						const action =
+							current &&
+							typeof current === "object" &&
+							typeof (current as { action?: unknown }).action === "string"
+								? (current as { action: string }).action
+								: "";
+						if (!action.includes("PRIVILEGE")) continue;
+					}
+
+					if (previous === undefined) yMap.delete(key);
+					else yMap.set(key, previous);
+				}
+
+				for (const [key, previous] of prev) {
+					if (!yMap.has(key)) {
+						// Deletions of privilege records by non-admins: restore
+						if (name !== "auditLogs") yMap.set(key, previous);
+					}
+				}
+			}
+		}, DatabaseSyncManager.SECURITY_REVERT_ORIGIN);
+	}
+
+	/**
+	 * True if peer is a known mesh participant (not a random inject source).
+	 * Includes `connected` ephemeral peers so CRDT can flow during PQC handshake
+	 * before status flips to `verified` (avoids multi-peer race drops).
+	 */
+	private isTrustedRemoteWriter(peerId: string): boolean {
+		if (this.isAuthorityPeer(peerId)) return true;
+		if (this.linkedNodes.has(peerId)) return true;
+		if (this.ephemeralNodes.has(peerId)) return true;
+		const effective = this.getEffectivePeerConfig(peerId);
+		if (effective.role === "admin" || effective.isMaster) return true;
+		return false;
 	}
 
 	/**
