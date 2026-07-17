@@ -44,16 +44,30 @@ test.describe('P2P Conflict Resolution', () => {
       (window as any)._p2pManagerForTest?.connect(targetPeerId);
     }, collabId);
 
-    // Wait for connection
+    // Wait for connection on both sides (linked nodes after PQC)
     await expect
       .poll(
         async () => {
           return adminPage.evaluate(() => {
             const mgr = (window as any)._p2pManagerForTest;
-            return mgr ? mgr.getConnectedPeers()?.length : 0;
+            const db = (window as any)._dbSyncForTest;
+            const peers = mgr?.getConnectedPeerIds?.()?.length || 0;
+            const linked = db?.getLinkedNodes?.()?.length || 0;
+            return Math.max(peers, linked);
           });
         },
-        { timeout: 15000 },
+        { timeout: 30000 },
+      )
+      .toBeGreaterThanOrEqual(1);
+    await expect
+      .poll(
+        async () => {
+          return collabPage.evaluate(() => {
+            const db = (window as any)._dbSyncForTest;
+            return db?.getLinkedNodes?.()?.length || 0;
+          });
+        },
+        { timeout: 30000 },
       )
       .toBeGreaterThanOrEqual(1);
 
@@ -66,10 +80,13 @@ test.describe('P2P Conflict Resolution', () => {
     await expect(adminPage.getByTestId('product-form')).toBeVisible();
     await adminPage.getByTestId('product-name-input').fill('Conflict Product');
     await adminPage.getByTestId('product-price-input').fill('100');
+    await adminPage.getByTestId('product-cost-input').fill('40');
+    await adminPage.getByTestId('product-quantity-input').fill('5');
     await adminPage.getByTestId('save-product-button').click();
+    await expect(adminPage.getByTestId('product-form')).toBeHidden({ timeout: 10000 });
 
-    // Wait for product to sync to collab
-    await expectProductSync(adminPage, collabPage, 'Conflict Product');
+    // Wait for product to sync to collab (target = collab, source = admin)
+    await expectProductSync(collabPage, adminPage, 'Conflict Product');
 
     // Both peers navigate to the product edit page
     const initialProductId = await adminPage.evaluate(() => {
@@ -143,8 +160,12 @@ test.describe('P2P Conflict Resolution', () => {
     // depending on whether a conflict actually occurred
     console.log('Pending edits section visible:', hasPendingSection);
 
-    // Verify settings page loaded
-    await expect(adminPage.locator('text=Settings').or(adminPage.locator('text=Configuración'))).toBeVisible();
+    // Verify settings page loaded (prefer stable test id / single heading)
+    await expect(
+      adminPage.getByRole('heading', { name: 'Settings', exact: true }).or(
+        adminPage.getByRole('heading', { name: 'Configuración', exact: true }),
+      ),
+    ).toBeVisible();
 
     await adminContext.close();
   });

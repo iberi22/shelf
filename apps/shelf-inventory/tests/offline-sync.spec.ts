@@ -69,14 +69,21 @@ test.describe('Offline Product Creation and Sync', () => {
 
     await pageB.getByTestId('product-name-input').fill('Offline Product');
     await pageB.getByTestId('product-sku-input').fill('OFFLINE-001');
-    // We must select a category because it is required!
-    await pageB.locator('select').first().selectOption({ index: 1 });
+    // Optional category select — only if the form exposes a non-empty <select>
+    const firstSelect = pageB.locator('select').first();
+    if (await firstSelect.count()) {
+      const optionCount = await firstSelect.locator('option').count();
+      if (optionCount > 1) {
+        await firstSelect.selectOption({ index: 1 });
+      }
+    }
     await pageB.getByTestId('product-price-input').fill('100');
+    await pageB.getByTestId('product-cost-input').fill('40');
     await pageB.getByTestId('product-quantity-input').fill('50');
     await pageB.getByTestId('save-product-button').click();
 
-    // Verify product is created locally on B
-    await expect(pageB.locator('text=Offline Product')).toBeVisible({ timeout: 15000 });
+    // Verify product is created locally on B (table + card can both match)
+    await expect(pageB.getByText('Offline Product').first()).toBeVisible({ timeout: 15000 });
 
     // 6. Bring Admin B back online
     await contextB.setOffline(false);
