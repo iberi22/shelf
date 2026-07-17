@@ -76,12 +76,9 @@ UI / AppContext
 
 ### P0 — Correctness / seguridad
 
-1. **YJS_UPDATE no cifrado a nivel app**  
-   Solo se cifran authority/recovery (`isSensitive`). Inventario va en claro sobre DTLS WebRTC.  
-   Archivo: `packages/p2p-mesh-core/src/p2p.ts` → `isSensitive`.
+1. ~~**YJS_UPDATE no cifrado**~~ ✅ (develop) — se cifra cuando hay clave post ML-KEM; pre-handshake = solo DTLS.
 
-2. **PIN at-rest débil**  
-   Fallback `default_secure_pin_123` en `packages/p2p-mesh-core/src/crypto.ts`.
+2. ~~**PIN at-rest hardcodeado**~~ ✅ (develop) — `shelf_device_entropy` per-device si no hay appLockPin.
 
 3. **Dual message types**  
    `YJS_UPDATE` + `EDGE_MESH_ENVELOPE` conviven. Migrar YJS al envelope con flag + E2E.
@@ -99,20 +96,14 @@ UI / AppContext
 
 ### P0 — Tooling / monorepo
 
-7. **Vitest monorepo roto**  
-   `Cannot find package '@vitest/utils'` en shelf root; tests unitarios edge-mesh corren bien en `E:\proyectosSWAL\edge-mesh` standalone.
+7. **lint-staged/husky frágil** — commits a veces con `--no-verify` (falta `listr2` en algunos installs). Pre-push build ya verde.
 
-8. **Junction/node_modules STALE**  
-   `packages/p2p-mesh-core/node_modules/edge-mesh` → junction a  
-   `E:\scripts-python\shelf\packages\edge-mesh`  
-   **NO** a `E:\proyectosSWAL\shelf\packages\edge-mesh`.  
-   Riesgo: builds/tests usan código viejo de otra ruta.  
-   **Acción:** `pnpm install` / recrear links; no confiar en dist huérfano.
+8. ~~**Junction stale scripts-python**~~ ✅ tras `pnpm install --force` apunta a `proyectosSWAL/shelf/packages/edge-mesh`.
 
 9. **Dos copias de edge-mesh**  
-   - SSOT preferido: `E:\proyectosSWAL\edge-mesh`  
+   - SSOT preferido: `E:\proyectosSWAL\edge-mesh` (GitHub `iberi22/edge-mesh` branch `develop`)  
    - Copia monorepo: `shelf/packages/edge-mesh`  
-   Sync manual tras cambios; falta política automatizada (submodule/workspace protocol).
+   Sync manual tras cambios; falta política automatizada.
 
 ### P1 — Fase D restante
 
