@@ -222,3 +222,75 @@ describe('Security: Remote applyUpdate authz', () => {
     expect(products.get('ok-product')).toMatchObject({ id: 'ok-product', name: 'Legit' });
   });
 });
+
+describe('Security: dual-ready YJS app encryption', () => {
+  it('does not mark YJS app-encrypted until dual-ready', () => {
+    const p2p: any = p2pManager;
+    const peerId = 'peer-crypto-a';
+    p2p.dualReadyEncryption?.clear?.();
+    p2p.encryptionKeys?.clear?.();
+    p2p.pendingEncryptionReady?.clear?.();
+    p2p.encryptYjsWhenDualReady = true;
+
+    expect(p2pManager.isYjsAppEncryptedForPeer(peerId)).toBe(false);
+
+    // Simulate local AES key without peer ENCRYPTION_READY
+    p2p.encryptionKeys.set(peerId, {} as CryptoKey);
+    expect(p2pManager.isYjsAppEncryptedForPeer(peerId)).toBe(false);
+
+    p2p.dualReadyEncryption.add(peerId);
+    expect(p2pManager.isYjsAppEncryptedForPeer(peerId)).toBe(true);
+
+    p2p.encryptYjsWhenDualReady = false;
+    expect(p2pManager.isYjsAppEncryptedForPeer(peerId)).toBe(false);
+
+    // restore default
+    p2p.encryptYjsWhenDualReady = true;
+    p2p.dualReadyEncryption.clear();
+    p2p.encryptionKeys.clear();
+  });
+
+  it('shouldEncryptMessage encrypts YJS only when dual-ready', () => {
+    const p2p: any = p2pManager;
+    const peerId = 'peer-crypto-b';
+    p2p.dualReadyEncryption.clear();
+    p2p.encryptionKeys.clear();
+    p2p.encryptYjsWhenDualReady = true;
+
+    const yjsMsg = { type: 'YJS_UPDATE', payload: { update: 'aa' } };
+    const authMsg = { type: 'CHANGE_ROLE', payload: { targetPeerId: 'x', role: 'collaborator' } };
+
+    expect(p2p.shouldEncryptMessage(peerId, yjsMsg)).toBe(false);
+    expect(p2p.shouldEncryptMessage(peerId, authMsg)).toBe(true);
+
+    p2p.dualReadyEncryption.add(peerId);
+    expect(p2p.shouldEncryptMessage(peerId, yjsMsg)).toBe(true);
+    expect(p2p.shouldEncryptMessage(peerId, authMsg)).toBe(true);
+
+    p2p.dualReadyEncryption.clear();
+  });
+
+  it('onEncryptionReady promotes dual-ready only after local key exists', () => {
+    const p2p: any = p2pManager;
+    const peerId = 'peer-crypto-c';
+    p2p.dualReadyEncryption.clear();
+    p2p.encryptionKeys.clear();
+    p2p.pendingEncryptionReady.clear();
+    p2p.connections = p2p.connections || new Map();
+    p2p.requestYjsSync = vi.fn();
+
+    // Peer announces ready first
+    p2p.onEncryptionReady(peerId);
+    expect(p2p.dualReadyEncryption.has(peerId)).toBe(false);
+    expect(p2p.pendingEncryptionReady.has(peerId)).toBe(true);
+
+    // Local key appears + pending ready
+    p2p.encryptionKeys.set(peerId, {} as CryptoKey);
+    p2p.onEncryptionReady(peerId);
+    expect(p2p.dualReadyEncryption.has(peerId)).toBe(true);
+    expect(p2p.pendingEncryptionReady.has(peerId)).toBe(false);
+
+    p2p.dualReadyEncryption.clear();
+    p2p.encryptionKeys.clear();
+  });
+});

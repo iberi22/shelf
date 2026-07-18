@@ -59,3 +59,4 @@
 
 Tras cada fase: actualizar `implementation_percentage` solo con evidencia; recalcular promedio en metadata.
 
+

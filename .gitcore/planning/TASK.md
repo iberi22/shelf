@@ -21,7 +21,7 @@
 | A | Honesty + P0 (dashboard, PO, scanner, tier wire) | ✅ |
 | B | CSV hardened + AC 008/013 + plan UI + tests | ✅ |
 | C | Monetization gates + AI + invite authority + i18n | ✅ |
-| D | Mesh security (YJS encrypt dual-ready, invite) | ⏳ |
+| D | Mesh security (YJS dual-ready encrypt) | ✅ |
 | E | Edge Phase D dual-path collapse | ⏳ |
 | F | GPU decision (implement or ADR out) | ⏳ |
 | G | QA CI hardened → 100% | ⏳ |
@@ -79,3 +79,4 @@
 | ROADMAP-012 | Auth AC alignment | P0 | 🟡 (docs this session) |
 | ROADMAP-007 | Phase D unification | P0 | 🔴 |
 | SRC-GPU-001 | Real WebGPU tasks | P2 | 🔴 |
+

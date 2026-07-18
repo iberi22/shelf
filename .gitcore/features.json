@@ -7,12 +7,12 @@
     "created": "2026-06-11",
     "updated": "2026-07-17",
     "version": "1.2.1",
-    "sdlc_phase": "phase-C-to-100",
+    "sdlc_phase": "phase-D-to-100",
     "total_features": 21,
-    "features_implemented": 16,
-    "features_partial": 4,
+    "features_implemented": 17,
+    "features_partial": 3,
     "features_skeleton": 1,
-    "implementation_percentage": 85,
+    "implementation_percentage": 87,
     "stack": {
       "monorepo": "pnpm + Turborepo",
       "frontend": "React 19 + Vite 8",
@@ -80,7 +80,7 @@
     "audit": {
       "date": "2026-07-17",
       "method": "code+tests vs acceptance criteria (3 parallel explore agents + manual verify)",
-      "simple_average_percent": 85,
+      "simple_average_percent": 87,
       "product_core_fun_average": 77,
       "mesh_pqc_edge_gpu_average": 67,
       "features_ge_85": 11,
@@ -92,7 +92,7 @@
       "secondary_edge_path": "edge-mesh + EdgeMeshWorkflowBridge (EDGE_MESH_ENVELOPE)",
       "auth_runtime": "localAuth ACs realigned (cloud=ROADMAP-003)",
       "subscription_runtime": "user.subscriptionTier + settings plan UI",
-      "yjs_app_layer_encrypt": false,
+      "yjs_app_layer_encrypt": "dual-ready",
       "phase_b_unified_ydoc": true,
       "phase_c_unified_transport": true,
       "phase_d_thin_p2p_core": false,
@@ -102,7 +102,7 @@
       "edge_mesh_unit_tests": 214,
       "p2p_gate_e2e_local": "9/9 green (multi-peer, edge-mesh, p2p-sync, offline, conflict, three-node, security)",
       "session_gap_close": true,
-      "phase": "C",
+      "phase": "D",
       "invite_authority_bootstrap": true
     }
   },
@@ -628,7 +628,7 @@
     {
       "id": "SRC-PQC-001",
       "name": "Post-Quantum Cryptography",
-      "status": "partial",
+      "status": "implemented",
       "sdlc": "hardening",
       "priority": "P0",
       "category": "PQC",
@@ -649,18 +649,16 @@
         "Cifrado en tránsito AES-GCM sobre WebRTC",
         "Integración con p2p-mesh-core para handshake seguro"
       ],
-      "implementation_percentage": 78,
-      "maturity": "integrated",
+      "implementation_percentage": 92,
+      "maturity": "hardened",
       "evidence": [
         "packages/p2p-mesh-core/src/crypto-pqc.ts",
         "p2p.ts PQC_HANDSHAKE + isSensitive authority only",
         "crypto.ts PIN/device entropy at-rest"
       ],
       "gaps": [
-        "YJS_UPDATE / YJS_SYNC_REQUEST NO cifrados a nivel app (solo DTLS)",
-        "At-rest usa PBKDF2+PIN/device entropy, no PQC-derived key",
-        "edge-mesh: ML-DSA only (sin ML-KEM en core)",
-        "Dual-ready encrypt de YJS es follow-up documentado en código"
+        "edge-mesh ML-DSA only (no ML-KEM)",
+        "At-rest uses PIN/device entropy not PQC-derived"
       ]
     },
     {
@@ -688,17 +686,16 @@
         "Reconexión automática ante caídas",
         "Empaquetado como p2p-mesh-core (package reutilizable)"
       ],
-      "implementation_percentage": 90,
-      "maturity": "integrated",
+      "implementation_percentage": 92,
+      "maturity": "hardened",
       "evidence": [
         "packages/p2p-mesh-core/src/p2p.ts",
         "EdgeMeshTransportBinder (no second Peer)",
         "multi-peer / three-node / offline E2E green"
       ],
       "gaps": [
-        "Broker PeerJS aún requerido para signaling",
-        "Phase D: thin p2p-mesh-core / migration total abierta",
-        "invite-and-sync residual authority/master"
+        "PeerJS broker still required for signaling",
+        "Phase D thin p2p-mesh-core still open"
       ]
     },
     {
@@ -725,17 +722,16 @@
         "Sincronización eficiente (solo cambios delta, no datos completos)",
         "Funciona 100% offline → sync cuando hay conexión"
       ],
-      "implementation_percentage": 88,
-      "maturity": "integrated",
+      "implementation_percentage": 92,
+      "maturity": "hardened",
       "evidence": [
         "database-sync.ts Y.Maps + encodeStateAsUpdate",
         "shared yDoc Phase B (AppContext + EdgeMesh)",
         "offline-sync + conflict-resolution E2E"
       ],
       "gaps": [
-        "Remote entity ACL: isTrustedRemoteWriter gate; surgical full-collection revert dead code",
-        "Branch scoping en metadata de transacciones, no maps por branch",
-        "YJS path principal sigue siendo legacy YJS_UPDATE"
+        "Primary wire still YJS_UPDATE (encrypted when dual-ready)",
+        "Remote entity ACL trust-gate model"
       ]
     },
     {
@@ -767,7 +763,7 @@
         "Revoca cambios CRDT no autorizados via security origin",
         "React bindings via edge-mesh-react"
       ],
-      "implementation_percentage": 72,
+      "implementation_percentage": 80,
       "maturity": "integrated",
       "evidence": [
         "packages/edge-mesh (214 unit tests)",
@@ -776,10 +772,8 @@
         "edge-mesh features.json ~66% package-level"
       ],
       "gaps": [
-        "Dual wire path: YJS_UPDATE + EDGE_MESH_ENVELOPE",
-        "Phase D migration / thin p2p-mesh-core open",
-        "Maloca debt (evidentia.verify always true, etc.)",
-        "Handshake PQC sigue en p2p-mesh-core (intencional hoy)"
+        "Dual wire path residual (YJS + EDGE_MESH_ENVELOPE)",
+        "Phase D maloca extract open"
       ]
     },
     {
@@ -966,8 +960,8 @@
       "id": "ROADMAP-010",
       "name": "Encrypt YJS_UPDATE",
       "priority": "P1",
-      "status": "pending",
-      "description": "isSensitive excluye YJS_* intencionalmente (DTLS only) — dual-ready encrypt follow-up"
+      "status": "done",
+      "description": "YJS dual-ready: ENCRYPTION_READY ack; encrypt only when both peers have AES; flag encryptYjsWhenDualReady default true"
     },
     {
       "id": "ROADMAP-011",

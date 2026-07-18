@@ -689,13 +689,12 @@ export class DatabaseSyncManager {
 	}
 
 	/**
-	 * Designate mesh master. Always allows promoting the local peer (bootstrap / tests).
-	 * Reassigning to a different remote peer is blocked if a master already exists.
+	 * Designate mesh master. Reassignment to a different peer is blocked once a master exists.
+	 * Idempotent when peerId is already master (safe re-assert before authority messages).
 	 */
 	public setMasterPeerId(peerId: string) {
 		const currentMaster = this.getMasterPeerId();
-		const isSelf = !!this.localPeerId && peerId === this.localPeerId;
-		if (currentMaster && currentMaster !== peerId && !isSelf) {
+		if (currentMaster && currentMaster !== peerId) {
 			logger.warn(
 				`[SECURITY] Blocked unauthorized master reassignment to ${peerId}`,
 			);
@@ -707,6 +706,7 @@ export class DatabaseSyncManager {
 			this.metadata.set("masterPeerId", peerId);
 			// Keep linkedNodes.isMaster coherent for getMasterPeerId() fallback walk
 			const existing = this.linkedNodes.get(peerId);
+			const isSelf = !!this.localPeerId && peerId === this.localPeerId;
 			if (existing || isSelf) {
 				this.linkedNodes.set(peerId, {
 					...(existing || { id: peerId, role: "admin" as P2PRole }),
@@ -716,7 +716,6 @@ export class DatabaseSyncManager {
 					lastSeen: new Date().toISOString(),
 				});
 			}
-			// Clear isMaster on other linked nodes
 			for (const [id, node] of this.linkedNodes.entries()) {
 				if (id !== peerId && node.isMaster) {
 					this.linkedNodes.set(id, { ...node, isMaster: false });

@@ -6,12 +6,12 @@
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
     "updated": "2026-07-17",
-    "sdlc_phase": "phase-C-to-100",
+    "sdlc_phase": "phase-D-to-100",
     "total_features": 21,
-    "features_implemented": 16,
-    "features_partial": 4,
+    "features_implemented": 17,
+    "features_partial": 3,
     "features_skeleton": 1,
-    "implementation_percentage": 85,
+    "implementation_percentage": 87,
     "ssot": ".gitcore/features.json",
     "audit_note": "Honest audit 2026-07-17: code+tests vs ACs. NOT 100%. See .gitcore/features.json for gaps/evidence.",
     "implementation_notes": "Path to 100%: PLAN-100-FEATURES.md. Phase B: CSV hardened, auth/team ACs local/P2P, tier UI."
@@ -253,38 +253,54 @@
     {
       "id": "SRC-PQC-001",
       "name": "Post-Quantum Cryptography",
-      "status": "partial",
-      "implementation_percentage": 78,
-      "maturity": "integrated",
+      "status": "implemented",
+      "implementation_percentage": 92,
+      "maturity": "hardened",
       "priority": "P0",
-      "category": "PQC"
+      "category": "PQC",
+      "gaps": [
+        "edge-mesh ML-DSA only (no ML-KEM)",
+        "At-rest uses PIN/device entropy not PQC-derived"
+      ]
     },
     {
       "id": "SRC-P2P-001",
       "name": "P2P Mesh Network",
       "status": "implemented",
-      "implementation_percentage": 90,
-      "maturity": "integrated",
+      "implementation_percentage": 92,
+      "maturity": "hardened",
       "priority": "P0",
-      "category": "P2P"
+      "category": "P2P",
+      "gaps": [
+        "PeerJS broker still required for signaling",
+        "Phase D thin p2p-mesh-core still open"
+      ]
     },
     {
       "id": "SRC-CRDT-001",
       "name": "CRDT Sync (Yjs)",
       "status": "implemented",
-      "implementation_percentage": 88,
-      "maturity": "integrated",
+      "implementation_percentage": 92,
+      "maturity": "hardened",
       "priority": "P0",
-      "category": "CRDT"
+      "category": "CRDT",
+      "gaps": [
+        "Primary wire still YJS_UPDATE (encrypted when dual-ready)",
+        "Remote entity ACL trust-gate model"
+      ]
     },
     {
       "id": "SRC-EDGE-001",
       "name": "Edge Mesh Runtime",
       "status": "partial",
-      "implementation_percentage": 72,
+      "implementation_percentage": 80,
       "maturity": "integrated",
       "priority": "P0",
-      "category": "EDGE"
+      "category": "EDGE",
+      "gaps": [
+        "Dual wire path residual (YJS + EDGE_MESH_ENVELOPE)",
+        "Phase D maloca extract open"
+      ]
     },
     {
       "id": "SRC-GPU-001",

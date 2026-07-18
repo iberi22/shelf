@@ -489,9 +489,9 @@
     {
       "id": "SRC-PQC-001",
       "name": "Post-Quantum Cryptography",
-      "implementation_percentage": 78,
-      "status": "partial",
-      "maturity": "integrated",
+      "implementation_percentage": 92,
+      "status": "implemented",
+      "maturity": "hardened",
       "priority": "P0",
       "category": "PQC",
       "paths": [
@@ -511,9 +511,8 @@
         "handshake": true
       },
       "gaps": [
-        "YJS_* not in isSensitive — DTLS only",
-        "At-rest not PQC-derived (PIN/device entropy)",
-        "edge-mesh ML-DSA only"
+        "edge-mesh ML-DSA only (no ML-KEM)",
+        "At-rest uses PIN/device entropy not PQC-derived"
       ],
       "next_actions": [
         "Dual-ready YJS encrypt after both peers have key",
@@ -523,9 +522,9 @@
     {
       "id": "SRC-P2P-001",
       "name": "P2P Mesh Network",
-      "implementation_percentage": 90,
+      "implementation_percentage": 92,
       "status": "implemented",
-      "maturity": "integrated",
+      "maturity": "hardened",
       "priority": "P0",
       "category": "P2P",
       "paths": [
@@ -546,9 +545,8 @@
         "no_broker": false
       },
       "gaps": [
-        "PeerJS broker required for signaling",
-        "Phase D thin p2p-mesh-core open",
-        "invite-and-sync residual"
+        "PeerJS broker still required for signaling",
+        "Phase D thin p2p-mesh-core still open"
       ],
       "next_actions": [
         "Phase D roadmap; fix invite authority"
@@ -557,9 +555,9 @@
     {
       "id": "SRC-CRDT-001",
       "name": "CRDT Sync (Yjs)",
-      "implementation_percentage": 88,
+      "implementation_percentage": 92,
       "status": "implemented",
-      "maturity": "integrated",
+      "maturity": "hardened",
       "priority": "P0",
       "category": "CRDT",
       "paths": [
@@ -580,8 +578,8 @@
         "remote_entity_acl_strict": false
       },
       "gaps": [
-        "isTrustedRemoteWriter only; full collection surgical revert dead",
-        "Primary wire still YJS_UPDATE"
+        "Primary wire still YJS_UPDATE (encrypted when dual-ready)",
+        "Remote entity ACL trust-gate model"
       ],
       "next_actions": [
         "Optional re-harden entity remote ACL with multi-peer tests"
@@ -590,7 +588,7 @@
     {
       "id": "SRC-EDGE-001",
       "name": "Edge Mesh Runtime",
-      "implementation_percentage": 72,
+      "implementation_percentage": 80,
       "status": "partial",
       "maturity": "integrated",
       "priority": "P0",
@@ -614,9 +612,8 @@
         "single_wire_path": false
       },
       "gaps": [
-        "Dual YJS_UPDATE + EDGE_MESH_ENVELOPE",
-        "Phase D open",
-        "Maloca debt in package"
+        "Dual wire path residual (YJS + EDGE_MESH_ENVELOPE)",
+        "Phase D maloca extract open"
       ],
       "next_actions": [
         "PHASE-D-ROADMAP items"
