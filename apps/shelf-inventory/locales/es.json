@@ -46,7 +46,10 @@
     "sortBy": "Ordenar por",
     "editItem": "Editar {{item}}",
     "deleteItem": "Eliminar {{item}}",
-    "done": "Listo"
+    "done": "Listo",
+    "accessDenied": "Acceso restringido",
+    "accessDeniedDescription": "No tienes permisos para ver esta sección.",
+    "language": "Idioma"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -221,7 +224,17 @@
     "valuation": {
       "totalValue": "Valor Total",
       "grandTotal": "Total General"
-    }
+    },
+    "aiEngineHintLocal": "WebLLM local (WebGPU) — los datos no salen del dispositivo",
+    "aiEngineHintNano": "Gemini Nano (integrado en el navegador)",
+    "aiEngineHintGemini": "Clave API Gemini (cliente) — proxy opcional en ajustes",
+    "aiEngineHintAuto": "Auto: local si no hay clave Gemini; si no, motores en la nube",
+    "aiHelpHowTitle": "Cómo funciona",
+    "aiHelpHowBody": "Pregunta por inventario, ventas o análisis (ej. stock bajo). Uso tus datos locales como contexto.",
+    "aiHelpLocalTitle": "Local / Nano",
+    "aiHelpLocalBody": "Los datos no salen del dispositivo. Sin costo de API. Local usa WebLLM + WebGPU si está disponible.",
+    "aiHelpCloudTitle": "Gemini / proxy",
+    "aiHelpCloudBody": "Clave API o URL de proxy opcional en Ajustes. No es obligatorio para uso offline-first."
   },
   "settings": {
     "title": "Configuración",
@@ -305,7 +318,8 @@
         "member": "Miembro"
       },
       "sendInvitation": "Enviar Invitación",
-      "emailPlaceholder": "miembro@ejemplo.com"
+      "emailPlaceholder": "miembro@ejemplo.com",
+      "linkCopied": "Enlace de invitación copiado"
     },
     "feedback": {
       "title": "Sugerencias y Soporte",
@@ -331,7 +345,11 @@
       "localModel": "Modelo Local",
       "modelSmall": "Pequeño (Phi-3 Mini)",
       "modelMedium": "Mediano (Qwen 2.5 1.5B)",
-      "proxyUrl": "URL de Proxy Local (Opcional)"
+      "proxyUrl": "URL de Proxy Local (Opcional)",
+      "localOcrTitle": "OCR de facturas local",
+      "localOcrDescription": "Usa Tesseract.js para OCR 100% offline. Si está desactivado, se usa la API de Gemini (requiere internet y API key).",
+      "localOcrOn": "Local (activado)",
+      "localOcrOff": "Nube (Gemini)"
     },
     "branches": {
       "title": "Sucursales / Bodegas",
@@ -360,7 +378,8 @@
       "current": "Plan actual",
       "updated": "Plan actualizado a {{plan}}",
       "stripeCheckout": "Abrir checkout Stripe (si está configurado)"
-    }
+    },
+    "language": "Idioma"
   },
   "auth": {
     "login": "Iniciar Sesión",

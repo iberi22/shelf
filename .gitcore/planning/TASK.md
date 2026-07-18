@@ -19,8 +19,8 @@
 | Fase | Trabajo | Estado |
 |------|---------|--------|
 | A | Honesty + P0 (dashboard, PO, scanner, tier wire) | ✅ |
-| B | CSV hardened + AC 008/013 + plan UI + tests | 🟡 in progress |
-| C | Monetization Stripe/docs + AI polish | ⏳ |
+| B | CSV hardened + AC 008/013 + plan UI + tests | ✅ |
+| C | Monetization gates + AI + invite authority + i18n | ✅ |
 | D | Mesh security (YJS encrypt dual-ready, invite) | ⏳ |
 | E | Edge Phase D dual-path collapse | ⏳ |
 | F | GPU decision (implement or ADR out) | ⏳ |

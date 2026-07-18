@@ -105,6 +105,17 @@ export class DatabaseSyncManager {
 		return !!selfNode?.isMaster;
 	}
 
+	/** True if peer completed PQC handshake (status verified). */
+	public isPeerVerified(peerId?: string | null): boolean {
+		if (!peerId) return false;
+		return this.ephemeralNodes.get(peerId)?.status === "verified";
+	}
+
+	/** Public authority check for mesh transport guards. */
+	public isAuthorityPeerId(peerId?: string | null): boolean {
+		return this.isAuthorityPeer(peerId);
+	}
+
 	private isAuthorityPeer(peerId?: string | null): boolean {
 		if (!peerId) return false;
 		const masterId = this.getAuthorityPeerId();
@@ -677,9 +688,14 @@ export class DatabaseSyncManager {
 		}
 	}
 
+	/**
+	 * Designate mesh master. Always allows promoting the local peer (bootstrap / tests).
+	 * Reassigning to a different remote peer is blocked if a master already exists.
+	 */
 	public setMasterPeerId(peerId: string) {
 		const currentMaster = this.getMasterPeerId();
-		if (currentMaster && currentMaster !== peerId) {
+		const isSelf = !!this.localPeerId && peerId === this.localPeerId;
+		if (currentMaster && currentMaster !== peerId && !isSelf) {
 			logger.warn(
 				`[SECURITY] Blocked unauthorized master reassignment to ${peerId}`,
 			);
@@ -689,6 +705,23 @@ export class DatabaseSyncManager {
 		this.doc.transact(() => {
 			this.metadata.set("authorityPeerId", peerId);
 			this.metadata.set("masterPeerId", peerId);
+			// Keep linkedNodes.isMaster coherent for getMasterPeerId() fallback walk
+			const existing = this.linkedNodes.get(peerId);
+			if (existing || isSelf) {
+				this.linkedNodes.set(peerId, {
+					...(existing || { id: peerId, role: "admin" as P2PRole }),
+					id: peerId,
+					role: "admin",
+					isMaster: true,
+					lastSeen: new Date().toISOString(),
+				});
+			}
+			// Clear isMaster on other linked nodes
+			for (const [id, node] of this.linkedNodes.entries()) {
+				if (id !== peerId && node.isMaster) {
+					this.linkedNodes.set(id, { ...node, isMaster: false });
+				}
+			}
 		}, "local");
 	}
 

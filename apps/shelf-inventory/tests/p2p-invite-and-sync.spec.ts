@@ -77,12 +77,18 @@ test.describe('P2P Invite Link, Pairing, and Permission Enforcement', () => {
     const adminPeerId = await getLocalPeerId(adminPage);
     expect(adminPeerId).toBeTruthy();
 
-    // Configure Admin as local Master/Authority for the tests
+    // Configure Admin as local Master/Authority for the tests (force self-master)
     await adminPage.evaluate((authorityPeerId) => {
       const dbSync = (window as any)._dbSyncForTest;
-      if (!dbSync?.setMasterPeerId || !dbSync?.updateLinkedNode) return;
+      const p2p = (window as any)._p2pManagerForTest;
+      if (!dbSync?.setMasterPeerId) return;
       dbSync.setMasterPeerId(authorityPeerId);
-      dbSync.updateLinkedNode(authorityPeerId, { role: 'admin', isMaster: true }, authorityPeerId);
+      dbSync.updateLinkedNode?.(authorityPeerId, { role: 'admin', isMaster: true }, authorityPeerId);
+      // Keep transport role aligned so isLocalAuthorityPeer bootstrap works
+      if (p2p) p2p.role = 'admin';
+      if (!dbSync.isLocalAuthority?.()) {
+        throw new Error(`Admin is not local authority after setMasterPeerId (master=${dbSync.getMasterPeerId?.()})`);
+      }
     }, adminPeerId);
 
     // 1.5 Create a pre-existing product in Admin BEFORE Collaborator connects
@@ -174,7 +180,14 @@ test.describe('P2P Invite Link, Pairing, and Permission Enforcement', () => {
         const dbSync = (window as any)._dbSyncForTest;
         if (!p2p || !dbSync) throw new Error('P2P test hooks are unavailable');
 
-        const localPeerId = dbSync.localPeerId;
+        const localPeerId = dbSync.localPeerId as string;
+        // Re-assert master right before authority messages (Yjs merge can lag)
+        dbSync.setMasterPeerId(localPeerId);
+        p2p.role = 'admin';
+        if (!dbSync.isLocalAuthority()) {
+          throw new Error(`Admin lost authority before CHANGE_ROLE (master=${dbSync.getMasterPeerId?.()})`);
+        }
+
         dbSync.updatePeerConfig(targetPeerId, 'collaborator', nextPermissions, localPeerId);
         dbSync.updateLinkedNode(targetPeerId, { role: 'collaborator', permissions: nextPermissions }, localPeerId);
         p2p.sendTo(targetPeerId, {

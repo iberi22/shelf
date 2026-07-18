@@ -15,16 +15,24 @@ import Settings from './components/Settings';
 import Sidebar, { MobileBottomNav } from './components/Sidebar';
 import Suppliers from './components/Suppliers';
 import { useAppContext } from './context/AppContext';
+import { useI18n } from './context/I18nContext';
 import { useSubscription } from './context/SubscriptionContext';
 import { useFeatureFlags } from './hooks/useFeatureFlags';
 
-const AccessDenied = () => (
-  <div className="flex flex-col items-center justify-center h-full text-center">
-    <div className="text-6xl mb-4">🔒</div>
-    <h2 className="text-2xl font-bold text-red-500 mb-2">Acceso Restringido</h2>
-    <p className="text-foreground/70">No tienes permisos para ver esta sección.</p>
-  </div>
-);
+const AccessDenied = () => {
+  const { t } = useI18n();
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center" data-testid="access-denied">
+      <div className="text-6xl mb-4">🔒</div>
+      <h2 className="text-2xl font-bold text-red-500 mb-2">
+        {t('common.accessDenied') || 'Access Denied'}
+      </h2>
+      <p className="text-foreground/70">
+        {t('common.accessDeniedDescription') || 'You do not have permission to view this section.'}
+      </p>
+    </div>
+  );
+};
 
 const MainApp: React.FC = () => {
   const [activeComponent, setActiveComponent] = useState('nav.summary');

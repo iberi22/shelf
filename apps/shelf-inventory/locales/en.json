@@ -46,7 +46,10 @@
     "sortBy": "Sort by",
     "editItem": "Edit {{item}}",
     "deleteItem": "Delete {{item}}",
-    "done": "Done"
+    "done": "Done",
+    "accessDenied": "Access Denied",
+    "accessDeniedDescription": "You do not have permission to view this section.",
+    "language": "Language"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -221,7 +224,17 @@
     "valuation": {
       "totalValue": "Total Value",
       "grandTotal": "Grand Total"
-    }
+    },
+    "aiEngineHintLocal": "Local WebLLM (WebGPU) — data stays on device",
+    "aiEngineHintNano": "Gemini Nano (browser built-in)",
+    "aiEngineHintGemini": "Gemini API key (client) — optional proxy URL in settings",
+    "aiEngineHintAuto": "Auto: local if no Gemini key, else cloud engines",
+    "aiHelpHowTitle": "How it works",
+    "aiHelpHowBody": "Ask about inventory, recent sales, or analysis (e.g. low stock). I use your local data as context.",
+    "aiHelpLocalTitle": "Local / Nano",
+    "aiHelpLocalBody": "Data stays on-device. No extra API cost. Local uses WebLLM + WebGPU when available.",
+    "aiHelpCloudTitle": "Gemini / proxy",
+    "aiHelpCloudBody": "Optional API key or proxy URL in Settings. Not required for offline-first use."
   },
   "settings": {
     "title": "Settings",
@@ -307,7 +320,8 @@
         "member": "Member"
       },
       "sendInvitation": "Send Invitation",
-      "emailPlaceholder": "member@example.com"
+      "emailPlaceholder": "member@example.com",
+      "linkCopied": "Invite link copied to clipboard"
     },
     "feedback": {
       "title": "Feedback & Support",
@@ -333,7 +347,11 @@
       "localModel": "Local Model",
       "modelSmall": "Small (Phi-3 Mini)",
       "modelMedium": "Medium (Qwen 2.5 1.5B)",
-      "proxyUrl": "Local Proxy URL (Optional)"
+      "proxyUrl": "Local Proxy URL (Optional)",
+      "localOcrTitle": "Local invoice OCR",
+      "localOcrDescription": "Use Tesseract.js for 100% offline invoice OCR. When off, Gemini API is used (requires internet and API key).",
+      "localOcrOn": "Local (On)",
+      "localOcrOff": "Cloud (Gemini)"
     },
     "branches": {
       "title": "Branches / Warehouses",
@@ -362,7 +380,8 @@
       "current": "Plan actual",
       "updated": "Plan actualizado a {{plan}}",
       "stripeCheckout": "Abrir checkout Stripe (si está configurado)"
-    }
+    },
+    "language": "Language"
   },
   "auth": {
     "login": "Login",

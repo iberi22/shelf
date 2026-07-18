@@ -190,16 +190,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const setSubscriptionTier = (tier: User['subscriptionTier']) => {
-    if (!user) return;
-    if (user.isGuest) {
-      const next = { ...user, subscriptionTier: tier };
+    // Persisted override — wins over shelf_demo_full_access in SubscriptionContext
+    localStorage.setItem('shelf_subscription_tier_override', tier);
+    if (tier === 'free') {
+      localStorage.removeItem('shelf_demo_full_access');
+    }
+    if (user?.isGuest || !user) {
+      const base =
+        user ||
+        ({
+          uid: localStorage.getItem('shelf_local_peer_id') || `guest_${Date.now()}`,
+          email: null,
+          isGuest: true,
+        } as User);
+      const next = { ...base, subscriptionTier: tier, isGuest: true as const };
       localStorage.setItem('guest_user', JSON.stringify(next));
       setUser(next);
-      return;
+    } else {
+      localAuthManager.updateSubscriptionTier(tier);
+      const refreshed = localAuthManager.getCurrentUser();
+      if (refreshed) setUser({ ...refreshed, subscriptionTier: tier });
     }
-    localAuthManager.updateSubscriptionTier(tier);
-    const refreshed = localAuthManager.getCurrentUser();
-    if (refreshed) setUser(refreshed);
+    window.dispatchEvent(new Event('shelf-tier-changed'));
   };
 
   const value = {

@@ -22,8 +22,8 @@
 | Fase | Nombre | Features foco | Meta avg | Estado |
 |------|--------|---------------|----------|--------|
 | **A** | Honesty + P0 quick wins | 003,005,006,009, docs | ~78% | ✅ done |
-| **B** | Product completion (FUN residual) | 014,008*,013*,007,009 tier UI,010 | ~85% | 🔄 **esta sesión** |
-| **C** | Monetization & auth product truth | 008,009,007 gates | ~90% | pending |
+| **B** | Product completion (FUN residual) | ~85% | ✅ | |
+| **C** | Monetization & auth product truth | ~90% | ✅ |
 | **D** | Mesh security | PQC, CRDT, EDGE, P2P invite | ~94% | pending |
 | **E** | Edge Phase D + dual-path collapse | EDGE, P2P | ~96% | pending |
 | **F** | GPU decision | GPU-001 | ~97% | pending |
@@ -58,3 +58,4 @@
 ## Tracking
 
 Tras cada fase: actualizar `implementation_percentage` solo con evidencia; recalcular promedio en metadata.
+

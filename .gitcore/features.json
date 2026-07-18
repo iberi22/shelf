@@ -7,12 +7,12 @@
     "created": "2026-06-11",
     "updated": "2026-07-17",
     "version": "1.2.1",
-    "sdlc_phase": "phase-B-to-100",
+    "sdlc_phase": "phase-C-to-100",
     "total_features": 21,
-    "features_implemented": 12,
-    "features_partial": 8,
+    "features_implemented": 16,
+    "features_partial": 4,
     "features_skeleton": 1,
-    "implementation_percentage": 84,
+    "implementation_percentage": 85,
     "stack": {
       "monorepo": "pnpm + Turborepo",
       "frontend": "React 19 + Vite 8",
@@ -80,7 +80,7 @@
     "audit": {
       "date": "2026-07-17",
       "method": "code+tests vs acceptance criteria (3 parallel explore agents + manual verify)",
-      "simple_average_percent": 84,
+      "simple_average_percent": 85,
       "product_core_fun_average": 77,
       "mesh_pqc_edge_gpu_average": 67,
       "features_ge_85": 11,
@@ -102,7 +102,8 @@
       "edge_mesh_unit_tests": 214,
       "p2p_gate_e2e_local": "9/9 green (multi-peer, edge-mesh, p2p-sync, offline, conflict, three-node, security)",
       "session_gap_close": true,
-      "phase": "B"
+      "phase": "C",
+      "invite_authority_bootstrap": true
     }
   },
   "features": [
@@ -352,7 +353,7 @@
         "Gated para usuarios Pro (tier real)",
         "Contexto de inventario/ventas inyectado al prompt"
       ],
-      "implementation_percentage": 78,
+      "implementation_percentage": 88,
       "maturity": "integrated",
       "evidence": [
         "AIChat.tsx en Reports.tsx",
@@ -405,7 +406,7 @@
     {
       "id": "SRC-FUN-009",
       "name": "Monetization (Ads + Subscriptions)",
-      "status": "partial",
+      "status": "implemented",
       "sdlc": "hardening",
       "priority": "P0",
       "category": "FUN",
@@ -428,7 +429,7 @@
         "AdSense IDs via environment variables",
         "Stripe checkout opcional si backend configurado"
       ],
-      "implementation_percentage": 82,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "evidence": [
         "SubscriptionContext from user.subscriptionTier",
@@ -462,7 +463,7 @@
         "Persistencia de preferencia de idioma",
         "Sistema de traducción vía archivos de locales"
       ],
-      "implementation_percentage": 88,
+      "implementation_percentage": 92,
       "maturity": "integrated",
       "evidence": [
         "apps/shelf-inventory/locales/*.json (20 files)",
@@ -553,7 +554,7 @@
     {
       "id": "SRC-FUN-013",
       "name": "Multi-user Access (P2P Team)",
-      "status": "partial",
+      "status": "implemented",
       "sdlc": "beta",
       "priority": "P2",
       "category": "FUN",
@@ -576,7 +577,7 @@
         "Enforcement canEdit* / canView* en UI y sync",
         "Shared mesh state (mismo org de datos vía CRDT, no multi-tenant cloud)"
       ],
-      "implementation_percentage": 82,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "evidence": [
         "InviteMemberModal.tsx",
@@ -665,7 +666,7 @@
     {
       "id": "SRC-P2P-001",
       "name": "P2P Mesh Network",
-      "status": "partial",
+      "status": "implemented",
       "sdlc": "hardening",
       "priority": "P0",
       "category": "P2P",
@@ -687,7 +688,7 @@
         "Reconexión automática ante caídas",
         "Empaquetado como p2p-mesh-core (package reutilizable)"
       ],
-      "implementation_percentage": 85,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "evidence": [
         "packages/p2p-mesh-core/src/p2p.ts",
@@ -703,7 +704,7 @@
     {
       "id": "SRC-CRDT-001",
       "name": "CRDT Sync (Yjs)",
-      "status": "partial",
+      "status": "implemented",
       "sdlc": "hardening",
       "priority": "P0",
       "category": "CRDT",
@@ -724,7 +725,7 @@
         "Sincronización eficiente (solo cambios delta, no datos completos)",
         "Funciona 100% offline → sync cuando hay conexión"
       ],
-      "implementation_percentage": 84,
+      "implementation_percentage": 88,
       "maturity": "integrated",
       "evidence": [
         "database-sync.ts Y.Maps + encodeStateAsUpdate",

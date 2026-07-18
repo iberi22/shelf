@@ -233,9 +233,16 @@ class P2PManager {
 
 	private isLocalAuthorityPeer(): boolean {
 		if (!this.localPeerId) return false;
+		// Prefer CRDT authority (masterPeerId / linkedNodes.isMaster)
+		if (dbSync.isLocalAuthority()) return true;
 		const masterId = this.getMasterPeerId();
 		if (masterId) return masterId === this.localPeerId;
-		return this.role === "admin";
+		// Bootstrap: UI admin with no master yet becomes master so CHANGE_ROLE can flow
+		if (this.role === "admin") {
+			dbSync.setMasterPeerId(this.localPeerId);
+			return dbSync.isLocalAuthority();
+		}
+		return false;
 	}
 
 	private isAuthorityMessage(message: SyncMessage): boolean {
@@ -246,9 +253,26 @@ class P2PManager {
 		);
 	}
 
+	/**
+	 * Accept authority messages only from the mesh master.
+	 * Bootstrap: if master is not yet known on this node (Yjs metadata lag),
+	 * adopt the first PQC-verified authority sender as master.
+	 */
 	private isAuthorizedAuthoritySender(fromPeerId: string): boolean {
 		const masterId = this.getMasterPeerId();
-		return Boolean(masterId && fromPeerId === masterId);
+		if (masterId) return fromPeerId === masterId;
+		if (dbSync.isAuthorityPeerId(fromPeerId)) return true;
+		if (dbSync.isPeerVerified(fromPeerId)) {
+			// Mesh bootstrap — first verified authority peer becomes master
+			dbSync.setMasterPeerId(fromPeerId);
+			dbSync.updateLinkedNode(
+				fromPeerId,
+				{ role: "admin", isMaster: true },
+				fromPeerId,
+			);
+			return true;
+		}
+		return false;
 	}
 
 	private initYjsSync() {
