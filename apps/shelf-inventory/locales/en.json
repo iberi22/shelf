@@ -318,7 +318,9 @@
       "roles": {
         "owner": "Owner",
         "admin": "Admin",
-        "member": "Member"
+        "member": "Member",
+        "collaborator": "Collaborator",
+        "vendedor": "Seller"
       },
       "sendInvitation": "Send Invitation",
       "emailPlaceholder": "member@example.com",
@@ -573,6 +575,7 @@
     "statusConnecting": "Connecting...",
     "configCollaboratorTitle": "Collaborator Configuration",
     "roleAdmin": "Admin",
+    "roleCollaborator": "Collaborator",
     "roleVendedor": "Seller",
     "roleCustom": "Custom",
     "peerId": "Peer ID",

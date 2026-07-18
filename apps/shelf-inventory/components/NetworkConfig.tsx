@@ -314,7 +314,10 @@ const NetworkConfig: React.FC = () => {
                 <span className="truncate min-w-0">{member.email}</span>
                 <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
                   <span className="text-[10px] sm:text-sm font-semibold capitalize px-2 py-0.5 rounded-full bg-foreground/10">
-                    {member.role}
+                    {(() => {
+                      const displayRole = member.role === 'member' ? 'collaborator' : member.role;
+                      return t(`settings.team.roles.${displayRole}`) || displayRole;
+                    })()}
                   </span>
                   {isAdmin && member.role !== 'owner' && (
                     <button
