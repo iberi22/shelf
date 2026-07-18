@@ -1,14 +1,7 @@
 import type { Product } from 'p2p-mesh-core';
 
 /** Canonical CSV columns for product import */
-export const CANONICAL_CSV_HEADERS = [
-  'name',
-  'sku',
-  'quantity',
-  'price',
-  'cost',
-  'imageUrl',
-] as const;
+export const CANONICAL_CSV_HEADERS = ['name', 'sku', 'quantity', 'price', 'cost', 'imageUrl'] as const;
 
 export type CanonicalCsvHeader = (typeof CANONICAL_CSV_HEADERS)[number];
 
@@ -21,7 +14,7 @@ const HEADER_ALIASES: Record<string, CanonicalCsvHeader> = {
   sku: 'sku',
   code: 'sku',
   codigo: 'sku',
-  'código': 'sku',
+  código: 'sku',
   quantity: 'quantity',
   qty: 'quantity',
   cantidad: 'quantity',
@@ -48,7 +41,10 @@ export interface CsvProductParseResult {
 }
 
 function normalizeHeader(raw: string): string {
-  return raw.replace(/^\uFEFF/, '').trim().toLowerCase();
+  return raw
+    .replace(/^\uFEFF/, '')
+    .trim()
+    .toLowerCase();
 }
 
 /**
@@ -90,11 +86,41 @@ export function mapHeaders(rawHeaders: string[]): {
   return { mapping, missing };
 }
 
+export function previewCsvHeaders(text: string): {
+  rawHeaders: string[];
+  suggestedMapping: (CanonicalCsvHeader | null)[];
+  missingRequired: CanonicalCsvHeader[];
+} {
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+
+  if (lines.length === 0) {
+    return {
+      rawHeaders: [],
+      suggestedMapping: [],
+      missingRequired: [...CANONICAL_CSV_HEADERS].filter((h) => h !== 'imageUrl'),
+    };
+  }
+
+  const rawHeaders = splitCsvLine(lines[0]);
+  const { mapping, missing } = mapHeaders(rawHeaders);
+  return {
+    rawHeaders,
+    suggestedMapping: mapping,
+    missingRequired: missing,
+  };
+}
+
 /**
  * Parse product CSV text into product drafts + per-row errors.
  * Requires name + at least one of quantity/price/cost columns (name is mandatory).
  */
-export function parseProductCsv(text: string): CsvProductParseResult {
+export function parseProductCsv(
+  text: string,
+  options?: { columnMapping?: (CanonicalCsvHeader | null)[] },
+): CsvProductParseResult {
   const lines = text
     .split(/\r?\n/)
     .map((l) => l.trim())
@@ -109,7 +135,19 @@ export function parseProductCsv(text: string): CsvProductParseResult {
   }
 
   const rawHeaders = splitCsvLine(lines[0]);
-  const { mapping, missing } = mapHeaders(rawHeaders);
+
+  let mapping: (CanonicalCsvHeader | null)[];
+  let missing: CanonicalCsvHeader[];
+
+  if (options?.columnMapping && options.columnMapping.length === rawHeaders.length) {
+    mapping = options.columnMapping;
+    const found = new Set(mapping.filter(Boolean) as CanonicalCsvHeader[]);
+    missing = CANONICAL_CSV_HEADERS.filter((h) => h !== 'imageUrl' && !found.has(h));
+  } else {
+    const res = mapHeaders(rawHeaders);
+    mapping = res.mapping;
+    missing = res.missing;
+  }
 
   if (missing.includes('name')) {
     return {
@@ -169,9 +207,7 @@ export function parseProductCsv(text: string): CsvProductParseResult {
     });
   }
 
-  const mappedHeaders = [
-    ...new Set(mapping.filter((m): m is CanonicalCsvHeader => m !== null)),
-  ];
+  const mappedHeaders = [...new Set(mapping.filter((m): m is CanonicalCsvHeader => m !== null))];
 
   return { products, errors, mappedHeaders };
 }
