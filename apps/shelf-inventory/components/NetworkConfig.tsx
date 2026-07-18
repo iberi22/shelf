@@ -50,8 +50,7 @@ const NetworkConfig: React.FC = () => {
   const [feedback, setFeedback] = useState('');
 
   const { isPyme, tier } = useSubscription();
-  const { user, hasAppLock, hasBiometricLock, setAppLock, setBiometricLock, setSubscriptionTier } =
-    useAuth();
+  const { user, hasAppLock, hasBiometricLock, setAppLock, setBiometricLock, setSubscriptionTier } = useAuth();
   const [newPin, setNewPin] = useState('');
   const [biometricsSupported, setBiometricsSupported] = useState(false);
 
@@ -361,11 +360,14 @@ const NetworkConfig: React.FC = () => {
                 type="button"
                 data-testid={`set-tier-${plan}`}
                 onClick={() => {
+                  if (plan !== 'free' && tier === 'free') {
+                    const confirmed = window.confirm(
+                      t('settings.plan.confirmUpgrade') || 'Are you sure you want to upgrade your plan?',
+                    );
+                    if (!confirmed) return;
+                  }
                   setSubscriptionTier(plan);
-                  showNotification(
-                    t('settings.plan.updated', { plan }) || `Plan set to ${plan}`,
-                    'success',
-                  );
+                  showNotification(t('settings.plan.updated', { plan }) || `Plan set to ${plan}`, 'success');
                 }}
                 className={`text-sm font-bold py-2 px-4 rounded-lg border min-h-[40px] transition-colors active:scale-95 ${
                   tier === plan
@@ -377,11 +379,14 @@ const NetworkConfig: React.FC = () => {
               </button>
             ))}
           </div>
+          <p className="text-xs text-[#F5F5DC]/60 italic mt-1">
+            {t('settings.plan.offlineNotice') || 'Local plans are offline-first; payment when Stripe env enabled.'}
+          </p>
           <button
             type="button"
             data-testid="open-subscription-modal-button"
             onClick={() => openSubscriptionModal()}
-            className="text-sm text-sky-400 hover:text-sky-300 font-semibold"
+            className="text-sm text-sky-400 hover:text-sky-300 font-semibold block pt-2"
           >
             {t('settings.plan.stripeCheckout') || 'Open Stripe checkout (if configured)'}
           </button>

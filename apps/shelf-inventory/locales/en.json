@@ -376,11 +376,13 @@
       "successDelete": "Branch deleted successfully."
     },
     "plan": {
-      "title": "Plan / Suscripción",
-      "description": "El plan local controla funciones Pro y anuncios. Stripe es opcional si hay backend.",
-      "current": "Plan actual",
-      "updated": "Plan actualizado a {{plan}}",
-      "stripeCheckout": "Abrir checkout Stripe (si está configurado)"
+      "title": "Plan / Subscription",
+      "description": "Local plan controls Pro features and ads. Stripe is optional if backend is configured.",
+      "current": "Current plan",
+      "updated": "Plan updated to {{plan}}",
+      "stripeCheckout": "Open Stripe checkout (if configured)",
+      "offlineNotice": "Local plans are offline-first. Stripe payments are only required when cloud integration is enabled.",
+      "confirmUpgrade": "Are you sure you want to upgrade your plan?"
     },
     "language": "Language"
   },
@@ -449,6 +451,8 @@
     "loginRequired": "You must be logged in to subscribe.",
     "redirecting": "Redirecting to payment...",
     "paymentError": "Failed to initiate payment process. Please try again.",
+    "offlineSuccess": "Local plan activated successfully (Offline Mode).",
+    "paymentErrorOfflineFallback": "Failed to initiate payment, but local plan was activated successfully (Offline Mode).",
     "upgradeToPyme": "Upgrade to PYME",
     "pro": {
       "title": "Pro",

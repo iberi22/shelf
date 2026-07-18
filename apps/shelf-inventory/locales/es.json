@@ -378,7 +378,9 @@
       "description": "El plan local controla funciones Pro y anuncios. Stripe es opcional si hay backend.",
       "current": "Plan actual",
       "updated": "Plan actualizado a {{plan}}",
-      "stripeCheckout": "Abrir checkout Stripe (si está configurado)"
+      "stripeCheckout": "Abrir checkout Stripe (si está configurado)",
+      "offlineNotice": "Los planes locales son offline-first. El pago por Stripe solo es necesario cuando la integración en la nube está activa.",
+      "confirmUpgrade": "¿Estás seguro de que deseas actualizar tu plan?"
     },
     "language": "Idioma"
   },
@@ -459,6 +461,8 @@
     "loginRequired": "Debes iniciar sesión para suscribirte.",
     "redirecting": "Redirigiendo al pago...",
     "paymentError": "Error al iniciar el proceso de pago. Inténtalo de nuevo.",
+    "offlineSuccess": "Plan local activado correctamente (Modo Offline).",
+    "paymentErrorOfflineFallback": "Error al iniciar el pago, pero el plan local se activó correctamente (Modo Offline).",
     "upgradeToPyme": "Actualizar a PYME",
     "pro": {
       "title": "Pro",
