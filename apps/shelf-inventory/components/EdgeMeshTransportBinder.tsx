@@ -8,7 +8,7 @@
 import { CAPACIDAD_ESTANDAR, type EdgeMesh, type NodoId } from 'edge-mesh';
 import { useEdgeMesh } from 'edge-mesh-react';
 import { createP2PManagerTransport, p2pManager } from 'p2p-mesh-core';
-import { useEffect, useRef, useState, type FC } from 'react';
+import { type FC, useEffect, useRef, useState } from 'react';
 
 const TRANSPORT_STATUS_EVENT = 'shelf-edge-mesh-transport';
 const SYNC_NS = 'global';
@@ -37,8 +37,8 @@ export function useEdgeMeshTransportStatus() {
   const [status, setStatus] = useState<EdgeMeshTransportStatus>(() => {
     if (typeof window === 'undefined') return defaultTransportStatus;
     return (
-      (window as unknown as { __shelfEdgeMeshTransport?: EdgeMeshTransportStatus })
-        .__shelfEdgeMeshTransport || defaultTransportStatus
+      (window as unknown as { __shelfEdgeMeshTransport?: EdgeMeshTransportStatus }).__shelfEdgeMeshTransport ||
+      defaultTransportStatus
     );
   });
 
@@ -55,8 +55,7 @@ export function useEdgeMeshTransportStatus() {
 
 function emitTransportStatus(status: EdgeMeshTransportStatus) {
   if (typeof window === 'undefined') return;
-  (window as unknown as { __shelfEdgeMeshTransport?: EdgeMeshTransportStatus }).__shelfEdgeMeshTransport =
-    status;
+  (window as unknown as { __shelfEdgeMeshTransport?: EdgeMeshTransportStatus }).__shelfEdgeMeshTransport = status;
   window.dispatchEvent(new CustomEvent(TRANSPORT_STATUS_EVENT, { detail: status }));
 }
 
@@ -106,9 +105,7 @@ const EdgeMeshTransportBinder: FC = () => {
       connectedPeers: p2pManager.getConnectedPeerIds().length,
       transportType: mesh.obtenerTransport()?.tipo ?? null,
       yjsWirePath: p2pManager.getActiveYjsWirePath(),
-      dualReadyPeers: p2pManager
-        .getConnectedPeerIds()
-        .filter((id) => p2pManager.isYjsAppEncryptedForPeer(id)).length,
+      dualReadyPeers: p2pManager.getConnectedPeerIds().filter((id) => p2pManager.isYjsAppEncryptedForPeer(id)).length,
     });
 
     return () => {

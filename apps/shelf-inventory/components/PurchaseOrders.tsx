@@ -214,7 +214,9 @@ const PurchaseOrders: React.FC = () => {
                     {t('purchases.orderDate')}: {po.orderDate}
                   </p>
                 </div>
-                <span className={`flex-shrink-0 px-2 py-1 text-xs font-semibold rounded-full ${statusClass(po.status)}`}>
+                <span
+                  className={`flex-shrink-0 px-2 py-1 text-xs font-semibold rounded-full ${statusClass(po.status)}`}
+                >
                   {statusLabel(po.status)}
                 </span>
               </div>

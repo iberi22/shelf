@@ -46,7 +46,10 @@
     "sortBy": "Ordenar por",
     "editItem": "Editar {{item}}",
     "deleteItem": "Eliminar {{item}}",
-    "done": "Listo"
+    "done": "Listo",
+    "accessDenied": "Acceso restringido",
+    "accessDeniedDescription": "No tienes permisos para ver esta sección.",
+    "language": "Idioma"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -109,7 +112,8 @@
       "noVariantGroup": "Sin grupo de variantes",
       "newVariantGroup": "Crear nuevo grupo de variantes",
       "variantSiblings": "Productos en el mismo grupo:",
-      "noSiblings": "Sin otros productos en este grupo"
+      "noSiblings": "Sin otros productos en este grupo",
+      "duplicateSku": "El SKU ya existe: {{sku}}"
     },
     "batchProcessing": "Procesando imágenes...",
     "batchCompiling": "Comprimiendo y preparando lote de productos:"
@@ -172,7 +176,11 @@
       "selectSupplier": "Selecciona un proveedor...",
       "selectSupplierAlert": "Por favor, selecciona un proveedor.",
       "addItem": "+ Añadir Producto"
-    }
+    },
+    "statusCancelled": "Cancelada",
+    "cancel": "Cancelar orden",
+    "cancelConfirm": "¿Cancelar esta orden de compra? El stock no cambiará.",
+    "cancelSuccess": "Orden de compra cancelada"
   },
   "reports": {
     "title": "Reportes y Análisis",
@@ -217,7 +225,17 @@
     "valuation": {
       "totalValue": "Valor Total",
       "grandTotal": "Total General"
-    }
+    },
+    "aiEngineHintLocal": "WebLLM local (WebGPU) — los datos no salen del dispositivo",
+    "aiEngineHintNano": "Gemini Nano (integrado en el navegador)",
+    "aiEngineHintGemini": "Clave API Gemini (cliente) — proxy opcional en ajustes",
+    "aiEngineHintAuto": "Auto: local si no hay clave Gemini; si no, motores en la nube",
+    "aiHelpHowTitle": "Cómo funciona",
+    "aiHelpHowBody": "Pregunta por inventario, ventas o análisis (ej. stock bajo). Uso tus datos locales como contexto.",
+    "aiHelpLocalTitle": "Local / Nano",
+    "aiHelpLocalBody": "Los datos no salen del dispositivo. Sin costo de API. Local usa WebLLM + WebGPU si está disponible.",
+    "aiHelpCloudTitle": "Gemini / proxy",
+    "aiHelpCloudBody": "Clave API o URL de proxy opcional en Ajustes. No es obligatorio para uso offline-first."
   },
   "settings": {
     "title": "Configuración",
@@ -277,7 +295,13 @@
       "importing": "Importando...",
       "success": "Se importaron {{count}} productos con éxito.",
       "error": "La importación falló: {{error}}",
-      "invalidHeaderError": "Archivo CSV no válido. Por favor, asegúrate de que las cabeceras coincidan con la plantilla."
+      "invalidHeaderError": "Archivo CSV no válido. Por favor, asegúrate de que las cabeceras coincidan con la plantilla.",
+      "rowErrors": "Algunas filas se omitieron:",
+      "invalidFile": "Selecciona un archivo .csv válido.",
+      "mapColumns": "Asociar columnas del CSV",
+      "mapColumnsDesc": "Selecciona qué campo coincide con cada columna de tu archivo. El campo Nombre de Producto es obligatorio.",
+      "ignoreColumn": "(Ignorar)",
+      "nameRequiredError": "* Se requiere la asociación de Nombre del Producto para habilitar la importación."
     },
     "reset": {
       "button": "Reiniciar Datos",
@@ -299,7 +323,8 @@
         "member": "Miembro"
       },
       "sendInvitation": "Enviar Invitación",
-      "emailPlaceholder": "miembro@ejemplo.com"
+      "emailPlaceholder": "miembro@ejemplo.com",
+      "linkCopied": "Enlace de invitación copiado"
     },
     "feedback": {
       "title": "Sugerencias y Soporte",
@@ -325,9 +350,12 @@
       "localModel": "Modelo Local",
       "modelSmall": "Pequeño (Phi-3 Mini)",
       "modelMedium": "Mediano (Qwen 2.5 1.5B)",
-      "proxyUrl": "URL de Proxy Local (Opcional)"
+      "proxyUrl": "URL de Proxy Local (Opcional)",
+      "localOcrTitle": "OCR de facturas local",
+      "localOcrDescription": "Usa Tesseract.js para OCR 100% offline. Si está desactivado, se usa la API de Gemini (requiere internet y API key).",
+      "localOcrOn": "Local (activado)",
+      "localOcrOff": "Nube (Gemini)"
     },
-
     "branches": {
       "title": "Sucursales / Bodegas",
       "description": "Gestiona las ubicaciones físicas de tu inventario.",
@@ -348,7 +376,15 @@
       "successAdd": "Sucursal agregada.",
       "successUpdate": "Sucursal actualizada.",
       "successDelete": "Sucursal eliminada correctamente."
-    }
+    },
+    "plan": {
+      "title": "Plan / Suscripción",
+      "description": "El plan local controla funciones Pro y anuncios. Stripe es opcional si hay backend.",
+      "current": "Plan actual",
+      "updated": "Plan actualizado a {{plan}}",
+      "stripeCheckout": "Abrir checkout Stripe (si está configurado)"
+    },
+    "language": "Idioma"
   },
   "auth": {
     "login": "Iniciar Sesión",

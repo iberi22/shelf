@@ -297,7 +297,11 @@
       "error": "La importación falló: {{error}}",
       "invalidHeaderError": "Archivo CSV no válido. Por favor, asegúrate de que las cabeceras coincidan con la plantilla.",
       "rowErrors": "Algunas filas se omitieron:",
-      "invalidFile": "Selecciona un archivo .csv válido."
+      "invalidFile": "Selecciona un archivo .csv válido.",
+      "mapColumns": "Asociar columnas del CSV",
+      "mapColumnsDesc": "Selecciona qué campo coincide con cada columna de tu archivo. El campo Nombre de Producto es obligatorio.",
+      "ignoreColumn": "(Ignorar)",
+      "nameRequiredError": "* Se requiere la asociación de Nombre del Producto para habilitar la importación."
     },
     "reset": {
       "button": "Reiniciar Datos",
