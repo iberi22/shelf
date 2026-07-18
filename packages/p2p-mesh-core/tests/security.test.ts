@@ -270,6 +270,56 @@ describe('Security: dual-ready YJS app encryption', () => {
     p2p.dualReadyEncryption.clear();
   });
 
+  it('does not mark EDGE_MESH_ENVELOPE app-encrypted until dual-ready', () => {
+    const p2p: any = p2pManager;
+    const peerId = 'peer-crypto-envelope-a';
+    p2p.dualReadyEncryption?.clear?.();
+    p2p.encryptionKeys?.clear?.();
+    p2p.pendingEncryptionReady?.clear?.();
+    p2p.encryptYjsWhenDualReady = true;
+
+    expect(p2pManager.isEdgeMeshEnvelopeEncryptedForPeer(peerId)).toBe(false);
+
+    // Simulate local AES key without peer ENCRYPTION_READY
+    p2p.encryptionKeys.set(peerId, {} as CryptoKey);
+    expect(p2pManager.isEdgeMeshEnvelopeEncryptedForPeer(peerId)).toBe(false);
+
+    p2p.dualReadyEncryption.add(peerId);
+    expect(p2pManager.isEdgeMeshEnvelopeEncryptedForPeer(peerId)).toBe(true);
+
+    p2p.encryptYjsWhenDualReady = false;
+    expect(p2pManager.isEdgeMeshEnvelopeEncryptedForPeer(peerId)).toBe(false);
+
+    // restore default
+    p2p.encryptYjsWhenDualReady = true;
+    p2p.dualReadyEncryption.clear();
+    p2p.encryptionKeys.clear();
+  });
+
+  it('shouldEncryptMessage encrypts EDGE_MESH_ENVELOPE only when dual-ready', () => {
+    const p2p: any = p2pManager;
+    const peerId = 'peer-crypto-envelope-b';
+    p2p.dualReadyEncryption.clear();
+    p2p.encryptionKeys.clear();
+    p2p.encryptYjsWhenDualReady = true;
+
+    const envMsg = { type: 'EDGE_MESH_ENVELOPE', payload: { envelope: {} as any } };
+    const authMsg = { type: 'CHANGE_ROLE', payload: { targetPeerId: 'x', role: 'collaborator' } };
+
+    expect(p2p.shouldEncryptMessage(peerId, envMsg)).toBe(false);
+    expect(p2p.shouldEncryptMessage(peerId, authMsg)).toBe(true);
+
+    p2p.dualReadyEncryption.add(peerId);
+    expect(p2p.shouldEncryptMessage(peerId, envMsg)).toBe(true);
+    expect(p2p.shouldEncryptMessage(peerId, authMsg)).toBe(true);
+
+    p2p.encryptYjsWhenDualReady = false;
+    expect(p2p.shouldEncryptMessage(peerId, envMsg)).toBe(false);
+
+    p2p.encryptYjsWhenDualReady = true;
+    p2p.dualReadyEncryption.clear();
+  });
+
   it('onEncryptionReady promotes dual-ready only after local key exists', () => {
     const p2p: any = p2pManager;
     const peerId = 'peer-crypto-c';
