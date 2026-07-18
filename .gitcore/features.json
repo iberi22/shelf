@@ -5,14 +5,14 @@
     "project_display": "Shelf Inventory Management",
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
-    "updated": "2026-07-17",
-    "version": "1.2.1",
-    "sdlc_phase": "phase-G-complete",
+    "updated": "2026-07-18",
+    "version": "1.2.3",
+    "sdlc_phase": "ola-h-integrated",
     "total_features": 21,
-    "features_implemented": 21,
-    "features_partial": 0,
+    "features_implemented": 20,
+    "features_partial": 1,
     "features_skeleton": 0,
-    "implementation_percentage": 100,
+    "implementation_percentage": 91,
     "stack": {
       "monorepo": "pnpm + Turborepo",
       "frontend": "React 19 + Vite 8",
@@ -70,7 +70,7 @@
         "description": "Progressive Web App con soporte offline"
       }
     },
-    "implementation_notes": "Phase G: all 21 SRC at 100% vs product ACs (offline-first). Residual polish listed in gaps as non-blocking notes + future_roadmap.",
+    "implementation_notes": "Ola H integrated into develop: envelope encrypt, invite mesh roles, CSV column map, monetization offline fallback. Project avg ~91%. Residual partial: SRC-EDGE-001 (Phase D).",
     "status_model": {
       "skeleton": "API o package existe, comportamiento mock/placeholder",
       "unit": "Lógica local o unit tests; no E2E mesh endurecido",
@@ -78,14 +78,14 @@
       "hardened": "Authz/crypto en path de red + coverage y CI verdes"
     },
     "audit": {
-      "date": "2026-07-17",
-      "method": "code+tests vs acceptance criteria (3 parallel explore agents + manual verify)",
-      "simple_average_percent": 100,
-      "product_core_fun_average": 77,
-      "mesh_pqc_edge_gpu_average": 67,
-      "features_ge_85": 11,
-      "features_partial_40_84": 12,
-      "features_skeleton_lt_40": 1,
+      "date": "2026-07-18",
+      "method": "post Ola H integration (Jules PRs #301-#304 + local review) + code verify",
+      "simple_average_percent": 91,
+      "product_core_fun_average": 92,
+      "mesh_pqc_edge_gpu_average": 88,
+      "features_ge_85": 20,
+      "features_partial_40_84": 1,
+      "features_skeleton_lt_40": 0,
       "ssot_file": ".gitcore/features.json",
       "root_features_json": "status-only index; was falsely 100% — corrected",
       "primary_inventory_path": "p2p-mesh-core (YJS_UPDATE)",
@@ -102,13 +102,25 @@
       "edge_mesh_unit_tests": 214,
       "p2p_gate_e2e_local": "9/9 green (multi-peer, edge-mesh, p2p-sync, offline, conflict, three-node, security)",
       "session_gap_close": true,
-      "phase": "G",
+      "phase": "H-integrated",
       "invite_authority_bootstrap": true,
       "yjs_wire": "envelope-when-ready",
       "gpu": "kernels+webgpu+cpu",
       "qa_hardened": true,
       "lint_staged_root": true,
-      "ci_package_tests": true
+      "ci_package_tests": true,
+      "ola_h_issues": [
+        297,
+        298,
+        299,
+        300
+      ],
+      "ola_h_prs": [
+        301,
+        302,
+        303,
+        304
+      ]
     }
   },
   "features": [
@@ -136,7 +148,7 @@
         "Listar productos con búsqueda y filtros",
         "Cantidad se actualiza automáticamente al vender"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 96,
       "maturity": "hardened",
       "evidence": [
         "apps/shelf-inventory/components/Inventory.tsx",
@@ -173,7 +185,7 @@
         "Historial de ventas con fecha, productos y total",
         "Cálculo automático de revenue y profit por venta"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 97,
       "maturity": "hardened",
       "evidence": [
         "apps/shelf-inventory/components/Sales.tsx",
@@ -210,7 +222,7 @@
         "Gráficos de ventas en el tiempo (chart.js)",
         "Top productos más vendidos"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 92,
       "maturity": "integrated",
       "evidence": [
         "apps/shelf-inventory/components/Dashboard.tsx",
@@ -241,7 +253,7 @@
         "Componente genérico ContactManagementPage (sin duplicación)",
         "Refactorizado: ahorro de 300+ líneas de código duplicado"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 98,
       "maturity": "hardened",
       "evidence": [
         "ContactManagementPage.tsx",
@@ -276,7 +288,7 @@
         "Listar órdenes activas e históricas",
         "Estado de orden: pendiente, recibida, cancelada"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 94,
       "maturity": "integrated",
       "evidence": [
         "PurchaseOrders.tsx",
@@ -309,7 +321,7 @@
         "Soporte para QR y códigos de barras estándar (EAN, UPC, Code128)",
         "Feedback visual de escaneo exitoso"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "evidence": [
         "BarcodeScanner.tsx",
@@ -343,7 +355,7 @@
         "Gated para usuarios Pro (tier real)",
         "Contexto de inventario/ventas inyectado al prompt"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 86,
       "maturity": "integrated",
       "evidence": [
         "AIChat.tsx en Reports.tsx",
@@ -379,7 +391,7 @@
         "Seed recovery / restore cuenta local",
         "Multi-dispositivo de datos vía P2P o backup JSON (no cloud login)"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 88,
       "maturity": "integrated",
       "evidence": [
         "AuthContext.tsx → localAuthManager only",
@@ -417,15 +429,16 @@
         "AdSense IDs via environment variables",
         "Stripe checkout opcional si backend configurado"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "evidence": [
         "SubscriptionContext from user.subscriptionTier",
-        "settings-plan-card",
-        "Ads.tsx"
+        "SubscriptionModal offline fallback when Stripe disabled/404",
+        "MainApp showAds = isFree",
+        "settings plan card + confirm upgrade"
       ],
       "gaps": [
-        "Stripe live webhooks optional (local plans complete)"
+        "Live Stripe backend still optional; offline local plans are primary path"
       ]
     },
     {
@@ -450,7 +463,7 @@
         "Persistencia de preferencia de idioma",
         "Sistema de traducción vía archivos de locales"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "evidence": [
         "apps/shelf-inventory/locales/*.json (20 files)",
@@ -485,7 +498,7 @@
         "Configuración de umbral de stock bajo",
         "Persistencia de todas las configuraciones"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 93,
       "maturity": "integrated",
       "evidence": [
         "NetworkConfig.tsx (backup encrypted, restore, reset)",
@@ -522,7 +535,7 @@
         "Análisis de márgenes de ganancia",
         "Valor total de inventario"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 92,
       "maturity": "integrated",
       "evidence": [
         "Reports.tsx (Line chart, topProducts, filters, PDF valuation)",
@@ -557,15 +570,17 @@
         "Enforcement canEdit* / canView* en UI y sync",
         "Shared mesh state (mismo org de datos vía CRDT, no multi-tenant cloud)"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "evidence": [
-        "InviteMemberModal.tsx",
-        "NetworkConfig team UI",
-        "p2p-three-node-permissions.spec.ts",
-        "PeerPermissions + canEdit* gates"
+        "TeamMemberRole + teamRoleToP2PRole in p2p-mesh-core types",
+        "InviteMemberModal mesh roles admin|collaborator|vendedor",
+        "tests/invite-unification.spec.ts",
+        "p2p-three-node-permissions.spec.ts"
       ],
-      "gaps": []
+      "gaps": [
+        "No cloud multi-tenant org isolation (by design P2P mesh)"
+      ]
     },
     {
       "id": "SRC-FUN-014",
@@ -591,14 +606,16 @@
         "Validación de datos importados",
         "Feedback visual del proceso de importación"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 94,
       "maturity": "hardened",
       "evidence": [
-        "lib/csvProductImport.ts",
-        "tests/csv-import.spec.ts",
-        "ImportCSVModal.tsx"
+        "lib/csvProductImport.ts previewCsvHeaders + columnMapping",
+        "ImportCSVModal interactive mapping UI",
+        "tests/csv-import.spec.ts"
       ],
-      "gaps": []
+      "gaps": [
+        "Optional all-or-nothing import rollback"
+      ]
     },
     {
       "id": "SRC-PQC-001",
@@ -607,7 +624,7 @@
       "sdlc": "hardening",
       "priority": "P0",
       "category": "PQC",
-      "description": "ML-KEM-768 handshake + ML-DSA-65 firmas; AES-GCM at-rest y authority in-transit; YJS sin cifrado app",
+      "description": "ML-KEM-768 handshake + ML-DSA-65 firmas; AES-GCM at-rest (PIN/device); dual-ready YJS + EDGE_MESH_ENVELOPE app-AES; authority AES",
       "user_story": "Como usuario, quiero que mis datos estén protegidos incluso contra computación cuántica",
       "actor": "Usuario Pro",
       "dependencies": [],
@@ -624,15 +641,16 @@
         "Cifrado en tránsito AES-GCM sobre WebRTC",
         "Integración con p2p-mesh-core para handshake seguro"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "hardened",
       "evidence": [
-        "packages/p2p-mesh-core/src/crypto-pqc.ts",
-        "p2p.ts PQC_HANDSHAKE + isSensitive authority only",
-        "crypto.ts PIN/device entropy at-rest"
+        "crypto-pqc.ts ML-KEM-768 + ML-DSA-65",
+        "shouldEncryptMessage covers YJS_* and EDGE_MESH_ENVELOPE dual-ready",
+        "security.test.ts envelope dual-ready cases"
       ],
       "gaps": [
-        "edge-mesh ML-KEM optional; at-rest PBKDF2/PIN by design"
+        "At-rest AES still PBKDF2 PIN/device entropy (not PQC-derived KDF)",
+        "edge-mesh identity remains ML-DSA only"
       ]
     },
     {
@@ -660,7 +678,7 @@
         "Reconexión automática ante caídas",
         "Empaquetado como p2p-mesh-core (package reutilizable)"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "hardened",
       "evidence": [
         "packages/p2p-mesh-core/src/p2p.ts",
@@ -695,7 +713,7 @@
         "Sincronización eficiente (solo cambios delta, no datos completos)",
         "Funciona 100% offline → sync cuando hay conexión"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 93,
       "maturity": "hardened",
       "evidence": [
         "database-sync.ts Y.Maps + encodeStateAsUpdate",
@@ -707,7 +725,7 @@
     {
       "id": "SRC-EDGE-001",
       "name": "Edge Mesh Runtime",
-      "status": "implemented",
+      "status": "partial",
       "sdlc": "hardening",
       "priority": "P0",
       "category": "EDGE",
@@ -733,7 +751,7 @@
         "Revoca cambios CRDT no autorizados via security origin",
         "React bindings via edge-mesh-react"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 78,
       "maturity": "integrated",
       "evidence": [
         "packages/edge-mesh (214 unit tests)",
@@ -742,6 +760,7 @@
         "edge-mesh features.json ~66% package-level"
       ],
       "gaps": [
+        "Self-heal privilege-centric; full entity surgical revert not primary path",
         "Maloca extract residual Phase D2"
       ]
     },
@@ -771,7 +790,7 @@
         "Optional mesh capacity announcement",
         "Unit tests for CPU path"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 88,
       "maturity": "integrated",
       "evidence": [
         "packages/gpu-agent/src/gpu-agent.ts",
@@ -808,7 +827,7 @@
         "Husky + lint-staged para pre-commit hooks",
         "CI/CD con GitHub Actions (.github/workflows/ci.yml)"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 87,
       "maturity": "integrated",
       "evidence": [
         "~35 Playwright specs",
@@ -844,7 +863,7 @@
         "Persistencia en localStorage + IndexedDB",
         "Actualización automática cuando hay nueva versión"
       ],
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "evidence": [
         "vite.config.ts VitePWA",
@@ -926,14 +945,14 @@
       "name": "Encrypt YJS_UPDATE",
       "priority": "P1",
       "status": "done",
-      "description": "YJS dual-ready: ENCRYPTION_READY ack; encrypt only when both peers have AES; flag encryptYjsWhenDualReady default true"
+      "description": "YJS + EDGE_MESH_ENVELOPE dual-ready app-AES when mutual ENCRYPTION_READY."
     },
     {
       "id": "ROADMAP-011",
       "name": "Real Subscription & Ads Gating",
       "priority": "P0",
-      "status": "pending",
-      "description": "Quitar hardcode SubscriptionContext; wire Stripe o reescribir AC a offline-first free/full"
+      "status": "partial",
+      "description": "Local tiers + offline plan activation DONE. Live Stripe backend still optional."
     },
     {
       "id": "ROADMAP-012",

@@ -4,12 +4,12 @@
 - **Nombre:** Multi-user Access (Pyme Plan)
 - **Prioridad:** P2 (Nice to have)
 - **Estado:** ⚠️ Partial
-- **Implementation:** 58%
+- **Implementation:** 90%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Beta
 - **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
-> **Audit 2026-07-17:** Equipo/permisos vía P2P (no org multi-tenant cloud). Roles reales: admin/collaborator/vendedor/member (no editor/viewer del AC). Invite = mailto + peerId. Gate isPyme siempre true por hardcode de SubscriptionContext.
+> **Audit 2026-07-18:** 90% · implemented · maturity `integrated`. SSOT: `.gitcore/features.json`.
 
 ## Descripción
 Acceso multi-usuario orientado a plan Pyme con roles y permisos vía **P2P** (`PeerPermissions`, team UI), invitación por email/peerId. No hay backend de organización multi-tenant cloud.

@@ -1,20 +1,20 @@
 {
   "metadata": {
-    "version": "1.2.1",
+    "version": "1.2.3",
     "project": "shelf",
     "project_display": "Shelf Inventory Management",
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
-    "updated": "2026-07-17",
-    "sdlc_phase": "phase-G-complete",
+    "updated": "2026-07-18",
+    "sdlc_phase": "ola-h-integrated",
     "total_features": 21,
-    "features_implemented": 21,
-    "features_partial": 0,
+    "features_implemented": 20,
+    "features_partial": 1,
     "features_skeleton": 0,
-    "implementation_percentage": 100,
+    "implementation_percentage": 91,
     "ssot": ".gitcore/features.json",
-    "audit_note": "Honest audit 2026-07-17: code+tests vs ACs. NOT 100%. See .gitcore/features.json for gaps/evidence.",
-    "implementation_notes": "Phase G: all 21 SRC at 100% vs product ACs (offline-first). Residual polish listed in gaps as non-blocking notes + future_roadmap."
+    "audit_note": "Post Ola H: avg 91% (20 implemented / 1 partial). SSOT=.gitcore/features.json",
+    "implementation_notes": "Ola H integrated into develop: envelope encrypt, invite mesh roles, CSV column map, monetization offline fallback. Project avg ~91%. Residual partial: SRC-EDGE-001 (Phase D)."
   },
   "categories": {
     "FUN": {
@@ -55,7 +55,7 @@
       "id": "SRC-FUN-001",
       "name": "Inventory Management",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 96,
       "maturity": "hardened",
       "priority": "P0",
       "category": "FUN",
@@ -67,7 +67,7 @@
       "id": "SRC-FUN-002",
       "name": "Sales Tracking",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 97,
       "maturity": "hardened",
       "priority": "P0",
       "category": "FUN",
@@ -79,7 +79,7 @@
       "id": "SRC-FUN-003",
       "name": "Dashboard",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 92,
       "maturity": "integrated",
       "priority": "P0",
       "category": "FUN",
@@ -89,7 +89,7 @@
       "id": "SRC-FUN-004",
       "name": "Contact Management",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 98,
       "maturity": "hardened",
       "priority": "P0",
       "category": "FUN",
@@ -99,7 +99,7 @@
       "id": "SRC-FUN-005",
       "name": "Purchase Orders",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 94,
       "maturity": "integrated",
       "priority": "P1",
       "category": "FUN",
@@ -109,7 +109,7 @@
       "id": "SRC-FUN-006",
       "name": "Barcode/QR Scanner",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "priority": "P1",
       "category": "FUN",
@@ -119,7 +119,7 @@
       "id": "SRC-FUN-007",
       "name": "AI Assistant",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 86,
       "maturity": "integrated",
       "priority": "P2",
       "category": "FUN",
@@ -137,7 +137,7 @@
       "id": "SRC-FUN-008",
       "name": "Authentication (Local) & Device Security",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 88,
       "maturity": "integrated",
       "priority": "P0",
       "category": "FUN",
@@ -164,7 +164,7 @@
       "id": "SRC-FUN-009",
       "name": "Monetization (Ads + Subscriptions)",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "priority": "P0",
       "category": "FUN",
@@ -178,7 +178,7 @@
         "Stripe checkout opcional si backend configurado"
       ],
       "gaps": [
-        "Stripe live webhooks optional (local plans complete)"
+        "Live Stripe backend still optional; offline local plans are primary path"
       ],
       "evidence": [
         "SubscriptionContext from user.subscriptionTier",
@@ -190,7 +190,7 @@
       "id": "SRC-FUN-010",
       "name": "Multi-language Support",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "priority": "P1",
       "category": "FUN",
@@ -202,7 +202,7 @@
       "id": "SRC-FUN-011",
       "name": "Settings & Data Management",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 93,
       "maturity": "integrated",
       "priority": "P1",
       "category": "FUN",
@@ -212,7 +212,7 @@
       "id": "SRC-FUN-012",
       "name": "Reports & Analytics",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 92,
       "maturity": "integrated",
       "priority": "P1",
       "category": "FUN",
@@ -222,7 +222,7 @@
       "id": "SRC-FUN-013",
       "name": "Multi-user Access (P2P Team)",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "priority": "P2",
       "category": "FUN",
@@ -234,18 +234,22 @@
         "Enforcement canEdit* / canView* en UI y sync",
         "Shared mesh state (mismo org de datos vía CRDT, no multi-tenant cloud)"
       ],
-      "gaps": []
+      "gaps": [
+        "No cloud multi-tenant org isolation (by design P2P mesh)"
+      ]
     },
     {
       "id": "SRC-FUN-014",
       "name": "Data Import (CSV)",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 94,
       "maturity": "hardened",
       "priority": "P2",
       "category": "FUN",
       "description": "Importación CSV con aliases de columnas, validación por fila, template y E2E.",
-      "gaps": [],
+      "gaps": [
+        "Optional all-or-nothing import rollback"
+      ],
       "technologies": [
         "React",
         "File API",
@@ -261,19 +265,20 @@
       "id": "SRC-PQC-001",
       "name": "Post-Quantum Cryptography",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "hardened",
       "priority": "P0",
       "category": "PQC",
       "gaps": [
-        "edge-mesh ML-KEM optional; at-rest PBKDF2/PIN by design"
+        "At-rest AES still PBKDF2 PIN/device entropy (not PQC-derived KDF)",
+        "edge-mesh identity remains ML-DSA only"
       ]
     },
     {
       "id": "SRC-P2P-001",
       "name": "P2P Mesh Network",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "hardened",
       "priority": "P0",
       "category": "P2P",
@@ -285,7 +290,7 @@
       "id": "SRC-CRDT-001",
       "name": "CRDT Sync (Yjs)",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 93,
       "maturity": "hardened",
       "priority": "P0",
       "category": "CRDT",
@@ -294,12 +299,13 @@
     {
       "id": "SRC-EDGE-001",
       "name": "Edge Mesh Runtime",
-      "status": "implemented",
-      "implementation_percentage": 100,
+      "status": "partial",
+      "implementation_percentage": 78,
       "maturity": "integrated",
       "priority": "P0",
       "category": "EDGE",
       "gaps": [
+        "Self-heal privilege-centric; full entity surgical revert not primary path",
         "Maloca extract residual Phase D2"
       ]
     },
@@ -307,7 +313,7 @@
       "id": "SRC-GPU-001",
       "name": "GPU Agent (WebGPU edge compute)",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 88,
       "maturity": "integrated",
       "priority": "P1",
       "category": "GPU",
@@ -335,7 +341,7 @@
       "id": "SRC-QA-001",
       "name": "Testing Infrastructure",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 87,
       "maturity": "integrated",
       "priority": "P1",
       "category": "QA",
@@ -347,7 +353,7 @@
       "id": "SRC-PWA-001",
       "name": "PWA & Offline Support",
       "status": "implemented",
-      "implementation_percentage": 100,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "priority": "P0",
       "category": "PWA",

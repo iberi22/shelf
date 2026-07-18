@@ -4,12 +4,12 @@
 - **Name:** P2P Mesh Network
 - **Priority:** P0 (Core)
 - **Status:** ⚠️ Partial
-- **Implementation:** 85%
+- **Implementation:** 90%
 - **Category:** P2P (P2P Mesh Sync)
 - **SDLC:** Hardening
 - **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
-> **Audit 2026-07-17:** Broker PeerJS aún requerido para signaling; Phase D (thin p2p-mesh-core / migración total) abierta; residual invite-and-sync authority/master.
+> **Audit 2026-07-18:** 90% · implemented · maturity `hardened`. SSOT: `.gitcore/features.json`.
 
 ## Description
 

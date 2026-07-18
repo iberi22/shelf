@@ -152,7 +152,7 @@ Shelf uses GitCore (v3.6.0) for architecture governance, feature tracking, and S
 | File | Purpose |
 | --- | --- |
 | `.gitcore/ARCHITECTURE.md` | Project architecture, stack, patterns, layers |
-| `.gitcore/features.json` | Feature registry (21 features, ~75% real — not 100%) |
+| `.gitcore/features.json` | Feature registry (21 features, ~91% real — 20 implemented / 1 partial) |
 | `.gitcore/AGENT_INDEX.md` | Agent labels (jules, opencode, gemini, claude) |
 | `.gitcore/SDLC_WORKFLOW.md` | Development lifecycle workflow |
 | `.gitcore/CORTEX_INTEGRATION.md` | SWAL neural core integration |

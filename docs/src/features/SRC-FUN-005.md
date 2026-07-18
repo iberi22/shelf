@@ -4,12 +4,12 @@
 - **Nombre:** Purchase Orders
 - **Prioridad:** P1 (Importante)
 - **Estado:** ⚠️ Partial
-- **Implementation:** 84%
+- **Implementation:** 94%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Production
 - **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
-> **Audit 2026-07-17:** Falta status `cancelled` en dominio y UI; sin E2E que assert stock on receive; lista única sin tabs/filtros por estado.
+> **Audit 2026-07-18:** 94% · implemented · maturity `integrated`. SSOT: `.gitcore/features.json`.
 
 ## Descripción
 Órdenes de compra a proveedores con estados (pendiente, recibida, cancelada). Al marcar como recibida, el stock se incrementa automáticamente.

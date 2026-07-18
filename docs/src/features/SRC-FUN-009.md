@@ -4,12 +4,12 @@
 - **Nombre:** Monetization (Ads + Subscriptions)
 - **Prioridad:** P0 (Core)
 - **Estado:** ⚠️ Partial
-- **Implementation:** 42%
+- **Implementation:** 90%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Hardening
 - **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
-> **Audit 2026-07-17:** `SubscriptionContext` hardcodes `isPro`/`isPyme` true, `isFree` false — ads never show; checkout always appears as current plan. Sin backend Stripe ejecutable en monorepo; plan Basic ausente en modal; tokens auth dummy para checkout.
+> **Audit 2026-07-18:** 90% · implemented · maturity `integrated`. SSOT: `.gitcore/features.json`.
 
 ## Descripción
 Sistema de monetización con anuncios (DesktopAdColumn, MobileAdBars) para usuarios free y planes de suscripción (Basic, Pro, Pyme) procesados vía Stripe. **UI presente; billing y ads efectivamente stub por hardcode Pro.**
