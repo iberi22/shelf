@@ -49,8 +49,9 @@ const NetworkConfig: React.FC = () => {
   const [isInviteModalOpen, setInviteModalOpen] = useState(false);
   const [feedback, setFeedback] = useState('');
 
-  const { isPyme } = useSubscription();
-  const { user, hasAppLock, hasBiometricLock, setAppLock, setBiometricLock } = useAuth();
+  const { isPyme, tier } = useSubscription();
+  const { user, hasAppLock, hasBiometricLock, setAppLock, setBiometricLock, setSubscriptionTier } =
+    useAuth();
   const [newPin, setNewPin] = useState('');
   const [biometricsSupported, setBiometricsSupported] = useState(false);
 
@@ -336,6 +337,61 @@ const NetworkConfig: React.FC = () => {
         </div>
       </CollapsibleCard>
 
+      {/* Local plan / monetization tier (offline-first; Stripe is optional remote) */}
+      <CollapsibleCard
+        title={t('settings.plan.title') || 'Plan / Subscription'}
+        description={
+          t('settings.plan.description') ||
+          'Local plan controls Pro features and ads. Cloud Stripe checkout is optional when backend is configured.'
+        }
+        icon={<Coins className="h-5 w-5" />}
+        testId="settings-plan-card"
+      >
+        <div className="space-y-3" data-testid="subscription-tier-controls">
+          <p className="text-sm text-[#F5F5DC]/80">
+            {t('settings.plan.current') || 'Current plan'}:{' '}
+            <span className="font-bold text-yellow-400" data-testid="subscription-tier-value">
+              {tier}
+            </span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {(['free', 'pro', 'pyme'] as const).map((plan) => (
+              <button
+                key={plan}
+                type="button"
+                data-testid={`set-tier-${plan}`}
+                onClick={() => {
+                  setSubscriptionTier(plan);
+                  // Clear demo override so the chosen tier is effective in E2E/dev
+                  if (plan === 'free') {
+                    localStorage.removeItem('shelf_demo_full_access');
+                  }
+                  showNotification(
+                    t('settings.plan.updated', { plan }) || `Plan set to ${plan}`,
+                    'success',
+                  );
+                }}
+                className={`text-sm font-bold py-2 px-4 rounded-lg border min-h-[40px] transition-colors active:scale-95 ${
+                  tier === plan
+                    ? 'bg-yellow-400/20 border-yellow-400 text-yellow-300'
+                    : 'bg-transparent border-[#F5F5DC]/40 text-[#F5F5DC] hover:bg-[#F5F5DC]/10'
+                }`}
+              >
+                {plan}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            data-testid="open-subscription-modal-button"
+            onClick={() => openSubscriptionModal()}
+            className="text-sm text-sky-400 hover:text-sky-300 font-semibold"
+          >
+            {t('settings.plan.stripeCheckout') || 'Open Stripe checkout (if configured)'}
+          </button>
+        </div>
+      </CollapsibleCard>
+
       {/* AI Settings */}
       <CollapsibleCard
         title={`🤖 ${t('settings.ai.title')}`}
@@ -611,6 +667,7 @@ const NetworkConfig: React.FC = () => {
             <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.import.cardDescription')}</p>
             <button
               type="button"
+              data-testid="open-import-csv-button"
               onClick={() => setIsImportModalOpen(true)}
               className="w-full mt-2 text-sm bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 cursor-pointer"
             >

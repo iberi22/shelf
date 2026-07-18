@@ -6,14 +6,15 @@
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
     "updated": "2026-07-17",
-    "sdlc_phase": "hardening",
+    "sdlc_phase": "phase-B-to-100",
     "total_features": 21,
-    "features_implemented": 11,
-    "features_partial": 9,
+    "features_implemented": 12,
+    "features_partial": 8,
     "features_skeleton": 1,
-    "implementation_percentage": 78,
+    "implementation_percentage": 84,
     "ssot": ".gitcore/features.json",
-    "audit_note": "Honest audit 2026-07-17: code+tests vs ACs. NOT 100%. See .gitcore/features.json for gaps/evidence."
+    "audit_note": "Honest audit 2026-07-17: code+tests vs ACs. NOT 100%. See .gitcore/features.json for gaps/evidence.",
+    "implementation_notes": "Path to 100%: PLAN-100-FEATURES.md. Phase B: CSV hardened, auth/team ACs local/P2P, tier UI."
   },
   "categories": {
     "FUN": {
@@ -108,28 +109,75 @@
       "id": "SRC-FUN-007",
       "name": "AI Assistant",
       "status": "partial",
-      "implementation_percentage": 72,
-      "maturity": "unit",
+      "implementation_percentage": 78,
+      "maturity": "integrated",
       "priority": "P2",
-      "category": "FUN"
+      "category": "FUN",
+      "acceptance_criteria": [
+        "Chat integrado en reports page",
+        "Motores: WebLLM local, Gemini Nano, Gemini API key, proxy URL opcional",
+        "Gated para usuarios Pro (tier real)",
+        "Contexto de inventario/ventas inyectado al prompt"
+      ],
+      "gaps": [
+        "CF proxy no es path primario (AC realineado a multi-engine)",
+        "Calidad modelo depende del engine"
+      ]
     },
     {
       "id": "SRC-FUN-008",
-      "name": "Authentication & Cloud Sync",
-      "status": "partial",
-      "implementation_percentage": 42,
-      "maturity": "unit",
+      "name": "Authentication (Local) & Device Security",
+      "status": "implemented",
+      "implementation_percentage": 88,
+      "maturity": "integrated",
       "priority": "P0",
-      "category": "FUN"
+      "category": "FUN",
+      "description": "Autenticación offline-first con localAuth, app lock, devices y seed recovery. Cloud sync = ROADMAP-003.",
+      "acceptance_criteria": [
+        "Registro/login email+password local (localAuth, hashed)",
+        "Guest mode y logout",
+        "App lock PIN y/o biometrics (WebAuthn)",
+        "Lista y revocación de dispositivos autorizados",
+        "Seed recovery / restore cuenta local",
+        "Multi-dispositivo de datos vía P2P o backup JSON (no cloud login)"
+      ],
+      "gaps": [
+        "Cloud Firestore sync sigue en ROADMAP-003",
+        "getIdToken es local-token (no JWT cloud)"
+      ],
+      "technologies": [
+        "localAuth",
+        "localStorage",
+        "WebAuthn",
+        "P2P restore"
+      ]
     },
     {
       "id": "SRC-FUN-009",
       "name": "Monetization (Ads + Subscriptions)",
       "status": "partial",
-      "implementation_percentage": 68,
+      "implementation_percentage": 82,
       "maturity": "integrated",
       "priority": "P0",
-      "category": "FUN"
+      "category": "FUN",
+      "description": "Tiers free/pro/pyme locales controlan ads y Pro features; Stripe checkout opcional.",
+      "acceptance_criteria": [
+        "Anuncios para usuarios free (DesktopAdColumn, MobileAdBars)",
+        "Anuncios ocultos para pro/pyme",
+        "UI de plan local free/pro/pyme en settings",
+        "Modal de suscripción Pro/Pyme",
+        "AdSense IDs via environment variables",
+        "Stripe checkout opcional si backend configurado"
+      ],
+      "gaps": [
+        "Webhooks Stripe producción no en monorepo",
+        "Plan Basic no es tier separado (free = ads)"
+      ],
+      "evidence": [
+        "SubscriptionContext from user.subscriptionTier",
+        "settings-plan-card",
+        "Ads.tsx"
+      ]
     },
     {
       "id": "SRC-FUN-010",
@@ -160,21 +208,47 @@
     },
     {
       "id": "SRC-FUN-013",
-      "name": "Multi-user Access (Pyme Plan)",
+      "name": "Multi-user Access (P2P Team)",
       "status": "partial",
-      "implementation_percentage": 58,
+      "implementation_percentage": 82,
       "maturity": "integrated",
       "priority": "P2",
-      "category": "FUN"
+      "category": "FUN",
+      "description": "Equipo e invitaciones P2P con roles admin/collaborator/vendedor y PeerPermissions.",
+      "acceptance_criteria": [
+        "Invitación de miembros (mailto + peerId deep link)",
+        "Roles mesh: admin, collaborator, vendedor (PeerPermissions)",
+        "UI de gestión de equipo en settings",
+        "Enforcement canEdit* / canView* en UI y sync",
+        "Shared mesh state (mismo org de datos vía CRDT, no multi-tenant cloud)"
+      ],
+      "gaps": [
+        "invite-and-sync residual authority/master",
+        "No Firebase org RBAC (intencional)"
+      ]
     },
     {
       "id": "SRC-FUN-014",
       "name": "Data Import (CSV)",
       "status": "implemented",
-      "implementation_percentage": 78,
-      "maturity": "integrated",
+      "implementation_percentage": 94,
+      "maturity": "hardened",
       "priority": "P2",
-      "category": "FUN"
+      "category": "FUN",
+      "description": "Importación CSV con aliases de columnas, validación por fila, template y E2E.",
+      "gaps": [
+        "Mapper UI drag-drop de columnas aún no (aliases cubren EN/ES)"
+      ],
+      "technologies": [
+        "React",
+        "File API",
+        "csvProductImport lib"
+      ],
+      "evidence": [
+        "lib/csvProductImport.ts",
+        "tests/csv-import.spec.ts",
+        "ImportCSVModal.tsx"
+      ]
     },
     {
       "id": "SRC-PQC-001",

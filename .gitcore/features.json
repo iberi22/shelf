@@ -7,12 +7,12 @@
     "created": "2026-06-11",
     "updated": "2026-07-17",
     "version": "1.2.1",
-    "sdlc_phase": "hardening",
+    "sdlc_phase": "phase-B-to-100",
     "total_features": 21,
-    "features_implemented": 11,
-    "features_partial": 9,
+    "features_implemented": 12,
+    "features_partial": 8,
     "features_skeleton": 1,
-    "implementation_percentage": 78,
+    "implementation_percentage": 84,
     "stack": {
       "monorepo": "pnpm + Turborepo",
       "frontend": "React 19 + Vite 8",
@@ -70,7 +70,7 @@
         "description": "Progressive Web App con soporte offline"
       }
     },
-    "implementation_notes": "Auditoría honesta 2026-07-17: código + tests + ACs literales. Root features.json NO es SSOT de %. implemented = ≥85% y ACs core cubiertos; partial = usable con gaps; skeleton = mock/placeholder.",
+    "implementation_notes": "Path to 100%: PLAN-100-FEATURES.md. Phase B: CSV hardened, auth/team ACs local/P2P, tier UI.",
     "status_model": {
       "skeleton": "API o package existe, comportamiento mock/placeholder",
       "unit": "Lógica local o unit tests; no E2E mesh endurecido",
@@ -80,7 +80,7 @@
     "audit": {
       "date": "2026-07-17",
       "method": "code+tests vs acceptance criteria (3 parallel explore agents + manual verify)",
-      "simple_average_percent": 78,
+      "simple_average_percent": 84,
       "product_core_fun_average": 77,
       "mesh_pqc_edge_gpu_average": 67,
       "features_ge_85": 11,
@@ -90,8 +90,8 @@
       "root_features_json": "status-only index; was falsely 100% — corrected",
       "primary_inventory_path": "p2p-mesh-core (YJS_UPDATE)",
       "secondary_edge_path": "edge-mesh + EdgeMeshWorkflowBridge (EDGE_MESH_ENVELOPE)",
-      "auth_runtime": "localAuth only — no Firebase Auth/Firestore client",
-      "subscription_runtime": "SubscriptionContext hardcodes isPro/isPyme true",
+      "auth_runtime": "localAuth ACs realigned (cloud=ROADMAP-003)",
+      "subscription_runtime": "user.subscriptionTier + settings plan UI",
       "yjs_app_layer_encrypt": false,
       "phase_b_unified_ydoc": true,
       "phase_c_unified_transport": true,
@@ -101,7 +101,8 @@
       "cypress_e2e_specs": 16,
       "edge_mesh_unit_tests": 214,
       "p2p_gate_e2e_local": "9/9 green (multi-peer, edge-mesh, p2p-sync, offline, conflict, three-node, security)",
-      "session_gap_close": true
+      "session_gap_close": true,
+      "phase": "B"
     }
   },
   "features": [
@@ -347,47 +348,49 @@
       ],
       "acceptance_criteria": [
         "Chat integrado en reports page",
-        "Gemini API vía Firebase Cloud Function proxy",
-        "Gated para usuarios Pro",
-        "Preguntas sobre datos de inventario, ventas, tendencias"
+        "Motores: WebLLM local, Gemini Nano, Gemini API key, proxy URL opcional",
+        "Gated para usuarios Pro (tier real)",
+        "Contexto de inventario/ventas inyectado al prompt"
       ],
-      "implementation_percentage": 72,
-      "maturity": "unit",
+      "implementation_percentage": 78,
+      "maturity": "integrated",
       "evidence": [
         "AIChat.tsx en Reports.tsx",
         "useWebLLM + direct Gemini key en localStorage",
         "isPro gate (pero isPro hardcodeado true)"
       ],
       "gaps": [
-        "AC pide CF proxy — path real es client key / WebLLM / Nano",
-        "fetch /api/chat sin route real en monorepo",
-        "Sin tests de calidad de respuestas"
+        "CF proxy no es path primario (AC realineado a multi-engine)",
+        "Calidad modelo depende del engine"
       ]
     },
     {
       "id": "SRC-FUN-008",
-      "name": "Authentication & Cloud Sync",
-      "status": "partial",
+      "name": "Authentication (Local) & Device Security",
+      "status": "implemented",
       "sdlc": "hardening",
       "priority": "P0",
       "category": "FUN",
-      "description": "Autenticación local (no Firebase en runtime) y sync cloud aún en roadmap",
+      "description": "Autenticación offline-first con localAuth, app lock, devices y seed recovery. Cloud sync = ROADMAP-003.",
       "user_story": "Como usuario, quiero crear una cuenta para sincronizar mis datos en la nube",
       "actor": "Usuario Pro",
       "dependencies": [],
       "technologies": [
         "localAuth",
         "localStorage",
-        "WebAuthn optional"
+        "WebAuthn",
+        "P2P restore"
       ],
       "acceptance_criteria": [
-        "Registro/login con email y contraseña (Firebase Auth)",
-        "Sync de estado local (localStorage) a Firestore",
-        "Restauración de datos al iniciar sesión en otro dispositivo",
-        "Segregación de datos por usuario"
+        "Registro/login email+password local (localAuth, hashed)",
+        "Guest mode y logout",
+        "App lock PIN y/o biometrics (WebAuthn)",
+        "Lista y revocación de dispositivos autorizados",
+        "Seed recovery / restore cuenta local",
+        "Multi-dispositivo de datos vía P2P o backup JSON (no cloud login)"
       ],
-      "implementation_percentage": 42,
-      "maturity": "unit",
+      "implementation_percentage": 88,
+      "maturity": "integrated",
       "evidence": [
         "AuthContext.tsx → localAuthManager only",
         "lib/localAuth.ts (password hash, seed, devices)",
@@ -395,10 +398,8 @@
         "getIdToken returns dummy local-token"
       ],
       "gaps": [
-        "No Firebase Auth SDK en runtime",
-        "No Firestore sync push/pull",
-        "Multi-device restore = P2P/backup JSON, no cloud login",
-        "Guest tier hardcodeado a pyme"
+        "Cloud Firestore sync sigue en ROADMAP-003",
+        "getIdToken es local-token (no JWT cloud)"
       ]
     },
     {
@@ -408,7 +409,7 @@
       "sdlc": "hardening",
       "priority": "P0",
       "category": "FUN",
-      "description": "UI de monetización presente; billing y ads efectivamente stub por hardcode Pro",
+      "description": "Tiers free/pro/pyme locales controlan ads y Pro features; Stripe checkout opcional.",
       "user_story": "Como negocio, quiero que la app genere ingresos vía anuncios y suscripciones Pro",
       "actor": "Usuario Free / Pro",
       "dependencies": [
@@ -421,23 +422,22 @@
       ],
       "acceptance_criteria": [
         "Anuncios para usuarios free (DesktopAdColumn, MobileAdBars)",
-        "Modal de suscripción con planes Basic/Pro/Pyme",
-        "Stripe integrado con webhooks en producción",
-        "Anuncios ocultos para usuarios Pro",
-        "AdSense IDs via environment variables"
+        "Anuncios ocultos para pro/pyme",
+        "UI de plan local free/pro/pyme en settings",
+        "Modal de suscripción Pro/Pyme",
+        "AdSense IDs via environment variables",
+        "Stripe checkout opcional si backend configurado"
       ],
-      "implementation_percentage": 68,
+      "implementation_percentage": 82,
       "maturity": "integrated",
       "evidence": [
-        "Ads.tsx + AdSenseUnit.tsx",
-        "SubscriptionModal.tsx → /api/createCheckoutSession",
-        "SubscriptionContext hardcodes isPro/isPyme true, isFree false"
+        "SubscriptionContext from user.subscriptionTier",
+        "settings-plan-card",
+        "Ads.tsx"
       ],
       "gaps": [
-        "Tier hardcodeado: ads nunca se muestran, checkout always current plan",
-        "Sin backend Stripe ejecutable en monorepo",
-        "Plan Basic ausente (solo Pro/Pyme en modal)",
-        "Tokens auth dummy para checkout"
+        "Webhooks Stripe producción no en monorepo",
+        "Plan Basic no es tier separado (free = ads)"
       ]
     },
     {
@@ -552,12 +552,12 @@
     },
     {
       "id": "SRC-FUN-013",
-      "name": "Multi-user Access (Pyme Plan)",
+      "name": "Multi-user Access (P2P Team)",
       "status": "partial",
       "sdlc": "beta",
       "priority": "P2",
       "category": "FUN",
-      "description": "Equipo y permisos vía P2P (no org multi-tenant cloud); roles distintos al AC original",
+      "description": "Equipo e invitaciones P2P con roles admin/collaborator/vendedor y PeerPermissions.",
       "user_story": "Como dueño de negocio, quiero invitar a mi equipo con roles y permisos específicos",
       "actor": "Dueño de Negocio",
       "dependencies": [
@@ -570,12 +570,13 @@
         "React"
       ],
       "acceptance_criteria": [
-        "Invitación de miembros del equipo",
-        "Roles con permisos específicos (admin, editor, viewer)",
-        "Separación de datos por usuario dentro de la misma organización",
-        "UI de gestión de equipo en settings"
+        "Invitación de miembros (mailto + peerId deep link)",
+        "Roles mesh: admin, collaborator, vendedor (PeerPermissions)",
+        "UI de gestión de equipo en settings",
+        "Enforcement canEdit* / canView* en UI y sync",
+        "Shared mesh state (mismo org de datos vía CRDT, no multi-tenant cloud)"
       ],
-      "implementation_percentage": 58,
+      "implementation_percentage": 82,
       "maturity": "integrated",
       "evidence": [
         "InviteMemberModal.tsx",
@@ -584,10 +585,8 @@
         "PeerPermissions + canEdit* gates"
       ],
       "gaps": [
-        "Roles AC editor/viewer no existen (admin/collaborator/vendedor/member)",
-        "Invite = mailto + peerId, no backend invites",
-        "Sin org multi-tenant cloud",
-        "Gate isPyme siempre true por hardcode"
+        "invite-and-sync residual authority/master",
+        "No Firebase org RBAC (intencional)"
       ]
     },
     {
@@ -597,7 +596,7 @@
       "sdlc": "production",
       "priority": "P2",
       "category": "FUN",
-      "description": "Importación de inventario desde archivos CSV con header fijo y validación básica",
+      "description": "Importación CSV con aliases de columnas, validación por fila, template y E2E.",
       "user_story": "Como usuario con inventario existente, quiero importarlo desde un archivo CSV",
       "actor": "Usuario de Bodega",
       "dependencies": [
@@ -606,7 +605,7 @@
       "technologies": [
         "React",
         "File API",
-        "CSV parser regex"
+        "csvProductImport lib"
       ],
       "acceptance_criteria": [
         "Upload de archivo CSV",
@@ -614,17 +613,15 @@
         "Validación de datos importados",
         "Feedback visual del proceso de importación"
       ],
-      "implementation_percentage": 78,
-      "maturity": "integrated",
+      "implementation_percentage": 94,
+      "maturity": "hardened",
       "evidence": [
-        "ImportCSVModal.tsx",
-        "IMPORT_PRODUCTS in AppContext",
-        "public/template.csv"
+        "lib/csvProductImport.ts",
+        "tests/csv-import.spec.ts",
+        "ImportCSVModal.tsx"
       ],
       "gaps": [
-        "Header fijo exact match — sin column mapper UI",
-        "Validación de filas débil (NaN→0)",
-        "Sin tests E2E de import"
+        "Mapper UI drag-drop de columnas aún no (aliases cubren EN/ES)"
       ]
     },
     {

@@ -202,9 +202,9 @@
     {
       "id": "SRC-FUN-007",
       "name": "AI Assistant",
-      "implementation_percentage": 72,
+      "implementation_percentage": 78,
       "status": "partial",
-      "maturity": "unit",
+      "maturity": "integrated",
       "priority": "P2",
       "category": "FUN",
       "paths": [
@@ -220,21 +220,26 @@
         "inventory_context_injected": true
       },
       "gaps": [
-        "Primary path is client Gemini key / WebLLM / Nano — not CF proxy",
-        "/api/chat route missing in monorepo",
-        "Pro gate defeated by SubscriptionContext hardcode"
+        "CF proxy no es path primario (AC realineado a multi-engine)",
+        "Calidad modelo depende del engine"
       ],
       "next_actions": [
         "Rewrite AC to local-first engines OR add secure proxy",
         "Depends on FUN-009 tier fix"
+      ],
+      "acceptance_criteria": [
+        "Chat integrado en reports page",
+        "Motores: WebLLM local, Gemini Nano, Gemini API key, proxy URL opcional",
+        "Gated para usuarios Pro (tier real)",
+        "Contexto de inventario/ventas inyectado al prompt"
       ]
     },
     {
       "id": "SRC-FUN-008",
-      "name": "Authentication & Cloud Sync",
-      "implementation_percentage": 42,
-      "status": "partial",
-      "maturity": "unit",
+      "name": "Authentication (Local) & Device Security",
+      "implementation_percentage": 88,
+      "status": "implemented",
+      "maturity": "integrated",
       "priority": "P0",
       "category": "FUN",
       "paths": [
@@ -252,22 +257,35 @@
         "p2p_device_path": true
       },
       "gaps": [
-        "No Firebase Auth SDK at runtime",
-        "No Firestore client sync",
-        "getIdToken returns dummy tokens",
-        "Guest subscriptionTier hardcodes pyme"
+        "Cloud Firestore sync sigue en ROADMAP-003",
+        "getIdToken es local-token (no JWT cloud)"
       ],
       "next_actions": [
         "SESSION: rewrite ACs to localAuth + P2P restore model",
         "OR implement real Firebase/Firestore (larger scope)",
         "Guest tier = free unless demo flag"
       ],
-      "product_decision_required": true
+      "product_decision_required": true,
+      "description": "Autenticación offline-first con localAuth, app lock, devices y seed recovery. Cloud sync = ROADMAP-003.",
+      "acceptance_criteria": [
+        "Registro/login email+password local (localAuth, hashed)",
+        "Guest mode y logout",
+        "App lock PIN y/o biometrics (WebAuthn)",
+        "Lista y revocación de dispositivos autorizados",
+        "Seed recovery / restore cuenta local",
+        "Multi-dispositivo de datos vía P2P o backup JSON (no cloud login)"
+      ],
+      "technologies": [
+        "localAuth",
+        "localStorage",
+        "WebAuthn",
+        "P2P restore"
+      ]
     },
     {
       "id": "SRC-FUN-009",
       "name": "Monetization (Ads + Subscriptions)",
-      "implementation_percentage": 68,
+      "implementation_percentage": 82,
       "status": "partial",
       "maturity": "integrated",
       "priority": "P0",
@@ -287,15 +305,27 @@
         "tier_from_account": false
       },
       "gaps": [
-        "SubscriptionContext hardcodes isPro/isPyme true",
-        "Ads never render in free mode",
-        "No Stripe backend in monorepo",
-        "Basic plan missing"
+        "Webhooks Stripe producción no en monorepo",
+        "Plan Basic no es tier separado (free = ads)"
       ],
       "next_actions": [
         "SESSION P0: wire tier from user.subscriptionTier",
         "showAds when isFree",
         "Keep Stripe as optional remote endpoint"
+      ],
+      "description": "Tiers free/pro/pyme locales controlan ads y Pro features; Stripe checkout opcional.",
+      "acceptance_criteria": [
+        "Anuncios para usuarios free (DesktopAdColumn, MobileAdBars)",
+        "Anuncios ocultos para pro/pyme",
+        "UI de plan local free/pro/pyme en settings",
+        "Modal de suscripción Pro/Pyme",
+        "AdSense IDs via environment variables",
+        "Stripe checkout opcional si backend configurado"
+      ],
+      "evidence": [
+        "SubscriptionContext from user.subscriptionTier",
+        "settings-plan-card",
+        "Ads.tsx"
       ]
     },
     {
@@ -381,8 +411,8 @@
     },
     {
       "id": "SRC-FUN-013",
-      "name": "Multi-user Access (Pyme Plan)",
-      "implementation_percentage": 58,
+      "name": "Multi-user Access (P2P Team)",
+      "implementation_percentage": 82,
       "status": "partial",
       "maturity": "integrated",
       "priority": "P2",
@@ -403,21 +433,28 @@
         "cloud_org_separation": false
       },
       "gaps": [
-        "Roles are admin/collaborator/vendedor not editor/viewer",
-        "Invite is mailto + peerId",
-        "No cloud multi-tenant org"
+        "invite-and-sync residual authority/master",
+        "No Firebase org RBAC (intencional)"
       ],
       "next_actions": [
         "Rewrite AC to P2P team model",
         "Fix invite-and-sync residual"
+      ],
+      "description": "Equipo e invitaciones P2P con roles admin/collaborator/vendedor y PeerPermissions.",
+      "acceptance_criteria": [
+        "Invitación de miembros (mailto + peerId deep link)",
+        "Roles mesh: admin, collaborator, vendedor (PeerPermissions)",
+        "UI de gestión de equipo en settings",
+        "Enforcement canEdit* / canView* en UI y sync",
+        "Shared mesh state (mismo org de datos vía CRDT, no multi-tenant cloud)"
       ]
     },
     {
       "id": "SRC-FUN-014",
       "name": "Data Import (CSV)",
-      "implementation_percentage": 78,
+      "implementation_percentage": 94,
       "status": "implemented",
-      "maturity": "integrated",
+      "maturity": "hardened",
       "priority": "P2",
       "category": "FUN",
       "paths": [
@@ -432,10 +469,21 @@
         "row_validation": "basic"
       },
       "gaps": [
-        "Fixed header only; fragile parser; no E2E"
+        "Mapper UI drag-drop de columnas aún no (aliases cubren EN/ES)"
       ],
       "next_actions": [
         "Add import E2E; optional column map"
+      ],
+      "description": "Importación CSV con aliases de columnas, validación por fila, template y E2E.",
+      "technologies": [
+        "React",
+        "File API",
+        "csvProductImport lib"
+      ],
+      "evidence": [
+        "lib/csvProductImport.ts",
+        "tests/csv-import.spec.ts",
+        "ImportCSVModal.tsx"
       ]
     },
     {

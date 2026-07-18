@@ -281,7 +281,9 @@
       "importing": "Importando...",
       "success": "Se importaron {{count}} productos con éxito.",
       "error": "La importación falló: {{error}}",
-      "invalidHeaderError": "Archivo CSV no válido. Por favor, asegúrate de que las cabeceras coincidan con la plantilla."
+      "invalidHeaderError": "Archivo CSV no válido. Por favor, asegúrate de que las cabeceras coincidan con la plantilla.",
+      "rowErrors": "Algunas filas se omitieron:",
+      "invalidFile": "Selecciona un archivo .csv válido."
     },
     "reset": {
       "button": "Reiniciar Datos",
@@ -351,6 +353,13 @@
       "successAdd": "Sucursal agregada.",
       "successUpdate": "Sucursal actualizada.",
       "successDelete": "Sucursal eliminada correctamente."
+    },
+    "plan": {
+      "title": "Plan / Suscripción",
+      "description": "El plan local controla funciones Pro y anuncios. Stripe es opcional si hay backend.",
+      "current": "Plan actual",
+      "updated": "Plan actualizado a {{plan}}",
+      "stripeCheckout": "Abrir checkout Stripe (si está configurado)"
     }
   },
   "auth": {

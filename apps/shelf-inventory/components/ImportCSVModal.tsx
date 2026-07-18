@@ -1,9 +1,10 @@
-import type { ImportStrategy, Product } from 'p2p-mesh-core';
+import type { ImportStrategy } from 'p2p-mesh-core';
 import type React from 'react';
 import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
+import { parseProductCsv } from '../lib/csvProductImport';
 import Modal from './Modal';
 
 interface ImportCSVModalProps {
@@ -17,60 +18,65 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
   const [file, setFile] = useState<File | null>(null);
   const [strategy, setStrategy] = useState<ImportStrategy>('skip');
   const [isLoading, setIsLoading] = useState(false);
+  const [rowErrors, setRowErrors] = useState<string[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile && selectedFile.type === 'text/csv') {
+    if (!selectedFile) {
+      setFile(null);
+      return;
+    }
+    const nameOk = selectedFile.name.toLowerCase().endsWith('.csv');
+    const typeOk =
+      !selectedFile.type ||
+      selectedFile.type === 'text/csv' ||
+      selectedFile.type === 'application/vnd.ms-excel' ||
+      selectedFile.type === 'text/plain';
+    if (nameOk || typeOk) {
       setFile(selectedFile);
+      setRowErrors([]);
     } else {
       setFile(null);
-      showNotification('Please select a valid .csv file.', 'error');
+      showNotification(t('settings.import.invalidFile') || 'Please select a valid .csv file.', 'error');
     }
   };
 
   const handleImport = async () => {
     if (!file) {
-      showNotification('No file selected.', 'error');
+      showNotification(t('settings.import.noFileSelected') || 'No file selected.', 'error');
       return;
     }
     setIsLoading(true);
+    setRowErrors([]);
 
     try {
       const text = await file.text();
-      const rows = text.split('\n').filter((row) => row.trim() !== '');
-      const header = rows[0]
-        .trim()
-        .split(',')
-        .map((h) => h.trim());
-      const expectedHeader = ['name', 'sku', 'quantity', 'price', 'cost', 'imageUrl'];
+      const { products, errors } = parseProductCsv(text);
 
-      // Validate header
-      if (JSON.stringify(header) !== JSON.stringify(expectedHeader)) {
-        throw new Error(t('settings.import.invalidHeaderError'));
+      if (products.length === 0) {
+        const msg =
+          errors[0]?.message ||
+          t('settings.import.invalidHeaderError') ||
+          'No valid products found in CSV';
+        throw new Error(msg);
       }
 
-      const productsToImport: Omit<Product, 'id'>[] = rows.slice(1).map((row) => {
-        const values = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
-        const [name, sku, quantity, price, cost, imageUrl] = values.map((v) => v.replace(/"/g, '').trim());
-        return {
-          name: name || 'Unnamed Product',
-          sku: sku || undefined,
-          quantity: parseInt(quantity, 10) || 0,
-          price: parseFloat(price) || 0,
-          cost: parseFloat(cost) || 0,
-          imageUrl: imageUrl || undefined,
-          isActive: true,
-          updatedBy: 'system',
-          updatedAt: new Date().toISOString(),
-        };
-      });
+      if (errors.length > 0) {
+        setRowErrors(errors.slice(0, 8).map((e) => `L${e.line}: ${e.message}`));
+      }
 
-      dispatch({ type: 'IMPORT_PRODUCTS', payload: { products: productsToImport, strategy } });
-      showNotification(t('settings.import.success', { count: productsToImport.length }), 'success');
-      onClose();
+      dispatch({ type: 'IMPORT_PRODUCTS', payload: { products, strategy } });
+      showNotification(
+        t('settings.import.success', { count: products.length }) ||
+          `Imported ${products.length} products`,
+        errors.length > 0 ? 'info' : 'success',
+      );
+      if (errors.length === 0) {
+        onClose();
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unknown error occurred.';
-      showNotification(t('settings.import.error', { error: message }), 'error');
+      showNotification(t('settings.import.error', { error: message }) || message, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -78,13 +84,14 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
 
   return (
     <Modal isOpen={true} onClose={onClose} title={t('settings.import.title')}>
-      <div className="space-y-6">
+      <div className="space-y-6" data-testid="import-csv-modal">
         <p className="text-sm text-foreground/70">{t('settings.import.description')}</p>
 
         <a
           href="/template.csv"
           download="shelf_template.csv"
           className="inline-block text-sm font-semibold text-yellow-400 hover:text-yellow-300 transition-colors"
+          data-testid="import-csv-template-link"
         >
           {t('settings.import.downloadTemplate')}
         </a>
@@ -95,22 +102,28 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
           </label>
           <input
             id="csv-upload"
+            data-testid="import-csv-file-input"
             type="file"
-            accept=".csv"
+            accept=".csv,text/csv"
             onChange={handleFileChange}
             className="w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-foreground/10 file:text-foreground hover:file:bg-foreground/20"
           />
-          <p className="text-xs text-foreground/60 mt-1">{file ? file.name : t('settings.import.noFileSelected')}</p>
+          <p className="text-xs text-foreground/60 mt-1" data-testid="import-csv-file-name">
+            {file ? file.name : t('settings.import.noFileSelected')}
+          </p>
         </div>
 
         <div>
-          <p className="block text-sm font-medium text-foreground mb-2">{t('settings.import.conflictStrategy')}</p>
+          <p className="block text-sm font-medium text-foreground mb-2">
+            {t('settings.import.conflictStrategy')}
+          </p>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
                 type="radio"
                 name="strategy"
                 value="skip"
+                data-testid="import-csv-strategy-skip"
                 checked={strategy === 'skip'}
                 onChange={() => setStrategy('skip')}
                 className="form-radio bg-background border-foreground/50 text-yellow-400 focus:ring-yellow-400"
@@ -122,6 +135,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
                 type="radio"
                 name="strategy"
                 value="update"
+                data-testid="import-csv-strategy-update"
                 checked={strategy === 'update'}
                 onChange={() => setStrategy('update')}
                 className="form-radio bg-background border-foreground/50 text-yellow-400 focus:ring-yellow-400"
@@ -131,10 +145,23 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
           </div>
         </div>
 
+        {rowErrors.length > 0 && (
+          <div
+            className="text-xs text-yellow-300/90 bg-yellow-400/10 border border-yellow-400/30 rounded-lg p-3 space-y-1"
+            data-testid="import-csv-row-errors"
+          >
+            <p className="font-semibold">{t('settings.import.rowErrors') || 'Some rows were skipped:'}</p>
+            {rowErrors.map((e) => (
+              <p key={e}>{e}</p>
+            ))}
+          </div>
+        )}
+
         <div className="flex justify-end gap-4 mt-4">
           <button
             type="button"
             onClick={onClose}
+            data-testid="import-csv-cancel"
             className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95"
           >
             {t('common.cancel')}
@@ -143,6 +170,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
             type="button"
             onClick={handleImport}
             disabled={!file || isLoading}
+            data-testid="import-csv-submit"
             className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? t('settings.import.importing') : t('settings.import.button')}

@@ -14,18 +14,17 @@
 
 ---
 
-## 🔄 Activo — Session Features honesty + gap close
+## 🔄 Activo — Path to 100% (PLAN-100-FEATURES.md)
 
 | Fase | Trabajo | Estado |
 |------|---------|--------|
-| 0 | SSOT features + details + FEATURES_STATUS | 🟡 in progress |
-| 1.1 | FUN-009 SubscriptionContext tier real | ⏳ next |
-| 1.2 | FUN-003 Dashboard charts reales | ⏳ |
-| 1.3 | FUN-008 AC localAuth + guest free | ⏳ |
-| 2.1 | FUN-005 PO cancelled | ⏳ |
-| 2.2 | FUN-006 scanner formats/feedback | ⏳ |
-| 2.3 | FUN-014 CSV E2E | ⏳ |
-| 4 | Gate P2P + push develop | ⏳ |
+| A | Honesty + P0 (dashboard, PO, scanner, tier wire) | ✅ |
+| B | CSV hardened + AC 008/013 + plan UI + tests | 🟡 in progress |
+| C | Monetization Stripe/docs + AI polish | ⏳ |
+| D | Mesh security (YJS encrypt dual-ready, invite) | ⏳ |
+| E | Edge Phase D dual-path collapse | ⏳ |
+| F | GPU decision (implement or ADR out) | ⏳ |
+| G | QA CI hardened → 100% | ⏳ |
 
 ---
 

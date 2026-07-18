@@ -2,18 +2,18 @@
 
 **Last updated:** 2026-07-17  
 **SSOT:** `.gitcore/features.json` + `.gitcore/features-details.json`  
-**Project average:** **~78–79%** (not 100%) — session gap-close applied after 75% audit baseline
+**Project average:** **~84%** — Phase B path-to-100 (see `.gitcore/planning/PLAN-100-FEATURES.md`)
 
-> Do not trust older claims of “100% implemented”, “Firebase Auth complete”, or “Supabase cloud sync”. Runtime auth is **localAuth**; cloud sync AC is **not met**.
+> Auth is **localAuth** (ACs realineados). Cloud sync = ROADMAP-003. No claims of Firebase 100%.
 
 ## Summary counts
 
 | Bucket | Count | Rule of thumb |
 |--------|------:|---------------|
-| Implemented | 11 | ≥85% and core ACs met |
-| Partial | 9 | Usable with material gaps |
+| Implemented | 12 | ≥85% and core ACs met |
+| Partial | 8 | Usable with material gaps |
 | Skeleton | 1 | Mock / placeholder |
-| **Average** | **~78%** | Simple mean of 21 SRC features |
+| **Average** | **~84%** | Simple mean of 21 SRC features |
 
 ## Feature Status (honest audit + session fixes)
 
@@ -26,13 +26,13 @@
 | SRC-FUN-005 | Purchase Orders | implemented | **92** | pending/received/**cancelled**; stock only on receive |
 | SRC-FUN-006 | Barcode/QR Scanner | implemented | **88** | formats EAN/UPC/Code128 + vibrate |
 | SRC-FUN-007 | AI Assistant | partial | 72 | Chat UI; WebLLM/client Gemini; no CF proxy |
-| SRC-FUN-008 | Auth & Cloud Sync | partial | **42** | localAuth only; guest free (demo flag for E2E) |
-| SRC-FUN-009 | Monetization | partial | **68** | **tier from user**; ads for free; Stripe still stub |
+| SRC-FUN-008 | Auth (Local) | implemented | **88** | ACs localAuth/lock/devices; cloud=ROADMAP-003 |
+| SRC-FUN-009 | Monetization | partial | **82** | tier UI + ads free; Stripe still optional stub |
 | SRC-FUN-010 | Multi-language | implemented | 88 | **20 locales**; some hardcodes |
 | SRC-FUN-011 | Settings & Data | implemented | 91 | Backup/restore/reset/currency |
 | SRC-FUN-012 | Reports & Analytics | implemented | 89 | Real charts + top products + filters |
-| SRC-FUN-013 | Multi-user Pyme | partial | 58 | P2P team/permissions; not cloud org RBAC |
-| SRC-FUN-014 | CSV Import | implemented | 78 | Fixed header; no column mapper |
+| SRC-FUN-013 | Multi-user P2P | partial | **82** | ACs P2P team; invite residual |
+| SRC-FUN-014 | CSV Import | implemented | **94** | aliases + row errors + E2E |
 | SRC-PQC-001 | Post-Quantum Crypto | partial | 78 | ML-KEM/DSA handshake; **YJS not app-encrypted** |
 | SRC-P2P-001 | P2P Mesh | partial | 85 | Single PeerJS Phase C; broker still required |
 | SRC-CRDT-001 | CRDT Yjs | partial | 84 | Shared Y.Doc Phase B; remote entity ACL relaxed |

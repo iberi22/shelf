@@ -26,6 +26,8 @@ interface AuthContextType {
   revokeDevice: (deviceId: string) => void;
   loginLocal: (email: string, password: string) => Promise<void>;
   createLocalAccount: (email: string, password: string) => Promise<{ seed: string[] }>;
+  /** Update local/guest subscription tier and refresh session user (drives ads/pro gates). */
+  setSubscriptionTier: (tier: User['subscriptionTier']) => void;
 }
 
 const hashPin = async (pin: string): Promise<string> => {
@@ -187,6 +189,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { seed };
   };
 
+  const setSubscriptionTier = (tier: User['subscriptionTier']) => {
+    if (!user) return;
+    if (user.isGuest) {
+      const next = { ...user, subscriptionTier: tier };
+      localStorage.setItem('guest_user', JSON.stringify(next));
+      setUser(next);
+      return;
+    }
+    localAuthManager.updateSubscriptionTier(tier);
+    const refreshed = localAuthManager.getCurrentUser();
+    if (refreshed) setUser(refreshed);
+  };
+
   const value = {
     user,
     isLoading,
@@ -207,6 +222,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     revokeDevice,
     loginLocal,
     createLocalAccount,
+    setSubscriptionTier,
   };
 
   return (
