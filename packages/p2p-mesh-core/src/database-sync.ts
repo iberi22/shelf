@@ -1216,8 +1216,8 @@ export class DatabaseSyncManager {
 	}
 
 	/**
-	 * Surgical post-merge check used only for privilege-sensitive collections.
-	 * Entity CRDT (products/sales/clients/…) is gated by isTrustedRemoteWriter().
+	 * Post-merge permission check for a remote peer mutating a collection key.
+	 * Mirrors local `checkPermissions` canEdit* matrix so membership alone is not enough.
 	 */
 	private checkRemotePermissions(
 		peerId: string,
@@ -1246,23 +1246,31 @@ export class DatabaseSyncManager {
 			return false;
 		}
 
-		// Entity collections: trusted writers keep their merge (isTrustedRemoteWriter already gated)
-		if (
-			collectionName === "products" ||
-			collectionName === "productChangeHistory" ||
-			collectionName === "sales" ||
-			collectionName === "clients" ||
-			collectionName === "suppliers" ||
-			collectionName === "purchaseOrders" ||
-			collectionName === "ocrResults" ||
-			collectionName === "arqueoSessions" ||
-			collectionName === "branches" ||
-			collectionName === "auditLogs"
-		) {
-			return true;
+		const perms: Partial<PeerPermissions> = effective.permissions || {};
+		switch (collectionName) {
+			case "products":
+			case "productChangeHistory":
+				return !!perms.canEditProducts;
+			case "sales":
+				return !!perms.canEditSales;
+			case "clients":
+				return !!perms.canEditClients;
+			case "suppliers":
+				return !!perms.canEditSuppliers;
+			case "purchaseOrders":
+			case "ocrResults":
+				return !!perms.canEditPurchaseOrders;
+			case "arqueoSessions":
+				return !!perms.canViewArqueo;
+			case "branches":
+				// Branch topology remains admin-only for remote writers
+				return false;
+			case "auditLogs":
+				// Non-admins may append normal audit entries (not PRIVILEGE — handled above)
+				return true;
+			default:
+				return false;
 		}
-
-		return false;
 	}
 
 	private snapshotCollectionMaps(): Map<
@@ -1349,9 +1357,7 @@ export class DatabaseSyncManager {
 
 		const peerId = origin as string;
 		// Hard gate: drop entire CRDT payload from completely unknown peers (inject attacks).
-		// Known mesh members (linkedNodes or ephemeral after connect/handshake) may merge.
-		// Local write ACL remains on upsertEntity. Privilege maps (teamMembers/linkedNodes/
-		// pendingEdits / PRIVILEGE audits) are surgically protected post-merge.
+		// Known mesh members may merge; post-merge surgical revert enforces canEdit* + privilege maps.
 		if (!this.isTrustedRemoteWriter(peerId)) {
 			logger.warn(
 				`[SECURITY] Dropped remote CRDT update from untrusted peer ${peerId}`,
@@ -1359,9 +1365,14 @@ export class DatabaseSyncManager {
 			return;
 		}
 
-		const beforePrivilege = this.snapshotPrivilegeMaps();
+		const before = this.snapshotCollectionMaps();
 		Y.applyUpdate(this.doc, update, origin);
-		this.revertUnauthorizedPrivilegeMaps(peerId, beforePrivilege);
+		const reverted = this.revertUnauthorizedRemoteChanges(peerId, before);
+		if (reverted.length > 0) {
+			logger.warn(
+				`[SECURITY] Surgically reverted unauthorized remote changes from ${peerId} on: ${reverted.join(", ")}`,
+			);
+		}
 	}
 
 	private static readonly PRIVILEGE_COLLECTIONS = [
