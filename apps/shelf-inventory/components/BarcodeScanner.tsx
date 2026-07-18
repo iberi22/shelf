@@ -37,9 +37,28 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
           const config = {
             fps: 10,
             qrbox: { width: 250, height: 250 },
+            // Explicit formats: QR + common retail barcodes
+            formatsToSupport: [
+              // Html5QrcodeSupportedFormats enum values (numeric)
+              0, // QR_CODE
+              2, // AZTEC
+              8, // EAN_13
+              9, // EAN_8
+              10, // UPC_A
+              11, // UPC_E
+              6, // CODE_128
+              5, // CODE_39
+            ],
           };
 
           const handleScanSuccess = (decodedText: string, _decodedResult: Html5QrcodeResult) => {
+            try {
+              if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+                navigator.vibrate(50);
+              }
+            } catch {
+              /* ignore */
+            }
             onScanRef.current(decodedText);
             stopScanner();
           };

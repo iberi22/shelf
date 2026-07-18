@@ -3,9 +3,11 @@
 - **ID:** SRC-FUN-011
 - **Nombre:** Settings & Data Management
 - **Prioridad:** P1 (Importante)
-- **Estado:** ✅ Implementado
+- **Estado:** ✅ Implemented
+- **Implementation:** 91%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Production
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
 ## Descripción
 Configuraciones de usuario (moneda, umbral de stock bajo, formato numérico) y gestión de datos (backup/restore JSON, reset total con confirmación).

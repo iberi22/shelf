@@ -167,7 +167,11 @@
     "orderDate": "Order Date",
     "statusPending": "Pending",
     "statusReceived": "Received",
+    "statusCancelled": "Cancelled",
     "markAsReceived": "Mark as Received",
+    "cancel": "Cancel order",
+    "cancelConfirm": "Cancel this purchase order? Stock will not change.",
+    "cancelSuccess": "Purchase order cancelled",
     "form": {
       "selectSupplier": "Select a supplier...",
       "selectSupplierAlert": "Please select a supplier.",
@@ -329,7 +333,6 @@
       "modelMedium": "Medium (Qwen 2.5 1.5B)",
       "proxyUrl": "Local Proxy URL (Optional)"
     },
-
     "branches": {
       "title": "Branches / Warehouses",
       "description": "Manage the physical locations of your inventory.",

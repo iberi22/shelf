@@ -3,9 +3,11 @@
 - **ID:** SRC-FUN-010
 - **Nombre:** Multi-language Support
 - **Prioridad:** P1 (Importante)
-- **Estado:** ✅ Implementado
+- **Estado:** ✅ Implemented
+- **Implementation:** 88%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Production
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
 ## Descripción
 Soporte multi-idioma con traducción completa de UI en Inglés, Español y Portugués. Preferencia persistida en localStorage.

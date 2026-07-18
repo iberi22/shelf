@@ -8,44 +8,236 @@
     "updated": "2026-07-17",
     "sdlc_phase": "hardening",
     "total_features": 21,
-    "features_implemented": 8,
-    "features_partial": 12,
+    "features_implemented": 11,
+    "features_partial": 9,
     "features_skeleton": 1,
-    "implementation_percentage": 75,
+    "implementation_percentage": 78,
     "ssot": ".gitcore/features.json",
     "audit_note": "Honest audit 2026-07-17: code+tests vs ACs. NOT 100%. See .gitcore/features.json for gaps/evidence."
   },
   "categories": {
-    "FUN": { "name": "Funcionalidades Core", "count": 14 },
-    "PQC": { "name": "Post-Quantum Cryptography", "count": 1 },
-    "P2P": { "name": "P2P Mesh Sync", "count": 1 },
-    "CRDT": { "name": "CRDT Conflict Resolution", "count": 1 },
-    "EDGE": { "name": "Edge Mesh Runtime", "count": 1 },
-    "GPU": { "name": "GPU Agent", "count": 1 },
-    "QA": { "name": "Quality Assurance", "count": 1 },
-    "PWA": { "name": "PWA & Offline", "count": 1 }
+    "FUN": {
+      "name": "Funcionalidades Core",
+      "count": 14
+    },
+    "PQC": {
+      "name": "Post-Quantum Cryptography",
+      "count": 1
+    },
+    "P2P": {
+      "name": "P2P Mesh Sync",
+      "count": 1
+    },
+    "CRDT": {
+      "name": "CRDT Conflict Resolution",
+      "count": 1
+    },
+    "EDGE": {
+      "name": "Edge Mesh Runtime",
+      "count": 1
+    },
+    "GPU": {
+      "name": "GPU Agent",
+      "count": 1
+    },
+    "QA": {
+      "name": "Quality Assurance",
+      "count": 1
+    },
+    "PWA": {
+      "name": "PWA & Offline",
+      "count": 1
+    }
   },
   "features": [
-    { "id": "SRC-FUN-001", "name": "Inventory Management", "status": "implemented", "implementation_percentage": 96, "maturity": "hardened", "priority": "P0", "category": "FUN" },
-    { "id": "SRC-FUN-002", "name": "Sales Tracking", "status": "implemented", "implementation_percentage": 97, "maturity": "hardened", "priority": "P0", "category": "FUN" },
-    { "id": "SRC-FUN-003", "name": "Dashboard", "status": "partial", "implementation_percentage": 68, "maturity": "integrated", "priority": "P0", "category": "FUN" },
-    { "id": "SRC-FUN-004", "name": "Contact Management", "status": "implemented", "implementation_percentage": 98, "maturity": "hardened", "priority": "P0", "category": "FUN" },
-    { "id": "SRC-FUN-005", "name": "Purchase Orders", "status": "partial", "implementation_percentage": 84, "maturity": "integrated", "priority": "P1", "category": "FUN" },
-    { "id": "SRC-FUN-006", "name": "Barcode/QR Scanner", "status": "implemented", "implementation_percentage": 82, "maturity": "integrated", "priority": "P1", "category": "FUN" },
-    { "id": "SRC-FUN-007", "name": "AI Assistant", "status": "partial", "implementation_percentage": 72, "maturity": "unit", "priority": "P2", "category": "FUN" },
-    { "id": "SRC-FUN-008", "name": "Authentication & Cloud Sync", "status": "partial", "implementation_percentage": 40, "maturity": "unit", "priority": "P0", "category": "FUN" },
-    { "id": "SRC-FUN-009", "name": "Monetization (Ads + Subscriptions)", "status": "partial", "implementation_percentage": 42, "maturity": "unit", "priority": "P0", "category": "FUN" },
-    { "id": "SRC-FUN-010", "name": "Multi-language Support", "status": "implemented", "implementation_percentage": 88, "maturity": "integrated", "priority": "P1", "category": "FUN" },
-    { "id": "SRC-FUN-011", "name": "Settings & Data Management", "status": "implemented", "implementation_percentage": 91, "maturity": "integrated", "priority": "P1", "category": "FUN" },
-    { "id": "SRC-FUN-012", "name": "Reports & Analytics", "status": "implemented", "implementation_percentage": 89, "maturity": "integrated", "priority": "P1", "category": "FUN" },
-    { "id": "SRC-FUN-013", "name": "Multi-user Access (Pyme Plan)", "status": "partial", "implementation_percentage": 58, "maturity": "integrated", "priority": "P2", "category": "FUN" },
-    { "id": "SRC-FUN-014", "name": "Data Import (CSV)", "status": "implemented", "implementation_percentage": 78, "maturity": "integrated", "priority": "P2", "category": "FUN" },
-    { "id": "SRC-PQC-001", "name": "Post-Quantum Cryptography", "status": "partial", "implementation_percentage": 78, "maturity": "integrated", "priority": "P0", "category": "PQC" },
-    { "id": "SRC-P2P-001", "name": "P2P Mesh Network", "status": "partial", "implementation_percentage": 85, "maturity": "integrated", "priority": "P0", "category": "P2P" },
-    { "id": "SRC-CRDT-001", "name": "CRDT Sync (Yjs)", "status": "partial", "implementation_percentage": 84, "maturity": "integrated", "priority": "P0", "category": "CRDT" },
-    { "id": "SRC-EDGE-001", "name": "Edge Mesh Runtime", "status": "partial", "implementation_percentage": 72, "maturity": "integrated", "priority": "P0", "category": "EDGE" },
-    { "id": "SRC-GPU-001", "name": "GPU Agent (WebGPU)", "status": "skeleton", "implementation_percentage": 18, "maturity": "skeleton", "priority": "P1", "category": "GPU" },
-    { "id": "SRC-QA-001", "name": "Testing Infrastructure", "status": "partial", "implementation_percentage": 78, "maturity": "integrated", "priority": "P1", "category": "QA" },
-    { "id": "SRC-PWA-001", "name": "PWA & Offline Support", "status": "implemented", "implementation_percentage": 86, "maturity": "integrated", "priority": "P0", "category": "PWA" }
+    {
+      "id": "SRC-FUN-001",
+      "name": "Inventory Management",
+      "status": "implemented",
+      "implementation_percentage": 96,
+      "maturity": "hardened",
+      "priority": "P0",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-002",
+      "name": "Sales Tracking",
+      "status": "implemented",
+      "implementation_percentage": 97,
+      "maturity": "hardened",
+      "priority": "P0",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-003",
+      "name": "Dashboard",
+      "status": "implemented",
+      "implementation_percentage": 90,
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-004",
+      "name": "Contact Management",
+      "status": "implemented",
+      "implementation_percentage": 98,
+      "maturity": "hardened",
+      "priority": "P0",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-005",
+      "name": "Purchase Orders",
+      "status": "implemented",
+      "implementation_percentage": 92,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-006",
+      "name": "Barcode/QR Scanner",
+      "status": "implemented",
+      "implementation_percentage": 88,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-007",
+      "name": "AI Assistant",
+      "status": "partial",
+      "implementation_percentage": 72,
+      "maturity": "unit",
+      "priority": "P2",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-008",
+      "name": "Authentication & Cloud Sync",
+      "status": "partial",
+      "implementation_percentage": 42,
+      "maturity": "unit",
+      "priority": "P0",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-009",
+      "name": "Monetization (Ads + Subscriptions)",
+      "status": "partial",
+      "implementation_percentage": 68,
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-010",
+      "name": "Multi-language Support",
+      "status": "implemented",
+      "implementation_percentage": 88,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-011",
+      "name": "Settings & Data Management",
+      "status": "implemented",
+      "implementation_percentage": 91,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-012",
+      "name": "Reports & Analytics",
+      "status": "implemented",
+      "implementation_percentage": 89,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-013",
+      "name": "Multi-user Access (Pyme Plan)",
+      "status": "partial",
+      "implementation_percentage": 58,
+      "maturity": "integrated",
+      "priority": "P2",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-FUN-014",
+      "name": "Data Import (CSV)",
+      "status": "implemented",
+      "implementation_percentage": 78,
+      "maturity": "integrated",
+      "priority": "P2",
+      "category": "FUN"
+    },
+    {
+      "id": "SRC-PQC-001",
+      "name": "Post-Quantum Cryptography",
+      "status": "partial",
+      "implementation_percentage": 78,
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "PQC"
+    },
+    {
+      "id": "SRC-P2P-001",
+      "name": "P2P Mesh Network",
+      "status": "partial",
+      "implementation_percentage": 85,
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "P2P"
+    },
+    {
+      "id": "SRC-CRDT-001",
+      "name": "CRDT Sync (Yjs)",
+      "status": "partial",
+      "implementation_percentage": 84,
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "CRDT"
+    },
+    {
+      "id": "SRC-EDGE-001",
+      "name": "Edge Mesh Runtime",
+      "status": "partial",
+      "implementation_percentage": 72,
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "EDGE"
+    },
+    {
+      "id": "SRC-GPU-001",
+      "name": "GPU Agent (WebGPU)",
+      "status": "skeleton",
+      "implementation_percentage": 18,
+      "maturity": "skeleton",
+      "priority": "P1",
+      "category": "GPU"
+    },
+    {
+      "id": "SRC-QA-001",
+      "name": "Testing Infrastructure",
+      "status": "partial",
+      "implementation_percentage": 78,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "QA"
+    },
+    {
+      "id": "SRC-PWA-001",
+      "name": "PWA & Offline Support",
+      "status": "implemented",
+      "implementation_percentage": 86,
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "PWA"
+    }
   ]
 }

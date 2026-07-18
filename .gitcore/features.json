@@ -9,10 +9,10 @@
     "version": "1.2.1",
     "sdlc_phase": "hardening",
     "total_features": 21,
-    "features_implemented": 8,
-    "features_partial": 12,
+    "features_implemented": 11,
+    "features_partial": 9,
     "features_skeleton": 1,
-    "implementation_percentage": 75,
+    "implementation_percentage": 78,
     "stack": {
       "monorepo": "pnpm + Turborepo",
       "frontend": "React 19 + Vite 8",
@@ -80,10 +80,10 @@
     "audit": {
       "date": "2026-07-17",
       "method": "code+tests vs acceptance criteria (3 parallel explore agents + manual verify)",
-      "simple_average_percent": 75,
+      "simple_average_percent": 78,
       "product_core_fun_average": 77,
       "mesh_pqc_edge_gpu_average": 67,
-      "features_ge_85": 8,
+      "features_ge_85": 11,
       "features_partial_40_84": 12,
       "features_skeleton_lt_40": 1,
       "ssot_file": ".gitcore/features.json",
@@ -100,7 +100,8 @@
       "playwright_specs": 35,
       "cypress_e2e_specs": 16,
       "edge_mesh_unit_tests": 214,
-      "p2p_gate_e2e_local": "9/9 green (multi-peer, edge-mesh, p2p-sync, offline, conflict, three-node, security)"
+      "p2p_gate_e2e_local": "9/9 green (multi-peer, edge-mesh, p2p-sync, offline, conflict, three-node, security)",
+      "session_gap_close": true
     }
   },
   "features": [
@@ -115,7 +116,12 @@
       "user_story": "Como dueño de negocio, quiero gestionar mi inventario digitalmente para saber exactamente qué tengo en stock",
       "actor": "Dueño de Negocio",
       "dependencies": [],
-      "technologies": ["React", "localStorage", "Yjs", "IndexedDB"],
+      "technologies": [
+        "React",
+        "localStorage",
+        "Yjs",
+        "IndexedDB"
+      ],
       "acceptance_criteria": [
         "Crear producto con nombre, SKU, cantidad, precio, costo, imagen",
         "Editar producto existente",
@@ -146,8 +152,15 @@
       "description": "Registro de ventas con decremento automático de stock",
       "user_story": "Como vendedor, quiero registrar ventas para que el stock se actualice automáticamente",
       "actor": "Vendedor / Cajero",
-      "dependencies": ["SRC-FUN-001"],
-      "technologies": ["React", "localStorage", "Context API", "jsPDF"],
+      "dependencies": [
+        "SRC-FUN-001"
+      ],
+      "technologies": [
+        "React",
+        "localStorage",
+        "Context API",
+        "jsPDF"
+      ],
       "acceptance_criteria": [
         "Registrar venta seleccionando productos del inventario",
         "Decremento automático de stock al confirmar venta",
@@ -169,22 +182,29 @@
     {
       "id": "SRC-FUN-003",
       "name": "Dashboard",
-      "status": "partial",
+      "status": "implemented",
       "sdlc": "production",
       "priority": "P0",
       "category": "FUN",
       "description": "Panel principal con métricas clave del negocio en tiempo real",
       "user_story": "Como dueño, quiero ver un dashboard con mis métricas clave de un vistazo",
       "actor": "Dueño de Negocio",
-      "dependencies": ["SRC-FUN-001", "SRC-FUN-002"],
-      "technologies": ["React", "chart.js", "react-chartjs-2"],
+      "dependencies": [
+        "SRC-FUN-001",
+        "SRC-FUN-002"
+      ],
+      "technologies": [
+        "React",
+        "chart.js",
+        "react-chartjs-2"
+      ],
       "acceptance_criteria": [
         "Tarjetas con Revenue, Profit, Ventas totales, Productos totales",
         "Dashboard personalizable (elegir qué stats mostrar)",
         "Gráficos de ventas en el tiempo (chart.js)",
         "Top productos más vendidos"
       ],
-      "implementation_percentage": 68,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "evidence": [
         "apps/shelf-inventory/components/Dashboard.tsx",
@@ -208,7 +228,11 @@
       "user_story": "Como usuario, quiero gestionar clientes y proveedores desde un mismo lugar",
       "actor": "Vendedor / Cajero",
       "dependencies": [],
-      "technologies": ["React", "localStorage", "Yjs"],
+      "technologies": [
+        "React",
+        "localStorage",
+        "Yjs"
+      ],
       "acceptance_criteria": [
         "CRUD de clientes (nombre, teléfono, email)",
         "CRUD de proveedores (nombre, teléfono, email)",
@@ -230,22 +254,29 @@
     {
       "id": "SRC-FUN-005",
       "name": "Purchase Orders",
-      "status": "partial",
+      "status": "implemented",
       "sdlc": "production",
       "priority": "P1",
       "category": "FUN",
       "description": "Órdenes de compra a proveedores con actualización automática de stock al recibirlas",
       "user_story": "Como dueño, quiero crear órdenes de compra a proveedores y que el stock se actualice al recibirlas",
       "actor": "Dueño de Negocio",
-      "dependencies": ["SRC-FUN-001", "SRC-FUN-004"],
-      "technologies": ["React", "localStorage", "Context API"],
+      "dependencies": [
+        "SRC-FUN-001",
+        "SRC-FUN-004"
+      ],
+      "technologies": [
+        "React",
+        "localStorage",
+        "Context API"
+      ],
       "acceptance_criteria": [
         "Crear orden de compra seleccionando proveedor y productos",
         "Marcar orden como recibida → stock se incrementa",
         "Listar órdenes activas e históricas",
         "Estado de orden: pendiente, recibida, cancelada"
       ],
-      "implementation_percentage": 84,
+      "implementation_percentage": 92,
       "maturity": "integrated",
       "evidence": [
         "PurchaseOrders.tsx",
@@ -268,15 +299,21 @@
       "description": "Escaneo de códigos de barras y QR para entrada rápida de SKU usando cámara del dispositivo",
       "user_story": "Como usuario de bodega, quiero escanear códigos de barras para no escribir SKUs manualmente",
       "actor": "Vendedor / Cajero",
-      "dependencies": ["SRC-FUN-001"],
-      "technologies": ["html5-qrcode", "React", "cámara Web"],
+      "dependencies": [
+        "SRC-FUN-001"
+      ],
+      "technologies": [
+        "html5-qrcode",
+        "React",
+        "cámara Web"
+      ],
       "acceptance_criteria": [
         "Escaneo usando cámara del dispositivo",
         "Parseo automático de código de barras a campo SKU",
         "Soporte para QR y códigos de barras estándar (EAN, UPC, Code128)",
         "Feedback visual de escaneo exitoso"
       ],
-      "implementation_percentage": 82,
+      "implementation_percentage": 88,
       "maturity": "integrated",
       "evidence": [
         "BarcodeScanner.tsx",
@@ -299,8 +336,15 @@
       "description": "Asistente IA para análisis de inventario y preguntas en lenguaje natural (gated para usuarios Pro)",
       "user_story": "Como usuario Pro, quiero preguntarle a un AI sobre mi inventario en lenguaje natural",
       "actor": "Usuario Pro",
-      "dependencies": ["SRC-FUN-008", "SRC-FUN-001"],
-      "technologies": ["WebLLM", "Gemini API client-side", "Gemini Nano"],
+      "dependencies": [
+        "SRC-FUN-008",
+        "SRC-FUN-001"
+      ],
+      "technologies": [
+        "WebLLM",
+        "Gemini API client-side",
+        "Gemini Nano"
+      ],
       "acceptance_criteria": [
         "Chat integrado en reports page",
         "Gemini API vía Firebase Cloud Function proxy",
@@ -331,14 +375,18 @@
       "user_story": "Como usuario, quiero crear una cuenta para sincronizar mis datos en la nube",
       "actor": "Usuario Pro",
       "dependencies": [],
-      "technologies": ["localAuth", "localStorage", "WebAuthn optional"],
+      "technologies": [
+        "localAuth",
+        "localStorage",
+        "WebAuthn optional"
+      ],
       "acceptance_criteria": [
         "Registro/login con email y contraseña (Firebase Auth)",
         "Sync de estado local (localStorage) a Firestore",
         "Restauración de datos al iniciar sesión en otro dispositivo",
         "Segregación de datos por usuario"
       ],
-      "implementation_percentage": 40,
+      "implementation_percentage": 42,
       "maturity": "unit",
       "evidence": [
         "AuthContext.tsx → localAuthManager only",
@@ -363,8 +411,14 @@
       "description": "UI de monetización presente; billing y ads efectivamente stub por hardcode Pro",
       "user_story": "Como negocio, quiero que la app genere ingresos vía anuncios y suscripciones Pro",
       "actor": "Usuario Free / Pro",
-      "dependencies": ["SRC-FUN-008"],
-      "technologies": ["Stripe UI", "AdSense UI", "React"],
+      "dependencies": [
+        "SRC-FUN-008"
+      ],
+      "technologies": [
+        "Stripe UI",
+        "AdSense UI",
+        "React"
+      ],
       "acceptance_criteria": [
         "Anuncios para usuarios free (DesktopAdColumn, MobileAdBars)",
         "Modal de suscripción con planes Basic/Pro/Pyme",
@@ -372,8 +426,8 @@
         "Anuncios ocultos para usuarios Pro",
         "AdSense IDs via environment variables"
       ],
-      "implementation_percentage": 42,
-      "maturity": "unit",
+      "implementation_percentage": 68,
+      "maturity": "integrated",
       "evidence": [
         "Ads.tsx + AdSenseUnit.tsx",
         "SubscriptionModal.tsx → /api/createCheckoutSession",
@@ -397,7 +451,11 @@
       "user_story": "Como usuario, quiero usar la app en mi idioma",
       "actor": "Usuario Free",
       "dependencies": [],
-      "technologies": ["React", "localStorage (i18n)", "JSON locale files"],
+      "technologies": [
+        "React",
+        "localStorage (i18n)",
+        "JSON locale files"
+      ],
       "acceptance_criteria": [
         "Toggle EN/ES/PT en settings",
         "Traducción completa de UI",
@@ -427,7 +485,12 @@
       "user_story": "Como usuario, quiero configurar la app y gestionar mis datos",
       "actor": "Usuario Free",
       "dependencies": [],
-      "technologies": ["React", "localStorage", "File API (JSON)", "AES backup"],
+      "technologies": [
+        "React",
+        "localStorage",
+        "File API (JSON)",
+        "AES backup"
+      ],
       "acceptance_criteria": [
         "Respaldo y restauración JSON",
         "Reset de datos con confirmación",
@@ -458,8 +521,16 @@
       "description": "Reportes avanzados con gráficos (chart.js), filtros, análisis de márgenes y valor de inventario",
       "user_story": "Como dueño, quiero ver reportes detallados de mi negocio para tomar decisiones",
       "actor": "Dueño de Negocio",
-      "dependencies": ["SRC-FUN-001", "SRC-FUN-002"],
-      "technologies": ["chart.js", "react-chartjs-2", "React", "jsPDF"],
+      "dependencies": [
+        "SRC-FUN-001",
+        "SRC-FUN-002"
+      ],
+      "technologies": [
+        "chart.js",
+        "react-chartjs-2",
+        "React",
+        "jsPDF"
+      ],
       "acceptance_criteria": [
         "Gráficos de ventas en el tiempo (chart.js)",
         "Top productos más vendidos",
@@ -489,8 +560,15 @@
       "description": "Equipo y permisos vía P2P (no org multi-tenant cloud); roles distintos al AC original",
       "user_story": "Como dueño de negocio, quiero invitar a mi equipo con roles y permisos específicos",
       "actor": "Dueño de Negocio",
-      "dependencies": ["SRC-FUN-008"],
-      "technologies": ["P2P roles", "PeerPermissions", "Yjs teamMembers", "React"],
+      "dependencies": [
+        "SRC-FUN-008"
+      ],
+      "technologies": [
+        "P2P roles",
+        "PeerPermissions",
+        "Yjs teamMembers",
+        "React"
+      ],
       "acceptance_criteria": [
         "Invitación de miembros del equipo",
         "Roles con permisos específicos (admin, editor, viewer)",
@@ -522,8 +600,14 @@
       "description": "Importación de inventario desde archivos CSV con header fijo y validación básica",
       "user_story": "Como usuario con inventario existente, quiero importarlo desde un archivo CSV",
       "actor": "Usuario de Bodega",
-      "dependencies": ["SRC-FUN-001"],
-      "technologies": ["React", "File API", "CSV parser regex"],
+      "dependencies": [
+        "SRC-FUN-001"
+      ],
+      "technologies": [
+        "React",
+        "File API",
+        "CSV parser regex"
+      ],
       "acceptance_criteria": [
         "Upload de archivo CSV",
         "Parseo y mapeo de columnas automático",
@@ -554,7 +638,12 @@
       "user_story": "Como usuario, quiero que mis datos estén protegidos incluso contra computación cuántica",
       "actor": "Usuario Pro",
       "dependencies": [],
-      "technologies": ["@noble/post-quantum", "ML-KEM-768", "ML-DSA-65", "AES-GCM"],
+      "technologies": [
+        "@noble/post-quantum",
+        "ML-KEM-768",
+        "ML-DSA-65",
+        "AES-GCM"
+      ],
       "acceptance_criteria": [
         "Intercambio de llaves ML-KEM-768 (NIST estandarizado)",
         "Firmas digitales ML-DSA-65",
@@ -586,8 +675,14 @@
       "description": "Red mesh P2P vía WebRTC (PeerJS) offline-first; un solo PeerJS en Shelf (Phase C)",
       "user_story": "Como usuario, quiero que los datos se sincronicen entre mis dispositivos sin servidor central",
       "actor": "Usuario de Bodega",
-      "dependencies": ["SRC-PQC-001"],
-      "technologies": ["PeerJS", "WebRTC", "p2p-mesh-core"],
+      "dependencies": [
+        "SRC-PQC-001"
+      ],
+      "technologies": [
+        "PeerJS",
+        "WebRTC",
+        "p2p-mesh-core"
+      ],
       "acceptance_criteria": [
         "Descubrimiento de peers vía WebRTC",
         "Topología mesh descentralizada (cada nodo a múltiples peers)",
@@ -618,8 +713,13 @@
       "description": "Sincronización CRDT Yjs con doc compartido (Phase B); ACL remota de entidades relajada",
       "user_story": "Como usuario, quiero que los cambios se sincronicen sin conflictos entre dispositivos",
       "actor": "Usuario de Bodega",
-      "dependencies": ["SRC-P2P-001"],
-      "technologies": ["Yjs", "y-protocols"],
+      "dependencies": [
+        "SRC-P2P-001"
+      ],
+      "technologies": [
+        "Yjs",
+        "y-protocols"
+      ],
       "acceptance_criteria": [
         "Integración Yjs para tipos de datos compartidos",
         "Resolución automática de conflictos (CRDT)",
@@ -650,8 +750,17 @@
       "description": "Runtime P2P reutilizable con namespaces, authz, Y.Doc compartido y transport late-bind",
       "user_story": "Como desarrollador, quiero un runtime P2P reutilizable que encapsule la logica mesh en un package independiente",
       "actor": "Desarrollador",
-      "dependencies": ["SRC-P2P-001", "SRC-CRDT-001", "SRC-PQC-001"],
-      "technologies": ["Yjs", "PeerJS", "edge-mesh", "edge-mesh-react"],
+      "dependencies": [
+        "SRC-P2P-001",
+        "SRC-CRDT-001",
+        "SRC-PQC-001"
+      ],
+      "technologies": [
+        "Yjs",
+        "PeerJS",
+        "edge-mesh",
+        "edge-mesh-react"
+      ],
       "acceptance_criteria": [
         "Namespaces por tipo de entidad (products, sales, clients, etc)",
         "Broadcasts de updates CRDT como deltas codificados",
@@ -685,8 +794,13 @@
       "description": "Package scaffold; executeTask mock; WebLLM real no usa GpuAgent.executeTask",
       "user_story": "Como desarrollador, quiero delegar tareas intensivas al WebGPU local via un package reutilizable",
       "actor": "Desarrollador",
-      "dependencies": ["SRC-EDGE-001"],
-      "technologies": ["WebGPU", "gpu-agent"],
+      "dependencies": [
+        "SRC-EDGE-001"
+      ],
+      "technologies": [
+        "WebGPU",
+        "gpu-agent"
+      ],
       "acceptance_criteria": [
         "Tenant WebGPU expuesto por edge-mesh",
         "Ejecución de agentes en edge local",
@@ -717,7 +831,14 @@
       "user_story": "Como desarrollador, quiero tests automatizados para asegurar calidad del código",
       "actor": "Desarrollador",
       "dependencies": [],
-      "technologies": ["Playwright", "Cypress", "Biome", "Husky", "GitHub Actions", "Vitest"],
+      "technologies": [
+        "Playwright",
+        "Cypress",
+        "Biome",
+        "Husky",
+        "GitHub Actions",
+        "Vitest"
+      ],
       "acceptance_criteria": [
         "data-testid en todos los elementos interactivos",
         "Tests E2E con Cypress para flujos críticos",
@@ -752,7 +873,12 @@
       "user_story": "Como usuario, quiero instalar la app y usarla sin internet",
       "actor": "Usuario Free",
       "dependencies": [],
-      "technologies": ["vite-plugin-pwa", "workbox-window", "Service Worker", "IndexedDB"],
+      "technologies": [
+        "vite-plugin-pwa",
+        "workbox-window",
+        "Service Worker",
+        "IndexedDB"
+      ],
       "acceptance_criteria": [
         "Instalable como PWA",
         "Funciona 100% sin conexión a internet",

@@ -3,9 +3,11 @@
 - **ID:** SRC-FUN-012
 - **Nombre:** Reports & Analytics
 - **Prioridad:** P1 (Importante)
-- **Estado:** ✅ Implementado
+- **Estado:** ✅ Implemented
+- **Implementation:** 89%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Production
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
 ## Descripción
 Reportes avanzados con gráficos (chart.js), filtros por fecha/producto/cliente, análisis de márgenes de ganancia y valor total de inventario.

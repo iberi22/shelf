@@ -3,9 +3,11 @@
 - **ID:** SRC-FUN-004
 - **Nombre:** Contact Management
 - **Prioridad:** P0 (Core)
-- **Estado:** ✅ Implementado
+- **Estado:** ✅ Implemented
+- **Implementation:** 98%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Production
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
 ## Descripción
 Gestión unificada de clientes y proveedores desde un mismo componente genérico. Ahorra 300+ líneas de código eliminando duplicación entre las dos vistas.

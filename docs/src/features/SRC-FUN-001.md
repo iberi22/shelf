@@ -3,9 +3,11 @@
 - **ID:** SRC-FUN-001
 - **Nombre:** Inventory Management
 - **Prioridad:** P0 (Core)
-- **Estado:** ✅ Implementado
+- **Estado:** ✅ Implemented
+- **Implementation:** 96%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Production
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
 ## Descripción
 CRUD completo de productos con nombre, SKU, cantidad, precio, costo e imágenes. Es el feature fundamental del sistema de inventario; todos los demás features dependen de este.

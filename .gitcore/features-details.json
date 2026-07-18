@@ -1,0 +1,666 @@
+{
+  "version": "1.3.0",
+  "updated": "2026-07-17",
+  "ssot_summary": ".gitcore/features.json",
+  "audit": {
+    "date": "2026-07-17",
+    "method": "code + tests + literal acceptance criteria",
+    "project_average_percent": 75,
+    "fun_average_percent": 77,
+    "mesh_average_percent": 67,
+    "counts": {
+      "implemented": 8,
+      "partial": 12,
+      "skeleton": 1,
+      "total": 21
+    }
+  },
+  "features": [
+    {
+      "id": "SRC-FUN-001",
+      "name": "Inventory Management",
+      "implementation_percentage": 96,
+      "status": "implemented",
+      "maturity": "hardened",
+      "priority": "P0",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/components/Inventory.tsx",
+        "apps/shelf-inventory/lib/productVariants.ts",
+        "apps/shelf-inventory/context/AppContext.tsx",
+        "packages/p2p-mesh-core/src/types.ts"
+      ],
+      "tests": [
+        "apps/shelf-inventory/tests/crud-operations.spec.ts",
+        "apps/shelf-inventory/tests/variant-catalog.spec.ts",
+        "apps/shelf-inventory/tests/persistence-*.spec.ts",
+        "apps/shelf-inventory/cypress/e2e/inventory.cy.ts"
+      ],
+      "acceptance_met": {
+        "crud": true,
+        "fields_name_sku_qty_price_cost_image": true,
+        "search_list": true,
+        "auto_stock_on_sell": true
+      },
+      "gaps": [
+        "No hard unique-SKU enforcement on save",
+        "Filters mostly free-text + sort, not multi-facet"
+      ],
+      "next_actions": []
+    },
+    {
+      "id": "SRC-FUN-002",
+      "name": "Sales Tracking",
+      "implementation_percentage": 97,
+      "status": "implemented",
+      "maturity": "hardened",
+      "priority": "P0",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/components/Sales.tsx",
+        "apps/shelf-inventory/context/AppContext.tsx"
+      ],
+      "tests": [
+        "apps/shelf-inventory/tests/crud-operations.spec.ts",
+        "apps/shelf-inventory/cypress/e2e/sales.cy.ts",
+        "apps/shelf-inventory/cypress/e2e/pdf-generation.cy.ts"
+      ],
+      "acceptance_met": {
+        "register_sale": true,
+        "auto_stock_decrement": true,
+        "history": true,
+        "revenue_profit": true
+      },
+      "gaps": [
+        "Scanner not integrated into sale cart flow"
+      ],
+      "next_actions": [
+        "Optional: scan-to-cart in Sales"
+      ]
+    },
+    {
+      "id": "SRC-FUN-003",
+      "name": "Dashboard",
+      "implementation_percentage": 90,
+      "status": "implemented",
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/components/Dashboard.tsx",
+        "apps/shelf-inventory/components/ProChartsTeaserCard.tsx",
+        "apps/shelf-inventory/components/Reports.tsx"
+      ],
+      "tests": [],
+      "acceptance_met": {
+        "kpi_cards": true,
+        "customizable": true,
+        "real_time_series_charts": false,
+        "top_products_on_dashboard": false
+      },
+      "gaps": [
+        "ProChartsTeaserCard uses hardcoded demo data",
+        "Top products only on Reports page",
+        "totalProducts card sums qty not SKU count"
+      ],
+      "next_actions": [
+        "Wire real sales-by-day Line chart from state.sales",
+        "Show top products on Dashboard",
+        "Replace or gate fake teaser charts"
+      ]
+    },
+    {
+      "id": "SRC-FUN-004",
+      "name": "Contact Management",
+      "implementation_percentage": 98,
+      "status": "implemented",
+      "maturity": "hardened",
+      "priority": "P0",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/components/ContactManagementPage.tsx",
+        "apps/shelf-inventory/components/Clients.tsx",
+        "apps/shelf-inventory/components/Suppliers.tsx"
+      ],
+      "tests": [
+        "apps/shelf-inventory/tests/crud-operations.spec.ts",
+        "apps/shelf-inventory/cypress/e2e/clients.cy.ts",
+        "apps/shelf-inventory/cypress/e2e/suppliers.cy.ts"
+      ],
+      "acceptance_met": {
+        "clients_crud": true,
+        "suppliers_crud": true,
+        "generic_page": true
+      },
+      "gaps": [
+        "No address field; no free-text search"
+      ],
+      "next_actions": []
+    },
+    {
+      "id": "SRC-FUN-005",
+      "name": "Purchase Orders",
+      "implementation_percentage": 92,
+      "status": "implemented",
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/components/PurchaseOrders.tsx",
+        "packages/p2p-mesh-core/src/types.ts"
+      ],
+      "tests": [
+        "apps/shelf-inventory/cypress/e2e/purchase-orders.cy.ts"
+      ],
+      "acceptance_met": {
+        "create_po": true,
+        "receive_increments_stock": true,
+        "list": true,
+        "status_cancelled": false
+      },
+      "gaps": [
+        "status only pending|received — no cancelled",
+        "No E2E asserting stock on receive"
+      ],
+      "next_actions": [
+        "Add cancelled status + cancel action",
+        "E2E receive → stock"
+      ]
+    },
+    {
+      "id": "SRC-FUN-006",
+      "name": "Barcode/QR Scanner",
+      "implementation_percentage": 88,
+      "status": "implemented",
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/components/BarcodeScanner.tsx",
+        "apps/shelf-inventory/components/Inventory.tsx"
+      ],
+      "tests": [
+        "apps/shelf-inventory/tests/scanner-lifecycle.spec.ts"
+      ],
+      "acceptance_met": {
+        "camera_scan": true,
+        "fill_sku": true,
+        "explicit_format_list": false,
+        "success_feedback": false
+      },
+      "gaps": [
+        "No formatsToSupport EAN/UPC/Code128",
+        "No vibrate/sound success feedback",
+        "Not used in Sales"
+      ],
+      "next_actions": [
+        "Explicit barcode formats",
+        "Success toast/vibrate",
+        "Optional Sales integration"
+      ]
+    },
+    {
+      "id": "SRC-FUN-007",
+      "name": "AI Assistant",
+      "implementation_percentage": 72,
+      "status": "partial",
+      "maturity": "unit",
+      "priority": "P2",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/components/AIChat.tsx",
+        "apps/shelf-inventory/hooks/useWebLLM.ts",
+        "apps/shelf-inventory/components/Reports.tsx"
+      ],
+      "tests": [],
+      "acceptance_met": {
+        "chat_in_reports": true,
+        "cloud_function_proxy_primary": false,
+        "pro_gate_ui": true,
+        "inventory_context_injected": true
+      },
+      "gaps": [
+        "Primary path is client Gemini key / WebLLM / Nano — not CF proxy",
+        "/api/chat route missing in monorepo",
+        "Pro gate defeated by SubscriptionContext hardcode"
+      ],
+      "next_actions": [
+        "Rewrite AC to local-first engines OR add secure proxy",
+        "Depends on FUN-009 tier fix"
+      ]
+    },
+    {
+      "id": "SRC-FUN-008",
+      "name": "Authentication & Cloud Sync",
+      "implementation_percentage": 42,
+      "status": "partial",
+      "maturity": "unit",
+      "priority": "P0",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/context/AuthContext.tsx",
+        "apps/shelf-inventory/lib/localAuth.ts",
+        "apps/shelf-inventory/components/LocalLoginModal.tsx",
+        "apps/shelf-inventory/firestore.rules"
+      ],
+      "tests": [],
+      "acceptance_met": {
+        "local_email_password": true,
+        "firebase_auth": false,
+        "firestore_sync": false,
+        "multi_device_cloud_restore": false,
+        "p2p_device_path": true
+      },
+      "gaps": [
+        "No Firebase Auth SDK at runtime",
+        "No Firestore client sync",
+        "getIdToken returns dummy tokens",
+        "Guest subscriptionTier hardcodes pyme"
+      ],
+      "next_actions": [
+        "SESSION: rewrite ACs to localAuth + P2P restore model",
+        "OR implement real Firebase/Firestore (larger scope)",
+        "Guest tier = free unless demo flag"
+      ],
+      "product_decision_required": true
+    },
+    {
+      "id": "SRC-FUN-009",
+      "name": "Monetization (Ads + Subscriptions)",
+      "implementation_percentage": 68,
+      "status": "partial",
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/context/SubscriptionContext.tsx",
+        "apps/shelf-inventory/components/SubscriptionModal.tsx",
+        "apps/shelf-inventory/components/Ads.tsx",
+        "apps/shelf-inventory/MainApp.tsx"
+      ],
+      "tests": [],
+      "acceptance_met": {
+        "ads_ui_components": true,
+        "subscription_modal": true,
+        "stripe_live_checkout": false,
+        "ads_shown_for_free": false,
+        "tier_from_account": false
+      },
+      "gaps": [
+        "SubscriptionContext hardcodes isPro/isPyme true",
+        "Ads never render in free mode",
+        "No Stripe backend in monorepo",
+        "Basic plan missing"
+      ],
+      "next_actions": [
+        "SESSION P0: wire tier from user.subscriptionTier",
+        "showAds when isFree",
+        "Keep Stripe as optional remote endpoint"
+      ]
+    },
+    {
+      "id": "SRC-FUN-010",
+      "name": "Multi-language Support",
+      "implementation_percentage": 88,
+      "status": "implemented",
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/context/I18nContext.tsx",
+        "apps/shelf-inventory/locales/*.json"
+      ],
+      "tests": [],
+      "acceptance_met": {
+        "en_es_pt": true,
+        "locales_count": 20,
+        "persistence": true,
+        "full_ui_no_hardcode": false
+      },
+      "gaps": [
+        "Hardcoded ES strings in NetworkConfig/MainApp",
+        "Secondary locales partially English"
+      ],
+      "next_actions": [
+        "Sweep hardcoded strings for primary locales"
+      ]
+    },
+    {
+      "id": "SRC-FUN-011",
+      "name": "Settings & Data Management",
+      "implementation_percentage": 91,
+      "status": "implemented",
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/components/NetworkConfig.tsx",
+        "apps/shelf-inventory/context/CurrencyContext.tsx"
+      ],
+      "tests": [
+        "apps/shelf-inventory/tests/settings-features.spec.ts",
+        "apps/shelf-inventory/cypress/e2e/settings.cy.ts"
+      ],
+      "acceptance_met": {
+        "backup_restore": true,
+        "reset": true,
+        "currency": true,
+        "low_stock": true
+      },
+      "gaps": [
+        "Backup .encrypted vs accept=json UX"
+      ],
+      "next_actions": []
+    },
+    {
+      "id": "SRC-FUN-012",
+      "name": "Reports & Analytics",
+      "implementation_percentage": 89,
+      "status": "implemented",
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/components/Reports.tsx"
+      ],
+      "tests": [
+        "apps/shelf-inventory/tests/e2e/reports-export.spec.ts",
+        "apps/shelf-inventory/tests/arqueo-catalog-reports.spec.ts"
+      ],
+      "acceptance_met": {
+        "charts": true,
+        "top_products": true,
+        "filters": true,
+        "margins": true,
+        "inventory_value": true
+      },
+      "gaps": [
+        "Cypress smoke only; advanced suite roadmap"
+      ],
+      "next_actions": []
+    },
+    {
+      "id": "SRC-FUN-013",
+      "name": "Multi-user Access (Pyme Plan)",
+      "implementation_percentage": 58,
+      "status": "partial",
+      "maturity": "integrated",
+      "priority": "P2",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/components/InviteMemberModal.tsx",
+        "apps/shelf-inventory/components/NetworkConfig.tsx",
+        "packages/p2p-mesh-core/src/types.ts"
+      ],
+      "tests": [
+        "apps/shelf-inventory/tests/p2p-three-node-permissions.spec.ts",
+        "apps/shelf-inventory/tests/p2p-invite-and-sync.spec.ts"
+      ],
+      "acceptance_met": {
+        "invite_ui": true,
+        "roles_admin_editor_viewer": false,
+        "p2p_permissions": true,
+        "cloud_org_separation": false
+      },
+      "gaps": [
+        "Roles are admin/collaborator/vendedor not editor/viewer",
+        "Invite is mailto + peerId",
+        "No cloud multi-tenant org"
+      ],
+      "next_actions": [
+        "Rewrite AC to P2P team model",
+        "Fix invite-and-sync residual"
+      ]
+    },
+    {
+      "id": "SRC-FUN-014",
+      "name": "Data Import (CSV)",
+      "implementation_percentage": 78,
+      "status": "implemented",
+      "maturity": "integrated",
+      "priority": "P2",
+      "category": "FUN",
+      "paths": [
+        "apps/shelf-inventory/components/ImportCSVModal.tsx",
+        "apps/shelf-inventory/public/template.csv"
+      ],
+      "tests": [],
+      "acceptance_met": {
+        "upload": true,
+        "fixed_header_parse": true,
+        "interactive_column_map": false,
+        "row_validation": "basic"
+      },
+      "gaps": [
+        "Fixed header only; fragile parser; no E2E"
+      ],
+      "next_actions": [
+        "Add import E2E; optional column map"
+      ]
+    },
+    {
+      "id": "SRC-PQC-001",
+      "name": "Post-Quantum Cryptography",
+      "implementation_percentage": 78,
+      "status": "partial",
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "PQC",
+      "paths": [
+        "packages/p2p-mesh-core/src/crypto-pqc.ts",
+        "packages/p2p-mesh-core/src/crypto.ts",
+        "packages/p2p-mesh-core/src/p2p.ts"
+      ],
+      "tests": [
+        "packages/p2p-mesh-core/tests/security.test.ts"
+      ],
+      "acceptance_met": {
+        "ml_kem_768": true,
+        "ml_dsa_65": true,
+        "aes_gcm_at_rest": true,
+        "aes_gcm_yjs_app_layer": false,
+        "aes_gcm_authority": true,
+        "handshake": true
+      },
+      "gaps": [
+        "YJS_* not in isSensitive — DTLS only",
+        "At-rest not PQC-derived (PIN/device entropy)",
+        "edge-mesh ML-DSA only"
+      ],
+      "next_actions": [
+        "Dual-ready YJS encrypt after both peers have key",
+        "Document transit honestly"
+      ]
+    },
+    {
+      "id": "SRC-P2P-001",
+      "name": "P2P Mesh Network",
+      "implementation_percentage": 85,
+      "status": "partial",
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "P2P",
+      "paths": [
+        "packages/p2p-mesh-core/src/p2p.ts",
+        "apps/shelf-inventory/components/EdgeMeshTransportBinder.tsx"
+      ],
+      "tests": [
+        "apps/shelf-inventory/tests/multi-peer.spec.ts",
+        "apps/shelf-inventory/tests/p2p-three-node-permissions.spec.ts",
+        "apps/shelf-inventory/tests/offline-sync.spec.ts"
+      ],
+      "acceptance_met": {
+        "peerjs_discovery": true,
+        "mesh_topology": true,
+        "admin_node": true,
+        "auto_reconnect": true,
+        "single_peerjs_shelf": true,
+        "no_broker": false
+      },
+      "gaps": [
+        "PeerJS broker required for signaling",
+        "Phase D thin p2p-mesh-core open",
+        "invite-and-sync residual"
+      ],
+      "next_actions": [
+        "Phase D roadmap; fix invite authority"
+      ]
+    },
+    {
+      "id": "SRC-CRDT-001",
+      "name": "CRDT Sync (Yjs)",
+      "implementation_percentage": 84,
+      "status": "partial",
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "CRDT",
+      "paths": [
+        "packages/p2p-mesh-core/src/database-sync.ts",
+        "apps/shelf-inventory/context/AppContext.tsx"
+      ],
+      "tests": [
+        "apps/shelf-inventory/tests/p2p-conflict-resolution.spec.ts",
+        "apps/shelf-inventory/tests/offline-sync.spec.ts",
+        "packages/edge-mesh/tests/sync/shared-ydoc.test.ts"
+      ],
+      "acceptance_met": {
+        "yjs_maps": true,
+        "conflict_resolution": true,
+        "delta_sync": true,
+        "offline_then_sync": true,
+        "shared_ydoc_phase_b": true,
+        "remote_entity_acl_strict": false
+      },
+      "gaps": [
+        "isTrustedRemoteWriter only; full collection surgical revert dead",
+        "Primary wire still YJS_UPDATE"
+      ],
+      "next_actions": [
+        "Optional re-harden entity remote ACL with multi-peer tests"
+      ]
+    },
+    {
+      "id": "SRC-EDGE-001",
+      "name": "Edge Mesh Runtime",
+      "implementation_percentage": 72,
+      "status": "partial",
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "EDGE",
+      "paths": [
+        "packages/edge-mesh/",
+        "packages/edge-mesh-react/",
+        "apps/shelf-inventory/components/EdgeMeshWorkflowBridge.tsx",
+        "apps/shelf-inventory/components/EdgeMeshTransportBinder.tsx"
+      ],
+      "tests": [
+        "packages/edge-mesh/tests/** (214)",
+        "apps/shelf-inventory/tests/edge-mesh-sync.spec.ts"
+      ],
+      "acceptance_met": {
+        "namespaces": true,
+        "delta_broadcast": true,
+        "remote_apply_origin": true,
+        "authz_path": true,
+        "react_bindings": true,
+        "single_wire_path": false
+      },
+      "gaps": [
+        "Dual YJS_UPDATE + EDGE_MESH_ENVELOPE",
+        "Phase D open",
+        "Maloca debt in package"
+      ],
+      "next_actions": [
+        "PHASE-D-ROADMAP items"
+      ]
+    },
+    {
+      "id": "SRC-GPU-001",
+      "name": "GPU Agent (WebGPU)",
+      "implementation_percentage": 18,
+      "status": "skeleton",
+      "maturity": "skeleton",
+      "priority": "P1",
+      "category": "GPU",
+      "paths": [
+        "packages/gpu-agent/src/gpu-agent.ts"
+      ],
+      "tests": [],
+      "acceptance_met": {
+        "webgpu_detect": true,
+        "execute_task_real": false,
+        "verify_task_real": false,
+        "mesh_routing": false
+      },
+      "gaps": [
+        "executeTask mock",
+        "verifyTask placeholder",
+        "WebLLM does not use GpuAgent.executeTask"
+      ],
+      "next_actions": [
+        "Keep skeleton; real work = later sprint"
+      ]
+    },
+    {
+      "id": "SRC-QA-001",
+      "name": "Testing Infrastructure",
+      "implementation_percentage": 78,
+      "status": "partial",
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "QA",
+      "paths": [
+        "apps/shelf-inventory/tests/",
+        "apps/shelf-inventory/cypress/",
+        ".github/workflows/ci.yml"
+      ],
+      "tests": [
+        "self"
+      ],
+      "acceptance_met": {
+        "playwright_e2e": true,
+        "cypress_e2e": true,
+        "biome": true,
+        "husky_reliable": false,
+        "gha_always_green": false
+      },
+      "gaps": [
+        "GHA jobs fail empty ~2s (infra)",
+        "Husky fragile",
+        "Coverage not reported"
+      ],
+      "next_actions": [
+        "Diagnose GHA runner failures; fix husky path"
+      ]
+    },
+    {
+      "id": "SRC-PWA-001",
+      "name": "PWA & Offline Support",
+      "implementation_percentage": 86,
+      "status": "implemented",
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "PWA",
+      "paths": [
+        "apps/shelf-inventory/vite.config.ts",
+        "apps/shelf-inventory/components/UpdateNotification.tsx",
+        "apps/shelf-inventory/hooks/usePersistedReducer.ts"
+      ],
+      "tests": [
+        "apps/shelf-inventory/cypress/e2e/pwa-offline.cy.ts",
+        "apps/shelf-inventory/tests/offline-sync.spec.ts"
+      ],
+      "acceptance_met": {
+        "installable": true,
+        "sw_cache": true,
+        "idb_persistence": true,
+        "update_notification": true,
+        "p2p_without_signaling": false
+      },
+      "gaps": [
+        "First P2P connect needs signaling online"
+      ],
+      "next_actions": []
+    }
+  ]
+}

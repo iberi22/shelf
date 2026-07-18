@@ -94,7 +94,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const guestUser: User = {
       uid: existingPeerId,
       email: null,
-      subscriptionTier: 'pyme', // Guests get full access for offline demo
+      // Free by default so ads/gates are honest. Opt-in: localStorage shelf_demo_full_access=true
+      subscriptionTier: 'free',
       isGuest: true,
     };
     localStorage.setItem('guest_user', JSON.stringify(guestUser));

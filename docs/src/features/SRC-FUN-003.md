@@ -3,9 +3,13 @@
 - **ID:** SRC-FUN-003
 - **Nombre:** Dashboard
 - **Prioridad:** P0 (Core)
-- **Estado:** ✅ Implementado
+- **Estado:** ⚠️ Partial
+- **Implementation:** 68%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Production
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
+
+> **Audit 2026-07-17:** Charts del Dashboard son teaser con datos fake (`ProChartsTeaserCard`); top productos viven en Reports, no en Dashboard; card totalProducts suma cantidades, no cuenta SKUs.
 
 ## Descripción
 Panel principal con métricas clave del negocio en tiempo real: Revenue, Profit, Ventas totales, Productos totales. Incluye gráficos de ventas en el tiempo y top productos más vendidos.

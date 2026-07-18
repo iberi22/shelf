@@ -1,72 +1,80 @@
 # Features Implementation Status
 
-This document tracks the current state, implementation percentage, and observed anomalies of Shelf features.
+**Last updated:** 2026-07-17  
+**SSOT:** `.gitcore/features.json` + `.gitcore/features-details.json`  
+**Project average:** **~78–79%** (not 100%) — session gap-close applied after 75% audit baseline
 
-Last updated: 2026-06-14
+> Do not trust older claims of “100% implemented”, “Firebase Auth complete”, or “Supabase cloud sync”. Runtime auth is **localAuth**; cloud sync AC is **not met**.
 
-## Summary
+## Summary counts
 
-The base product is usable and deployed, but the strategic P2P/CRDT, local-only AI, branch/warehouse, governance, and failover work is not complete. Do not treat this app as 100% implemented across the full roadmap while issues #87, #134, #135, #136, and #139 remain open.
+| Bucket | Count | Rule of thumb |
+|--------|------:|---------------|
+| Implemented | 11 | ≥85% and core ACs met |
+| Partial | 9 | Usable with material gaps |
+| Skeleton | 1 | Mock / placeholder |
+| **Average** | **~78%** | Simple mean of 21 SRC features |
 
-## Feature Status
+## Feature Status (honest audit + session fixes)
 
-| Feature | Status | Implementation | Notes |
-| --- | --- | ---: | --- |
-| Dashboard | Complete | 100% | Revenue, profit, sales, and product metrics are implemented. |
-| Inventory Management | Complete | 100% | CRUD works. Configurable multi-color/multi-measure UX is active. |
-| Inventory Configuration UX | Complete | 100% | Product fields, variants, validation, and Settings UX are fully deployed. |
-| Sales Management | Complete | 100% | Sales recording decrements stock. |
-| Client Management | Complete | 100% | Client CRUD is functional. |
-| Supplier Management | Complete | 100% | Supplier CRUD is functional. |
-| Offline First Base | Complete | 100% | Local persistence works for the current app state. |
-| 100% Offline / Local AI Pivot (#87) | Partial | 25% | Local-first/P2P base exists, but local OCR, WebLLM/StockBot, local-only profile/auth, and cloud dependency reduction remain open. |
-| Responsive Design | Complete | 100% | Main responsive flows are robust. Mobile UI validation is successful. |
-| Firebase Auth & RBAC | Complete | 100% | Multi-User Authorization Backend (RBAC) integrated successfully via Supabase. |
-| Cloud Sync | Complete | 100% | Pro Tier: Cloud Sync Integration via Supabase is fully implemented and resolving conflicts. |
-| Settings Module | Complete | 100% | Settings.tsx decoupled into BranchConfig, NetworkConfig, etc. No longer a God Object. |
-| Barcode/QR Scanner | Complete | 100% | Operational using `html5-qrcode`. |
-| AI Assistant (Chat) | Partial | 80% | UI exists. Cloud-backed Gemini remains dependent on backend deployment; local AI is not complete. |
-| Reporting & Charts | Complete | 100% | Base reports, charts, and Pro Tier Advanced PDF Reporting Engine (`jspdf`) are implemented. |
-| Purchase Orders | Complete | 100% | PO flow is functional. |
-| Data Import (CSV) | Complete | 100% | CSV parsing and import flow are implemented. |
-| P2P Sync Base & CRDT | Complete | 100% | Unified Reactive Persistence for Yjs CRDT State implemented (unidirectional data flow). |
-| CRDT Secure Edge Mesh (#139) | Complete | 100% | Cryptographic Handshake for Admin Claims via Post-Quantum Crypto (WebGPU) integrated. |
-| Branches/Warehouses P2P (#134) | Partial | 25% | Generic namespaces/partitions exist in `edge-mesh`; Shelf UI, active context, permissions, and consolidated reports are pending. |
-| Node Timeline / Failover (#135) | Partial | 45% | Presence timeline and peer health exist; persistent history, UI timeline, and governance-backed succession remain pending. |
-| Admin Consensus (#136) | Partial | 65% | `createGovernanceManager` and Cryptographic Handshakes for admin claims exist. Vote synchronization is pending. |
-| Stripe Checkout | Partial | 75% | Webhook and SDK code are ready; requires environment variables and backend deployment verification. |
-| Arqueo (OCR Invoices) | Partial | 80% | Frontend modals and routing exist. Local OCR remains part of #87. |
-| QA / Deployment | Complete | 100% | Global E2E Test Suite and QA Coverage Pass completed successfully. |
-| Sentry Error Monitoring | Complete | 100% | Offline queue and React ErrorBoundary integrated (`@sentry/react`). |
-| Google Analytics 4 (GA4) | Complete | 100% | Offline Telemetry Queue tracking core flows integrated successfully. |
-| E-Commerce Webhooks | Complete | 100% | Webhook listener for Shopify/WooCommerce implemented. |
+| ID | Feature | Status | % | Notes |
+| --- | --- | --- | ---: | --- |
+| SRC-FUN-001 | Inventory Management | implemented | 96 | CRUD + variants + stock on sell; strong E2E |
+| SRC-FUN-002 | Sales Tracking | implemented | 97 | Stock decrement + PDF; hardened |
+| SRC-FUN-003 | Dashboard | implemented | **90** | Live charts from sales/products (was fake teaser) |
+| SRC-FUN-004 | Contact Management | implemented | 98 | Shared ContactManagementPage |
+| SRC-FUN-005 | Purchase Orders | implemented | **92** | pending/received/**cancelled**; stock only on receive |
+| SRC-FUN-006 | Barcode/QR Scanner | implemented | **88** | formats EAN/UPC/Code128 + vibrate |
+| SRC-FUN-007 | AI Assistant | partial | 72 | Chat UI; WebLLM/client Gemini; no CF proxy |
+| SRC-FUN-008 | Auth & Cloud Sync | partial | **42** | localAuth only; guest free (demo flag for E2E) |
+| SRC-FUN-009 | Monetization | partial | **68** | **tier from user**; ads for free; Stripe still stub |
+| SRC-FUN-010 | Multi-language | implemented | 88 | **20 locales**; some hardcodes |
+| SRC-FUN-011 | Settings & Data | implemented | 91 | Backup/restore/reset/currency |
+| SRC-FUN-012 | Reports & Analytics | implemented | 89 | Real charts + top products + filters |
+| SRC-FUN-013 | Multi-user Pyme | partial | 58 | P2P team/permissions; not cloud org RBAC |
+| SRC-FUN-014 | CSV Import | implemented | 78 | Fixed header; no column mapper |
+| SRC-PQC-001 | Post-Quantum Crypto | partial | 78 | ML-KEM/DSA handshake; **YJS not app-encrypted** |
+| SRC-P2P-001 | P2P Mesh | partial | 85 | Single PeerJS Phase C; broker still required |
+| SRC-CRDT-001 | CRDT Yjs | partial | 84 | Shared Y.Doc Phase B; remote entity ACL relaxed |
+| SRC-EDGE-001 | Edge Mesh Runtime | partial | 72 | Dual wire path; Phase D open |
+| SRC-GPU-001 | GPU Agent | skeleton | **18** | executeTask **mock** |
+| SRC-QA-001 | Testing | partial | 78 | Playwright strong; GHA infra flaky |
+| SRC-PWA-001 | PWA & Offline | implemented | 86 | SW + IDB + update banner |
 
-## Open Strategic Issues
+## Critical product lies (corrected)
 
-| Issue | Area | Implementation | Remaining Work |
-| --- | --- | ---: | --- |
-| #87 | 100% offline architecture and local AI | 25% | Split into local OCR, WebLLM/StockBot, local-only profile/auth, and removal/degradation of cloud dependencies. |
-| #134 | Branches and warehouses over P2P | 25% | Sidebar selector, Settings CRUD, `activeBranch/warehouse`, permissions by context, and consolidated reports. |
-| #135 | Node history and host failover | 45% | Persist timeline, show historical UI, and connect successor proposal to governance/authority metadata. |
-| #136 | Admin consensus | 35% | Candidate/vote UI, vote synchronization, audit trail, and safe authority metadata update. |
-| #139 | Secure CRDT sync in `edge-mesh` | 70% | Complete Shelf migration to `createCrdtSyncLayer`, ack/retry, capability enforcement, and multi-node E2E. |
+| Claim (old docs) | Reality |
+|------------------|---------|
+| Firebase Auth & Cloud Sync 100% | `AuthContext` → `localAuthManager` only |
+| Cloud Sync via Supabase | No Supabase client in app |
+| Stripe production-ready | UI calls `/api/createCheckoutSession`; tier hardcodes Pro |
+| Dashboard charts real | `ProChartsTeaserCard` hardcodes Ene–Jun demo |
+| GPU agents on WebGPU | Mock delay + string result |
+| YJS encrypted with PQC | Only authority messages app-encrypted; YJS = DTLS |
 
-## Required Adjustments
+## Strategic open work (linked)
 
-1. Fix `LandingPage` so `t(...)` can safely return either a string or an array.
-2. Fix `addOverlayBlocker` so E2E helpers do not remove functional modals.
-3. Complete #139 by migrating Shelf more deeply to the new `edge-mesh` sync layer.
-4. Add 2-node and 3-node E2E coverage without manual rebroadcast helpers.
-5. Implement #134 branch/warehouse UX and data isolation.
-6. Implement #135 persistent node timeline and governance-backed failover.
-7. Implement #136 admin candidacy, voting, and authority update flow.
-8. Split #87 into smaller implementation tasks for local OCR, local AI, local profile/auth, and cloud dependency reduction.
-9. Audit Dependabot vulnerabilities before a broad public release.
-10. Validate current uncommitted local changes before documenting them as deployed.
+| Track | Related | Priority |
+|-------|---------|----------|
+| Real subscription gating | FUN-009 | P0 |
+| Auth AC alignment (docs or Firebase) | FUN-008 | P0 |
+| Dashboard real charts | FUN-003 | P0 |
+| PO cancelled + receive E2E | FUN-005 | P1 |
+| Encrypt YJS post dual-key | PQC / ROADMAP-010 | P1 |
+| Phase D thin p2p-mesh-core | EDGE / P2P | P1 |
+| GPU real execution | GPU-001 | P2 |
 
-## Known Risks
+## Validation snapshot (2026-07-17)
 
-- `apps/shelf-inventory/tests/p2p-sync-advanced.spec.ts` is blocked by legacy test helper behavior around overlays/modals.
-- Manual in-app browser verification can hit `LandingPage: t(...).map is not a function` unless test storage flags bypass the landing flow.
-- GitHub reported existing Dependabot vulnerabilities during the push flow: 47 total, including 23 high.
-- Local uncommitted edits exist in inventory configuration UI/tests and are not part of the last documented production deployment.
+- edge-mesh unit: **214/214**
+- Playwright gate: multi-peer, edge-mesh-sync, p2p-sync, offline, conflict, three-node, security → **9/9**
+- Vercel build: green after removing stale `edge-mesh-react` type stub
+- GitHub Actions shelf: often fails instantly (infra) — prefer local + Vercel
+
+## Required doc sources
+
+1. `.gitcore/features.json` — summary + gaps per SRC  
+2. `.gitcore/features-details.json` — paths, tests, acceptance_met, next_actions  
+3. Root `features.json` — index only  
+4. This file — human-readable status for app folder  
+5. `docs/src/REQUIREMENTS.md` / `NON-FUNCTIONAL.md` — must match SSOT (not 100%)

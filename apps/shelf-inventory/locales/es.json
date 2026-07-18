@@ -172,7 +172,11 @@
       "selectSupplier": "Selecciona un proveedor...",
       "selectSupplierAlert": "Por favor, selecciona un proveedor.",
       "addItem": "+ Añadir Producto"
-    }
+    },
+    "statusCancelled": "Cancelada",
+    "cancel": "Cancelar orden",
+    "cancelConfirm": "¿Cancelar esta orden de compra? El stock no cambiará.",
+    "cancelSuccess": "Orden de compra cancelada"
   },
   "reports": {
     "title": "Reportes y Análisis",
@@ -327,7 +331,6 @@
       "modelMedium": "Mediano (Qwen 2.5 1.5B)",
       "proxyUrl": "URL de Proxy Local (Opcional)"
     },
-
     "branches": {
       "title": "Sucursales / Bodegas",
       "description": "Gestiona las ubicaciones físicas de tu inventario.",

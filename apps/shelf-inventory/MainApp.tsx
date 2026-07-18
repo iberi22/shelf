@@ -31,7 +31,7 @@ const MainApp: React.FC = () => {
   const { isFree } = useSubscription();
   const { state, dispatch } = useAppContext();
   const { isEnabled } = useFeatureFlags();
-  const showAds = isFree; // No ads if pro/pyme (always true now)
+  const showAds = isFree; // Ads only for free tier (tier from user.subscriptionTier)
 
   if (state.isExpelled) {
     return (

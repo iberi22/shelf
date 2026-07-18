@@ -3,9 +3,11 @@
 - **ID:** SRC-FUN-006
 - **Nombre:** Barcode/QR Scanner
 - **Prioridad:** P1 (Importante)
-- **Estado:** ✅ Implementado
+- **Estado:** ✅ Implemented
+- **Implementation:** 82%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Production
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
 ## Descripción
 Escaneo de códigos de barras y QR usando la cámara del dispositivo para entrada rápida de SKU sin escritura manual.

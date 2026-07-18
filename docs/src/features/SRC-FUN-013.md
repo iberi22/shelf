@@ -3,12 +3,16 @@
 - **ID:** SRC-FUN-013
 - **Nombre:** Multi-user Access (Pyme Plan)
 - **Prioridad:** P2 (Nice to have)
-- **Estado:** ✅ Implementado
+- **Estado:** ⚠️ Partial
+- **Implementation:** 58%
 - **Categoría:** FUN (Funcionalidades Core)
-- **SDLC:** Production
+- **SDLC:** Beta
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
+
+> **Audit 2026-07-17:** Equipo/permisos vía P2P (no org multi-tenant cloud). Roles reales: admin/collaborator/vendedor/member (no editor/viewer del AC). Invite = mailto + peerId. Gate isPyme siempre true por hardcode de SubscriptionContext.
 
 ## Descripción
-Acceso multi-usuario para plan Pyme con roles (admin, editor, viewer), invitación por email y separación de datos por usuario dentro de la misma organización.
+Acceso multi-usuario orientado a plan Pyme con roles y permisos vía **P2P** (`PeerPermissions`, team UI), invitación por email/peerId. No hay backend de organización multi-tenant cloud.
 
 ## Actor Principal
 Dueño de Negocio

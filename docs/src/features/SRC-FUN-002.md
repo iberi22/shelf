@@ -3,9 +3,11 @@
 - **ID:** SRC-FUN-002
 - **Nombre:** Sales Tracking
 - **Prioridad:** P0 (Core)
-- **Estado:** ✅ Implementado
+- **Estado:** ✅ Implemented
+- **Implementation:** 97%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Production
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
 ## Descripción
 Registro de ventas con decremento automático de stock. Cada venta resta del inventario y calcula revenue/profit automáticamente.
