@@ -9,20 +9,22 @@
     "version": "1.2.1",
     "sdlc_phase": "hardening",
     "total_features": 21,
-    "features_implemented": 11,
-    "implementation_percentage": 80,
+    "features_implemented": 8,
+    "features_partial": 12,
+    "features_skeleton": 1,
+    "implementation_percentage": 75,
     "stack": {
       "monorepo": "pnpm + Turborepo",
       "frontend": "React 19 + Vite 8",
       "language": "TypeScript 6",
       "styling": "Tailwind CSS 4 + PostCSS + Biome",
       "p2p": "PeerJS (WebRTC) + Yjs (CRDT)",
-      "edge-mesh": "@shelf/edge-mesh (reusable P2P runtime)",
-      "edge-mesh-react": "@shelf/edge-mesh-react (React bindings)",
-      "gpu-agent": "@shelf/gpu-agent (WebGPU)",
+      "edge-mesh": "edge-mesh (reusable P2P runtime)",
+      "edge-mesh-react": "edge-mesh-react (React bindings)",
+      "gpu-agent": "gpu-agent (WebGPU stub)",
       "crypto": "@noble/post-quantum (ML-KEM-768, ML-DSA-65)",
-      "auth": "Firebase Auth",
-      "payments": "Stripe",
+      "auth": "localAuth (no Firebase runtime)",
+      "payments": "Stripe UI stub (no live billing)",
       "deploy": "Vercel",
       "testing": "Playwright + Cypress + Biome + Husky"
     },
@@ -68,9 +70,7 @@
         "description": "Progressive Web App con soporte offline"
       }
     },
-    "features_partial": 9,
-    "features_skeleton": 1,
-    "implementation_notes": "Porcentajes recalibrados 2026-07-17 según codebase + tests. status: implemented|partial|skeleton. maturity: skeleton|unit|integrated|hardened. Path de inventario: p2p-mesh-core; edge-mesh es runtime paralelo en migración.",
+    "implementation_notes": "Auditoría honesta 2026-07-17: código + tests + ACs literales. Root features.json NO es SSOT de %. implemented = ≥85% y ACs core cubiertos; partial = usable con gaps; skeleton = mock/placeholder.",
     "status_model": {
       "skeleton": "API o package existe, comportamiento mock/placeholder",
       "unit": "Lógica local o unit tests; no E2E mesh endurecido",
@@ -79,16 +79,28 @@
     },
     "audit": {
       "date": "2026-07-17",
-      "product_weighted_estimate": 79,
-      "p2p_edge_pqc_gpu_estimate": 62,
-      "primary_inventory_path": "p2p-mesh-core",
-      "secondary_edge_path": "edge-mesh + EdgeMeshWorkflowBridge",
-      "vitest_executable": false,
-      "coverage_reported": false,
+      "method": "code+tests vs acceptance criteria (3 parallel explore agents + manual verify)",
+      "simple_average_percent": 75,
+      "product_core_fun_average": 77,
+      "mesh_pqc_edge_gpu_average": 67,
+      "features_ge_85": 8,
+      "features_partial_40_84": 12,
+      "features_skeleton_lt_40": 1,
+      "ssot_file": ".gitcore/features.json",
+      "root_features_json": "status-only index; was falsely 100% — corrected",
+      "primary_inventory_path": "p2p-mesh-core (YJS_UPDATE)",
+      "secondary_edge_path": "edge-mesh + EdgeMeshWorkflowBridge (EDGE_MESH_ENVELOPE)",
+      "auth_runtime": "localAuth only — no Firebase Auth/Firestore client",
+      "subscription_runtime": "SubscriptionContext hardcodes isPro/isPyme true",
+      "yjs_app_layer_encrypt": false,
       "phase_b_unified_ydoc": true,
       "phase_c_unified_transport": true,
-      "yjs_app_layer_encrypt": true,
-      "develop_pushed": true
+      "phase_d_thin_p2p_core": false,
+      "locales_count": 20,
+      "playwright_specs": 35,
+      "cypress_e2e_specs": 16,
+      "edge_mesh_unit_tests": 214,
+      "p2p_gate_e2e_local": "9/9 green (multi-peer, edge-mesh, p2p-sync, offline, conflict, three-node, security)"
     }
   },
   "features": [
@@ -103,11 +115,7 @@
       "user_story": "Como dueño de negocio, quiero gestionar mi inventario digitalmente para saber exactamente qué tengo en stock",
       "actor": "Dueño de Negocio",
       "dependencies": [],
-      "technologies": [
-        "React",
-        "localStorage",
-        "Firestore"
-      ],
+      "technologies": ["React", "localStorage", "Yjs", "IndexedDB"],
       "acceptance_criteria": [
         "Crear producto con nombre, SKU, cantidad, precio, costo, imagen",
         "Editar producto existente",
@@ -115,9 +123,18 @@
         "Listar productos con búsqueda y filtros",
         "Cantidad se actualiza automáticamente al vender"
       ],
-      "implementation_percentage": 92,
-      "maturity": "integrated",
-      "gaps": []
+      "implementation_percentage": 96,
+      "maturity": "hardened",
+      "evidence": [
+        "apps/shelf-inventory/components/Inventory.tsx",
+        "tests/crud-operations.spec.ts",
+        "tests/variant-catalog.spec.ts",
+        "cypress/e2e/inventory.cy.ts"
+      ],
+      "gaps": [
+        "No unique-SKU hard enforce en save path",
+        "Filtros principalmente free-text + sort, no multi-facet"
+      ]
     },
     {
       "id": "SRC-FUN-002",
@@ -129,52 +146,56 @@
       "description": "Registro de ventas con decremento automático de stock",
       "user_story": "Como vendedor, quiero registrar ventas para que el stock se actualice automáticamente",
       "actor": "Vendedor / Cajero",
-      "dependencies": [
-        "SRC-FUN-001"
-      ],
-      "technologies": [
-        "React",
-        "localStorage",
-        "Context API"
-      ],
+      "dependencies": ["SRC-FUN-001"],
+      "technologies": ["React", "localStorage", "Context API", "jsPDF"],
       "acceptance_criteria": [
         "Registrar venta seleccionando productos del inventario",
         "Decremento automático de stock al confirmar venta",
         "Historial de ventas con fecha, productos y total",
         "Cálculo automático de revenue y profit por venta"
       ],
-      "implementation_percentage": 90,
-      "maturity": "integrated",
-      "gaps": []
+      "implementation_percentage": 97,
+      "maturity": "hardened",
+      "evidence": [
+        "apps/shelf-inventory/components/Sales.tsx",
+        "AppContext ADD_SALE → syncInventoryStockChanges",
+        "cypress/e2e/sales.cy.ts",
+        "cypress/e2e/pdf-generation.cy.ts"
+      ],
+      "gaps": [
+        "Scanner no integrado en flujo de venta (solo form de producto)"
+      ]
     },
     {
       "id": "SRC-FUN-003",
       "name": "Dashboard",
-      "status": "implemented",
+      "status": "partial",
       "sdlc": "production",
       "priority": "P0",
       "category": "FUN",
       "description": "Panel principal con métricas clave del negocio en tiempo real",
       "user_story": "Como dueño, quiero ver un dashboard con mis métricas clave de un vistazo",
       "actor": "Dueño de Negocio",
-      "dependencies": [
-        "SRC-FUN-001",
-        "SRC-FUN-002"
-      ],
-      "technologies": [
-        "React",
-        "chart.js",
-        "react-chartjs-2"
-      ],
+      "dependencies": ["SRC-FUN-001", "SRC-FUN-002"],
+      "technologies": ["React", "chart.js", "react-chartjs-2"],
       "acceptance_criteria": [
         "Tarjetas con Revenue, Profit, Ventas totales, Productos totales",
         "Dashboard personalizable (elegir qué stats mostrar)",
         "Gráficos de ventas en el tiempo (chart.js)",
         "Top productos más vendidos"
       ],
-      "implementation_percentage": 88,
+      "implementation_percentage": 68,
       "maturity": "integrated",
-      "gaps": []
+      "evidence": [
+        "apps/shelf-inventory/components/Dashboard.tsx",
+        "ProChartsTeaserCard.tsx (datos demo hardcodeados)",
+        "Reports.tsx (charts reales + top products)"
+      ],
+      "gaps": [
+        "Charts del Dashboard son teaser con datos fake (ProChartsTeaserCard)",
+        "Top productos viven en Reports, no en Dashboard",
+        "totalProducts card suma cantidades, no cuenta SKUs"
+      ]
     },
     {
       "id": "SRC-FUN-004",
@@ -187,50 +208,54 @@
       "user_story": "Como usuario, quiero gestionar clientes y proveedores desde un mismo lugar",
       "actor": "Vendedor / Cajero",
       "dependencies": [],
-      "technologies": [
-        "React",
-        "localStorage",
-        "Firestore"
-      ],
+      "technologies": ["React", "localStorage", "Yjs"],
       "acceptance_criteria": [
         "CRUD de clientes (nombre, teléfono, email)",
         "CRUD de proveedores (nombre, teléfono, email)",
         "Componente genérico ContactManagementPage (sin duplicación)",
         "Refactorizado: ahorro de 300+ líneas de código duplicado"
       ],
-      "implementation_percentage": 90,
-      "maturity": "integrated",
-      "gaps": []
+      "implementation_percentage": 98,
+      "maturity": "hardened",
+      "evidence": [
+        "ContactManagementPage.tsx",
+        "Clients.tsx / Suppliers.tsx",
+        "cypress/e2e/clients.cy.ts",
+        "cypress/e2e/suppliers.cy.ts"
+      ],
+      "gaps": [
+        "Sin campo address; sin free-text search en lista"
+      ]
     },
     {
       "id": "SRC-FUN-005",
       "name": "Purchase Orders",
-      "status": "implemented",
+      "status": "partial",
       "sdlc": "production",
       "priority": "P1",
       "category": "FUN",
       "description": "Órdenes de compra a proveedores con actualización automática de stock al recibirlas",
       "user_story": "Como dueño, quiero crear órdenes de compra a proveedores y que el stock se actualice al recibirlas",
       "actor": "Dueño de Negocio",
-      "dependencies": [
-        "SRC-FUN-001",
-        "SRC-FUN-004"
-      ],
-      "technologies": [
-        "React",
-        "localStorage",
-        "Context API"
-      ],
+      "dependencies": ["SRC-FUN-001", "SRC-FUN-004"],
+      "technologies": ["React", "localStorage", "Context API"],
       "acceptance_criteria": [
         "Crear orden de compra seleccionando proveedor y productos",
         "Marcar orden como recibida → stock se incrementa",
         "Listar órdenes activas e históricas",
         "Estado de orden: pendiente, recibida, cancelada"
       ],
-      "implementation_percentage": 85,
+      "implementation_percentage": 84,
       "maturity": "integrated",
+      "evidence": [
+        "PurchaseOrders.tsx",
+        "types status: pending | received only",
+        "cypress/e2e/purchase-orders.cy.ts (create only)"
+      ],
       "gaps": [
-        "Cobertura E2E menor que inventory/sales"
+        "Falta status cancelled en dominio y UI",
+        "Sin E2E que assert stock on receive",
+        "Lista única sin tabs/filtros por estado"
       ]
     },
     {
@@ -243,23 +268,26 @@
       "description": "Escaneo de códigos de barras y QR para entrada rápida de SKU usando cámara del dispositivo",
       "user_story": "Como usuario de bodega, quiero escanear códigos de barras para no escribir SKUs manualmente",
       "actor": "Vendedor / Cajero",
-      "dependencies": [
-        "SRC-FUN-001"
-      ],
-      "technologies": [
-        "html5-qrcode",
-        "React",
-        "cámara Web"
-      ],
+      "dependencies": ["SRC-FUN-001"],
+      "technologies": ["html5-qrcode", "React", "cámara Web"],
       "acceptance_criteria": [
         "Escaneo usando cámara del dispositivo",
         "Parseo automático de código de barras a campo SKU",
         "Soporte para QR y códigos de barras estándar (EAN, UPC, Code128)",
         "Feedback visual de escaneo exitoso"
       ],
-      "implementation_percentage": 85,
+      "implementation_percentage": 82,
       "maturity": "integrated",
-      "gaps": []
+      "evidence": [
+        "BarcodeScanner.tsx",
+        "Inventory handleScanSuccess → setSku",
+        "tests/scanner-lifecycle.spec.ts"
+      ],
+      "gaps": [
+        "Sin formatsToSupport explícito EAN/UPC/Code128",
+        "Sin vibrate/sound feedback de éxito",
+        "No usado en Sales POS"
+      ]
     },
     {
       "id": "SRC-FUN-007",
@@ -271,25 +299,25 @@
       "description": "Asistente IA para análisis de inventario y preguntas en lenguaje natural (gated para usuarios Pro)",
       "user_story": "Como usuario Pro, quiero preguntarle a un AI sobre mi inventario en lenguaje natural",
       "actor": "Usuario Pro",
-      "dependencies": [
-        "SRC-FUN-008",
-        "SRC-FUN-001"
-      ],
-      "technologies": [
-        "@google/genai",
-        "Firebase Cloud Functions",
-        "Gemini API"
-      ],
+      "dependencies": ["SRC-FUN-008", "SRC-FUN-001"],
+      "technologies": ["WebLLM", "Gemini API client-side", "Gemini Nano"],
       "acceptance_criteria": [
         "Chat integrado en reports page",
         "Gemini API vía Firebase Cloud Function proxy",
         "Gated para usuarios Pro",
         "Preguntas sobre datos de inventario, ventas, tendencias"
       ],
-      "implementation_percentage": 75,
-      "maturity": "integrated",
+      "implementation_percentage": 72,
+      "maturity": "unit",
+      "evidence": [
+        "AIChat.tsx en Reports.tsx",
+        "useWebLLM + direct Gemini key en localStorage",
+        "isPro gate (pero isPro hardcodeado true)"
+      ],
       "gaps": [
-        "Calidad/resiliencia del proxy Gemini no validada en profundidad"
+        "AC pide CF proxy — path real es client key / WebLLM / Nano",
+        "fetch /api/chat sin route real en monorepo",
+        "Sin tests de calidad de respuestas"
       ]
     },
     {
@@ -299,26 +327,30 @@
       "sdlc": "hardening",
       "priority": "P0",
       "category": "FUN",
-      "description": "Autenticación Firebase y sincronización cloud para usuarios Pro",
+      "description": "Autenticación local (no Firebase en runtime) y sync cloud aún en roadmap",
       "user_story": "Como usuario, quiero crear una cuenta para sincronizar mis datos en la nube",
       "actor": "Usuario Pro",
       "dependencies": [],
-      "technologies": [
-        "Firebase Auth",
-        "Firestore",
-        "localStorage"
-      ],
+      "technologies": ["localAuth", "localStorage", "WebAuthn optional"],
       "acceptance_criteria": [
         "Registro/login con email y contraseña (Firebase Auth)",
         "Sync de estado local (localStorage) a Firestore",
         "Restauración de datos al iniciar sesión en otro dispositivo",
         "Segregación de datos por usuario"
       ],
-      "implementation_percentage": 70,
-      "maturity": "integrated",
+      "implementation_percentage": 40,
+      "maturity": "unit",
+      "evidence": [
+        "AuthContext.tsx → localAuthManager only",
+        "lib/localAuth.ts (password hash, seed, devices)",
+        "firestore.rules exists but no Firestore client",
+        "getIdToken returns dummy local-token"
+      ],
       "gaps": [
-        "Full cloud sync aún en roadmap ROADMAP-003",
-        "Restauración multi-dispositivo incompleta"
+        "No Firebase Auth SDK en runtime",
+        "No Firestore sync push/pull",
+        "Multi-device restore = P2P/backup JSON, no cloud login",
+        "Guest tier hardcodeado a pyme"
       ]
     },
     {
@@ -328,18 +360,11 @@
       "sdlc": "hardening",
       "priority": "P0",
       "category": "FUN",
-      "description": "Sistema de monetización con anuncios (DesktopAdColumn, MobileAdBars) y planes de suscripción (Basic/Pro/Pyme) vía Stripe",
+      "description": "UI de monetización presente; billing y ads efectivamente stub por hardcode Pro",
       "user_story": "Como negocio, quiero que la app genere ingresos vía anuncios y suscripciones Pro",
       "actor": "Usuario Free / Pro",
-      "dependencies": [
-        "SRC-FUN-008"
-      ],
-      "technologies": [
-        "Stripe",
-        "Firebase",
-        "AdSense",
-        "React"
-      ],
+      "dependencies": ["SRC-FUN-008"],
+      "technologies": ["Stripe UI", "AdSense UI", "React"],
       "acceptance_criteria": [
         "Anuncios para usuarios free (DesktopAdColumn, MobileAdBars)",
         "Modal de suscripción con planes Basic/Pro/Pyme",
@@ -347,10 +372,18 @@
         "Anuncios ocultos para usuarios Pro",
         "AdSense IDs via environment variables"
       ],
-      "implementation_percentage": 75,
-      "maturity": "integrated",
+      "implementation_percentage": 42,
+      "maturity": "unit",
+      "evidence": [
+        "Ads.tsx + AdSenseUnit.tsx",
+        "SubscriptionModal.tsx → /api/createCheckoutSession",
+        "SubscriptionContext hardcodes isPro/isPyme true, isFree false"
+      ],
       "gaps": [
-        "Webhooks Stripe en producción por validar end-to-end"
+        "Tier hardcodeado: ads nunca se muestran, checkout always current plan",
+        "Sin backend Stripe ejecutable en monorepo",
+        "Plan Basic ausente (solo Pro/Pyme en modal)",
+        "Tokens auth dummy para checkout"
       ]
     },
     {
@@ -360,24 +393,28 @@
       "sdlc": "production",
       "priority": "P1",
       "category": "FUN",
-      "description": "Soporte multi-idioma (Inglés, Español, Portugués) con persistencia de preferencia",
+      "description": "Soporte multi-idioma (20 locales) con persistencia de preferencia",
       "user_story": "Como usuario, quiero usar la app en mi idioma",
       "actor": "Usuario Free",
       "dependencies": [],
-      "technologies": [
-        "React",
-        "localStorage (i18n)",
-        "JSON locale files"
-      ],
+      "technologies": ["React", "localStorage (i18n)", "JSON locale files"],
       "acceptance_criteria": [
         "Toggle EN/ES/PT en settings",
         "Traducción completa de UI",
         "Persistencia de preferencia de idioma",
         "Sistema de traducción vía archivos de locales"
       ],
-      "implementation_percentage": 90,
+      "implementation_percentage": 88,
       "maturity": "integrated",
-      "gaps": []
+      "evidence": [
+        "apps/shelf-inventory/locales/*.json (20 files)",
+        "I18nContext.tsx",
+        "LanguageSelector.tsx"
+      ],
+      "gaps": [
+        "Strings hardcodeados ES en NetworkConfig/MainApp",
+        "Locales secundarios parcialmente en inglés"
+      ]
     },
     {
       "id": "SRC-FUN-011",
@@ -390,11 +427,7 @@
       "user_story": "Como usuario, quiero configurar la app y gestionar mis datos",
       "actor": "Usuario Free",
       "dependencies": [],
-      "technologies": [
-        "React",
-        "localStorage",
-        "File API (JSON)"
-      ],
+      "technologies": ["React", "localStorage", "File API (JSON)", "AES backup"],
       "acceptance_criteria": [
         "Respaldo y restauración JSON",
         "Reset de datos con confirmación",
@@ -402,9 +435,18 @@
         "Configuración de umbral de stock bajo",
         "Persistencia de todas las configuraciones"
       ],
-      "implementation_percentage": 90,
+      "implementation_percentage": 91,
       "maturity": "integrated",
-      "gaps": []
+      "evidence": [
+        "NetworkConfig.tsx (backup encrypted, restore, reset)",
+        "CurrencyContext.tsx",
+        "tests/settings-features.spec.ts",
+        "cypress/e2e/settings.cy.ts"
+      ],
+      "gaps": [
+        "accept=json vs backup .encrypted (UX frágil)",
+        "Sin E2E full backup/restore roundtrip"
+      ]
     },
     {
       "id": "SRC-FUN-012",
@@ -416,15 +458,8 @@
       "description": "Reportes avanzados con gráficos (chart.js), filtros, análisis de márgenes y valor de inventario",
       "user_story": "Como dueño, quiero ver reportes detallados de mi negocio para tomar decisiones",
       "actor": "Dueño de Negocio",
-      "dependencies": [
-        "SRC-FUN-001",
-        "SRC-FUN-002"
-      ],
-      "technologies": [
-        "chart.js",
-        "react-chartjs-2",
-        "React"
-      ],
+      "dependencies": ["SRC-FUN-001", "SRC-FUN-002"],
+      "technologies": ["chart.js", "react-chartjs-2", "React", "jsPDF"],
       "acceptance_criteria": [
         "Gráficos de ventas en el tiempo (chart.js)",
         "Top productos más vendidos",
@@ -432,9 +467,17 @@
         "Análisis de márgenes de ganancia",
         "Valor total de inventario"
       ],
-      "implementation_percentage": 88,
+      "implementation_percentage": 89,
       "maturity": "integrated",
-      "gaps": []
+      "evidence": [
+        "Reports.tsx (Line chart, topProducts, filters, PDF valuation)",
+        "tests/e2e/reports-export.spec.ts",
+        "tests/arqueo-catalog-reports.spec.ts"
+      ],
+      "gaps": [
+        "Cypress reports solo smoke",
+        "ROADMAP advanced suite aún abierto"
+      ]
     },
     {
       "id": "SRC-FUN-013",
@@ -443,28 +486,30 @@
       "sdlc": "beta",
       "priority": "P2",
       "category": "FUN",
-      "description": "Acceso multi-usuario para plan Pyme con roles (admin, editor, viewer) e invitación por email",
+      "description": "Equipo y permisos vía P2P (no org multi-tenant cloud); roles distintos al AC original",
       "user_story": "Como dueño de negocio, quiero invitar a mi equipo con roles y permisos específicos",
       "actor": "Dueño de Negocio",
-      "dependencies": [
-        "SRC-FUN-008"
-      ],
-      "technologies": [
-        "Firebase",
-        "Firestore",
-        "React"
-      ],
+      "dependencies": ["SRC-FUN-008"],
+      "technologies": ["P2P roles", "PeerPermissions", "Yjs teamMembers", "React"],
       "acceptance_criteria": [
         "Invitación de miembros del equipo",
         "Roles con permisos específicos (admin, editor, viewer)",
         "Separación de datos por usuario dentro de la misma organización",
         "UI de gestión de equipo en settings"
       ],
-      "implementation_percentage": 65,
-      "maturity": "unit",
+      "implementation_percentage": 58,
+      "maturity": "integrated",
+      "evidence": [
+        "InviteMemberModal.tsx",
+        "NetworkConfig team UI",
+        "p2p-three-node-permissions.spec.ts",
+        "PeerPermissions + canEdit* gates"
+      ],
       "gaps": [
-        "Backend multi-user incompleto (ROADMAP-004)",
-        "Roles Pyme parcialmente en UI P2P"
+        "Roles AC editor/viewer no existen (admin/collaborator/vendedor/member)",
+        "Invite = mailto + peerId, no backend invites",
+        "Sin org multi-tenant cloud",
+        "Gate isPyme siempre true por hardcode"
       ]
     },
     {
@@ -474,27 +519,28 @@
       "sdlc": "production",
       "priority": "P2",
       "category": "FUN",
-      "description": "Importación de inventario desde archivos CSV con parseo automático y validación",
+      "description": "Importación de inventario desde archivos CSV con header fijo y validación básica",
       "user_story": "Como usuario con inventario existente, quiero importarlo desde un archivo CSV",
       "actor": "Usuario de Bodega",
-      "dependencies": [
-        "SRC-FUN-001"
-      ],
-      "technologies": [
-        "React",
-        "File API",
-        "CSV parser"
-      ],
+      "dependencies": ["SRC-FUN-001"],
+      "technologies": ["React", "File API", "CSV parser regex"],
       "acceptance_criteria": [
         "Upload de archivo CSV",
         "Parseo y mapeo de columnas automático",
         "Validación de datos importados",
         "Feedback visual del proceso de importación"
       ],
-      "implementation_percentage": 80,
+      "implementation_percentage": 78,
       "maturity": "integrated",
+      "evidence": [
+        "ImportCSVModal.tsx",
+        "IMPORT_PRODUCTS in AppContext",
+        "public/template.csv"
+      ],
       "gaps": [
-        "Suite de tests de import CSV limitada"
+        "Header fijo exact match — sin column mapper UI",
+        "Validación de filas débil (NaN→0)",
+        "Sin tests E2E de import"
       ]
     },
     {
@@ -504,16 +550,11 @@
       "sdlc": "hardening",
       "priority": "P0",
       "category": "PQC",
-      "description": "Criptografía post-cuántica usando @noble/post-quantum (ML-KEM-768 para intercambio de llaves, ML-DSA-65 para firmas, AES-GCM para cifrado)",
+      "description": "ML-KEM-768 handshake + ML-DSA-65 firmas; AES-GCM at-rest y authority in-transit; YJS sin cifrado app",
       "user_story": "Como usuario, quiero que mis datos estén protegidos incluso contra computación cuántica",
       "actor": "Usuario Pro",
       "dependencies": [],
-      "technologies": [
-        "@noble/post-quantum",
-        "ML-KEM-768",
-        "ML-DSA-65",
-        "AES-GCM"
-      ],
+      "technologies": ["@noble/post-quantum", "ML-KEM-768", "ML-DSA-65", "AES-GCM"],
       "acceptance_criteria": [
         "Intercambio de llaves ML-KEM-768 (NIST estandarizado)",
         "Firmas digitales ML-DSA-65",
@@ -521,13 +562,18 @@
         "Cifrado en tránsito AES-GCM sobre WebRTC",
         "Integración con p2p-mesh-core para handshake seguro"
       ],
-      "implementation_percentage": 82,
+      "implementation_percentage": 78,
       "maturity": "integrated",
+      "evidence": [
+        "packages/p2p-mesh-core/src/crypto-pqc.ts",
+        "p2p.ts PQC_HANDSHAKE + isSensitive authority only",
+        "crypto.ts PIN/device entropy at-rest"
+      ],
       "gaps": [
-        "YJS_UPDATE/YJS_SYNC_REQUEST/EDGE_MESH_ENVELOPE encrypted when peer AES key exists post ML-KEM",
-        "Before handshake, falls back to WebRTC DTLS only",
-        "At-rest uses per-device entropy when no app lock PIN",
-        "edge-mesh still ML-DSA only (no ML-KEM in core)"
+        "YJS_UPDATE / YJS_SYNC_REQUEST NO cifrados a nivel app (solo DTLS)",
+        "At-rest usa PBKDF2+PIN/device entropy, no PQC-derived key",
+        "edge-mesh: ML-DSA only (sin ML-KEM en core)",
+        "Dual-ready encrypt de YJS es follow-up documentado en código"
       ]
     },
     {
@@ -537,17 +583,11 @@
       "sdlc": "hardening",
       "priority": "P0",
       "category": "P2P",
-      "description": "Red mesh P2P descentralizada vía WebRTC (PeerJS) para sincronización offline-first sin servidor central",
+      "description": "Red mesh P2P vía WebRTC (PeerJS) offline-first; un solo PeerJS en Shelf (Phase C)",
       "user_story": "Como usuario, quiero que los datos se sincronicen entre mis dispositivos sin servidor central",
       "actor": "Usuario de Bodega",
-      "dependencies": [
-        "SRC-PQC-001"
-      ],
-      "technologies": [
-        "PeerJS",
-        "WebRTC",
-        "p2p-mesh-core"
-      ],
+      "dependencies": ["SRC-PQC-001"],
+      "technologies": ["PeerJS", "WebRTC", "p2p-mesh-core"],
       "acceptance_criteria": [
         "Descubrimiento de peers vía WebRTC",
         "Topología mesh descentralizada (cada nodo a múltiples peers)",
@@ -555,12 +595,17 @@
         "Reconexión automática ante caídas",
         "Empaquetado como p2p-mesh-core (package reutilizable)"
       ],
-      "implementation_percentage": 86,
+      "implementation_percentage": 85,
       "maturity": "integrated",
+      "evidence": [
+        "packages/p2p-mesh-core/src/p2p.ts",
+        "EdgeMeshTransportBinder (no second Peer)",
+        "multi-peer / three-node / offline E2E green"
+      ],
       "gaps": [
-        "Un solo PeerJS (p2pManager); EdgeMesh no abre Peer",
-        "YJS_UPDATE + EDGE_MESH_ENVELOPE en mismo canal",
-        "Broker PeerJS aun requerido para discovery"
+        "Broker PeerJS aún requerido para signaling",
+        "Phase D: thin p2p-mesh-core / migration total abierta",
+        "invite-and-sync residual authority/master"
       ]
     },
     {
@@ -570,16 +615,11 @@
       "sdlc": "hardening",
       "priority": "P0",
       "category": "CRDT",
-      "description": "Sincronización CRDT usando Yjs para consistencia eventual sin servidor central",
+      "description": "Sincronización CRDT Yjs con doc compartido (Phase B); ACL remota de entidades relajada",
       "user_story": "Como usuario, quiero que los cambios se sincronicen sin conflictos entre dispositivos",
       "actor": "Usuario de Bodega",
-      "dependencies": [
-        "SRC-P2P-001"
-      ],
-      "technologies": [
-        "Yjs",
-        "y-protocols"
-      ],
+      "dependencies": ["SRC-P2P-001"],
+      "technologies": ["Yjs", "y-protocols"],
       "acceptance_criteria": [
         "Integración Yjs para tipos de datos compartidos",
         "Resolución automática de conflictos (CRDT)",
@@ -587,74 +627,17 @@
         "Sincronización eficiente (solo cambios delta, no datos completos)",
         "Funciona 100% offline → sync cuando hay conexión"
       ],
-      "implementation_percentage": 90,
+      "implementation_percentage": 84,
       "maturity": "integrated",
+      "evidence": [
+        "database-sync.ts Y.Maps + encodeStateAsUpdate",
+        "shared yDoc Phase B (AppContext + EdgeMesh)",
+        "offline-sync + conflict-resolution E2E"
+      ],
       "gaps": [
-        "Un solo Y.Doc inventario (Phase B)",
-        "Branch scoping sigue en metadata de transacciones, no maps separados por branch en schema unificado"
-      ]
-    },
-    {
-      "id": "SRC-QA-001",
-      "name": "Testing Infrastructure",
-      "status": "partial",
-      "sdlc": "beta",
-      "priority": "P1",
-      "category": "QA",
-      "description": "Infraestructura de testing E2E con Cypress, linting con Biome, pre-commit hooks con Husky + lint-staged",
-      "user_story": "Como desarrollador, quiero tests automatizados para asegurar calidad del código",
-      "actor": "Desarrollador",
-      "dependencies": [],
-      "technologies": [
-        "Cypress",
-        "Biome",
-        "Husky",
-        "lint-staged",
-        "GitHub Actions"
-      ],
-      "acceptance_criteria": [
-        "data-testid en todos los elementos interactivos",
-        "Tests E2E con Cypress para flujos críticos",
-        "Linting con Biome configurado",
-        "Husky + lint-staged para pre-commit hooks",
-        "CI/CD con GitHub Actions (.github/workflows/ci.yml)"
-      ],
-      "implementation_percentage": 72,
-      "maturity": "unit",
-      "gaps": [
-        "pnpm install repaired; pre-push tsc+vite green on develop",
-        "Husky lint-staged still fragile (listr2) — commits may need --no-verify",
-        "Playwright multi-peer regression post-unification not re-run in this session"
-      ]
-    },
-    {
-      "id": "SRC-PWA-001",
-      "name": "PWA & Offline Support",
-      "status": "implemented",
-      "sdlc": "production",
-      "priority": "P0",
-      "category": "PWA",
-      "description": "Progressive Web App con soporte offline completo (Service Worker, localStorage, IndexedDB, vite-plugin-pwa)",
-      "user_story": "Como usuario, quiero instalar la app y usarla sin internet",
-      "actor": "Usuario Free",
-      "dependencies": [],
-      "technologies": [
-        "vite-plugin-pwa",
-        "workbox-window",
-        "Service Worker",
-        "IndexedDB"
-      ],
-      "acceptance_criteria": [
-        "Instalable como PWA",
-        "Funciona 100% sin conexión a internet",
-        "Service worker configurado para caching offline",
-        "Persistencia en localStorage + IndexedDB",
-        "Actualización automática cuando hay nueva versión"
-      ],
-      "implementation_percentage": 88,
-      "maturity": "integrated",
-      "gaps": [
-        "Primera conexión P2P aún depende de signaling online"
+        "Remote entity ACL: isTrustedRemoteWriter gate; surgical full-collection revert dead code",
+        "Branch scoping en metadata de transacciones, no maps por branch",
+        "YJS path principal sigue siendo legacy YJS_UPDATE"
       ]
     },
     {
@@ -664,35 +647,32 @@
       "sdlc": "hardening",
       "priority": "P0",
       "category": "EDGE",
-      "description": "Runtime P2P reutilizable (@shelf/edge-mesh) con namespaces por entidad, autorización de mutaciones remotas, y reversión de cambios no autorizados",
+      "description": "Runtime P2P reutilizable con namespaces, authz, Y.Doc compartido y transport late-bind",
       "user_story": "Como desarrollador, quiero un runtime P2P reutilizable que encapsule la logica mesh en un package independiente",
       "actor": "Desarrollador",
-      "dependencies": [
-        "SRC-P2P-001",
-        "SRC-CRDT-001",
-        "SRC-PQC-001"
-      ],
-      "technologies": [
-        "Yjs",
-        "PeerJS",
-        "@shelf/edge-mesh",
-        "@shelf/edge-mesh-react"
-      ],
+      "dependencies": ["SRC-P2P-001", "SRC-CRDT-001", "SRC-PQC-001"],
+      "technologies": ["Yjs", "PeerJS", "edge-mesh", "edge-mesh-react"],
       "acceptance_criteria": [
         "Namespaces por tipo de entidad (products, sales, clients, etc)",
         "Broadcasts de updates CRDT como deltas codificados",
         "Aplica updates remotos con tipo { type: 'remote', peerId }",
         "Autoriza mutaciones remotas antes de entrar al estado",
         "Revoca cambios CRDT no autorizados via security origin",
-        "React bindings via @shelf/edge-mesh-react"
+        "React bindings via edge-mesh-react"
       ],
-      "implementation_percentage": 82,
+      "implementation_percentage": 72,
       "maturity": "integrated",
+      "evidence": [
+        "packages/edge-mesh (214 unit tests)",
+        "EdgeMeshTransportBinder + usarTransport Phase C",
+        "edge-mesh-sync.spec.ts",
+        "edge-mesh features.json ~66% package-level"
+      ],
       "gaps": [
-        "Y.Doc compartido con dbSync (Phase B)",
-        "Transport unificado via P2PManagerTransport (Phase C)",
-        "YJS_UPDATE aun convive con EDGE_MESH_ENVELOPE (migracion total = Phase D)",
-        "Handshake PQC sigue en p2p-mesh-core (intencional)"
+        "Dual wire path: YJS_UPDATE + EDGE_MESH_ENVELOPE",
+        "Phase D migration / thin p2p-mesh-core open",
+        "Maloca debt (evidentia.verify always true, etc.)",
+        "Handshake PQC sigue en p2p-mesh-core (intencional hoy)"
       ]
     },
     {
@@ -702,27 +682,95 @@
       "sdlc": "prototype",
       "priority": "P1",
       "category": "GPU",
-      "description": "Extension point para ejecución de agentes en el edge via WebGPU, expuesto como tenant WebGPU por edge-mesh",
+      "description": "Package scaffold; executeTask mock; WebLLM real no usa GpuAgent.executeTask",
       "user_story": "Como desarrollador, quiero delegar tareas intensivas al WebGPU local via un package reutilizable",
       "actor": "Desarrollador",
-      "dependencies": [
-        "SRC-EDGE-001"
-      ],
-      "technologies": [
-        "WebGPU",
-        "@shelf/gpu-agent"
-      ],
+      "dependencies": ["SRC-EDGE-001"],
+      "technologies": ["WebGPU", "gpu-agent"],
       "acceptance_criteria": [
         "Tenant WebGPU expuesto por edge-mesh",
         "Ejecución de agentes en edge local",
-        "Package reutilizable @shelf/gpu-agent"
+        "Package reutilizable gpu-agent"
       ],
-      "implementation_percentage": 22,
+      "implementation_percentage": 18,
       "maturity": "skeleton",
+      "evidence": [
+        "packages/gpu-agent/src/gpu-agent.ts executeTask mock",
+        "verifyTask placeholder return true",
+        "isWebGpuSupported used by useWebLLM only"
+      ],
       "gaps": [
-        "executeTask es mock",
+        "executeTask es mock delay + string",
         "Sin routing de tareas mesh",
-        "verifyTask placeholder"
+        "verifyTask placeholder",
+        "Sin tests del package"
+      ]
+    },
+    {
+      "id": "SRC-QA-001",
+      "name": "Testing Infrastructure",
+      "status": "partial",
+      "sdlc": "beta",
+      "priority": "P1",
+      "category": "QA",
+      "description": "Playwright fuerte + Cypress E2E; Biome; GHA file existe; CI runners a veces no ejecutan",
+      "user_story": "Como desarrollador, quiero tests automatizados para asegurar calidad del código",
+      "actor": "Desarrollador",
+      "dependencies": [],
+      "technologies": ["Playwright", "Cypress", "Biome", "Husky", "GitHub Actions", "Vitest"],
+      "acceptance_criteria": [
+        "data-testid en todos los elementos interactivos",
+        "Tests E2E con Cypress para flujos críticos",
+        "Linting con Biome configurado",
+        "Husky + lint-staged para pre-commit hooks",
+        "CI/CD con GitHub Actions (.github/workflows/ci.yml)"
+      ],
+      "implementation_percentage": 78,
+      "maturity": "integrated",
+      "evidence": [
+        "~35 Playwright specs",
+        "16 Cypress E2E + 1 component",
+        "edge-mesh 214 unit / p2p-mesh-core unit",
+        "pre-push build hook green; GHA jobs often empty-fail (infra)"
+      ],
+      "gaps": [
+        "Husky/lint-staged frágil (a veces --no-verify)",
+        "GHA shelf jobs fail ~2s sin steps (infra/billing)",
+        "data-testid no 100% de UI",
+        "Vitest monorepo junctions históricamente frágiles",
+        "Coverage formal no reportado"
+      ]
+    },
+    {
+      "id": "SRC-PWA-001",
+      "name": "PWA & Offline Support",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "PWA",
+      "description": "Progressive Web App con soporte offline (Service Worker, localStorage, IndexedDB, vite-plugin-pwa)",
+      "user_story": "Como usuario, quiero instalar la app y usarla sin internet",
+      "actor": "Usuario Free",
+      "dependencies": [],
+      "technologies": ["vite-plugin-pwa", "workbox-window", "Service Worker", "IndexedDB"],
+      "acceptance_criteria": [
+        "Instalable como PWA",
+        "Funciona 100% sin conexión a internet",
+        "Service worker configurado para caching offline",
+        "Persistencia en localStorage + IndexedDB",
+        "Actualización automática cuando hay nueva versión"
+      ],
+      "implementation_percentage": 86,
+      "maturity": "integrated",
+      "evidence": [
+        "vite.config.ts VitePWA",
+        "UpdateNotification.tsx",
+        "usePersistedReducer (IDB)",
+        "cypress/e2e/pwa-offline.cy.ts"
+      ],
+      "gaps": [
+        "Primera conexión P2P depende de signaling online",
+        "offline-indicator testid posiblemente stale en Cypress"
       ]
     }
   ],
@@ -731,61 +779,85 @@
       "id": "ROADMAP-001",
       "name": "Error Monitoring (Sentry)",
       "priority": "P1",
-      "description": "Integración de Sentry para monitoreo de errores en producción"
+      "status": "partial",
+      "description": "lib/sentry.ts existe con offline transport; requiere DSN en prod"
     },
     {
       "id": "ROADMAP-002",
       "name": "User Analytics (GA4)",
       "priority": "P2",
-      "description": "Google Analytics 4 para análisis de uso y comportamiento"
+      "status": "pending",
+      "description": "Google Analytics 4 — placeholder env VITE_GA_MEASUREMENT_ID sin integración completa"
     },
     {
       "id": "ROADMAP-003",
       "name": "Full Cloud Sync (Pro)",
       "priority": "P1",
-      "description": "Sincronización cloud completa para usuarios Pro con Firestore"
+      "status": "pending",
+      "description": "Sincronización cloud completa Firestore — no hay client runtime hoy"
     },
     {
       "id": "ROADMAP-004",
       "name": "Multi-user Backend Logic",
       "priority": "P2",
-      "description": "Lógica backend completa para multi-usuario (Pyme plan)"
+      "status": "partial",
+      "description": "P2P team+permissions sí; backend org multi-tenant no"
     },
     {
       "id": "ROADMAP-005",
       "name": "Advanced Reporting Suite",
       "priority": "P2",
-      "description": "Suite de reportes avanzados con descarga PDF y exportación"
+      "status": "partial",
+      "description": "Reports UI + PDF existen; suite avanzada/export full abierta"
     },
     {
       "id": "ROADMAP-006",
       "name": "E-commerce Integrations",
       "priority": "P3",
-      "description": "Integración con plataformas e-commerce (Shopify, WooCommerce, Mercado Libre)"
+      "status": "partial",
+      "description": "Webhooks Shopify/WooCommerce scaffold en api/webhooks; no end-to-end prod"
     },
     {
       "id": "ROADMAP-007",
       "name": "P2P Stack Unification",
       "priority": "P0",
-      "description": "Un solo Y.Doc + un solo PeerJS: migrar inventario de p2p-mesh-core a edge-mesh o envolver p2p-mesh-core como transport adapter"
+      "status": "partial",
+      "description": "Phase B shared Y.Doc + Phase C single PeerJS DONE; Phase D thin p2p-mesh-core OPEN"
     },
     {
       "id": "ROADMAP-008",
       "name": "Remote Mutation Authz on Primary Path",
       "priority": "P0",
-      "description": "Autorizar/revertir mutaciones remotas en dbSync.applyUpdate y envelopes firmados en edge-mesh"
+      "status": "partial",
+      "description": "isTrustedRemoteWriter + privilege maps; full entity surgical revert dead; collection ACL remote relajada"
     },
     {
       "id": "ROADMAP-009",
       "name": "Edge Mesh Secure Data Path",
       "priority": "P0",
-      "description": "Yjs onUpdate → envelope firmado → transport → apply con authz; MemoryTransport + multi-node tests"
+      "status": "partial",
+      "description": "MemoryTransport + authz tests en edge-mesh; inventario principal aún YJS_UPDATE"
     },
     {
       "id": "ROADMAP-010",
       "name": "Encrypt YJS_UPDATE",
       "priority": "P1",
-      "description": "Cifrar deltas de inventario con AES derivado de ML-KEM o documentar honestamente solo DTLS"
+      "status": "pending",
+      "description": "isSensitive excluye YJS_* intencionalmente (DTLS only) — dual-ready encrypt follow-up"
+    },
+    {
+      "id": "ROADMAP-011",
+      "name": "Real Subscription & Ads Gating",
+      "priority": "P0",
+      "status": "pending",
+      "description": "Quitar hardcode SubscriptionContext; wire Stripe o reescribir AC a offline-first free/full"
+    },
+    {
+      "id": "ROADMAP-012",
+      "name": "Auth AC Alignment",
+      "priority": "P0",
+      "status": "pending",
+      "description": "O reescribir AC a localAuth+P2P o reintroducir Firebase/Firestore real"
     }
   ]
 }
