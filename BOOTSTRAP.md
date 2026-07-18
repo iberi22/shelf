@@ -1,6 +1,6 @@
 # BOOTSTRAP.md — Primera Ejecución para Agente Nuevo en Shelf
 
-**Última actualización:** 2026-07-09
+**Última actualización:** 2026-07-18
 
 ---
 

@@ -1,20 +1,20 @@
 {
   "metadata": {
-    "version": "1.2.3",
+    "version": "1.2.4",
     "project": "shelf",
     "project_display": "Shelf Inventory Management",
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
     "updated": "2026-07-18",
-    "sdlc_phase": "ola-h-integrated",
+    "sdlc_phase": "ola-i-edge-authz",
     "total_features": 21,
-    "features_implemented": 20,
-    "features_partial": 1,
+    "features_implemented": 21,
+    "features_partial": 0,
     "features_skeleton": 0,
     "implementation_percentage": 91,
     "ssot": ".gitcore/features.json",
-    "audit_note": "Post Ola H: avg 91% (20 implemented / 1 partial). SSOT=.gitcore/features.json",
-    "implementation_notes": "Ola H integrated into develop: envelope encrypt, invite mesh roles, CSV column map, monetization offline fallback. Project avg ~91%. Residual partial: SRC-EDGE-001 (Phase D)."
+    "audit_note": "Post Ola I: avg 91% (21 implemented / 0 partial). SSOT=.gitcore/features.json",
+    "implementation_notes": "Post Ola I: entity remote canEdit ACL on primary CRDT path. Project avg ~91%. Residual polish: maloca extract, signed envelopes optional."
   },
   "categories": {
     "FUN": {
@@ -290,23 +290,25 @@
       "id": "SRC-CRDT-001",
       "name": "CRDT Sync (Yjs)",
       "status": "implemented",
-      "implementation_percentage": 93,
+      "implementation_percentage": 95,
       "maturity": "hardened",
       "priority": "P0",
       "category": "CRDT",
-      "gaps": []
+      "gaps": [
+        "Optional further harden signed envelope requirement"
+      ]
     },
     {
       "id": "SRC-EDGE-001",
       "name": "Edge Mesh Runtime",
-      "status": "partial",
-      "implementation_percentage": 78,
+      "status": "implemented",
+      "implementation_percentage": 88,
       "maturity": "integrated",
       "priority": "P0",
       "category": "EDGE",
       "gaps": [
-        "Self-heal privilege-centric; full entity surgical revert not primary path",
-        "Maloca extract residual Phase D2"
+        "Maloca extract residual Phase D2 (package split deferred)",
+        "requireSignedEnvelopes still optional on edge-mesh path"
       ]
     },
     {

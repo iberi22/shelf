@@ -1,7 +1,7 @@
 # AGENTS.md — Guía para Agentes de Shelf
 
 **Última actualización:** 2026-07-18
-**Versión del proyecto:** 1.2.3
+**Versión del proyecto:** 1.2.4
 
 ---
 
@@ -116,7 +116,7 @@ Shelf usa el protocolo GitCore. Archivos importantes:
 | Archivo | Propósito |
 |---------|-----------|
 | `.gitcore/ARCHITECTURE.md` | Stack, patrones, capas |
-| `.gitcore/features.json` | 21 features, ~91% real (20 implemented / 1 partial / 0 skeleton) |
+| `.gitcore/features.json` | 21 features, ~91% real (21 implemented / 0 partial / 0 skeleton) |
 | `.gitcore/SDLC_WORKFLOW.md` | Ciclo de vida: ANALYSIS → DESIGN → IMPLEMENT → TEST → DEPLOY |
 | `.gitcore/AGENT_INDEX.md` | Labels de agentes (jules, opencode, gemini, claude) |
 | `.gitcore/planning/TASK.md` | Tareas activas |

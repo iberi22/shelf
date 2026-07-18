@@ -58,7 +58,7 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Features (promedio AC) | ~91% (20 implemented / 1 partial / 0 skeleton) |
+| Features (promedio AC) | ~91% (21 implemented / 0 partial / 0 skeleton) |
 | Paquetes publicables | 4 (`@shelf/*`) |
 | Apps | 2 (shelf-inventory, docs) |
 | Cobertura tests | En crecimiento |

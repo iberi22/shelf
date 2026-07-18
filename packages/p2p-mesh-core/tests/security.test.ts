@@ -221,6 +221,92 @@ describe('Security: Remote applyUpdate authz', () => {
     const products = (dbSync as any).doc.getMap('products');
     expect(products.get('ok-product')).toMatchObject({ id: 'ok-product', name: 'Legit' });
   });
+
+  it('surgically reverts product mutations from a vendedor without canEditProducts', () => {
+    dbSync.updateLinkedNode(
+      'vendedor-peer',
+      {
+        role: 'vendedor',
+        isMaster: false,
+        dsaPublicKey: 'vendedor-key',
+        permissions: {
+          canEditProducts: false,
+          canEditSales: true,
+          canEditClients: true,
+          canEditSuppliers: false,
+          canEditPurchaseOrders: false,
+          canViewArqueo: false,
+        },
+      },
+      'victim-peer',
+    );
+    dbSync.updateEphemeralNode('vendedor-peer', {
+      status: 'verified',
+      dsaPublicKey: 'vendedor-key',
+    });
+
+    const remoteDoc = new Y.Doc();
+    remoteDoc.getMap('products').set('blocked-product', {
+      id: 'blocked-product',
+      name: 'Should Not Land',
+      quantity: 5,
+      price: 9,
+    });
+    remoteDoc.getMap('sales').set('ok-sale', {
+      id: 'ok-sale',
+      totalPrice: 10,
+      profit: 2,
+      items: [],
+    });
+    const update = Y.encodeStateAsUpdate(remoteDoc);
+
+    dbSync.applyUpdate(update, 'vendedor-peer');
+
+    const products = (dbSync as any).doc.getMap('products');
+    const sales = (dbSync as any).doc.getMap('sales');
+    expect(products.get('blocked-product')).toBeUndefined();
+    expect(sales.get('ok-sale')).toMatchObject({ id: 'ok-sale', totalPrice: 10 });
+  });
+
+  it('blocks non-admin remote mutations of privilege maps (linkedNodes)', () => {
+    dbSync.updateLinkedNode(
+      'collab-peer',
+      {
+        role: 'collaborator',
+        isMaster: false,
+        dsaPublicKey: 'collab-key',
+        permissions: {
+          canEditProducts: true,
+          canEditSales: true,
+          canEditClients: true,
+          canEditSuppliers: false,
+          canEditPurchaseOrders: false,
+          canViewArqueo: false,
+        },
+      },
+      'victim-peer',
+    );
+    dbSync.updateEphemeralNode('collab-peer', {
+      status: 'verified',
+      dsaPublicKey: 'collab-key',
+    });
+
+    const remoteDoc = new Y.Doc();
+    remoteDoc.getMap('linkedNodes').set('victim-peer', {
+      id: 'victim-peer',
+      role: 'collaborator',
+      isMaster: false,
+      lastSeen: new Date().toISOString(),
+    });
+    const update = Y.encodeStateAsUpdate(remoteDoc);
+
+    dbSync.applyUpdate(update, 'collab-peer');
+
+    const linked = (dbSync as any).doc.getMap('linkedNodes');
+    // Victim remains master/admin locally — demotion via remote CRDT must not stick
+    expect(linked.get('victim-peer')?.role).toBe('admin');
+    expect(linked.get('victim-peer')?.isMaster).toBe(true);
+  });
 });
 
 describe('Security: dual-ready YJS app encryption', () => {

@@ -1,7 +1,7 @@
 # Ola H — Close Partial Features (Shelf → ~93%)
 
 **Fecha:** 2026-07-17  
-**Baseline SSOT:** ~88% → **post-integration ~91%** (16 implemented / 5 partial / 0 skeleton)  
+**Baseline SSOT:** ~88% → **post-integration ~91%** → **post-integration ~91%** (16 implemented / 5 partial / 0 skeleton)  
 **Repo:** `iberi22/shelf` · trabajo preferido sobre `develop`  
 **Orquestación:** Jules async (`jules` label only)
 

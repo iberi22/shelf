@@ -4,12 +4,12 @@
 - **Name:** CRDT Sync (Yjs)
 - **Priority:** P0 (Core)
 - **Status:** ⚠️ Partial
-- **Implementation:** 93%
+- **Implementation:** 95%
 - **Category:** CRDT (Conflict-free Replicated Data Types)
 - **SDLC:** Hardening
 - **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
-> **Audit 2026-07-18:** 93% · implemented · maturity `hardened`. SSOT: `.gitcore/features.json`.
+> **Audit 2026-07-18:** 95% · implemented · maturity `hardened`. SSOT: `.gitcore/features.json`.
 
 ## Description
 
