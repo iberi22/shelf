@@ -84,3 +84,31 @@ export function tallyVotes(proposal: GovernanceProposal): {
 	const reject = values.filter((v) => v.value === "reject").length;
 	return { approve, reject, total: values.length };
 }
+
+/**
+ * Evaluate candidacy against active peer count.
+ * Majority = ceil((totalActivePeers + 1) / 2)  (classic majority of n peers)
+ * Any reject → rejected; expired without majority → expired; else active/approved.
+ */
+export function evaluateCandidacy(
+	proposal: GovernanceProposal,
+	totalActivePeers: number,
+	now = Date.now(),
+): GovernanceStatus {
+	const { approve, reject } = tallyVotes(proposal);
+	if (reject > 0) {
+		proposal.status = "rejected";
+		return "rejected";
+	}
+	const majority = Math.ceil((totalActivePeers + 1) / 2);
+	if (approve >= majority) {
+		proposal.status = "approved";
+		return "approved";
+	}
+	if (now >= proposal.expiresAt) {
+		proposal.status = "expired";
+		return "expired";
+	}
+	proposal.status = "active";
+	return "active";
+}

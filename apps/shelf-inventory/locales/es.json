@@ -112,7 +112,8 @@
       "noVariantGroup": "Sin grupo de variantes",
       "newVariantGroup": "Crear nuevo grupo de variantes",
       "variantSiblings": "Productos en el mismo grupo:",
-      "noSiblings": "Sin otros productos en este grupo"
+      "noSiblings": "Sin otros productos en este grupo",
+      "duplicateSku": "El SKU ya existe: {{sku}}"
     },
     "batchProcessing": "Procesando imágenes...",
     "batchCompiling": "Comprimiendo y preparando lote de productos:"

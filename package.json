@@ -7,6 +7,7 @@
         "build": "turbo run build",
         "lint": "turbo run lint",
         "format": "turbo run format",
+        "test:packages": "pnpm --dir packages/edge-mesh test && pnpm --dir packages/p2p-mesh-core test && pnpm --dir packages/gpu-agent test",
         "peer-server": "pnpm dlx peer --port 9000 --path /",
         "prepare": "husky",
         "release": "standard-version"
@@ -16,8 +17,17 @@
         "esbuild": "^0.25.4",
         "firebase-tools": "^15.22.4",
         "husky": "^9.1.7",
+        "lint-staged": "17.0.8",
         "standard-version": "^9.5.0",
         "turbo": "^2.10.3"
+    },
+    "lint-staged": {
+        "apps/shelf-inventory/**/*.{ts,tsx,js,jsx,json,css}": [
+            "biome check --write --no-errors-on-unmatched"
+        ],
+        "packages/**/*.{ts,tsx,js,jsx}": [
+            "biome check --write --no-errors-on-unmatched"
+        ]
     },
     "packageManager": "pnpm@9.12.0",
     "engines": {

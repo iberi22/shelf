@@ -11,24 +11,26 @@ if [ "$BRANCH_NAME" = "main" ]; then
 fi
 
 echo "[pre-commit] Running lint-staged (Biome)..."
-cd apps/shelf-inventory && npx --no-install lint-staged
-LINT_EXIT=$?
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm exec lint-staged
+  LINT_EXIT=$?
+else
+  npx --no-install lint-staged
+  LINT_EXIT=$?
+fi
 if [ $LINT_EXIT -ne 0 ]; then
   echo "[pre-commit] FAILED: lint-staged errors. Fix and retry."
   exit 1
 fi
 echo "[pre-commit] OK: lint-staged passed."
 
-echo "[pre-commit] Running TypeScript type check..."
-cd "$ROOT_DIR/apps/shelf-inventory" && npx tsc --noEmit --pretty
+echo "[pre-commit] Running TypeScript type check (shelf-inventory)..."
+cd "$ROOT_DIR/apps/shelf-inventory" && pnpm exec tsc --noEmit --pretty
 TSC_EXIT=$?
 if [ $TSC_EXIT -ne 0 ]; then
   echo "[pre-commit] FAILED: TypeScript type errors exist."
   exit 1
 fi
 echo "[pre-commit] OK: TypeScript check passed."
-
-echo "[pre-commit] Biome full scan..."
-npx --no-install biome check apps/shelf-inventory/src --reporter=summary 2>/dev/null || true
 
 echo "[pre-commit] OK: All checks passed. Commit allowed."

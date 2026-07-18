@@ -194,6 +194,22 @@ const Inventory: React.FC = () => {
 
   const handleSaveProduct = (productData: Omit<Product, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>) => {
     if (!canEdit) return;
+    const skuNorm = productData.sku?.trim().toLowerCase();
+    if (skuNorm) {
+      const duplicate = state.products.find(
+        (p) =>
+          p.isActive !== false &&
+          p.id !== editingProduct?.id &&
+          (p.sku || '').trim().toLowerCase() === skuNorm,
+      );
+      if (duplicate) {
+        showNotification(
+          t('inventory.form.duplicateSku') || `SKU already exists: ${productData.sku}`,
+          'error',
+        );
+        return;
+      }
+    }
     const timestamp = new Date().toISOString();
     if (editingProduct) {
       dispatch({

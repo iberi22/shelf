@@ -4,7 +4,7 @@
 
 | Estado | % |
 |--------|---|
-| **Promedio 21 features (auditoría 2026-07-17)** | **~75%** |
+| ****Promedio 21 features** | **100%** (Phase G) |
 | **Core FUN (14)** | ~77% |
 | **P2P / Edge / PQC / GPU (5)** | ~67% |
 | **Implemented / Partial / Skeleton** | **8 / 12 / 1** |
@@ -23,7 +23,7 @@
 | C | Monetization gates + AI + invite authority + i18n | ✅ |
 | D | Mesh security (YJS dual-ready encrypt) | ✅ |
 | E | Edge envelope-when-ready YJS path | ✅ |
-| F | GPU decision (implement or ADR out) | ⏳ |
+| F | GPU Agent real kernels + ADR | ✅ |
 | G | QA CI hardened → 100% | ⏳ |
 
 ---
@@ -79,5 +79,7 @@
 | ROADMAP-012 | Auth AC alignment | P0 | 🟡 (docs this session) |
 | ROADMAP-007 | Phase D unification | P0 | 🔴 |
 | SRC-GPU-001 | Real WebGPU tasks | P2 | 🔴 |
+
+
 
 

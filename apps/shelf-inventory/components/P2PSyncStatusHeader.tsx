@@ -104,8 +104,10 @@ const P2PSyncStatusHeader: React.FC = () => {
 
         {/* Compact Status Indicator Button */}
         <button
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
           data-testid="p2p-status-toggle"
+          data-sync-status={syncStatus}
           className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 shadow-md border focus:outline-none active:scale-95 cursor-pointer ${
             syncStatus === 'synced'
               ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20 shadow-[0_0_12px_rgba(34,197,94,0.15)]'
@@ -118,9 +120,9 @@ const P2PSyncStatusHeader: React.FC = () => {
           }`}
         >
           {syncStatus === 'disconnected' ? (
-            <WifiOff size={18} />
+            <WifiOff size={18} data-testid="offline-indicator" aria-label={t('common.offline') || 'Offline'} />
           ) : (
-            <Wifi size={18} className={syncStatus === 'syncing' ? 'animate-pulse' : ''} />
+            <Wifi size={18} className={syncStatus === 'syncing' ? 'animate-pulse' : ''} data-testid="online-indicator" />
           )}
 
           {/* Pulsing indicator dot */}

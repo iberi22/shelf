@@ -37,6 +37,9 @@ importers:
       husky:
         specifier: ^9.1.7
         version: 9.1.7
+      lint-staged:
+        specifier: 17.0.8
+        version: 17.0.8
       standard-version:
         specifier: ^9.5.0
         version: 9.5.0

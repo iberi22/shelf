@@ -12,7 +12,13 @@ if [ $BUILD_EXIT -ne 0 ]; then
 fi
 echo "[pre-push] OK: shelf-inventory build passed."
 
-echo "[pre-push] Biome check on shelf-inventory..."
-cd "$ROOT_DIR" && npx --no-install biome check apps/shelf-inventory/src --reporter=summary 2>/dev/null || true
+echo "[pre-push] Package unit tests (edge-mesh, p2p-mesh-core, gpu-agent)..."
+cd "$ROOT_DIR" && pnpm run test:packages 2>&1
+PKG_EXIT=$?
+if [ $PKG_EXIT -ne 0 ]; then
+  echo "[pre-push] FAILED: package unit tests. Fix before pushing."
+  exit 1
+fi
+echo "[pre-push] OK: package unit tests passed."
 
 echo "[pre-push] OK: All checks passed. Push allowed."

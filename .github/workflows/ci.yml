@@ -87,6 +87,26 @@ jobs:
           path: apps/shelf-inventory/playwright-report/
           retention-days: 30
 
+  packages:
+    name: Package unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.12.0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Unit tests (edge-mesh + p2p-mesh-core + gpu-agent)
+        run: pnpm run test:packages
+
   functions:
     name: Functions (build)
     runs-on: ubuntu-latest
