@@ -51,7 +51,7 @@ test.describe('Settings mobile layout', () => {
       const bottomNavItem = page.locator('[data-testid="mobile-nav-item-nav.settings"]');
       await bottomNavItem.waitFor({ state: 'visible', timeout: 5000 });
       await bottomNavItem.click();
-    } catch (e) {
+    } catch (_e) {
       const menuButton = page.locator('button[aria-label="Abrir menú"]');
       await expect(menuButton).toBeVisible({ timeout: 5000 });
       await menuButton.click();

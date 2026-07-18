@@ -99,7 +99,12 @@ export type SyncMessage =
 			payload: { deviceId: string; deviceName: string; authorizedAt: string };
 	  }
 	| { type: "CRDT_SYNC_ENVELOPE"; payload: { envelope: any } }
-	| { type: "EDGE_MESH_SYNC"; payload: Uint8Array };
+	| { type: "EDGE_MESH_SYNC"; payload: Uint8Array }
+	/** Phase C: edge-mesh Envolvente over the same PeerJS data channel. */
+	| {
+			type: "EDGE_MESH_ENVELOPE";
+			payload: { envelope: import("./p2p-transport-adapter").EdgeMeshEnvelopeWire };
+	  };
 
 export type ConnectionErrorInfo = {
 	peerId?: string;
@@ -165,6 +170,10 @@ class P2PManager {
 	private onConnectionErrorCallbacks: ((issue: ConnectionErrorInfo) => void)[] =
 		[];
 	private onPeerHealthChangeCallbacks: ((state: PeerHealthInfo) => void)[] = [];
+	private onEdgeMeshEnvelopeCallbacks: ((
+		envelope: import("./p2p-transport-adapter").EdgeMeshEnvelopeWire,
+		fromPeerId: string,
+	) => void)[] = [];
 	private healthEventsBound = false;
 
 	public localPeerId: string | null = null;
@@ -739,6 +748,16 @@ class P2PManager {
 					return;
 				}
 
+				// Phase C: edge-mesh envelopes over the same PeerJS channel
+				if (message.type === "EDGE_MESH_ENVELOPE") {
+					for (const cb of this.onEdgeMeshEnvelopeCallbacks) {
+						cb(message.payload.envelope, conn.peer);
+					}
+					// Also surface to generic listeners (status / debug)
+					this.emitMessageCallbacks(message, conn.peer);
+					return;
+				}
+
 				// Handle Yjs Updates
 				if (message.type === "YJS_UPDATE") {
 					const branchId = message.payload.branchId;
@@ -957,6 +976,10 @@ class P2PManager {
 	}
 
 	private isSensitive(message: SyncMessage): boolean {
+		// Authority/recovery always app-layer encrypted when a peer AES key exists.
+		// CRDT (YJS_*) stays on WebRTC DTLS for now: encrypting YJS before both peers
+		// finish setupEncryption caused silent drops (handleEncryptedMessage returns if no key)
+		// and broke multi-peer product sync. Track dual-ready encrypt as follow-up.
 		return [
 			"PROMOTE_ADMIN",
 			"CHANGE_ROLE",
@@ -1052,6 +1075,46 @@ class P2PManager {
 
 	public onConnectionChange(cb: (peers: PeerInfo[]) => void) {
 		this.onConnectionChangeCallbacks.push(cb);
+	}
+
+	// ─── Phase C: EdgeMesh transport host API ─────────────────────────────
+
+	public getConnectedPeerIds(): string[] {
+		return Array.from(this.connections.keys()).filter((id) =>
+			this.isPeerConnected(id),
+		);
+	}
+
+	public onEdgeMeshEnvelope(
+		cb: (
+			envelope: import("./p2p-transport-adapter").EdgeMeshEnvelopeWire,
+			fromPeerId: string,
+		) => void,
+	): () => void {
+		this.onEdgeMeshEnvelopeCallbacks.push(cb);
+		return () => {
+			this.onEdgeMeshEnvelopeCallbacks =
+				this.onEdgeMeshEnvelopeCallbacks.filter((entry) => entry !== cb);
+		};
+	}
+
+	public async sendEdgeMeshEnvelope(
+		peerId: string,
+		envelope: import("./p2p-transport-adapter").EdgeMeshEnvelopeWire,
+	): Promise<void> {
+		await this.sendTo(peerId, {
+			type: "EDGE_MESH_ENVELOPE",
+			payload: { envelope },
+		});
+	}
+
+	public async broadcastEdgeMeshEnvelope(
+		envelope: import("./p2p-transport-adapter").EdgeMeshEnvelopeWire,
+	): Promise<void> {
+		await this.broadcast({
+			type: "EDGE_MESH_ENVELOPE",
+			payload: { envelope },
+		});
 	}
 
 	public onHandshakeRequest(

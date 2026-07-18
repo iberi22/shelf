@@ -34,6 +34,11 @@ test.describe('P2P UI Sync Features', () => {
     await page2.getByTestId('manual-peer-id-input').fill(adminPeerId);
     await page2.getByTestId('manual-connect-button').click();
 
+    // Accept the confirmation modal
+    const confirmButton = page2.locator('button', { hasText: /Sincronizar y Conectar/i }).first();
+    await expect(confirmButton).toBeVisible();
+    await confirmButton.click();
+
     // Verify connection on Device 1 (Admin)
     await expect(page1.locator('strong.text-yellow-400', { hasText: '1' }).first()).toBeVisible({ timeout: 15000 });
 

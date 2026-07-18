@@ -1,4 +1,4 @@
-import { createCrdtSyncLayer } from 'edge-mesh';
+
 import {
   Activity,
   AlertCircle,
@@ -23,8 +23,9 @@ import {
   p2pManager,
   type SyncMessage,
 } from 'p2p-mesh-core';
-import { QRCodeCanvas } from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
@@ -100,9 +101,9 @@ const permissionOptions: { key: keyof PeerPermissions; label: string }[] = [
 ];
 
 const modalOverlayClass =
-  'fixed inset-0 z-50 flex h-[var(--app-height,100vh)] items-start justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm sm:items-center sm:p-4';
+  'fixed inset-0 z-50 flex h-[var(--app-height,100vh)] items-center justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm sm:p-4';
 const modalPanelClass =
-  'flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full flex-col overflow-hidden rounded-t-2xl border border-[#F5F5DC]/30 bg-[#1a1a1a] shadow-2xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg';
+  'flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full flex-col overflow-hidden rounded-2xl border border-[#F5F5DC]/30 bg-[#1a1a1a] shadow-2xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg';
 const modalBodyClass = 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 text-sm text-[#F5F5DC]/80 sm:p-5';
 
 const P2PSyncManager: React.FC = () => {
@@ -216,7 +217,12 @@ const P2PSyncManager: React.FC = () => {
     }
 
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && wakeLockStartedRef.current !== null && wakeLockRef.current === null && 'wakeLock' in navigator) {
+      if (
+        document.visibilityState === 'visible' &&
+        wakeLockStartedRef.current !== null &&
+        wakeLockRef.current === null &&
+        'wakeLock' in navigator
+      ) {
         await acquireWakeLock();
       }
     };
@@ -409,44 +415,10 @@ const P2PSyncManager: React.FC = () => {
     const interval = setInterval(() => {
       if (p2pManager.localPeerId) {
         dispatch({ type: 'SET_LOCAL_PEER_ID', payload: p2pManager.localPeerId });
-
-        if (!dbSync.syncLayer) {
-          const syncLayer = createCrdtSyncLayer({
-            namespace: 'shelf-inventory',
-            doc: dbSync.doc,
-            identity: {
-              peerId: p2pManager.localPeerId,
-            },
-          });
-          syncLayer.load().then(() => {
-            dbSync.setSyncLayer(syncLayer);
-          });
-        }
-
         clearInterval(interval);
       }
     }, 1000);
 
-    // Initialize CrdtSyncLayer if enabled
-    if (p2pManager.localPeerId && state.inventoryConfig.useEdgeMeshSync) {
-      const syncLayer = createCrdtSyncLayer({
-        namespace: 'shelf-sync',
-        identity: {
-          peerId: p2pManager.localPeerId,
-          sign: (msg) => p2pManager.sign(msg),
-          verify: (sig, msg, id) => p2pManager.verify(sig, msg, id),
-        },
-      });
-
-      dbSync.setSyncLayer(syncLayer);
-      dbSync.onEnvelope((envelope) => {
-        p2pManager.broadcast({ type: 'CRDT_SYNC_ENVELOPE', payload: { envelope } });
-      });
-
-      syncLayer.load().then(() => {
-        console.log('[P2P] CrdtSyncLayer loaded');
-      });
-    }
 
     return () => {
       // Cleanup interval if component unmounts before it fires
@@ -656,7 +628,6 @@ const P2PSyncManager: React.FC = () => {
 
   const { counts, sizeStr } = getDbStats();
 
-
   const handleChangePeerRole = (peerId: string, newRole: string) => {
     if (isLocalHostAuthority) {
       const peer = state.peers.find((p) => p.id === peerId);
@@ -810,7 +781,7 @@ const P2PSyncManager: React.FC = () => {
 
           {/* Share Actions - Minimalist Row */}
           {state.localPeerId && (
-            <div className="mt-3 flex items-center gap-2 pt-3 border-t border-white/5 overflow-x-auto pb-1">
+            <div className="mt-3 flex flex-wrap items-center gap-2 pt-3 border-t border-white/5 pb-1">
               <button
                 onClick={() => setShowMyQrModal(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white transition-colors whitespace-nowrap"
@@ -825,14 +796,26 @@ const P2PSyncManager: React.FC = () => {
               >
                 <MessageCircle size={14} /> WhatsApp
               </button>
-              <a
-                href={peerInviteLink || window.location.origin}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 text-xs transition-colors whitespace-nowrap"
+              <button
+                onClick={async () => {
+                  try {
+                    const linkToCopy = peerInviteLink || window.location.origin;
+                    await navigator.clipboard.writeText(linkToCopy);
+                    showNotification('Enlace del nodo copiado al portapapeles.', 'success');
+                  } catch (_e) {
+                    showNotification('Error al copiar el enlace.', 'error');
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 text-xs transition-colors whitespace-nowrap cursor-pointer"
               >
                 <Link2 size={14} /> Link Nodo
-              </a>
+              </button>
+              {/* Hidden anchor for tests to read the invite link */}
+              {(window as any).__E2E_TEST__ && peerInviteLink && (
+                <a href={peerInviteLink} data-testid="p2p-invite-link" style={{ display: 'none' }}>
+                  Invite Link Test
+                </a>
+              )}
               <a
                 href={pwaInstallLink || window.location.origin}
                 target="_blank"
@@ -847,44 +830,44 @@ const P2PSyncManager: React.FC = () => {
         </div>
 
         {/* Wake Lock Card - Always visible in main UI */}
-        <div className={`flex flex-col gap-2 p-3 rounded-xl border transition-colors shadow-sm ${
-          wakeLockActive
-            ? 'border-green-400/60 bg-green-500/10'
-            : 'border-green-500/30 bg-green-500/5'
-        }`}>
+        <div
+          className={`flex flex-col gap-2 p-3 rounded-xl border transition-colors shadow-sm ${
+            wakeLockActive ? 'border-green-400/60 bg-green-500/10' : 'border-green-500/30 bg-green-500/5'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${
-                wakeLockActive ? 'bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.7)]' : 'bg-gray-600'
-              }`} />
-              <span className={`text-xs font-bold uppercase tracking-wider ${
-                wakeLockActive ? 'text-green-300' : 'text-green-400'
-              }`}>
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${
+                  wakeLockActive ? 'bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.7)]' : 'bg-gray-600'
+                }`}
+              />
+              <span
+                className={`text-xs font-bold uppercase tracking-wider ${
+                  wakeLockActive ? 'text-green-300' : 'text-green-400'
+                }`}
+              >
                 Nodo Keep-Alive (24/7)
               </span>
               {wakeLockActive && (
                 <span className="text-[10px] bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-full font-mono">
-                  {(wakeLockUptime >= 3600
+                  {wakeLockUptime >= 3600
                     ? `${(wakeLockUptime / 3600).toFixed(1)}h`
                     : wakeLockUptime >= 60
                       ? `${Math.floor(wakeLockUptime / 60)}m ${wakeLockUptime % 60}s`
-                      : `${wakeLockUptime}s`)} activo
+                      : `${wakeLockUptime}s`}{' '}
+                  activo
                 </span>
               )}
             </span>
             <label className="relative inline-flex items-center cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={wakeLockActive}
-                onChange={toggleWakeLock}
-                className="sr-only peer"
-              />
+              <input type="checkbox" checked={wakeLockActive} onChange={toggleWakeLock} className="sr-only peer" />
               <div className="w-8 h-4.5 bg-[#121212] border border-[#F5F5DC]/25 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-[#121212] peer-checked:after:border-[#121212]"></div>
             </label>
           </div>
           <p className="text-[10px] text-green-400/80 leading-relaxed">
-            Previene la suspensión de pantalla/dispositivo para que la app sirva de nodo de sincronización activo
-            e ininterrumpido.
+            Previene la suspensión de pantalla/dispositivo para que la app sirva de nodo de sincronización activo e
+            ininterrumpido.
           </p>
           {wakeLockActive && (
             <div className="flex items-center gap-3 text-[10px] text-green-400/60 pt-1">
@@ -892,14 +875,8 @@ const P2PSyncManager: React.FC = () => {
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />
                 Heartbeat activo (30s)
               </span>
-              {wakeLockRetries > 0 && (
-                <span className="text-yellow-400/70">
-                  Reintentos: {wakeLockRetries}
-                </span>
-              )}
-              <span className="text-[9px] text-green-400/40">
-                Persiste al recargar
-              </span>
+              {wakeLockRetries > 0 && <span className="text-yellow-400/70">Reintentos: {wakeLockRetries}</span>}
+              <span className="text-[9px] text-green-400/40">Persiste al recargar</span>
             </div>
           )}
           {!('wakeLock' in navigator) && (
@@ -915,6 +892,7 @@ const P2PSyncManager: React.FC = () => {
           <div className="flex items-center gap-2 rounded-xl border border-[#F5F5DC]/20 bg-[#1a1a1a] p-1.5 shadow-sm">
             <div className="flex-1 flex items-center bg-[#121212] rounded-lg border border-transparent focus-within:border-yellow-400/50 px-3 transition-colors">
               <input
+                data-testid="manual-peer-id-input"
                 type="text"
                 placeholder="Ingresa Peer ID..."
                 value={manualPeerId}
@@ -923,6 +901,7 @@ const P2PSyncManager: React.FC = () => {
               />
               {manualPeerId.trim() && (
                 <button
+                  data-testid="manual-connect-button"
                   onClick={handleManualConnect}
                   className="text-yellow-400 font-bold text-xs px-2 hover:text-yellow-300 transition-colors"
                 >
@@ -1047,7 +1026,7 @@ const P2PSyncManager: React.FC = () => {
                             </span>
                           )}
                           {canManagePeer && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => setShowPermissions(showPermissions === peer.id ? null : peer.id)}
@@ -1145,500 +1124,526 @@ const P2PSyncManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Confirm Connection Modal */}
-      {showConfirmConnectModal && (
-        <div className={modalOverlayClass}>
-          <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-xl sm:h-auto`}>
-            <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
-              <h3 className="min-w-0 flex-1 font-bold text-[#F5F5DC]">
-                {t('p2pSync.confirmTitle') || 'Confirmar conexión P2P'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowConfirmConnectModal(false)}
-                className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className={`${modalBodyClass} space-y-4`}>
-              <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10">
-                <p className="text-xs text-[#F5F5DC]/60 mb-1">Peer ID destino</p>
-                <code className="font-mono text-yellow-400 break-all">{pendingPeerId}</code>
-              </div>
-
-              <div>
-                <p className="mb-2 font-semibold text-[#F5F5DC]">
-                  {t('p2pSync.configCollaboratorTitle') || 'Configuracion del Colaborador'}
-                </p>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-4">
-                  {[
-                    { role: 'admin' as P2PRole, label: t('p2pSync.roleAdmin') || 'Admin' },
-                    { role: 'collaborator' as P2PRole, label: 'Usuario normal' },
-                    { role: 'vendedor' as P2PRole, label: t('p2pSync.roleVendedor') || 'Vendedor' },
-                    { role: 'custom' as P2PRole, label: t('p2pSync.roleCustom') || 'Personalizado' },
-                  ].map((option) => (
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <>
+            {/* Confirm Connection Modal */}
+            {showConfirmConnectModal && (
+              <div className={modalOverlayClass}>
+                <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-xl sm:h-auto`}>
+                  <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
+                    <h3 className="min-w-0 flex-1 font-bold text-[#F5F5DC]">
+                      {t('p2pSync.confirmTitle') || 'Confirmar conexión P2P'}
+                    </h3>
                     <button
-                      key={option.role}
                       type="button"
-                      onClick={() => handleRoleChange(option.role)}
-                      className={`min-h-11 rounded border px-3 py-2 text-xs font-bold transition-colors ${
-                        selectedRole === option.role
-                          ? 'bg-yellow-400 text-[#121212] border-yellow-300'
-                          : 'bg-[#121212] text-[#F5F5DC] border-[#F5F5DC]/20 hover:border-[#F5F5DC]/50'
+                      onClick={() => setShowConfirmConnectModal(false)}
+                      className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className={`${modalBodyClass} space-y-4`}>
+                    <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10">
+                      <p className="text-xs text-[#F5F5DC]/60 mb-1">Peer ID destino</p>
+                      <code className="font-mono text-yellow-400 break-all">{pendingPeerId}</code>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 font-semibold text-[#F5F5DC]">
+                        {t('p2pSync.configCollaboratorTitle') || 'Configuracion del Colaborador'}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-4">
+                        {[
+                          { role: 'admin' as P2PRole, label: t('p2pSync.roleAdmin') || 'Admin' },
+                          { role: 'collaborator' as P2PRole, label: 'Usuario normal' },
+                          { role: 'vendedor' as P2PRole, label: t('p2pSync.roleVendedor') || 'Vendedor' },
+                          { role: 'custom' as P2PRole, label: t('p2pSync.roleCustom') || 'Personalizado' },
+                        ].map((option) => (
+                          <button
+                            key={option.role}
+                            type="button"
+                            onClick={() => handleRoleChange(option.role)}
+                            className={`min-h-11 rounded border px-3 py-2 text-xs font-bold transition-colors ${
+                              selectedRole === option.role
+                                ? 'bg-yellow-400 text-[#121212] border-yellow-300'
+                                : 'bg-[#121212] text-[#F5F5DC] border-[#F5F5DC]/20 hover:border-[#F5F5DC]/50'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+                      {permissionOptions.map((perm) => (
+                        <label key={perm.key} className="flex min-h-11 items-start gap-2 rounded bg-[#121212] p-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedPermissions[perm.key]}
+                            disabled={selectedRole !== 'custom'}
+                            onChange={() => handleCustomPermissionToggle(perm.key)}
+                            className="accent-yellow-500 rounded-sm"
+                          />
+                          <span className={selectedRole === 'custom' ? 'text-[#F5F5DC]/80' : 'text-[#F5F5DC]/45'}>
+                            {t(`p2pSync.permissions.${perm.key}`) || perm.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 md:grid-cols-3">
+                      {Object.entries(counts).map(([key, value]) => (
+                        <div key={key} className="p-2 rounded bg-[#121212] border border-[#F5F5DC]/10">
+                          <span className="block text-[#F5F5DC]/50">{t(`p2pSync.${key}`) || key}</span>
+                          <span className="font-mono text-[#F5F5DC]">{value}</span>
+                        </div>
+                      ))}
+                      <div className="p-2 rounded bg-[#121212] border border-[#F5F5DC]/10">
+                        <span className="block text-[#F5F5DC]/50">{t('p2pSync.confirmSize') || 'Peso Estimado'}</span>
+                        <span className="font-mono text-[#F5F5DC]">{sizeStr}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 flex-col gap-2 border-t border-[#F5F5DC]/10 p-4 sm:flex-row sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmConnectModal(false)}
+                      className="w-full rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444] sm:w-auto"
+                    >
+                      {t('p2pSync.close') || 'Cerrar'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmAndConnect}
+                      className="w-full rounded bg-[#F5F5DC] px-4 py-2 text-sm font-bold text-[#121212] transition-colors hover:bg-white sm:w-auto"
+                    >
+                      {t('p2pSync.confirmProceed') || 'Sincronizar y Conectar'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Info Modal */}
+            {showInfoModal && (
+              <div className={modalOverlayClass}>
+                <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-lg sm:h-auto`}>
+                  <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
+                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
+                      <Info size={18} className="text-yellow-400" />
+                      {t('p2pSync.infoTitle')}
+                    </h3>
+                    <button onClick={() => setShowInfoModal(false)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className={`${modalBodyClass} space-y-4`}>
+                    <p>
+                      <strong>{t('p2pSync.infoDistributedDb').split(':')[0]}:</strong>{' '}
+                      {t('p2pSync.infoDistributedDb').split(':')[1]}
+                    </p>
+                    <p>
+                      <strong>{t('p2pSync.infoPermissions').split(':')[0]}:</strong>{' '}
+                      {t('p2pSync.infoPermissions').split(':')[1]}
+                    </p>
+                    <p>
+                      <strong>{t('p2pSync.infoSync').split(':')[0]}:</strong> {t('p2pSync.infoSync').split(':')[1]}
+                    </p>
+                    <p>
+                      <strong>{t('p2pSync.infoConfig').split(':')[0]}:</strong> {t('p2pSync.infoConfig').split(':')[1]}
+                    </p>
+                    <p>
+                      <strong>{t('p2pSync.infoRoles').split(':')[0]}:</strong> {t('p2pSync.infoRoles').split(':')[1]}
+                    </p>
+                    <p>
+                      <strong>{t('p2pSync.infoProtection').split(':')[0]}:</strong>{' '}
+                      {t('p2pSync.infoProtection').split(':')[1]}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
+                    <button
+                      onClick={() => setShowInfoModal(false)}
+                      className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
+                    >
+                      {t('p2pSync.close')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Advanced Config Modal */}
+            {showConfigModal && (
+              <div className={modalOverlayClass}>
+                <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-md sm:h-auto`}>
+                  <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
+                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
+                      <Settings size={18} className="text-yellow-400" />
+                      Configuración Avanzada
+                    </h3>
+                    <button
+                      onClick={() => setShowConfigModal(false)}
+                      className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className={`${modalBodyClass} space-y-5`}>
+                    {/* Host Status & Failover */}
+                    <div className="flex flex-col gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-[#F5F5DC]">Host Principal</span>
+                        {state.role === 'admin' && !isHostLocal && (
+                          <button
+                            onClick={handleManualFailover}
+                            className="rounded bg-yellow-500/10 px-2 py-1 text-[10px] font-bold text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500/20 transition-colors"
+                          >
+                            Forzar Failover
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-xs font-mono text-yellow-400 break-all">{currentHostId || 'N/A'}</div>
+                    </div>
+
+                    {/* Wake Lock */}
+                    <div
+                      className={`flex flex-col gap-2 p-3 rounded-lg border transition-colors ${
+                        wakeLockActive ? 'border-green-400/60 bg-green-500/10' : 'border-green-500/30 bg-green-500/5'
                       }`}
                     >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
-                {permissionOptions.map((perm) => (
-                  <label key={perm.key} className="flex min-h-11 items-start gap-2 rounded bg-[#121212] p-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedPermissions[perm.key]}
-                      disabled={selectedRole !== 'custom'}
-                      onChange={() => handleCustomPermissionToggle(perm.key)}
-                      className="accent-yellow-500 rounded-sm"
-                    />
-                    <span className={selectedRole === 'custom' ? 'text-[#F5F5DC]/80' : 'text-[#F5F5DC]/45'}>
-                      {t(`p2pSync.permissions.${perm.key}`) || perm.label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 md:grid-cols-3">
-                {Object.entries(counts).map(([key, value]) => (
-                  <div key={key} className="p-2 rounded bg-[#121212] border border-[#F5F5DC]/10">
-                    <span className="block text-[#F5F5DC]/50">{t(`p2pSync.${key}`) || key}</span>
-                    <span className="font-mono text-[#F5F5DC]">{value}</span>
-                  </div>
-                ))}
-                <div className="p-2 rounded bg-[#121212] border border-[#F5F5DC]/10">
-                  <span className="block text-[#F5F5DC]/50">{t('p2pSync.confirmSize') || 'Peso Estimado'}</span>
-                  <span className="font-mono text-[#F5F5DC]">{sizeStr}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex shrink-0 flex-col gap-2 border-t border-[#F5F5DC]/10 p-4 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={() => setShowConfirmConnectModal(false)}
-                className="w-full rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444] sm:w-auto"
-              >
-                {t('p2pSync.close') || 'Cerrar'}
-              </button>
-              <button
-                type="button"
-                onClick={confirmAndConnect}
-                className="w-full rounded bg-[#F5F5DC] px-4 py-2 text-sm font-bold text-[#121212] transition-colors hover:bg-white sm:w-auto"
-              >
-                {t('p2pSync.confirmProceed') || 'Sincronizar y Conectar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Info Modal */}
-      {showInfoModal && (
-        <div className={modalOverlayClass}>
-          <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-lg sm:h-auto`}>
-            <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
-              <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
-                <Info size={18} className="text-yellow-400" />
-                {t('p2pSync.infoTitle')}
-              </h3>
-              <button onClick={() => setShowInfoModal(false)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className={`${modalBodyClass} space-y-4`}>
-              <p>
-                <strong>{t('p2pSync.infoDistributedDb').split(':')[0]}:</strong>{' '}
-                {t('p2pSync.infoDistributedDb').split(':')[1]}
-              </p>
-              <p>
-                <strong>{t('p2pSync.infoPermissions').split(':')[0]}:</strong>{' '}
-                {t('p2pSync.infoPermissions').split(':')[1]}
-              </p>
-              <p>
-                <strong>{t('p2pSync.infoSync').split(':')[0]}:</strong> {t('p2pSync.infoSync').split(':')[1]}
-              </p>
-              <p>
-                <strong>{t('p2pSync.infoConfig').split(':')[0]}:</strong> {t('p2pSync.infoConfig').split(':')[1]}
-              </p>
-              <p>
-                <strong>{t('p2pSync.infoRoles').split(':')[0]}:</strong> {t('p2pSync.infoRoles').split(':')[1]}
-              </p>
-              <p>
-                <strong>{t('p2pSync.infoProtection').split(':')[0]}:</strong>{' '}
-                {t('p2pSync.infoProtection').split(':')[1]}
-              </p>
-            </div>
-            <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
-              <button
-                onClick={() => setShowInfoModal(false)}
-                className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
-              >
-                {t('p2pSync.close')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Advanced Config Modal */}
-      {showConfigModal && (
-        <div className={modalOverlayClass}>
-          <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-md sm:h-auto`}>
-            <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
-              <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
-                <Settings size={18} className="text-yellow-400" />
-                Configuración Avanzada
-              </h3>
-              <button onClick={() => setShowConfigModal(false)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className={`${modalBodyClass} space-y-5`}>
-              {/* Host Status & Failover */}
-              <div className="flex flex-col gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-[#F5F5DC]">Host Principal</span>
-                  {state.role === 'admin' && !isHostLocal && (
-                    <button
-                      onClick={handleManualFailover}
-                      className="rounded bg-yellow-500/10 px-2 py-1 text-[10px] font-bold text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500/20 transition-colors"
-                    >
-                      Forzar Failover
-                    </button>
-                  )}
-                </div>
-                <div className="text-xs font-mono text-yellow-400 break-all">{currentHostId || 'N/A'}</div>
-              </div>
-
-              {/* Wake Lock */}
-              <div className={`flex flex-col gap-2 p-3 rounded-lg border transition-colors ${
-                wakeLockActive
-                  ? 'border-green-400/60 bg-green-500/10'
-                  : 'border-green-500/30 bg-green-500/5'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${
-                      wakeLockActive ? 'bg-green-400 animate-pulse shadow-[0_0_6px_rgba(74,222,128,0.6)]' : 'bg-gray-600'
-                    }`} />
-                    <span className={`text-xs font-bold uppercase tracking-wider ${
-                      wakeLockActive ? 'text-green-300' : 'text-green-400'
-                    }`}>
-                      Nodo Keep-Alive (24/7)
-                    </span>
-                    {wakeLockActive && (
-                      <span className="text-[10px] bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-full font-mono">
-                        {(wakeLockUptime >= 3600
-                          ? `${(wakeLockUptime / 3600).toFixed(1)}h`
-                          : wakeLockUptime >= 60
-                            ? `${Math.floor(wakeLockUptime / 60)}m ${wakeLockUptime % 60}s`
-                            : `${wakeLockUptime}s`)} activo
-                      </span>
-                    )}
-                  </span>
-                  <label className="relative inline-flex items-center cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={wakeLockActive}
-                      onChange={toggleWakeLock}
-                      className="sr-only peer"
-                    />
-                    <div className="w-8 h-4.5 bg-[#121212] border border-[#F5F5DC]/25 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-[#121212] peer-checked:after:border-[#121212]"></div>
-                  </label>
-                </div>
-                <p className="text-[10px] text-green-400/80 leading-relaxed">
-                  Previene la suspensión de pantalla/dispositivo para que la app sirva de nodo de sincronización activo
-                  e ininterrumpido.
-                </p>
-                {wakeLockActive && (
-                  <div className="flex items-center gap-3 text-[10px] text-green-400/60 pt-1">
-                    <span className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />
-                      Heartbeat activo (30s)
-                    </span>
-                    {wakeLockRetries > 0 && (
-                      <span className="text-yellow-400/70">
-                        Reintentos: {wakeLockRetries}
-                      </span>
-                    )}
-                    <span className="text-[9px] text-green-400/40">
-                      Persiste al recargar
-                    </span>
-                  </div>
-                )}
-                {!('wakeLock' in navigator) && (
-                  <p className="text-[10px] text-red-400/80 mt-1">
-                    ⚠️ Wake Lock API no disponible en este navegador. Actualiza Chrome/Edge o usa PWA.
-                  </p>
-                )}
-              </div>
-
-              {/* Branch Isolation */}
-              <div className="flex flex-col gap-2 p-3 rounded-lg border border-purple-500/30 bg-purple-500/5">
-                <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Branch Isolation</span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="ID de Rama (vacio para Global)..."
-                    value={branchInput}
-                    onChange={(e) => setBranchInput(e.target.value)}
-                    className="flex-1 bg-black/40 border border-[#F5F5DC]/20 rounded px-2 py-1.5 text-xs text-purple-200 focus:outline-none focus:border-purple-500/50"
-                  />
-                  <button
-                    onClick={handleBranchSwitch}
-                    className="bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold px-3 py-1.5 rounded transition-colors"
-                  >
-                    Switch
-                  </button>
-                </div>
-                <span className="text-[10px] text-purple-400/70">
-                  Current: <span className="font-mono text-purple-300">{state.activeBranch || 'Global (None)'}</span>
-                </span>
-              </div>
-
-              <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 flex flex-col gap-2">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-[#F5F5DC]/70">Rol Actual:</span>
-                  <span className="font-bold text-green-400 capitalize">{state.role}</span>
-                </div>
-                <p className="text-[10px] text-[#F5F5DC]/50">
-                  Solo el host original puede conceder permisos o promover nodos. Los nodos compartidos fuera del host
-                  quedan en modo comprador/portafolio.
-                </p>
-              </div>
-            </div>
-            <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
-              <button
-                onClick={() => setShowConfigModal(false)}
-                className="rounded bg-[#333] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#444]"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* My QR Modal */}
-      {showMyQrModal && (
-        <div className={modalOverlayClass}>
-          <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-sm sm:h-auto`}>
-            <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
-              <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
-                <QrCode size={18} className="text-yellow-400" />
-                {t('p2pSync.myQrTitle')}
-              </h3>
-              <button onClick={() => setShowMyQrModal(false)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className={`${modalBodyClass} flex flex-col items-center gap-4 text-center`}>
-              <div className="rounded-xl bg-white p-4">
-                {state.localPeerId ? (
-                  <QRCodeCanvas value={state.localPeerId} size={180} level="H" includeMargin={false} />
-                ) : (
-                  <div className="flex h-[180px] w-[180px] items-center justify-center bg-gray-200 text-gray-500 animate-pulse">
-                    Loading...
-                  </div>
-                )}
-              </div>
-              <p className="text-sm text-[#F5F5DC]/80 mt-2">{t('p2pSync.qrInstructions')}</p>
-            </div>
-            <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
-              <button
-                onClick={() => setShowMyQrModal(false)}
-                className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
-              >
-                {t('p2pSync.close')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* QR Scanner Modal */}
-      {showScannerModal && <QRScannerModal onScan={handleScanConnect} onClose={() => setShowScannerModal(false)} />}
-
-      {/* Sync Progress Modal */}
-      <div
-        key="sync-modal"
-        className={`fixed inset-0 z-[100] flex h-[var(--app-height,100vh)] items-end justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm transition-all duration-300 sm:items-center sm:p-4 pointer-events-none ${
-          showSyncModal ? 'opacity-100 visible' : 'opacity-0 invisible'
-        }`}
-      >
-        <div
-          className={`flex w-full max-w-[calc(100vw-1.5rem)] flex-col items-center gap-4 overflow-hidden rounded-t-2xl border border-green-500/30 bg-[#1a1a1a] p-5 text-center shadow-[0_0_30px_rgba(34,197,94,0.15)] sm:max-w-sm sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg sm:p-6 transition-transform duration-300 ${
-            showSyncModal ? 'translate-y-0 scale-100' : 'translate-y-4 scale-95'
-          }`}
-        >
-          <h3 className={`font-bold text-green-400 text-lg ${syncProgress < 100 ? 'animate-pulse' : ''}`}>
-            {syncProgress < 100 ? 'Sincronizando Paridad...' : '¡Empalme Completado!'}
-          </h3>
-
-          <div className="w-full bg-[#121212] rounded-full h-3 border border-[#F5F5DC]/10 overflow-hidden relative">
-            <div
-              className="bg-green-500 h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(34,197,94,0.8)]"
-              style={{ width: `${Math.min(syncProgress, 100)}%` }}
-            />
-          </div>
-
-          <p className="text-[#F5F5DC]/70 text-sm font-mono font-bold">
-            {syncProgress < 100 ? `${Math.round(syncProgress)}% Paridad` : '100% Paridad Lograda'}
-          </p>
-        </div>
-      </div>
-
-      {/* Connection History Modal */}
-      {showHistoryForPeer && (
-        <div className={modalOverlayClass}>
-          <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-2xl sm:h-auto`}>
-            <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
-              <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
-                <History size={18} className="text-orange-400" />
-                Historial de Conexión
-              </h3>
-              <button onClick={() => setShowHistoryForPeer(null)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className={`${modalBodyClass} space-y-4`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#121212] p-3 rounded-md border border-[#F5F5DC]/10">
-                <div className="min-w-0">
-                  <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider block mb-0.5">Peer ID</span>
-                  <code className="text-yellow-400 text-xs font-mono break-all">{showHistoryForPeer}</code>
-                </div>
-                <div className="shrink-0 text-right">
-                  <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider block mb-0.5">Total</span>
-                  <span className="text-sm font-bold text-[#F5F5DC]">
-                    {t('p2pSync.eventsRegistered', { count: dbSync.getPeerHistory(showHistoryForPeer).length })}
-                  </span>
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-lg border border-[#F5F5DC]/10 bg-black/20">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-[#121212] text-[#F5F5DC]/60 uppercase tracking-wider text-[10px]">
-                    <tr>
-                      <th className="px-4 py-2 font-bold">{t('sales.date')}</th>
-                      <th className="px-4 py-2 font-bold">{t('common.status')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#F5F5DC]/5">
-                    {[...dbSync.getPeerHistory(showHistoryForPeer)].reverse().map((event, idx) => {
-                      const iconMap: Record<string, any> = {
-                        connected: { color: 'text-green-400', icon: CheckCircle2 },
-                        verified: { color: 'text-blue-400', icon: ShieldAlert },
-                        offline: { color: 'text-red-400', icon: AlertCircle },
-                        disconnected: { color: 'text-red-400', icon: X },
-                        reconnected: { color: 'text-yellow-400', icon: RefreshCw },
-                      };
-                      const config = iconMap[event.eventType] || { color: 'text-gray-400', icon: Activity };
-                      const Icon = config.icon;
-
-                      return (
-                        <tr key={`${event.timestamp}-${idx}`} className="hover:bg-white/5 transition-colors">
-                          <td className="px-4 py-3 font-mono text-[#F5F5DC]/70 whitespace-nowrap">
-                            {new Date(event.timestamp).toLocaleString()}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center gap-1.5 font-medium ${config.color}`}>
-                              <Icon size={14} />
-                              {t(`p2pSync.eventTypes.${event.eventType}`)}
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              wakeLockActive
+                                ? 'bg-green-400 animate-pulse shadow-[0_0_6px_rgba(74,222,128,0.6)]'
+                                : 'bg-gray-600'
+                            }`}
+                          />
+                          <span
+                            className={`text-xs font-bold uppercase tracking-wider ${
+                              wakeLockActive ? 'text-green-300' : 'text-green-400'
+                            }`}
+                          >
+                            Nodo Keep-Alive (24/7)
+                          </span>
+                          {wakeLockActive && (
+                            <span className="text-[10px] bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-full font-mono">
+                              {wakeLockUptime >= 3600
+                                ? `${(wakeLockUptime / 3600).toFixed(1)}h`
+                                : wakeLockUptime >= 60
+                                  ? `${Math.floor(wakeLockUptime / 60)}m ${wakeLockUptime % 60}s`
+                                  : `${wakeLockUptime}s`}{' '}
+                              activo
                             </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {dbSync.getPeerHistory(showHistoryForPeer).length === 0 && (
-                      <tr>
-                        <td colSpan={2} className="px-4 py-8 text-center text-[#F5F5DC]/40 italic">
-                          No hay eventos registrados.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                          )}
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={wakeLockActive}
+                            onChange={toggleWakeLock}
+                            className="sr-only peer"
+                          />
+                          <div className="w-8 h-4.5 bg-[#121212] border border-[#F5F5DC]/25 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-[#121212] peer-checked:after:border-[#121212]"></div>
+                        </label>
+                      </div>
+                      <p className="text-[10px] text-green-400/80 leading-relaxed">
+                        Previene la suspensión de pantalla/dispositivo para que la app sirva de nodo de sincronización
+                        activo e ininterrumpido.
+                      </p>
+                      {wakeLockActive && (
+                        <div className="flex items-center gap-3 text-[10px] text-green-400/60 pt-1">
+                          <span className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />
+                            Heartbeat activo (30s)
+                          </span>
+                          {wakeLockRetries > 0 && (
+                            <span className="text-yellow-400/70">Reintentos: {wakeLockRetries}</span>
+                          )}
+                          <span className="text-[9px] text-green-400/40">Persiste al recargar</span>
+                        </div>
+                      )}
+                      {!('wakeLock' in navigator) && (
+                        <p className="text-[10px] text-red-400/80 mt-1">
+                          ⚠️ Wake Lock API no disponible en este navegador. Actualiza Chrome/Edge o usa PWA.
+                        </p>
+                      )}
+                    </div>
 
-              <div className="flex items-start gap-2 p-3 rounded bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-300">
-                <Info size={14} className="shrink-0 mt-0.5" />
-                <p>{t('p2pSync.historyMemoryDisclaimer')}</p>
-              </div>
-            </div>
-            <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
-              <button
-                onClick={() => setShowHistoryForPeer(null)}
-                className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
-              >
-                {t('p2pSync.close')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                    {/* Branch Isolation */}
+                    <div className="flex flex-col gap-2 p-3 rounded-lg border border-purple-500/30 bg-purple-500/5">
+                      <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">
+                        Branch Isolation
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="ID de Rama (vacio para Global)..."
+                          value={branchInput}
+                          onChange={(e) => setBranchInput(e.target.value)}
+                          className="flex-1 bg-black/40 border border-[#F5F5DC]/20 rounded px-2 py-1.5 text-xs text-purple-200 focus:outline-none focus:border-purple-500/50"
+                        />
+                        <button
+                          onClick={handleBranchSwitch}
+                          className="bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold px-3 py-1.5 rounded transition-colors"
+                        >
+                          Switch
+                        </button>
+                      </div>
+                      <span className="text-[10px] text-purple-400/70">
+                        Current:{' '}
+                        <span className="font-mono text-purple-300">{state.activeBranch || 'Global (None)'}</span>
+                      </span>
+                    </div>
 
-      {/* Activity Log Modal */}
-      {showLogsForPeer && (
-        <div className={modalOverlayClass}>
-          <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-2xl sm:h-auto`}>
-            <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
-              <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
-                📋 Registro de Actividad
-              </h3>
-              <button onClick={() => setShowLogsForPeer(null)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className={`${modalBodyClass} space-y-2`}>
-              <div className="mb-4">
-                <span className="text-sm opacity-70">Peer ID:</span>{' '}
-                <code className="text-yellow-400 text-sm font-mono break-all">{showLogsForPeer}</code>
-              </div>
-              {state.auditLogs && state.auditLogs.filter((log) => log.peerId === showLogsForPeer).length > 0 ? (
-                [...state.auditLogs]
-                  .filter((log) => log.peerId === showLogsForPeer)
-                  .reverse()
-                  .map((log) => (
-                    <div
-                      key={log.id}
-                      className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 text-sm flex flex-col gap-1"
+                    <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-[#F5F5DC]/70">Rol Actual:</span>
+                        <span className="font-bold text-green-400 capitalize">{state.role}</span>
+                      </div>
+                      <p className="text-[10px] text-[#F5F5DC]/50">
+                        Solo el host original puede conceder permisos o promover nodos. Los nodos compartidos fuera del
+                        host quedan en modo comprador/portafolio.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
+                    <button
+                      onClick={() => setShowConfigModal(false)}
+                      className="rounded bg-[#333] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#444]"
                     >
-                      <div className="flex justify-between items-center text-xs opacity-70">
-                        <span>{new Date(log.timestamp).toLocaleString()}</span>
-                        <span className="capitalize px-2 py-0.5 bg-foreground/10 rounded">
-                          {log.entityType || 'General'}
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* My QR Modal */}
+            {showMyQrModal && (
+              <div className={modalOverlayClass}>
+                <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-sm sm:h-auto`}>
+                  <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
+                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
+                      <QrCode size={18} className="text-yellow-400" />
+                      {t('p2pSync.myQrTitle')}
+                    </h3>
+                    <button onClick={() => setShowMyQrModal(false)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className={`${modalBodyClass} flex flex-col items-center gap-4 text-center`}>
+                    <div className="rounded-xl bg-white p-4">
+                      {state.localPeerId ? (
+                        <QRCodeSVG value={state.localPeerId} size={180} level="H" includeMargin={false} />
+                      ) : (
+                        <div className="flex h-[180px] w-[180px] items-center justify-center bg-gray-200 text-gray-500 animate-pulse">
+                          Loading...
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm text-[#F5F5DC]/80 mt-2">{t('p2pSync.qrInstructions')}</p>
+                  </div>
+                  <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
+                    <button
+                      onClick={() => setShowMyQrModal(false)}
+                      className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
+                    >
+                      {t('p2pSync.close')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* QR Scanner Modal */}
+            {showScannerModal && (
+              <QRScannerModal onScan={handleScanConnect} onClose={() => setShowScannerModal(false)} />
+            )}
+
+            {/* Sync Progress Modal */}
+            <div
+              key="sync-modal"
+              className={`fixed inset-0 z-[100] flex h-[var(--app-height,100vh)] items-end justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm transition-all duration-300 sm:items-center sm:p-4 pointer-events-none ${
+                showSyncModal ? 'opacity-100 visible' : 'opacity-0 invisible'
+              }`}
+            >
+              <div
+                className={`flex w-full max-w-[calc(100vw-1.5rem)] flex-col items-center gap-4 overflow-hidden rounded-t-2xl border border-green-500/30 bg-[#1a1a1a] p-5 text-center shadow-[0_0_30px_rgba(34,197,94,0.15)] sm:max-w-sm sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg sm:p-6 transition-transform duration-300 ${
+                  showSyncModal ? 'translate-y-0 scale-100' : 'translate-y-4 scale-95'
+                }`}
+              >
+                <h3 className={`font-bold text-green-400 text-lg ${syncProgress < 100 ? 'animate-pulse' : ''}`}>
+                  {syncProgress < 100 ? 'Sincronizando Paridad...' : '¡Empalme Completado!'}
+                </h3>
+
+                <div className="w-full bg-[#121212] rounded-full h-3 border border-[#F5F5DC]/10 overflow-hidden relative">
+                  <div
+                    className="bg-green-500 h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(34,197,94,0.8)]"
+                    style={{ width: `${Math.min(syncProgress, 100)}%` }}
+                  />
+                </div>
+
+                <p className="text-[#F5F5DC]/70 text-sm font-mono font-bold">
+                  {syncProgress < 100 ? `${Math.round(syncProgress)}% Paridad` : '100% Paridad Lograda'}
+                </p>
+              </div>
+            </div>
+
+            {/* Connection History Modal */}
+            {showHistoryForPeer && (
+              <div className={modalOverlayClass}>
+                <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-2xl sm:h-auto`}>
+                  <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
+                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
+                      <History size={18} className="text-orange-400" />
+                      Historial de Conexión
+                    </h3>
+                    <button
+                      onClick={() => setShowHistoryForPeer(null)}
+                      className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className={`${modalBodyClass} space-y-4`}>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#121212] p-3 rounded-md border border-[#F5F5DC]/10">
+                      <div className="min-w-0">
+                        <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider block mb-0.5">
+                          Peer ID
+                        </span>
+                        <code className="text-yellow-400 text-xs font-mono break-all">{showHistoryForPeer}</code>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider block mb-0.5">
+                          Total
+                        </span>
+                        <span className="text-sm font-bold text-[#F5F5DC]">
+                          {t('p2pSync.eventsRegistered', { count: dbSync.getPeerHistory(showHistoryForPeer).length })}
                         </span>
                       </div>
-                      <div className="text-[#F5F5DC] mt-1">{log.action}</div>
                     </div>
-                  ))
-              ) : (
-                <div className="text-center text-sm opacity-50 p-6">No hay actividad registrada para este nodo.</div>
-              )}
-            </div>
-            <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
-              <button
-                onClick={() => setShowLogsForPeer(null)}
-                className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
-              >
-                {t('p2pSync.close') || 'Cerrar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
+                    <div className="overflow-hidden rounded-lg border border-[#F5F5DC]/10 bg-black/20">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-[#121212] text-[#F5F5DC]/60 uppercase tracking-wider text-[10px]">
+                          <tr>
+                            <th className="px-4 py-2 font-bold">{t('sales.date')}</th>
+                            <th className="px-4 py-2 font-bold">{t('common.status')}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#F5F5DC]/5">
+                          {[...dbSync.getPeerHistory(showHistoryForPeer)].reverse().map((event, idx) => {
+                            const iconMap: Record<string, any> = {
+                              connected: { color: 'text-green-400', icon: CheckCircle2 },
+                              verified: { color: 'text-blue-400', icon: ShieldAlert },
+                              offline: { color: 'text-red-400', icon: AlertCircle },
+                              disconnected: { color: 'text-red-400', icon: X },
+                              reconnected: { color: 'text-yellow-400', icon: RefreshCw },
+                            };
+                            const config = iconMap[event.eventType] || { color: 'text-gray-400', icon: Activity };
+                            const Icon = config.icon;
+
+                            return (
+                              <tr key={`${event.timestamp}-${idx}`} className="hover:bg-white/5 transition-colors">
+                                <td className="px-4 py-3 font-mono text-[#F5F5DC]/70 whitespace-nowrap">
+                                  {new Date(event.timestamp).toLocaleString()}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className={`inline-flex items-center gap-1.5 font-medium ${config.color}`}>
+                                    <Icon size={14} />
+                                    {t(`p2pSync.eventTypes.${event.eventType}`)}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          {dbSync.getPeerHistory(showHistoryForPeer).length === 0 && (
+                            <tr>
+                              <td colSpan={2} className="px-4 py-8 text-center text-[#F5F5DC]/40 italic">
+                                No hay eventos registrados.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="flex items-start gap-2 p-3 rounded bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-300">
+                      <Info size={14} className="shrink-0 mt-0.5" />
+                      <p>{t('p2pSync.historyMemoryDisclaimer')}</p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
+                    <button
+                      onClick={() => setShowHistoryForPeer(null)}
+                      className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
+                    >
+                      {t('p2pSync.close')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Activity Log Modal */}
+            {showLogsForPeer && (
+              <div className={modalOverlayClass}>
+                <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-2xl sm:h-auto`}>
+                  <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
+                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
+                      📋 Registro de Actividad
+                    </h3>
+                    <button onClick={() => setShowLogsForPeer(null)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className={`${modalBodyClass} space-y-2`}>
+                    <div className="mb-4">
+                      <span className="text-sm opacity-70">Peer ID:</span>{' '}
+                      <code className="text-yellow-400 text-sm font-mono break-all">{showLogsForPeer}</code>
+                    </div>
+                    {state.auditLogs && state.auditLogs.filter((log) => log.peerId === showLogsForPeer).length > 0 ? (
+                      [...state.auditLogs]
+                        .filter((log) => log.peerId === showLogsForPeer)
+                        .reverse()
+                        .map((log) => (
+                          <div
+                            key={log.id}
+                            className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 text-sm flex flex-col gap-1"
+                          >
+                            <div className="flex justify-between items-center text-xs opacity-70">
+                              <span>{new Date(log.timestamp).toLocaleString()}</span>
+                              <span className="capitalize px-2 py-0.5 bg-foreground/10 rounded">
+                                {log.entityType || 'General'}
+                              </span>
+                            </div>
+                            <div className="text-[#F5F5DC] mt-1">{log.action}</div>
+                          </div>
+                        ))
+                    ) : (
+                      <div className="text-center text-sm opacity-50 p-6">
+                        No hay actividad registrada para este nodo.
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
+                    <button
+                      onClick={() => setShowLogsForPeer(null)}
+                      className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
+                    >
+                      {t('p2pSync.close') || 'Cerrar'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>,
+          document.body,
+        )}
     </CollapsibleCard>
   );
 };

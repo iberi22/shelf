@@ -1,18 +1,21 @@
-import { createNamespaceAuthorizer, isEdgeMeshRemoteOrigin } from 'edge-mesh';
+import { createNamespaceAuthorizer } from 'edge-mesh';
 import { useEdgeMesh } from 'edge-mesh-react';
 import type { AppState, PeerInfo, PeerPermissions } from 'p2p-mesh-core';
+import { dbSync } from 'p2p-mesh-core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type * as Y from 'yjs';
 import {
   getDeletedIdsFromYMapEvent,
   getShelfEdgeStats,
   SHELF_EDGE_BRANCH_COLLECTIONS,
+  SHELF_EDGE_COLLECTIONS,
   SHELF_EDGE_GLOBAL_COLLECTIONS,
   SHELF_EDGE_LOCAL_ORIGIN,
   SHELF_EDGE_NAMESPACE,
+  SHELF_EDGE_UNIFIED_DOC,
   type ShelfEdgeCollection,
   type ShelfEdgeCollectionStats,
-  syncAppStateToShelfEdgeDoc,
+  shelfEdgeMapKey,
 } from '../lib/edge-mesh-workflow';
 
 type EdgeMeshDispatch = (action: {
@@ -23,6 +26,8 @@ type EdgeMeshDispatch = (action: {
 export interface EdgeMeshWorkflowStatus {
   enabled: boolean;
   namespace: string;
+  unifiedDoc: boolean;
+  sharedWithDbSync: boolean;
   lastLocalSyncAt: string | null;
   lastRemoteSyncAt: string | null;
   lastChangedCollections: ShelfEdgeCollection[];
@@ -33,6 +38,8 @@ export interface EdgeMeshWorkflowStatus {
 const defaultStatus: EdgeMeshWorkflowStatus = {
   enabled: false,
   namespace: SHELF_EDGE_NAMESPACE,
+  unifiedDoc: SHELF_EDGE_UNIFIED_DOC,
+  sharedWithDbSync: false,
   lastLocalSyncAt: null,
   lastRemoteSyncAt: null,
   lastChangedCollections: [],
@@ -122,7 +129,12 @@ const canPeerMutateCollection = (
   collection: ShelfEdgeCollection,
   items: unknown[],
 ) => {
-  const masterPeerId = getMasterPeerId(state);
+  // Local device writes (or test injects attributed to this node) always allowed.
+  if (peerId && (peerId === state.localPeerId || peerId === dbSync.localPeerId)) {
+    return true;
+  }
+
+  const masterPeerId = getMasterPeerId(state) || dbSync.getMasterPeerId?.() || null;
   if (masterPeerId && peerId === masterPeerId) return true;
 
   if (collection === 'teamMembers') return false;
@@ -137,30 +149,30 @@ const canPeerMutateCollection = (
   if (!peer) return false;
 
   const permissions = peer.permissions || state.permissions;
-  const authorizer = createNamespaceAuthorizer({ authorityPeerId: masterPeerId || undefined });
+  const authorizer = createNamespaceAuthorizer();
   for (const candidate of state.peers) {
     const candidatePermissions =
       candidate.permissions || (candidate.id === state.localPeerId ? state.permissions : undefined);
     for (const [candidateCollection, candidatePermissionKey] of Object.entries(collectionPermissionMap)) {
       if (candidatePermissions?.[candidatePermissionKey]) {
-        authorizer.grant({
-          subject: candidate.id,
-          namespace: `${SHELF_EDGE_NAMESPACE}:${candidateCollection}`,
-          action: 'write',
-        });
+        authorizer.concederCapacidad(
+          `${SHELF_EDGE_NAMESPACE}:${candidateCollection}`,
+          candidate.id as any,
+          'write',
+        );
       }
     }
   }
 
   if (permissions?.[permissionKey] === true) {
-    authorizer.grant({
-      subject: peerId,
-      namespace: `${SHELF_EDGE_NAMESPACE}:${collection}`,
-      action: 'write',
-    });
+    authorizer.concederCapacidad(
+      `${SHELF_EDGE_NAMESPACE}:${collection}`,
+      peerId as any,
+      'write',
+    );
   }
 
-  return authorizer.can(peerId, `${SHELF_EDGE_NAMESPACE}:${collection}`, 'write');
+  return authorizer.verificarCapacidad(`${SHELF_EDGE_NAMESPACE}:${collection}`, peerId as any, 'write');
 };
 
 const getStateCollection = (state: AppState, collection: ShelfEdgeCollection) => {
@@ -182,116 +194,122 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
   dispatchRef.current = dispatch;
   stateRef.current = state;
 
-  const globalAdapter = useMemo(() => {
+  const sharedDoc = useMemo(() => {
     if (!mesh) return null;
-    return mesh.getNamespace(SHELF_EDGE_NAMESPACE);
+    return mesh.yjsAdapter.doc;
   }, [mesh]);
 
-  const branchAdapter = useMemo(() => {
-    if (!mesh || !state.activeBranchId) return null;
-    return mesh.getNamespace(`${SHELF_EDGE_NAMESPACE}/${state.activeBranchId}`);
-  }, [mesh, state.activeBranchId]);
+  const isSharedWithDbSync = Boolean(sharedDoc && sharedDoc === dbSync.doc);
+
+  // Unified Phase B: plain map keys (products, sales, …) matching dbSync — no shelf_ prefix.
+  const mapPrefix = '';
 
   useEffect(() => {
     emitStatus(status);
   }, [status]);
 
+  // Test harness on the shared document
   useEffect(() => {
-    if (!isLocalTestRuntime() || !globalAdapter) return;
+    if (!isLocalTestRuntime() || !sharedDoc || !mesh) return;
 
     (window as unknown as { __shelfEdgeMeshForTest?: unknown }).__shelfEdgeMeshForTest = {
+      unified: SHELF_EDGE_UNIFIED_DOC,
+      sharedWithDbSync: isSharedWithDbSync,
       getState: () => {
-        const globalState = SHELF_EDGE_GLOBAL_COLLECTIONS.reduce(
-          (snapshot, collection) => {
-            snapshot[collection] = Array.from(globalAdapter.doc.getMap(collection).values());
-            return snapshot;
-          },
-          {} as Record<ShelfEdgeCollection, unknown[]>,
-        );
-        const branchState = branchAdapter
-          ? SHELF_EDGE_BRANCH_COLLECTIONS.reduce(
-              (snapshot, collection) => {
-                snapshot[collection] = Array.from(branchAdapter.doc.getMap(collection).values());
-                return snapshot;
-              },
-              {} as Record<ShelfEdgeCollection, unknown[]>,
-            )
-          : {};
-        return { ...globalState, ...branchState };
+        const snapshot = {} as Record<ShelfEdgeCollection, unknown[]>;
+        for (const collection of SHELF_EDGE_COLLECTIONS) {
+          const key = shelfEdgeMapKey(collection, mapPrefix, true);
+          snapshot[collection] = Array.from(sharedDoc.getMap(key).values());
+        }
+        return snapshot;
       },
-      applyRemoteUpdate: (peerId: string, update: number[], collection?: ShelfEdgeCollection) => {
-        const isBranch = collection && SHELF_EDGE_BRANCH_COLLECTIONS.includes(collection as any);
-        const targetAdapter = isBranch ? branchAdapter : globalAdapter;
-        targetAdapter?.applyUpdate(new Uint8Array(update), { type: 'remote', peerId });
+      applyRemoteUpdate: (peerId: string, update: number[]) => {
+        // Prefer dbSync.applyUpdate so primary-path remote authz runs on the same doc.
+        if (isSharedWithDbSync) {
+          dbSync.applyUpdate(new Uint8Array(update), peerId);
+        } else {
+          mesh.yjsAdapter.applyUpdate(new Uint8Array(update), peerId);
+        }
       },
-      getUpdate: (collection?: ShelfEdgeCollection) => {
-        const isBranch = collection && SHELF_EDGE_BRANCH_COLLECTIONS.includes(collection as any);
-        const targetAdapter = isBranch ? branchAdapter : globalAdapter;
-        const update = (targetAdapter as any)?.getLocalUpdate?.() || (targetAdapter as any)?.getUpdate?.() || [];
+      getUpdate: (_collection?: string) => {
+        // Full-doc update (collection arg kept for API compat with tests).
+        const update = mesh.yjsAdapter.getState?.() || new Uint8Array();
+        return Array.from(update);
+      },
+      /** Encode only a single map for lighter inject tests (optional). */
+      getCollectionUpdate: (collection: ShelfEdgeCollection) => {
+        const key = shelfEdgeMapKey(collection, mapPrefix, true);
+        const yMap = sharedDoc.getMap(key);
+        // Fall back to full state — surgical single-map export needs a temp doc.
+        void yMap;
+        const update = mesh.yjsAdapter.getState?.() || new Uint8Array();
         return Array.from(update);
       },
       remove: (collection: ShelfEdgeCollection, id: string) => {
-        const isBranch = SHELF_EDGE_BRANCH_COLLECTIONS.includes(collection as any);
-        const targetAdapter = isBranch ? branchAdapter : globalAdapter;
-        if (!targetAdapter) return;
-        const yMap = targetAdapter.doc.getMap(collection);
-        targetAdapter.doc.transact(() => {
+        const key = shelfEdgeMapKey(collection, mapPrefix, true);
+        const yMap = sharedDoc.getMap(key);
+        // Use local origin so Security Guard does not treat test harness as a remote peer.
+        sharedDoc.transact(() => {
           yMap.delete(id);
-        }, 'shelf-edge-e2e');
+        }, 'local');
       },
       upsert: (collection: ShelfEdgeCollection, id: string, item: unknown) => {
-        const isBranch = SHELF_EDGE_BRANCH_COLLECTIONS.includes(collection as any);
-        const targetAdapter = isBranch ? branchAdapter : globalAdapter;
-        if (!targetAdapter) return;
-        const yMap = targetAdapter.doc.getMap(collection);
-        targetAdapter.doc.transact(() => {
+        const key = shelfEdgeMapKey(collection, mapPrefix, true);
+        const yMap = sharedDoc.getMap(key);
+        sharedDoc.transact(() => {
           yMap.set(id, item);
-        }, 'shelf-edge-e2e');
+        }, 'local');
       },
     };
 
     return () => {
       delete (window as unknown as { __shelfEdgeMeshForTest?: unknown }).__shelfEdgeMeshForTest;
     };
-  }, [globalAdapter, branchAdapter]);
+  }, [sharedDoc, mesh, isSharedWithDbSync]);
 
+  // Status: read stats from the single document (no AppState → Y mirror)
   useEffect(() => {
-    if (!globalAdapter || !isLoaded) {
+    if (!sharedDoc || !isLoaded) {
       setStatus(defaultStatus);
       return;
     }
 
-    // Sync Global Collections
-    const globalResult = syncAppStateToShelfEdgeDoc(globalAdapter.doc, state, SHELF_EDGE_GLOBAL_COLLECTIONS as any);
-
-    // Sync Branch Collections
-    let branchResult = {
-      changedCollections: [] as ShelfEdgeCollection[],
-      stats: {} as ShelfEdgeCollectionStats,
-      totalItems: 0,
-    };
-    if (branchAdapter) {
-      branchResult = syncAppStateToShelfEdgeDoc(branchAdapter.doc, state, SHELF_EDGE_BRANCH_COLLECTIONS as any);
-    }
-
-    const totalStats = { ...globalResult.stats, ...branchResult.stats };
-    const allChanged = [...globalResult.changedCollections, ...branchResult.changedCollections];
+    const stats = getShelfEdgeStats(sharedDoc, mapPrefix, true);
+    const totalItems = Object.values(stats).reduce((total, count) => total + count, 0);
 
     setStatus((previous) => ({
       enabled: true,
       namespace: SHELF_EDGE_NAMESPACE,
-      lastLocalSyncAt: allChanged.length > 0 ? new Date().toISOString() : previous.lastLocalSyncAt,
+      unifiedDoc: true,
+      sharedWithDbSync: isSharedWithDbSync,
+      lastLocalSyncAt: previous.lastLocalSyncAt ?? new Date().toISOString(),
       lastRemoteSyncAt: previous.lastRemoteSyncAt,
-      lastChangedCollections: allChanged.length > 0 ? allChanged : previous.lastChangedCollections,
-      stats: totalStats,
-      totalItems: globalResult.totalItems + branchResult.totalItems,
+      lastChangedCollections: previous.lastChangedCollections,
+      stats,
+      totalItems,
     }));
-  }, [globalAdapter, branchAdapter, isLoaded, state]);
+  }, [sharedDoc, isLoaded, isSharedWithDbSync, state.products, state.clients, state.sales, state.suppliers]);
 
+  // Defense-in-depth security observers on shared maps (complements dbSync.applyUpdate).
+  // Does not re-dispatch SYNC_ENTITIES when sharedWithDbSync — dbSync.onObserve already owns that path.
   useEffect(() => {
-    if (!globalAdapter || !isLoaded) return;
+    if (!sharedDoc || !isLoaded) return;
 
     const scheduleRemoteApply = (collection: ShelfEdgeCollection, yMap: Y.Map<unknown>, deletedIds: string[]) => {
+      // When doc is shared, React state is driven by dbSync.onObserve — avoid double SYNC_ENTITIES.
+      if (isSharedWithDbSync) {
+        const stats = getShelfEdgeStats(sharedDoc, mapPrefix, true);
+        setStatus((previous) => ({
+          ...previous,
+          enabled: true,
+          lastRemoteSyncAt: new Date().toISOString(),
+          lastChangedCollections: [collection],
+          stats,
+          totalItems: Object.values(stats).reduce((t, c) => t + c, 0),
+        }));
+        return;
+      }
+
       const pending = pendingRemoteCollectionsRef.current.get(collection) || {
         items: [],
         deletedIds: new Set<string>(),
@@ -321,31 +339,41 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
         });
         pendingRemoteCollectionsRef.current.clear();
 
-        const globalStats = getShelfEdgeStats(globalAdapter.doc);
-        const branchStats = branchAdapter ? getShelfEdgeStats(branchAdapter.doc) : ({} as any);
-        const stats = { ...globalStats, ...branchStats };
+        const stats = getShelfEdgeStats(sharedDoc, mapPrefix, true);
         setStatus((previous) => ({
           ...previous,
           enabled: true,
           lastRemoteSyncAt: new Date().toISOString(),
           lastChangedCollections: changedCollections,
           stats,
-          totalItems: Object.values(stats).reduce(
-            (total, count) => (Number(total) || 0) + (Number(count) || 0),
-            0,
-          ) as number,
+          totalItems: Object.values(stats).reduce((total, count) => total + count, 0),
         }));
       }, 0);
     };
 
-    const setupObservers = (collections: readonly ShelfEdgeCollection[], adapter: any) => {
-      if (!adapter) return [];
+    const setupObservers = (collections: readonly ShelfEdgeCollection[]) => {
       return collections.map((collection) => {
-        const yMap = adapter.doc.getMap(collection);
+        const key = shelfEdgeMapKey(collection, mapPrefix, true);
+        const yMap = sharedDoc.getMap(key);
         const observer = (event: Y.YMapEvent<unknown>) => {
           if (event.transaction.origin === SHELF_EDGE_LOCAL_ORIGIN) return;
           if (event.transaction.origin === SHELF_EDGE_SECURITY_ORIGIN) return;
-          if (!isEdgeMeshRemoteOrigin(event.transaction.origin)) {
+          if (event.transaction.origin === 'p2p-security-revert') return;
+          if (event.transaction.origin === 'local') {
+            // Local dbSync writes — update status only
+            const stats = getShelfEdgeStats(sharedDoc, mapPrefix, true);
+            setStatus((previous) => ({
+              ...previous,
+              enabled: true,
+              lastLocalSyncAt: new Date().toISOString(),
+              lastChangedCollections: [collection],
+              stats,
+              totalItems: Object.values(stats).reduce((t, c) => t + c, 0),
+            }));
+            return;
+          }
+
+          if (!(typeof event.transaction.origin === 'string')) {
             scheduleRemoteApply(collection, yMap, getDeletedIdsFromYMapEvent(event));
             return;
           }
@@ -353,14 +381,24 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
           const changedIds = Array.from(event.changes.keys.keys());
           const changedItems = changedIds.map((id) => yMap.get(id)).filter(Boolean);
           const deletedIds = getDeletedIdsFromYMapEvent(event);
-          const remotePeerId = event.transaction.origin.peerId;
+          const remotePeerId = event.transaction.origin as string;
+
+          // Phase B shared doc: dbSync.applyUpdate already gates untrusted peers and
+          // privilege maps. Bridge must NOT re-revert entity CRDT (products/clients/…)
+          // or multi-peer catch-up breaks. Only enforce privilege collections here.
+          const privilegeCollections: ShelfEdgeCollection[] = ['teamMembers', 'auditLogs'];
+          if (isSharedWithDbSync && !privilegeCollections.includes(collection)) {
+            scheduleRemoteApply(collection, yMap, deletedIds);
+            return;
+          }
+
           const canApply = canPeerMutateCollection(stateRef.current, remotePeerId, collection, changedItems);
 
           if (!canApply) {
             const previousItems = new Map(
               getStateCollection(stateRef.current, collection).map((item) => [item.id, item]),
             );
-            adapter.doc.transact(() => {
+            sharedDoc.transact(() => {
               for (const id of changedIds) {
                 const previousItem = previousItems.get(id);
                 if (previousItem) {
@@ -387,8 +425,10 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
       });
     };
 
-    const globalObservers = setupObservers(SHELF_EDGE_GLOBAL_COLLECTIONS, globalAdapter);
-    const branchObservers = setupObservers(SHELF_EDGE_BRANCH_COLLECTIONS, branchAdapter);
+    const observers = setupObservers([
+      ...SHELF_EDGE_GLOBAL_COLLECTIONS,
+      ...SHELF_EDGE_BRANCH_COLLECTIONS,
+    ]);
 
     return () => {
       if (remoteSyncTimerRef.current) {
@@ -396,11 +436,11 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
         remoteSyncTimerRef.current = null;
       }
       pendingRemoteCollectionsRef.current.clear();
-      for (const { yMap, observer } of [...globalObservers, ...branchObservers]) {
+      for (const { yMap, observer } of observers) {
         yMap.unobserve(observer);
       }
     };
-  }, [globalAdapter, branchAdapter, isLoaded]);
+  }, [sharedDoc, isLoaded, isSharedWithDbSync]);
 
   return null;
 };

@@ -14,6 +14,7 @@ import {
   normalizeInventoryFieldKey,
 } from '../lib/inventoryConfig';
 import { generateId } from '../utils/id';
+import CollapsibleCard from './CollapsibleCard';
 
 const BranchConfig: React.FC = () => {
   const { t } = useI18n();
@@ -233,29 +234,29 @@ const BranchConfig: React.FC = () => {
   };
 
   return (
-    <>
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="h-5 w-5 text-[#4ADE80]" aria-hidden="true" />
-              <h3 className="text-xl font-bold text-[#F5F5DC]">Configuracion de articulos</h3>
-            </div>
-            <p className="text-xs text-[#F5F5DC]/70 mt-1">
-              Ajusta los campos del producto, los atributos de variante y las medidas sugeridas desde aquí.
-            </p>
-          </div>
+    <div className="flex w-full flex-col gap-6 md:gap-8">
+      {/* Configuration of Articles */}
+      <CollapsibleCard
+        title="Configuración de artículos"
+        description="Ajusta los campos del producto, los atributos de variante y las medidas sugeridas."
+        icon={<SlidersHorizontal className="h-5 w-5" />}
+        testId="settings-articles-config-card"
+      >
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-4">
+          <p className="text-xs text-[#F5F5DC]/70">
+            Ajusta los campos del producto, los atributos de variante y las medidas sugeridas desde aquí.
+          </p>
           <button
             type="button"
             onClick={saveInventoryConfig}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#F5F5DC] px-4 py-2.5 text-sm font-bold text-[#121212] min-h-[44px] hover:bg-opacity-80 active:scale-95 md:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#F5F5DC] px-4 py-2.5 text-sm font-bold text-[#121212] min-h-[44px] hover:bg-opacity-80 active:scale-95 md:w-auto cursor-pointer shrink-0"
           >
             <Save className="h-4 w-4" aria-hidden="true" />
-            Guardar configuracion
+            Guardar configuración
           </button>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 mb-5">
           {inventoryConfigSummary.map((item) => (
             <div key={item.label} className="rounded-md border border-white/10 bg-[#121212] p-3">
               <div className="text-[11px] uppercase tracking-[0.12em] text-[#F5F5DC]/45">{item.label}</div>
@@ -265,14 +266,14 @@ const BranchConfig: React.FC = () => {
         </div>
 
         {inventoryConfigErrors.length > 0 && (
-          <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+          <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200 mb-4">
             {inventoryConfigErrors.map((error) => (
               <div key={error}>{error}</div>
             ))}
           </div>
         )}
 
-        <div className="mt-5 space-y-6">
+        <div className="space-y-6">
           <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
@@ -281,7 +282,7 @@ const BranchConfig: React.FC = () => {
                   Controla cómo el host aplica cambios de productos enviados por otros nodos.
                 </p>
               </div>
-              <span className="rounded-full border border-[#F5F5DC]/15 bg-[#0f0f0f] px-3 py-1 text-xs text-[#F5F5DC]/65">
+              <span className="rounded-full border border-[#F5F5DC]/15 bg-[#0f0f0f] px-3 py-1 text-xs text-[#F5F5DC]/65 self-start sm:self-center">
                 Historial: {inventoryConfigDraft.productHistoryLimit} cambios
               </span>
             </div>
@@ -315,7 +316,7 @@ const BranchConfig: React.FC = () => {
               <button
                 type="button"
                 onClick={addVariantAttribute}
-                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto"
+                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
               >
                 <span className="inline-flex items-center gap-2">
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -335,7 +336,7 @@ const BranchConfig: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => removeVariantAttribute(index)}
-                    className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
+                    className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </button>
@@ -353,7 +354,7 @@ const BranchConfig: React.FC = () => {
               <button
                 type="button"
                 onClick={addMeasureOption}
-                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto"
+                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
               >
                 <span className="inline-flex items-center gap-2">
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -373,7 +374,7 @@ const BranchConfig: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => removeMeasureOption(index)}
-                    className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs"
+                    className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </button>
@@ -393,7 +394,7 @@ const BranchConfig: React.FC = () => {
               <button
                 type="button"
                 onClick={addInventoryField}
-                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto"
+                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
               >
                 <span className="inline-flex items-center gap-2">
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -434,7 +435,7 @@ const BranchConfig: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => removeInventoryField(index)}
-                    className="w-full px-3 py-2.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs min-h-[44px] md:w-auto"
+                    className="w-full px-3 py-2.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs min-h-[44px] md:w-auto cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </button>
@@ -443,29 +444,30 @@ const BranchConfig: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </CollapsibleCard>
 
+      {/* Branches configuration */}
       {isAdmin && (
-        <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-[#4ADE80]" aria-hidden="true" />
-                <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.branches.title')}</h3>
-              </div>
-              <p className="text-xs text-[#F5F5DC]/70 mt-1">{t('settings.branches.description')}</p>
-            </div>
+        <CollapsibleCard
+          title={t('settings.branches.title')}
+          description={t('settings.branches.description')}
+          icon={<Building2 className="h-5 w-5" />}
+          testId="settings-branches-card"
+        >
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+            <span className="text-xs text-[#F5F5DC]/70">{t('settings.branches.description')}</span>
             <button
+              type="button"
               data-testid="add-branch-button"
               onClick={handleAddBranch}
-              className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 text-sm active:scale-95"
+              className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 text-sm active:scale-95 cursor-pointer shrink-0"
             >
               <Plus className="h-4 w-4 inline mr-1" />
               {t('settings.branches.add')}
             </button>
           </div>
 
-          <div className="mt-6 overflow-x-auto">
+          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#F5F5DC]/10 text-[#F5F5DC]/50 text-xs uppercase tracking-wider">
@@ -504,15 +506,17 @@ const BranchConfig: React.FC = () => {
                         <td className="py-4 px-4 text-right">
                           <div className="flex justify-end gap-2">
                             <button
+                              type="button"
                               onClick={() => handleEditBranch(branch)}
-                              className="p-2 text-[#4ADE80] hover:bg-[#4ADE80]/10 rounded-md transition-colors"
+                              className="p-2 text-[#4ADE80] hover:bg-[#4ADE80]/10 rounded-md transition-colors cursor-pointer"
                               title={t('common.edit')}
                             >
                               <Pencil className="h-4 w-4" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleDeleteBranch(branch.id)}
-                              className="p-2 text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+                              className="p-2 text-red-400 hover:bg-red-400/10 rounded-md transition-colors cursor-pointer"
                               title={t('common.delete')}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -531,7 +535,7 @@ const BranchConfig: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
+        </CollapsibleCard>
       )}
 
       {isBranchModalOpen && (
@@ -588,16 +592,18 @@ const BranchConfig: React.FC = () => {
               </div>
               <div className="flex gap-3 mt-8">
                 <button
+                  type="button"
                   onClick={() => setIsBranchModalOpen(false)}
-                  className="flex-1 px-4 py-3 border border-[#F5F5DC]/20 text-[#F5F5DC]/70 rounded-lg font-bold hover:bg-white/5 transition-all active:scale-95"
+                  className="flex-1 px-4 py-3 border border-[#F5F5DC]/20 text-[#F5F5DC]/70 rounded-lg font-bold hover:bg-white/5 transition-all active:scale-95 cursor-pointer"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
+                  type="button"
                   data-testid="save-branch-button"
                   onClick={handleSaveBranch}
                   disabled={!branchName.trim()}
-                  className="flex-1 px-4 py-3 bg-[#F5F5DC] text-[#121212] rounded-lg font-bold hover:bg-opacity-90 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-3 bg-[#F5F5DC] text-[#121212] rounded-lg font-bold hover:bg-opacity-90 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {editingBranch ? t('common.save') : t('settings.branches.add')}
                 </button>
@@ -606,7 +612,7 @@ const BranchConfig: React.FC = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useUI } from '../context/UIContext';
 import { generateId } from '../utils/id';
+import CollapsibleCard from './CollapsibleCard';
 
 const P2PMeshLogic: React.FC = () => {
   const { state } = useAppContext();
@@ -103,12 +104,12 @@ const P2PMeshLogic: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-      <div className="flex items-center gap-2 mb-4">
-        <Vote className="h-5 w-5 text-[#4ADE80]" aria-hidden="true" />
-        <h3 className="text-xl font-bold text-[#F5F5DC]">Elección de Admin (Consenso)</h3>
-      </div>
-
+    <CollapsibleCard
+      title="Elección de Admin (Consenso)"
+      description="Postulaciones y votación por consenso para ascender a rol de administrador."
+      icon={<Vote className="h-5 w-5" />}
+      testId="settings-p2p-consensus-card"
+    >
       {proposals.length > 0 ? (
         <div className="space-y-4">
           {proposals.map((proposal) => {
@@ -197,7 +198,7 @@ const P2PMeshLogic: React.FC = () => {
           )}
         </div>
       )}
-    </div>
+    </CollapsibleCard>
   );
 };
 

@@ -497,18 +497,14 @@ const Catalog: React.FC = () => {
       return;
     }
 
-    // Use srcdoc instead of document.write for safe DOM injection
-    // All product data is escaped via escapeHtml() in buildPrintableDocument
-    printWindow.document.body.style.margin = '0';
-    printWindow.document.body.style.padding = '0';
+    // Use DOM API instead of document.write for safe DOM injection
     const iframe = printWindow.document.createElement('iframe');
     iframe.srcdoc = html;
     iframe.style.width = '100%';
-    iframe.style.height = '100%';
+    iframe.style.height = '100vh';
     iframe.style.border = 'none';
-    iframe.style.display = 'block';
+    printWindow.document.body.style.margin = '0';
     printWindow.document.body.appendChild(iframe);
-    printWindow.focus();
   };
 
   return (

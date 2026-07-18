@@ -48,7 +48,7 @@ export const useGoogleDrive = () => {
             reject(response);
           } else {
             setIsAuthorized(true);
-            resolve(response.access_token!);
+            resolve(response.access_token as string);
           }
         },
       });

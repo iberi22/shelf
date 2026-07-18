@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { parseShopifyProduct, parseShopifyOrder, parseWooProduct, parseWooOrder } from './parsers';
+import { describe, expect, it } from 'vitest';
+import { parseShopifyOrder, parseShopifyProduct, parseWooOrder, parseWooProduct } from './parsers';
 
 describe('Webhook Parsers', () => {
   const peerId = 'test-bot';

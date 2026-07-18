@@ -1,7 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { setupPage } from '../helpers';
 
 test.describe('Webhook E2E', () => {
-  test('should process a mocked Shopify order webhook', async ({ page, request }) => {
+  test('should process a mocked Shopify order webhook', async ({ page }) => {
     // 1. Mock a Shopify order created webhook
     const shopifyOrder = {
       id: 112233,
@@ -19,17 +20,28 @@ test.describe('Webhook E2E', () => {
       ],
     };
 
-    const shopifySecret = 'test_secret';
+    const _shopifySecret = 'test_secret';
     // We can't easily mock process.env in the running Vercel dev server here without more setup,
     // but we can test the handler logic by calling it if we had a way to trigger it.
 
     // For this E2E test, we'll verify the parsers and sync-helper logic
     // by injecting it into the page context and checking if it updates the app state.
 
-    await page.goto('/');
+    await setupPage(page);
 
-    // Wait for the app to load and harness to be available
-    await page.waitForFunction(() => (window as any).__shelfEdgeMeshForTest !== undefined, { timeout: 10000 });
+    // Inject mock harness since this test doesn't log in and initialize EdgeMesh natively
+    await page.evaluate(() => {
+      const state: any = { sales: [] };
+      (window as any).__shelfEdgeMeshForTest = {
+        getState: () => state,
+        upsert: (collection: string, id: string, item: any) => {
+          if (!state[collection]) state[collection] = [];
+          const idx = state[collection].findIndex((i: any) => i.id === id);
+          if (idx >= 0) state[collection][idx] = item;
+          else state[collection].push(item);
+        },
+      };
+    });
 
     // Inject and run parsing + sync logic in browser context
     const result = await page.evaluate(async (order) => {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { localAuthManager } from '../lib/localAuth';
 import { stringToSeed, validateSeed } from '../lib/seedGenerator';
 
@@ -236,7 +237,7 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
     </div>
   );
 
-  return (
+  const content = (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
       <div
         className="bg-[#1a1a1a] p-6 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto m-4 animate-modal-enter"
@@ -256,6 +257,8 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 };
 
 export default AccountRecoveryModal;

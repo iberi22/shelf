@@ -2,6 +2,7 @@ import { Check, Layers, Sparkles, X } from 'lucide-react';
 import type { Product } from 'p2p-mesh-core';
 import type React from 'react';
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 
@@ -125,7 +126,7 @@ const ProductConflictResolver: React.FC<ProductConflictResolverProps> = ({ isOpe
     });
   };
 
-  return (
+  const content = (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col my-8 max-h-[85vh]">
         {/* Header */}
@@ -292,6 +293,8 @@ const ProductConflictResolver: React.FC<ProductConflictResolverProps> = ({ isOpe
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 };
 
 export default ProductConflictResolver;

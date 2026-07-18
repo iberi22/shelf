@@ -1,117 +1,116 @@
-import { EventEmitter } from 'events';
-import { MessageDeduplicator, createEnvelope } from '../protocol';
-import type {
-	EdgeMeshNode,
-	EdgeMeshNodeEvents,
-	MeshStorage,
-	MeshTransport,
-} from '../types';
+import type { EdgeMeshEventMap, EstadoNodo, NodoId } from "../types/index.js";
 
-export interface NodeOptions {
-	peerId: string;
-	transport: MeshTransport;
-	storage: MeshStorage;
+// ─── DEFAULT EDGE MESH NODE ────────────────────────────────────────────────
+
+export const ESTADO_TRANSICIONES = {
+	offline: ["conectando" as const],
+	conectando: ["online" as const, "offline" as const],
+	online: ["suspendido" as const, "reconectando" as const, "offline" as const],
+	suspendido: ["reconectando" as const, "offline" as const],
+	reconectando: ["online" as const, "offline" as const],
+	eliminado: [] as const,
+} as const;
+
+// Infer the valid transition type from the object
+export type TransicionEntrada =
+	(typeof ESTADO_TRANSICIONES)[keyof typeof ESTADO_TRANSICIONES][number];
+
+export interface EdgeMeshNode {
+	readonly nodoId: NodoId;
+	readonly eventTarget: EventTarget;
+	estado: EstadoNodo;
+
+	conectar(): Promise<void>;
+	desconectar(): Promise<void>;
+	enviar(destino: NodoId, payload: unknown): Promise<void>;
+	transmitir(payload: unknown): Promise<void>;
+
+	on<K extends keyof EdgeMeshEventMap>(
+		tipo: K,
+		handler: (ev: EdgeMeshEventMap[K]) => void,
+	): void;
+	off<K extends keyof EdgeMeshEventMap>(
+		tipo: K,
+		handler: (ev: EdgeMeshEventMap[K]) => void,
+	): void;
+	emit<K extends keyof EdgeMeshEventMap>(
+		tipo: K,
+		detalle: EdgeMeshEventMap[K]["detail"],
+	): void;
 }
 
-export class DefaultEdgeMeshNode extends EventEmitter implements EdgeMeshNode {
-	public readonly peerId: string;
-	private transport: MeshTransport;
-	private storage: MeshStorage;
-	private deduplicator: MessageDeduplicator;
-	private started = false;
+// ─── FACTORY ───────────────────────────────────────────────────────────────
 
-	constructor(options: NodeOptions) {
-		super();
-		this.peerId = options.peerId;
-		this.transport = options.transport;
-		this.storage = options.storage;
-		this.deduplicator = new MessageDeduplicator();
+export function createEdgeMeshNode(nodoId: NodoId): EdgeMeshNode {
+	return new DefaultEdgeMeshNode(nodoId);
+}
 
-		this.setupTransportListeners();
+// ─── IMPLEMENTATION ────────────────────────────────────────────────────────
+
+class DefaultEdgeMeshNode implements EdgeMeshNode {
+	readonly nodoId: NodoId;
+	readonly eventTarget: EventTarget;
+	estado: EstadoNodo = "offline";
+
+	constructor(nodoId: NodoId) {
+		this.nodoId = nodoId;
+		this.eventTarget = new EventTarget();
 	}
 
-	private setupTransportListeners() {
-		this.transport.on('message', (envelope) => {
-			if (this.deduplicator.isDuplicate(envelope.id)) {
-				return;
-			}
-
-			// If it's a broadcast or targeted at us
-			if (!envelope.targetPeerId || envelope.targetPeerId === this.peerId) {
-				this.emit('message', {
-					type: envelope.type,
-					payload: envelope.payload,
-					sourcePeerId: envelope.sourcePeerId,
-				});
-			}
-		});
-
-		this.transport.on('peer:connected', (peerId) => {
-			this.emit('peer:connected', peerId);
-		});
-
-		this.transport.on('peer:disconnected', (peerId) => {
-			this.emit('peer:disconnected', peerId);
-		});
-
-		this.transport.on('error', (error) => {
-			this.emit('error', error);
-		});
+	on<K extends keyof EdgeMeshEventMap>(
+		tipo: K,
+		handler: (ev: EdgeMeshEventMap[K]) => void,
+	): void {
+		this.eventTarget.addEventListener(tipo as string, handler as EventListener);
 	}
 
-	async start(): Promise<void> {
-		if (this.started) return;
-		await this.transport.start(this.peerId);
-		this.started = true;
-		this.emit('started');
-	}
-
-	async stop(): Promise<void> {
-		if (!this.started) return;
-		await this.transport.stop();
-		this.started = false;
-		this.emit('stopped');
-	}
-
-	async connect(remotePeerId: string): Promise<void> {
-		await this.transport.connect(remotePeerId);
-	}
-
-	async broadcast(message: { type: string; payload: any }): Promise<void> {
-		const envelope = createEnvelope(this.peerId, message.type, message.payload);
-		await this.transport.broadcast(envelope);
-	}
-
-	async send(
-		targetPeerId: string,
-		message: { type: string; payload: any },
-	): Promise<void> {
-		const envelope = createEnvelope(
-			this.peerId,
-			message.type,
-			message.payload,
-			targetPeerId,
+	off<K extends keyof EdgeMeshEventMap>(
+		tipo: K,
+		handler: (ev: EdgeMeshEventMap[K]) => void,
+	): void {
+		this.eventTarget.removeEventListener(
+			tipo as string,
+			handler as EventListener,
 		);
-		await this.transport.send(targetPeerId, envelope);
 	}
 
-	on<K extends keyof EdgeMeshNodeEvents>(
-		event: K,
-		listener: EdgeMeshNodeEvents[K],
-	): this {
-		return super.on(event, listener);
+	emit<K extends keyof EdgeMeshEventMap>(
+		tipo: K,
+		detalle: EdgeMeshEventMap[K]["detail"],
+	): void {
+		const evento = new CustomEvent(tipo as string, { detail: detalle });
+		this.eventTarget.dispatchEvent(evento);
 	}
 
-	off<K extends keyof EdgeMeshNodeEvents>(
-		event: K,
-		listener: EdgeMeshNodeEvents[K],
-	): this {
-		return super.off(event, listener);
+	private transicionar(nuevoEstado: TransicionEntrada): void {
+		const transiciones = ESTADO_TRANSICIONES[this.estado];
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
+		if (!(transiciones as readonly string[]).includes(nuevoEstado)) {
+			throw new Error(`Transicion invalida: ${this.estado} -> ${nuevoEstado}`);
+		}
+		const estadoAnterior = this.estado;
+		this.estado = nuevoEstado;
+		this.emit("estadoCambiado", { estadoAnterior, estadoNuevo: nuevoEstado });
 	}
-}
 
-export async function createEdgeMeshNode(
-	options: NodeOptions,
-): Promise<EdgeMeshNode> {
-	return new DefaultEdgeMeshNode(options);
+	async conectar(): Promise<void> {
+		this.transicionar("conectando");
+		// Placeholder: implementar logica de conexion real
+		this.transicionar("online");
+		this.emit("nodoConectado", { nodoId: this.nodoId });
+	}
+
+	async desconectar(): Promise<void> {
+		if (this.estado === "offline") return;
+		this.transicionar("offline");
+		this.emit("nodoDesconectado", { nodoId: this.nodoId });
+	}
+
+	async enviar(_destino: NodoId, _payload: unknown): Promise<void> {
+		// Placeholder: implementar envio directo
+	}
+
+	async transmitir(_payload: unknown): Promise<void> {
+		// Placeholder: implementar broadcast
+	}
 }

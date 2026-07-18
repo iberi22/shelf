@@ -1,9 +1,36 @@
+import type { Envolvente, NodoId, TipoTransporte } from "../types/index.js";
+
+export interface TransportEventMap {
+	conectado: CustomEvent<{ readonly nodoId: NodoId }>;
+	desconectado: CustomEvent<{ readonly nodoId: NodoId }>;
+	mensaje: CustomEvent<{
+		readonly envolvente: Envolvente;
+		readonly from?: NodoId;
+	}>;
+	error: CustomEvent<{ readonly mensaje: string; readonly error?: Error }>;
+}
+
+/**
+ * Minimal transport port used by EdgeMesh.
+ * PeerJS and Memory transports implement this surface.
+ */
 export interface ITransport {
-	send(peerId: string, data: Uint8Array): Promise<void>;
-	broadcast(data: Uint8Array): Promise<void>;
-	onMessage(callback: (peerId: string, data: Uint8Array) => void): void;
-	onConnect(callback: (peerId: string) => void): void;
-	onDisconnect(callback: (peerId: string) => void): void;
-	connect(peerId: string): Promise<void>;
-	disconnect(): Promise<void>;
+	readonly tipo: TipoTransporte;
+	readonly eventTarget: EventTarget;
+	readonly nodoId: NodoId;
+
+	on<K extends keyof TransportEventMap>(
+		tipo: K,
+		handler: (ev: TransportEventMap[K]) => void,
+	): void;
+	off<K extends keyof TransportEventMap>(
+		tipo: K,
+		handler: (ev: TransportEventMap[K]) => void,
+	): void;
+
+	enviar(destino: NodoId, payload: unknown, tipoMensaje?: string): Promise<void>;
+	transmitir(payload: unknown, tipoMensaje?: string): Promise<void>;
+	estaConectado(): boolean;
+	obtenerConexiones(): readonly string[];
+	cerrar(): Promise<void>;
 }

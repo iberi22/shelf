@@ -2,6 +2,7 @@ import { Box, History, Images, Layers3, Package2, PencilLine, RotateCcw, Ruler, 
 import type { InventoryConfig, Product } from 'p2p-mesh-core';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
@@ -738,18 +739,20 @@ const Inventory: React.FC = () => {
         </Modal>
       )}
 
-      {isProcessingBatch && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg max-w-sm w-full shadow-2xl flex flex-col items-center text-center gap-4">
-            <div className="w-12 h-12 border-4 border-[#F5F5DC]/20 border-t-yellow-500 rounded-full animate-spin"></div>
-            <h3 className="font-bold text-[#F5F5DC] text-lg">{t('inventory.batchProcessing')}</h3>
-            <p className="text-sm text-[#F5F5DC]/70">{t('inventory.batchCompiling')}</p>
-            <span className="font-mono text-yellow-400 font-bold bg-[#121212] px-3 py-1.5 rounded border border-[#F5F5DC]/10">
-              {batchProgress}
-            </span>
-          </div>
-        </div>
-      )}
+      {isProcessingBatch &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg max-w-sm w-full shadow-2xl flex flex-col items-center text-center gap-4">
+              <div className="w-12 h-12 border-4 border-[#F5F5DC]/20 border-t-yellow-500 rounded-full animate-spin"></div>
+              <h3 className="font-bold text-[#F5F5DC] text-lg">{t('inventory.batchProcessing')}</h3>
+              <p className="text-sm text-[#F5F5DC]/70">{t('inventory.batchCompiling')}</p>
+              <span className="font-mono text-yellow-400 font-bold bg-[#121212] px-3 py-1.5 rounded border border-[#F5F5DC]/10">
+                {batchProgress}
+              </span>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

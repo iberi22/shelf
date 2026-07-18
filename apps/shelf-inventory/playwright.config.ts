@@ -28,6 +28,6 @@ export default defineConfig({
       command: 'pnpm dlx peer --port 9000 --path /',
       url: 'http://127.0.0.1:9000',
       reuseExistingServer: !process.env.CI,
-    }
+    },
   ],
 });

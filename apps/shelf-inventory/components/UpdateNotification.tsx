@@ -113,9 +113,45 @@ const UpdateNotification: React.FC = () => {
     updateInProgressRef.current = false;
   };
 
-  const handleUpdate = () => {
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleUpdate = async () => {
+    if (isUpdating) return;
+    setIsUpdating(true);
     updateInProgressRef.current = true;
-    updateServiceWorker(true);
+
+    // Vaciar caches agresivamente
+    if ('caches' in window) {
+      try {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((name) => caches.delete(name)));
+        console.log('Cachés limpiados exitosamente');
+      } catch (err) {
+        console.warn('Error limpiando cachés', err);
+      }
+    }
+
+    // Opcional: forzar un sync P2P si p2pManager está disponible
+    import('p2p-mesh-core')
+      .then(({ p2pManager }) => {
+        if (p2pManager && typeof p2pManager.requestFullSync === 'function') {
+          p2pManager.requestFullSync();
+        }
+      })
+      .catch(() => {
+        // Ignore if it fails
+      });
+
+    try {
+      updateServiceWorker(true);
+    } catch (err) {
+      console.warn('Error invoking updateServiceWorker:', err);
+    }
+
+    // Fallback: reload anyway after 1.5s if controllerchange doesn't fire
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
   };
 
   if (!showReload) return null;
@@ -141,8 +177,27 @@ const UpdateNotification: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={handleUpdate}
-            className="w-full sm:flex-1 bg-yellow-400 text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-all active:scale-95 text-sm"
+            disabled={isUpdating}
+            className={`w-full sm:flex-1 bg-yellow-400 text-[#121212] font-bold py-2 px-4 rounded-lg transition-all text-sm flex items-center justify-center gap-2 ${
+              isUpdating ? 'opacity-70 cursor-not-allowed scale-95' : 'hover:bg-yellow-300 active:scale-95'
+            }`}
           >
+            {isUpdating && (
+              <svg
+                aria-hidden="true"
+                className="animate-spin h-4 w-4 text-[#121212]"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+            )}
             {t('update.reload')}
           </button>
           <button

@@ -1,4 +1,5 @@
 import type React from 'react';
+import { createPortal } from 'react-dom';
 import { useI18n } from '../context/I18nContext';
 
 interface ModalProps {
@@ -15,7 +16,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
 
   const widthClass = size === 'wide' ? 'sm:max-w-2xl lg:max-w-4xl' : 'sm:max-w-lg';
 
-  return (
+  const modalContent = (
     <div
       className="fixed inset-0 z-50 flex h-[var(--app-height,100vh)] items-end justify-center overflow-y-auto bg-black/70 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] animate-fade-in sm:items-center sm:p-4"
       onClick={onClose}
@@ -38,6 +39,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default Modal;

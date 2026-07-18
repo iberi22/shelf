@@ -1,6 +1,8 @@
+import { Laptop } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { localAuthManager } from '../lib/localAuth';
+import CollapsibleCard from './CollapsibleCard';
 
 const DeviceManagementPanel: React.FC = () => {
   const { getAuthorizedDevices, revokeDevice, isLocalAccount } = useAuth();
@@ -39,12 +41,12 @@ const DeviceManagementPanel: React.FC = () => {
   };
 
   return (
-    <div className="w-full min-w-0 max-w-full rounded-lg border border-[#F5F5DC]/20 bg-[#1a1a1a] p-4 md:p-6">
-      <h3 className="text-lg font-bold text-[#F5F5DC] mb-1">Authorized Devices</h3>
-      <p className="text-[#F5F5DC]/50 text-xs mb-4">
-        Devices that have access to your local account. Revoke access to devices you no longer use.
-      </p>
-
+    <CollapsibleCard
+      title="Authorized Devices"
+      description="Devices that have access to your local account. Revoke access to devices you no longer use."
+      icon={<Laptop className="h-5 w-5" />}
+      testId="settings-devices-card"
+    >
       <div className="space-y-3">
         {devices.length === 0 && <p className="text-[#F5F5DC]/40 text-sm italic">No devices registered.</p>}
 
@@ -77,22 +79,25 @@ const DeviceManagementPanel: React.FC = () => {
                   {confirmRevoke === device.deviceId ? (
                     <div className="flex flex-wrap gap-2">
                       <button
+                        type="button"
                         onClick={() => setConfirmRevoke(null)}
-                        className="text-xs text-[#F5F5DC]/50 hover:text-[#F5F5DC] px-2 py-1"
+                        className="text-xs text-[#F5F5DC]/50 hover:text-[#F5F5DC] px-2 py-1 cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleRevoke(device.deviceId)}
-                        className="text-xs bg-red-900/40 border border-red-600/50 text-red-300 px-2 py-1 rounded hover:bg-red-900/60 transition-colors"
+                        className="text-xs bg-red-900/40 border border-red-600/50 text-red-300 px-2 py-1 rounded hover:bg-red-900/60 transition-colors cursor-pointer"
                       >
                         Confirm
                       </button>
                     </div>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => setConfirmRevoke(device.deviceId)}
-                      className="text-xs text-red-400/70 hover:text-red-400 transition-colors"
+                      className="text-xs text-red-400/70 hover:text-red-400 transition-colors cursor-pointer"
                     >
                       Revoke
                     </button>
@@ -112,17 +117,22 @@ const DeviceManagementPanel: React.FC = () => {
                         placeholder="Device name"
                         onKeyDown={(e) => e.key === 'Enter' && handleSaveDeviceName()}
                       />
-                      <button onClick={handleSaveDeviceName} className="text-xs text-[#F5F5DC]/70 hover:text-[#F5F5DC]">
+                      <button
+                        type="button"
+                        onClick={handleSaveDeviceName}
+                        className="text-xs text-[#F5F5DC]/70 hover:text-[#F5F5DC] cursor-pointer"
+                      >
                         Save
                       </button>
                     </div>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => {
                         setNewDeviceName(device.deviceName);
                         setEditingName(true);
                       }}
-                      className="text-xs text-[#F5F5DC]/40 hover:text-[#F5F5DC]/70 transition-colors"
+                      className="text-xs text-[#F5F5DC]/40 hover:text-[#F5F5DC]/70 transition-colors cursor-pointer"
                     >
                       Rename
                     </button>
@@ -133,7 +143,7 @@ const DeviceManagementPanel: React.FC = () => {
           );
         })}
       </div>
-    </div>
+    </CollapsibleCard>
   );
 };
 

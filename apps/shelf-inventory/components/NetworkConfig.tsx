@@ -1,4 +1,4 @@
-import { Fingerprint, Languages, Lock } from 'lucide-react';
+import { Bot, Coins, Database, Fingerprint, Languages, Lock, MessageSquare, Users } from 'lucide-react';
 import type { RestoreStatePayload } from 'p2p-mesh-core';
 import { decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
 import type React from 'react';
@@ -9,12 +9,9 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useUI } from '../context/UIContext';
-import { useFeatureFlags } from '../hooks/useFeatureFlags';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { isBiometricsSupported } from '../lib/webauthn';
-import AuditLogViewer from './AuditLogViewer';
-import DataRecovery from './DataRecovery';
-import DeviceManagementPanel from './DeviceManagementPanel';
+import CollapsibleCard from './CollapsibleCard';
 import ImportCSVModal from './ImportCSVModal';
 import InviteMemberModal from './InviteMemberModal';
 import LanguageSelector from './LanguageSelector';
@@ -32,14 +29,6 @@ const CURRENCIES = [
 
 const NetworkConfig: React.FC = () => {
   const { t } = useI18n();
-  const {
-    features,
-    metadata: featuresMetadata,
-    overrides,
-    isEnabled: isFeatureEnabled,
-    toggleFeature,
-    resetOverrides,
-  } = useFeatureFlags();
   const { state, dispatch } = useAppContext();
   const { showNotification, openSubscriptionModal } = useUI();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -189,11 +178,14 @@ const NetworkConfig: React.FC = () => {
   };
 
   return (
-    <>
+    <div className="flex w-full flex-col gap-6 md:gap-8">
       {/* General Settings */}
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-        <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.general.title')}</h3>
-        <div className="mt-4 flex flex-col gap-3 rounded-md border border-[#F5F5DC]/10 bg-[#121212] p-4 sm:flex-row sm:items-center sm:justify-between">
+      <CollapsibleCard
+        title={t('settings.general.title')}
+        icon={<Languages className="h-5 w-5" />}
+        testId="settings-general-card"
+      >
+        <div className="flex flex-col gap-3 rounded-md border border-[#F5F5DC]/10 bg-[#121212] p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-sm font-semibold text-[#F5F5DC]/90">
               <Languages className="h-4 w-4 text-[#4ADE80]" aria-hidden="true" />
@@ -217,7 +209,7 @@ const NetworkConfig: React.FC = () => {
             value={lowStockThreshold}
             onChange={(e) => setLowStockThreshold(Number(e.target.value))}
             min="0"
-            className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+            className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
           />
         </div>
         <div className="mt-4">
@@ -235,21 +227,18 @@ const NetworkConfig: React.FC = () => {
             onChange={(e) => setTablePageSize(Math.max(1, Number(e.target.value) || 50))}
             min="1"
             step="1"
-            className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+            className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
           />
         </div>
-      </div>
-
-      <DeviceManagementPanel />
-
-      {isAdmin && <AuditLogViewer />}
-
-      <DataRecovery />
+      </CollapsibleCard>
 
       {/* Currency Settings */}
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-        <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.currency.title')}</h3>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      <CollapsibleCard
+        title={t('settings.currency.title')}
+        icon={<Coins className="h-5 w-5" />}
+        testId="settings-currency-card"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>
             <label htmlFor="currencySymbol" className="block text-sm font-medium text-[#F5F5DC]/90">
               {t('settings.currency.symbol')}
@@ -260,7 +249,7 @@ const NetworkConfig: React.FC = () => {
               data-testid="currency-select"
               value={currencyCode}
               onChange={(e) => setCurrencyCode(e.target.value)}
-              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
             >
               {CURRENCIES.map(({ code, nameKey }) => (
                 <option key={code} value={code}>
@@ -279,44 +268,48 @@ const NetworkConfig: React.FC = () => {
               data-testid="number-format-select"
               value={numberFormat}
               onChange={(e) => setNumberFormat(e.target.value as any)}
-              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
             >
               <option value="en-US">1,234.56 ({t('settings.currency.formats.en-US')})</option>
               <option value="de-DE">1.234,56 ({t('settings.currency.formats.de-DE')})</option>
             </select>
           </div>
         </div>
-      </div>
+      </CollapsibleCard>
 
       {/* Team Management */}
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <div>
-            <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.team.title')}</h3>
-            <p className="text-xs text-[#F5F5DC]/70 mt-1">{t('settings.team.description')}</p>
-          </div>
+      <CollapsibleCard
+        title={t('settings.team.title')}
+        description={t('settings.team.description')}
+        icon={<Users className="h-5 w-5" />}
+        testId="settings-team-card"
+      >
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+          <span className="text-xs text-[#F5F5DC]/70">{t('settings.team.description')}</span>
           {isPyme ? (
             <button
+              type="button"
               onClick={() => setInviteModalOpen(true)}
-              className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 text-sm active:scale-95"
+              className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-opacity-80 text-sm active:scale-95 cursor-pointer"
             >
               {t('settings.team.invite')}
             </button>
           ) : (
             <button
+              type="button"
               onClick={openSubscriptionModal}
-              className="w-full sm:w-auto bg-sky-500 text-background font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-sky-400 text-sm active:scale-95"
+              className="w-full sm:w-auto bg-sky-500 text-background font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-sky-400 text-sm active:scale-95 cursor-pointer"
             >
               {t('subscription.upgradeToPyme')}
             </button>
           )}
         </div>
-        <div className="mt-4 space-y-2">
+        <div className="space-y-2">
           {team.length > 0 ? (
             team.map((member) => (
               <div
                 key={member.id}
-                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-md bg-background/50"
+                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-md bg-background/50 border border-[#F5F5DC]/5"
               >
                 <span className="truncate min-w-0">{member.email}</span>
                 <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
@@ -325,8 +318,9 @@ const NetworkConfig: React.FC = () => {
                   </span>
                   {isAdmin && member.role !== 'owner' && (
                     <button
+                      type="button"
                       onClick={() => dispatch({ type: 'DELETE_TEAM_MEMBER', payload: member.id })}
-                      className="text-red-400 hover:text-red-300 text-xs p-1"
+                      className="text-red-400 hover:text-red-300 text-xs p-1 cursor-pointer"
                     >
                       ✕
                     </button>
@@ -340,13 +334,15 @@ const NetworkConfig: React.FC = () => {
             </p>
           )}
         </div>
-      </div>
+      </CollapsibleCard>
 
       {/* AI Settings */}
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-        <h3 className="text-xl font-bold text-[#F5F5DC]">🤖 {t('settings.ai.title')}</h3>
-        <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">{t('settings.ai.description')}</p>
-
+      <CollapsibleCard
+        title={`🤖 ${t('settings.ai.title')}`}
+        description={t('settings.ai.description')}
+        icon={<Bot className="h-5 w-5" />}
+        testId="settings-ai-card"
+      >
         <div className="space-y-4">
           <div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -358,8 +354,9 @@ const NetworkConfig: React.FC = () => {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setUseLocalOcr(!useLocalOcr)}
-                className={`bg-transparent border border-[#F5F5DC]/30 text-[#F5F5DC] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-[#F5F5DC]/10 transition-all text-sm ${useLocalOcr ? 'bg-[#4ADE80]/10 border-[#4ADE80]/30' : ''}`}
+                className={`bg-transparent border border-[#F5F5DC]/30 text-[#F5F5DC] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-all text-sm cursor-pointer ${useLocalOcr ? 'bg-[#4ADE80]/10 border-[#4ADE80]/30' : ''}`}
               >
                 {useLocalOcr ? 'Local (Activado)' : 'Cloud (Gemini)'}
               </button>
@@ -411,7 +408,7 @@ const NetworkConfig: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowGeminiKey(!showGeminiKey)}
-                className="text-xs text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
+                className="text-xs text-[#F5F5DC]/60 hover:text-[#F5F5DC] cursor-pointer"
               >
                 {showGeminiKey ? 'Ocultar' : 'Mostrar'}
               </button>
@@ -434,7 +431,7 @@ const NetworkConfig: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowOpenCodeGoKey(!showOpenCodeGoKey)}
-                className="text-xs text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
+                className="text-xs text-[#F5F5DC]/60 hover:text-[#F5F5DC] cursor-pointer"
               >
                 {showOpenCodeGoKey ? 'Ocultar' : 'Mostrar'}
               </button>
@@ -475,12 +472,15 @@ const NetworkConfig: React.FC = () => {
             />
           </div>
         </div>
-      </div>
+      </CollapsibleCard>
 
       {/* Feedback and Support */}
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-        <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.feedback.title')}</h3>
-        <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">{t('settings.feedback.description')}</p>
+      <CollapsibleCard
+        title={t('settings.feedback.title')}
+        description={t('settings.feedback.description')}
+        icon={<MessageSquare className="h-5 w-5" />}
+        testId="settings-feedback-card"
+      >
         <textarea
           data-testid="feedback-textarea"
           value={feedback}
@@ -489,25 +489,23 @@ const NetworkConfig: React.FC = () => {
           className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 min-h-[100px] focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
         />
         <button
+          type="button"
           data-testid="feedback-submit-button"
           onClick={handleSendFeedback}
           disabled={!feedback.trim()}
-          className="w-full mt-2 text-sm bg-foreground/90 text-background font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-foreground transition-colors active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
+          className="w-full mt-2 text-sm bg-foreground/90 text-background font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-foreground transition-colors active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {t('settings.feedback.button')}
         </button>
-      </div>
+      </CollapsibleCard>
 
-      {/* App Lock Settings */}
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-        <div className="flex items-center gap-2">
-          <Lock className="h-5 w-5 text-[#4ADE80]" aria-hidden="true" />
-          <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.security.title') || 'Seguridad'}</h3>
-        </div>
-        <p className="text-xs text-[#F5F5DC]/70 mt-1 mb-4">
-          Configura una contraseña, PIN o huella digital para proteger el acceso al inventario.
-        </p>
-
+      {/* App Lock Settings / Security */}
+      <CollapsibleCard
+        title={t('settings.security.title') || 'Seguridad'}
+        description="Configura una contraseña, PIN o huella digital para proteger el acceso al inventario."
+        icon={<Lock className="h-5 w-5" />}
+        testId="settings-security-card"
+      >
         <div className="space-y-4">
           <div className="rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -519,9 +517,10 @@ const NetworkConfig: React.FC = () => {
               </div>
               {hasAppLock && (
                 <button
+                  type="button"
                   data-testid="disable-app-lock-button"
                   onClick={() => setAppLock(null)}
-                  className="text-sm font-bold text-red-400 hover:text-red-300 transition-colors"
+                  className="text-sm font-bold text-red-400 hover:text-red-300 transition-colors cursor-pointer"
                 >
                   {t('settings.security.disable') || 'Desactivar'}
                 </button>
@@ -539,6 +538,7 @@ const NetworkConfig: React.FC = () => {
                   className="min-w-0 flex-1 p-2.5 bg-[#0f0f0f] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
                 />
                 <button
+                  type="button"
                   data-testid="enable-app-lock-button"
                   onClick={async () => {
                     if (newPin.length >= 4) {
@@ -549,7 +549,7 @@ const NetworkConfig: React.FC = () => {
                       showNotification('La contraseña o PIN debe tener al menos 4 caracteres', 'error');
                     }
                   }}
-                  className="bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 transition-all text-sm"
+                  className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-opacity-80 transition-all text-sm cursor-pointer"
                 >
                   {t('settings.security.enable') || 'Activar'}
                 </button>
@@ -579,6 +579,7 @@ const NetworkConfig: React.FC = () => {
                 </p>
               </div>
               <button
+                type="button"
                 data-testid="toggle-biometric-lock-button"
                 disabled={!biometricsSupported}
                 onClick={async () => {
@@ -588,45 +589,50 @@ const NetworkConfig: React.FC = () => {
                     'success',
                   );
                 }}
-                className="bg-transparent border border-[#F5F5DC]/30 text-[#F5F5DC] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-[#F5F5DC]/10 transition-all text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                className="bg-transparent border border-[#F5F5DC]/30 text-[#F5F5DC] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-all text-sm disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
               >
                 {hasBiometricLock ? 'Desactivar huella' : 'Activar huella'}
               </button>
             </div>
           </div>
         </div>
-      </div>
+      </CollapsibleCard>
 
       {/* Data Management */}
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg">
-        <h3 className="text-xl font-bold text-[#F5F5DC]">{t('settings.data.title')}</h3>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <CollapsibleCard
+        title={t('settings.data.title')}
+        icon={<Database className="h-5 w-5" />}
+        testId="settings-data-card"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Import */}
-          <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
+          <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-[#F5F5DC]/20">
             <h4 className="font-bold text-[#F5F5DC]">{t('settings.import.button')}</h4>
             <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.import.cardDescription')}</p>
             <button
+              type="button"
               onClick={() => setIsImportModalOpen(true)}
-              className="w-full mt-2 text-sm bg-transparent border border-foreground/50 font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-foreground/10 transition-colors active:scale-95"
+              className="w-full mt-2 text-sm bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 cursor-pointer"
             >
               {t('settings.import.button')}
             </button>
           </div>
 
           {/* Backup */}
-          <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
+          <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-[#F5F5DC]/20">
             <h4 className="font-bold text-[#F5F5DC]">{t('settings.backup.button')}</h4>
             <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.backup.description')}</p>
             <button
+              type="button"
               onClick={handleCreateBackup}
-              className="w-full mt-2 text-sm bg-transparent border border-foreground/50 font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-foreground/10 transition-colors active:scale-95"
+              className="w-full mt-2 text-sm bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 cursor-pointer"
             >
               {t('settings.backup.button')}
             </button>
           </div>
 
           {/* Restore */}
-          <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
+          <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-[#F5F5DC]/20">
             <h4 className="font-bold text-[#F5F5DC]">{t('settings.restore.button')}</h4>
             <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.restore.description')}</p>
             <input
@@ -639,7 +645,7 @@ const NetworkConfig: React.FC = () => {
             />
             <label
               htmlFor="restore-file-input"
-              className="w-full mt-2 cursor-pointer text-center text-sm bg-transparent border border-foreground/50 font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-foreground/10 transition-colors active:scale-95"
+              className="w-full mt-2 cursor-pointer text-center text-sm bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 inline-flex items-center justify-center font-bold"
             >
               {t('settings.restore.button')}
             </label>
@@ -650,130 +656,21 @@ const NetworkConfig: React.FC = () => {
             <h4 className="font-bold text-red-400">{t('settings.reset.button')}</h4>
             <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.reset.description')}</p>
             <button
+              type="button"
               onClick={handleResetData}
-              className="w-full mt-2 text-sm bg-transparent border border-red-500/50 text-red-400 font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-red-500/10 transition-colors active:scale-95"
+              className="w-full mt-2 text-sm bg-transparent border border-red-500/50 text-red-400 font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-red-500/10 transition-colors active:scale-95 cursor-pointer"
             >
               {t('settings.reset.button')}
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Feature Flags / Control de Funcionalidades */}
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 md:p-6 rounded-lg mt-6">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h3 className="text-xl font-bold text-[#F5F5DC]">Control de Funcionalidades (GitCore)</h3>
-            <p className="text-xs text-[#F5F5DC]/70 mt-1">
-              Protocolo: v{featuresMetadata.protocol_version} | Proyecto: {featuresMetadata.project_display} v
-              {featuresMetadata.version}
-            </p>
-          </div>
-          {Object.keys(overrides).length > 0 && (
-            <button
-              onClick={resetOverrides}
-              className="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold py-1 px-3 border border-red-500/30 rounded transition-all cursor-pointer"
-            >
-              Restablecer
-            </button>
-          )}
-        </div>
-
-        <div className="bg-background/30 rounded-lg p-3 mb-4 text-xs text-[#F5F5DC]/70 border border-[#F5F5DC]/10 flex flex-col md:flex-row md:justify-around gap-2 text-center">
-          <div>
-            Progreso: <strong>{featuresMetadata.implementation_percentage}%</strong>
-          </div>
-          <div>
-            Implementadas:{' '}
-            <strong>
-              {featuresMetadata.features_implemented}/{featuresMetadata.total_features}
-            </strong>
-          </div>
-          <div>
-            Última actualización: <strong>{featuresMetadata.updated}</strong>
-          </div>
-          <div>
-            Modo:{' '}
-            <strong className={import.meta.env.DEV ? 'text-yellow-400' : 'text-green-400'}>
-              {import.meta.env.DEV ? 'Desarrollo (Sync Disco)' : 'Producción (Overrides)'}
-            </strong>
-          </div>
-        </div>
-
-        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-          {features.map((feature) => {
-            const enabled = isFeatureEnabled(feature.id);
-            const hasOverride = overrides[feature.id] !== undefined;
-
-            return (
-              <div
-                key={feature.id}
-                className={`flex items-start justify-between p-3 rounded-lg border transition-all ${
-                  enabled ? 'bg-[#4ADE80]/5 border-[#4ADE80]/20' : 'bg-[#ef4444]/5 border-[#ef4444]/10 opacity-70'
-                }`}
-              >
-                <div className="flex-1 min-w-0 pr-4">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-xs font-bold bg-[#121212] px-1.5 py-0.5 rounded border border-[#F5F5DC]/10 text-[#F5F5DC]/80">
-                      {feature.id}
-                    </span>
-                    <h4 className="font-bold text-sm text-[#F5F5DC] truncate">{feature.name}</h4>
-                    <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-background/50 text-[#F5F5DC]/60">
-                      {feature.category}
-                    </span>
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        feature.priority === 'P0'
-                          ? 'bg-red-500/20 text-red-400'
-                          : feature.priority === 'P1'
-                            ? 'bg-yellow-500/20 text-yellow-400'
-                            : 'bg-blue-500/20 text-blue-400'
-                      }`}
-                    >
-                      {feature.priority}
-                    </span>
-                    {hasOverride && (
-                      <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30 animate-pulse">
-                        Override
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-[#F5F5DC]/60 mt-1.5 leading-relaxed">{feature.description}</p>
-                  {feature.technologies && feature.technologies.length > 0 && (
-                    <div className="flex gap-1.5 mt-2 flex-wrap">
-                      {feature.technologies.map((tech) => (
-                        <span
-                          key={tech}
-                          className="text-[10px] text-[#F5F5DC]/40 bg-[#121212]/30 px-1 py-0.2 rounded border border-[#F5F5DC]/5"
-                        >
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center pt-1">
-                  <label className="relative inline-flex items-center cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={enabled}
-                      onChange={() => toggleFeature(feature.id)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-9 h-5 bg-[#121212] border border-[#F5F5DC]/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-[#121212] peer-checked:after:border-[#121212]"></div>
-                  </label>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      </CollapsibleCard>
 
       {isImportModalOpen && <ImportCSVModal onClose={() => setIsImportModalOpen(false)} />}
       {isInviteModalOpen && (
         <InviteMemberModal onClose={() => setInviteModalOpen(false)} onInviteSent={handleInviteSent} />
       )}
-    </>
+    </div>
   );
 };
 

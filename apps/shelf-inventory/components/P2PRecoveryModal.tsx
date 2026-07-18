@@ -1,6 +1,7 @@
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { decryptDataLegacy as decryptData, generateUUID, p2pManager } from 'p2p-mesh-core';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { localAuthManager } from '../lib/localAuth';
 
 interface P2PRecoveryModalProps {
@@ -298,7 +299,7 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
     </div>
   );
 
-  return (
+  const content = (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
       <div
         className="bg-[#1a1a1a] p-6 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto m-4 animate-modal-enter"
@@ -320,6 +321,8 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 };
 
 export default P2PRecoveryModal;

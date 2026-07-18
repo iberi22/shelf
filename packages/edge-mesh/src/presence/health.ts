@@ -1,168 +1,206 @@
-import { EventEmitter } from 'events';
+import type { EstadoSalud, HealthStatus, NodoId } from "../types/index.js";
+import { ESTADO_SALUD } from "../types/index.js";
 
-export interface ReconnectBackoffOptions {
-	initialDelayMs?: number;
-	maxDelayMs?: number;
-	jitterRatio?: number;
-	random?: () => number;
+// ─── CONSTANTS ─────────────────────────────────────────────────────────────
+
+const CONFIG_POR_DEFECTO = {
+	heartbeatIntervalMs: 5_000,
+	timeoutMs: 15_000,
+	maxFallosConsecutivos: 3,
+	latenciaAltaMs: 500,
+} as const;
+
+export interface HealthCheckerConfig {
+	readonly heartbeatIntervalMs: number;
+	readonly timeoutMs: number;
+	readonly maxFallosConsecutivos: number;
+	readonly latenciaAltaMs: number;
 }
 
-export interface PeerHealthMonitorOptions {
-	now?: () => number;
-	staleAfterMs?: number;
-	offlineAfterMs?: number;
+// ─── HEALTH CHECKER ────────────────────────────────────────────────────────
+
+export interface HealthEventMap {
+	heartbeatRecibido: CustomEvent<{
+		readonly nodoId: NodoId;
+		readonly timestamp: number;
+		readonly latenciaMs: number;
+	}>;
+	saludCambiada: CustomEvent<{
+		readonly nodoId: NodoId;
+		readonly estadoAnterior: EstadoSalud;
+		readonly estadoNuevo: EstadoSalud;
+	}>;
+	nodoCaido: CustomEvent<{ readonly nodoId: NodoId }>;
+	timeout: CustomEvent<{ readonly nodoId: NodoId }>;
 }
 
-export interface PeerHealthState {
-	peerId: string;
-	status: 'healthy' | 'stale' | 'offline';
-	lastSeen: number;
-	lastPingAt?: number;
-	lastPongAt?: number;
-}
+export class HealthChecker {
+	readonly eventTarget: EventTarget;
+	private readonly estados: Map<NodoId, HealthStatus>;
+	private readonly heartbeatsRecibidos: Map<NodoId, number>;
+	private readonly tiemposEnvio: Map<NodoId, number>;
+	private readonly config: HealthCheckerConfig;
+	private intervalo: ReturnType<typeof setInterval> | null = null;
+	private secuencia: number = 0;
 
-export interface PeerHealthEvents {
-	'peer:healthy': (state: PeerHealthState) => void;
-	'peer:stale': (state: PeerHealthState) => void;
-	'peer:offline': (state: PeerHealthState) => void;
-	'sync:error': (event: { peerId?: string; error: Error }) => void;
-}
-
-export const getReconnectDelay = (
-	attempt: number,
-	options: ReconnectBackoffOptions = {},
-): number => {
-	const initialDelayMs = options.initialDelayMs ?? 1000;
-	const maxDelayMs = options.maxDelayMs ?? 30000;
-	const jitterRatio = options.jitterRatio ?? 0;
-	const baseDelay = Math.min(
-		initialDelayMs * 2 ** Math.max(0, attempt),
-		maxDelayMs,
-	);
-	if (jitterRatio <= 0) return baseDelay;
-
-	const random = options.random ?? Math.random;
-	const jitter = baseDelay * jitterRatio * random();
-	return Math.min(Math.round(baseDelay + jitter), maxDelayMs);
-};
-
-export class PeerHealthMonitor extends EventEmitter {
-	private peers = new Map<string, PeerHealthState>();
-	private now: () => number;
-	private staleAfterMs: number;
-	private offlineAfterMs: number;
-
-	constructor(options: PeerHealthMonitorOptions = {}) {
-		super();
-		this.now = options.now || (() => Date.now());
-		this.staleAfterMs = options.staleAfterMs ?? 30000;
-		this.offlineAfterMs = options.offlineAfterMs ?? 60000;
+	constructor(config: Partial<HealthCheckerConfig> = {}) {
+		this.eventTarget = new EventTarget();
+		this.estados = new Map();
+		this.heartbeatsRecibidos = new Map();
+		this.tiemposEnvio = new Map();
+		this.config = { ...CONFIG_POR_DEFECTO, ...config };
 	}
 
-	on<K extends keyof PeerHealthEvents>(
-		eventName: K,
-		listener: PeerHealthEvents[K],
-	): this {
-		return super.on(eventName, listener as (...args: unknown[]) => void);
+	// ─── HEARTBEAT ────────────────────────────────────────────────────────
+
+	generarHeartbeat(nodoId: NodoId): {
+		readonly nodoId: NodoId;
+		readonly timestamp: number;
+		readonly secuencia: number;
+		readonly intervaloMs: number;
+	} {
+		this.secuencia++;
+		return {
+			nodoId,
+			timestamp: Date.now(),
+			secuencia: this.secuencia,
+			intervaloMs: this.config.heartbeatIntervalMs,
+		};
 	}
 
-	off<K extends keyof PeerHealthEvents>(
-		eventName: K,
-		listener: PeerHealthEvents[K],
-	): this {
-		return super.off(eventName, listener as (...args: unknown[]) => void);
-	}
+	recibirHeartbeat(nodoId: NodoId, timestamp: number): void {
+		const ahora = Date.now();
+		const latenciaMs = ahora - timestamp;
+		this.heartbeatsRecibidos.set(nodoId, ahora);
+		this.tiemposEnvio.set(nodoId, timestamp);
 
-	markConnected(peerId: string): PeerHealthState {
-		return this.setStatus(peerId, 'healthy', {
-			lastSeen: this.now(),
+		const existente = this.estados.get(nodoId);
+		const estadoAnterior = existente?.estado ?? ESTADO_SALUD.DESCONOCIDO;
+
+		let nuevoEstado: EstadoSalud;
+		let fallos = existente?.fallosConsecutivos ?? 0;
+
+		if (latenciaMs > this.config.timeoutMs) {
+			fallos++;
+			nuevoEstado = ESTADO_SALUD.FALLANDO;
+		} else if (latenciaMs > this.config.latenciaAltaMs) {
+			fallos = 0;
+			nuevoEstado = ESTADO_SALUD.LENTO;
+		} else {
+			fallos = 0;
+			nuevoEstado = ESTADO_SALUD.SALUDABLE;
+		}
+
+		this.estados.set(nodoId, {
+			nodoId,
+			estado: nuevoEstado,
+			ultimoHeartbeat: ahora,
+			latenciaMs,
+			fallosConsecutivos: fallos,
 		});
-	}
 
-	markPing(peerId: string): PeerHealthState {
-		const current = this.getOrCreate(peerId);
-		return this.setStatus(peerId, current.status, {
-			lastPingAt: this.now(),
+		this.emit("heartbeatRecibido", {
+			nodoId,
+			timestamp,
+			latenciaMs,
 		});
+
+		if (estadoAnterior !== nuevoEstado) {
+			this.emit("saludCambiada", {
+				nodoId,
+				estadoAnterior,
+				estadoNuevo: nuevoEstado,
+			});
+		}
+
+		if (fallos >= this.config.maxFallosConsecutivos) {
+			this.emit("nodoCaido", { nodoId });
+		}
 	}
 
-	markPong(peerId: string): PeerHealthState {
-		return this.setStatus(peerId, 'healthy', {
-			lastSeen: this.now(),
-			lastPongAt: this.now(),
-		});
-	}
+	// ─── MONITOREO ────────────────────────────────────────────────────────
 
-	markOffline(peerId: string): PeerHealthState {
-		return this.setStatus(peerId, 'offline', {
-			lastSeen: this.getOrCreate(peerId).lastSeen,
-		});
-	}
-
-	reportSyncError(peerId: string | undefined, error: Error): void {
-		this.emit('sync:error', { peerId, error });
-	}
-
-	sweep(): PeerHealthState[] {
-		const now = this.now();
-		const changed: PeerHealthState[] = [];
-
-		for (const state of this.peers.values()) {
-			if (state.status === 'offline') continue;
-			const age = now - state.lastSeen;
-			if (age >= this.offlineAfterMs) {
-				changed.push(this.setStatus(state.peerId, 'offline'));
-			} else if (age >= this.staleAfterMs && state.status !== 'stale') {
-				changed.push(this.setStatus(state.peerId, 'stale'));
+	verificarTimeouts(): void {
+		const ahora = Date.now();
+		for (const [nodoId, ultimoHb] of this.heartbeatsRecibidos) {
+			if (ahora - ultimoHb > this.config.timeoutMs) {
+				this.emit("timeout", { nodoId });
+				this.emit("nodoCaido", { nodoId });
 			}
 		}
-
-		return changed;
 	}
 
-	get(peerId: string): PeerHealthState | undefined {
-		const state = this.peers.get(peerId);
-		return state ? { ...state } : undefined;
+	iniciar(): void {
+		this.intervalo = setInterval(() => {
+			this.verificarTimeouts();
+		}, this.config.heartbeatIntervalMs);
 	}
 
-	list(): PeerHealthState[] {
-		return Array.from(this.peers.values()).map((state) => ({ ...state }));
-	}
-
-	private getOrCreate(peerId: string): PeerHealthState {
-		const existing = this.peers.get(peerId);
-		if (existing) return existing;
-		const state: PeerHealthState = {
-			peerId,
-			status: 'healthy',
-			lastSeen: this.now(),
-		};
-		this.peers.set(peerId, state);
-		return state;
-	}
-
-	private setStatus(
-		peerId: string,
-		status: PeerHealthState['status'],
-		patch: Partial<PeerHealthState> = {},
-	): PeerHealthState {
-		const previous = this.getOrCreate(peerId);
-		const next: PeerHealthState = {
-			...previous,
-			...patch,
-			peerId,
-			status,
-		};
-		this.peers.set(peerId, next);
-
-		if (previous.status !== next.status || status === 'healthy') {
-			this.emit(`peer:${status}`, { ...next });
+	detener(): void {
+		if (this.intervalo !== null) {
+			clearInterval(this.intervalo);
+			this.intervalo = null;
 		}
+	}
 
-		return { ...next };
+	// ─── CONSULTAS ────────────────────────────────────────────────────────
+
+	obtenerSalud(nodoId: NodoId): HealthStatus | null {
+		return this.estados.get(nodoId) ?? null;
+	}
+
+	obtenerTodasLasSaludes(): readonly HealthStatus[] {
+		return Array.from(this.estados.values());
+	}
+
+	obtenerNodosActivos(): readonly NodoId[] {
+		const ahora = Date.now();
+		const activos: NodoId[] = [];
+		for (const [nodoId, ultimoHb] of this.heartbeatsRecibidos) {
+			if (ahora - ultimoHb < this.config.timeoutMs) {
+				activos.push(nodoId);
+			}
+		}
+		return activos;
+	}
+
+	obtenerLatencia(nodoId: NodoId): number | null {
+		const estado = this.estados.get(nodoId);
+		return estado?.latenciaMs ?? null;
+	}
+
+	// ─── EVENTOS ──────────────────────────────────────────────────────────
+
+	on<K extends keyof HealthEventMap>(
+		tipo: K,
+		handler: (ev: HealthEventMap[K]) => void,
+	): void {
+		this.eventTarget.addEventListener(tipo as string, handler as EventListener);
+	}
+
+	off<K extends keyof HealthEventMap>(
+		tipo: K,
+		handler: (ev: HealthEventMap[K]) => void,
+	): void {
+		this.eventTarget.removeEventListener(
+			tipo as string,
+			handler as EventListener,
+		);
+	}
+
+	private emit<K extends keyof HealthEventMap>(
+		tipo: K,
+		detalle: HealthEventMap[K]["detail"],
+	): void {
+		const evento = new CustomEvent(tipo as string, { detail: detalle });
+		this.eventTarget.dispatchEvent(evento);
+	}
+
+	reiniciar(): void {
+		this.detener();
+		this.estados.clear();
+		this.heartbeatsRecibidos.clear();
+		this.tiemposEnvio.clear();
+		this.secuencia = 0;
 	}
 }
-
-export const createPeerHealthMonitor = (
-	options: PeerHealthMonitorOptions = {},
-) => new PeerHealthMonitor(options);

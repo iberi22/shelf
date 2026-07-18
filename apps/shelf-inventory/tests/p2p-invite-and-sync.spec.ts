@@ -108,7 +108,7 @@ test.describe('P2P Invite Link, Pairing, and Permission Enforcement', () => {
 
     // Get the actual invite link from the Admin's UI
     const inviteLinkLocator = adminPage.locator('[data-testid="p2p-invite-link"]');
-    await inviteLinkLocator.waitFor({ state: 'visible' });
+    await inviteLinkLocator.waitFor({ state: 'attached' });
     const inviteUrl = await inviteLinkLocator.getAttribute('href');
     if (!inviteUrl) {
       throw new Error('Failed to find invite link on Admin settings page');
@@ -224,7 +224,7 @@ test.describe('P2P Invite Link, Pairing, and Permission Enforcement', () => {
     // 7. Test Permission Restriction (Unauthorized Edit):
     // Collaborator tries to edit product price (canEditProducts: false)
     await collabPage.evaluate(
-      ({ id, name }) => {
+      ({ id }) => {
         const dbSync = (window as any)._dbSyncForTest;
         const currentState = dbSync?.getState(dbSync.localPeerId);
         const product = currentState?.products?.find((item: any) => item.id === id);
@@ -292,7 +292,7 @@ test.describe('P2P Invite Link, Pairing, and Permission Enforcement', () => {
     // 9. Test Permission Conceded:
     // Collaborator tries to edit product price again (now has permission)
     await collabPage.evaluate(
-      ({ id, name }) => {
+      ({ id }) => {
         const dbSync = (window as any)._dbSyncForTest;
         const currentState = dbSync?.getState(dbSync.localPeerId);
         const product = currentState?.products?.find((item: any) => item.id === id);

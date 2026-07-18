@@ -71,9 +71,8 @@ const Reports: React.FC = () => {
       if (branch.id === state.activeBranchId) continue;
 
       const namespace = `shelf/${branch.id}`;
-      const adapter = mesh.getNamespace(namespace);
-      const branchSales = Array.from(adapter.doc.getMap('sales').values()) as any[];
-      const branchProducts = Array.from(adapter.doc.getMap('products').values()) as any[];
+      const branchSales = Array.from(mesh.yjsAdapter.doc.getMap(`${namespace}_sales`).values()) as any[];
+      const branchProducts = Array.from(mesh.yjsAdapter.doc.getMap(`${namespace}_products`).values()) as any[];
 
       allSales.push(...branchSales.map((s) => ({ ...s, branchName: branch.name })));
       allProducts.push(...branchProducts.map((p) => ({ ...p, branchName: branch.name })));
@@ -81,13 +80,10 @@ const Reports: React.FC = () => {
 
     // Global namespace
     if (state.activeBranchId !== null) {
-      const adapter = mesh.getNamespace('shelf');
-      if (adapter?.doc) {
-        const globalSales = Array.from(adapter.doc.getMap('sales').values()) as any[];
-        const globalProducts = Array.from(adapter.doc.getMap('products').values()) as any[];
-        allSales.push(...globalSales.map((s) => ({ ...s, branchName: 'Global' })));
-        allProducts.push(...globalProducts.map((p) => ({ ...p, branchName: 'Global' })));
-      }
+      const globalSales = Array.from(mesh.yjsAdapter.doc.getMap(`shelf_sales`).values()) as any[];
+      const globalProducts = Array.from(mesh.yjsAdapter.doc.getMap(`shelf_products`).values()) as any[];
+      allSales.push(...globalSales.map((s) => ({ ...s, branchName: 'Global' })));
+      allProducts.push(...globalProducts.map((p) => ({ ...p, branchName: 'Global' })));
     }
 
     return { sales: allSales, products: allProducts };

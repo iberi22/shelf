@@ -88,9 +88,13 @@ export default function InvoiceScannerModal({
 
     return () => {
       if (qrScannerRef.current) {
-        qrScannerRef.current.stop().catch(() => {
-          // Camera already stopped
-        });
+        try {
+          qrScannerRef.current.stop().catch(() => {
+            // Camera already stopped
+          });
+        } catch (e) {
+          console.error('Sync error on stop:', e);
+        }
       }
     };
   }, [isOpen, scanMode]);

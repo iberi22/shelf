@@ -7,6 +7,7 @@ import Clients from './components/Clients';
 import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
 import P2PSyncStatusHeader from './components/P2PSyncStatusHeader';
+import PullToRefresh from './components/PullToRefresh';
 import PurchaseOrders from './components/PurchaseOrders';
 import Reports from './components/Reports';
 import Sales from './components/Sales';
@@ -95,10 +96,15 @@ const MainApp: React.FC = () => {
         <div className="flex flex-1 overflow-hidden relative">
           <Sidebar activeComponent={activeComponent} setActiveComponent={setActiveComponent} />
           {/* Add pt-16 on mobile to push content below the fixed hamburger menu */}
-          <main className="flex-1 min-w-0 p-4 pt-16 sm:p-6 md:p-8 overflow-y-auto pb-20 md:pb-8">
-            <P2PSyncStatusHeader />
-            {renderComponent()}
-          </main>
+          <PullToRefresh>
+            <main
+              id="main-scroll-area"
+              className="flex-1 min-w-0 p-4 pt-16 sm:p-6 md:p-8 overflow-y-auto pb-24 md:pb-8 h-full"
+            >
+              <P2PSyncStatusHeader />
+              {renderComponent()}
+            </main>
+          </PullToRefresh>
         </div>
         <MobileBottomNav activeComponent={activeComponent} setActiveComponent={setActiveComponent} />
       </div>

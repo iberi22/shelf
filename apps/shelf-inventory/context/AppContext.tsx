@@ -28,6 +28,7 @@ import React, {
   useEffect,
   useMemo,
 } from 'react';
+import EdgeMeshTransportBinder from '../components/EdgeMeshTransportBinder';
 import EdgeMeshWorkflowBridge from '../components/EdgeMeshWorkflowBridge';
 import usePersistedReducer from '../hooks/usePersistedReducer';
 import { DEFAULT_INVENTORY_CONFIG, normalizeInventoryConfig } from '../lib/inventoryConfig';
@@ -579,34 +580,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [state]);
 
+  // Phase B+C: shared Y.Doc + single PeerJS (p2pManager) via P2PManagerTransport adapter.
+  // EdgeMesh never opens its own Peer (no peerId). YJS inventory still uses YJS_UPDATE on that Peer;
+  // EdgeMesh protocol uses EDGE_MESH_ENVELOPE on the same channel (see EdgeMeshTransportBinder).
   const edgeMeshConfig = useMemo(() => {
     if (!state.localPeerId) return null;
     return {
-      localPeerId: state.localPeerId,
-      transport: {
-        send: (to: string, data: Uint8Array) =>
-          p2pManager.sendTo(to, { type: 'EDGE_MESH_SYNC', payload: data } as unknown as Parameters<
-            typeof p2pManager.sendTo
-          >[1]),
-        broadcast: (data: Uint8Array) =>
-          p2pManager.broadcast({ type: 'EDGE_MESH_SYNC', payload: data } as unknown as Parameters<
-            typeof p2pManager.broadcast
-          >[0]),
-        onMessage: (callback: (from: string, data: Uint8Array) => void) => {
-          p2pManager.onMessage((msg: unknown, from: string) => {
-            const typedMsg = msg as { type: string; payload: Uint8Array };
-            if (typedMsg.type === 'EDGE_MESH_SYNC') {
-              callback(from, typedMsg.payload);
-            }
-          });
-        },
-        onPeerConnect: (_callback: (peerId: string) => void) => {
-          // Simplified, ideally p2pManager should expose this cleanly
-        },
-        onPeerDisconnect: (_callback: (peerId: string) => void) => {
-          // Simplified
-        },
-      },
+      nodoId: state.localPeerId as import('edge-mesh').NodoId,
+      yDoc: dbSync.doc as unknown as import('edge-mesh').EdgeMeshConfig['yDoc'],
+      storageBackend: 'mem' as const,
+      requireAuthz: true,
+      // Host (p2pManager.initYjsSync) already broadcasts local CRDT patches — do not double-relay.
+      relayLocalYjs: false,
     };
   }, [state.localPeerId]);
 
@@ -1020,6 +1005,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
       <EdgeMeshProvider config={edgeMeshConfig}>
+        <EdgeMeshTransportBinder />
         <EdgeMeshWorkflowBridge state={state} dispatch={rawDispatch} isLoaded={isLoaded} />
         {children}
       </EdgeMeshProvider>

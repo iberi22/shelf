@@ -35,7 +35,39 @@ test.describe('Edge Mesh workflow synchronization and data security', () => {
     await openSettingsWithEdgeMesh(sourcePage);
     await openSettingsWithEdgeMesh(targetPage);
 
+    const sourcePeerId = await getPeerId(sourcePage);
     const targetPeerId = await getPeerId(targetPage);
+    expect(sourcePeerId).toBeTruthy();
+    expect(targetPeerId).toBeTruthy();
+
+    // Authorize source on target as a verified product/client editor (remote authz path).
+    await targetPage.evaluate((srcId: string) => {
+      const db = (window as any)._dbSyncForTest;
+      if (!db) return;
+      const perms = {
+        canViewProducts: true,
+        canEditProducts: true,
+        canViewSales: true,
+        canEditSales: true,
+        canViewClients: true,
+        canEditClients: true,
+        canViewSuppliers: true,
+        canEditSuppliers: true,
+        canViewPurchaseOrders: true,
+        canEditPurchaseOrders: true,
+        canViewReports: true,
+        canViewArqueo: true,
+        canViewDashboard: true,
+      };
+      db.updateLinkedNode(
+        srcId,
+        { role: 'admin', isMaster: true, dsaPublicKey: 'src-key', permissions: perms },
+        db.localPeerId,
+      );
+      db.updateEphemeralNode(srcId, { status: 'verified', dsaPublicKey: 'src-key' });
+      db.setMasterPeerId(srcId);
+    }, sourcePeerId as string);
+
     const client = {
       id: 'edge-client-001',
       name: 'Edge Mesh Client',
@@ -43,14 +75,65 @@ test.describe('Edge Mesh workflow synchronization and data security', () => {
       phone: '555-0000',
       isActive: true,
       updatedAt: new Date().toISOString(),
-      updatedBy: targetPeerId,
+      updatedBy: sourcePeerId,
       updatedByRole: 'admin',
     };
 
     await upsertEdgeMeshEntity(sourcePage, 'clients', client.id, client);
+    // Confirm source sees the entity before export
+    await expectEdgeMeshEntity(sourcePage, 'clients', (items) =>
+      items.some((item) => item.id === client.id && item.name === client.name),
+    );
     const update = await exportEdgeMeshUpdate(sourcePage, 'clients');
     console.log(`Edge Mesh CRDT Update Size: ${update.length} bytes`);
-    await applyRemoteEdgeMeshUpdate(targetPage, targetPeerId, update, 'clients');
+    expect(update.length).toBeGreaterThan(0);
+
+    // Apply as remote verified source peer (exercises applyUpdate trust gate + shared doc)
+    await targetPage.evaluate(
+      ({ data, srcId }) => {
+        const db = (window as any)._dbSyncForTest;
+        // Force trust metadata on the live singleton right before apply
+        db.updateLinkedNode(
+          srcId,
+          {
+            role: 'collaborator',
+            isMaster: false,
+            dsaPublicKey: 'src-key',
+            permissions: {
+              canViewProducts: true,
+              canEditProducts: true,
+              canViewSales: true,
+              canEditSales: true,
+              canViewClients: true,
+              canEditClients: true,
+              canViewSuppliers: true,
+              canEditSuppliers: true,
+              canViewPurchaseOrders: true,
+              canEditPurchaseOrders: true,
+              canViewReports: true,
+              canViewArqueo: true,
+              canViewDashboard: true,
+            },
+          },
+          db.localPeerId,
+        );
+        db.updateEphemeralNode(srcId, { status: 'verified', dsaPublicKey: 'src-key' });
+        db.applyUpdate(new Uint8Array(data), srcId);
+      },
+      { data: update, srcId: sourcePeerId as string },
+    );
+
+    const probe = await targetPage.evaluate((clientId: string) => {
+      const db = (window as any)._dbSyncForTest;
+      const fromDb = db ? Array.from(db.doc.getMap('clients').values()) : [];
+      return {
+        count: fromDb.length,
+        has: fromDb.some((c: any) => c?.id === clientId),
+        names: fromDb.map((c: any) => c?.name),
+      };
+    }, client.id);
+    console.log('Target clients after remote apply:', JSON.stringify(probe));
+    expect(probe.has).toBe(true);
 
     await expectEdgeMeshEntity(targetPage, 'clients', (items) =>
       items.some((item) => item.id === client.id && item.name === client.name),

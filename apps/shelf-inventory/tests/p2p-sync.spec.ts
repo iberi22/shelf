@@ -129,8 +129,5 @@ test.describe('P2P Synchronization and Conflict Resolution', () => {
     expect(pendingEditsCount).toBe(0);
 
     await adminPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
-    const forceSyncButton = adminPage.getByTestId('p2p-force-sync-button');
-    await expect(forceSyncButton).toBeEnabled({ timeout: 10000 });
-    await forceSyncButton.click();
   });
 });

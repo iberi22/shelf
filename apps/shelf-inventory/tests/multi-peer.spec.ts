@@ -57,10 +57,22 @@ test.describe('Multi-Peer E2E Synchronization', () => {
     await adminPage.getByTestId('save-product-button').click();
     await expect(adminPage.getByTestId('product-form')).toBeHidden({ timeout: 10000 });
 
-    // Step 3: Peer B verifies the product was received via sync
-    await expectProductSync(adminPage, collabPage, 'Multi-Peer Sync Product');
+    // Step 3: Peer B (collab) verifies the product was received via sync
+    // expectProductSync(target, source, name) — target is the peer that should RECEIVE
+    await expectProductSync(collabPage, adminPage, 'Multi-Peer Sync Product');
 
-    // Step 4: Peer B edits the product
+    // Step 4: Peer B edits the product (enable auto-apply so collab write hits products map, not pendingEdits)
+    await collabPage.evaluate(() => {
+      const db = (window as any)._dbSyncForTest;
+      const cfg = db?.getInventoryConfig?.() || {};
+      db?.updateInventoryConfig?.({ ...cfg, autoApplyProductUpdates: true });
+    });
+    await adminPage.evaluate(() => {
+      const db = (window as any)._dbSyncForTest;
+      const cfg = db?.getInventoryConfig?.() || {};
+      db?.updateInventoryConfig?.({ ...cfg, autoApplyProductUpdates: true });
+    });
+
     const productId = await collabPage.evaluate(() => {
       const dbSync = (window as any)._dbSyncForTest;
       const state = dbSync?.getState(dbSync.localPeerId);
@@ -74,8 +86,9 @@ test.describe('Multi-Peer E2E Synchronization', () => {
     await expect(collabPage.getByTestId('product-form')).toBeVisible();
     await collabPage.getByTestId('product-price-input').fill('250');
     await collabPage.getByTestId('save-product-button').click();
+    await expect(collabPage.getByTestId('product-form')).toBeHidden({ timeout: 10000 });
 
-    // Step 5: Peer A verifies the update
+    // Step 5: Peer A (admin) verifies the collab price update
     await expectProductPriceSync(adminPage, collabPage, 'Multi-Peer Sync Product', 250);
 
     // Cleanup

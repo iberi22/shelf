@@ -1,7 +1,7 @@
 {
   "name": "shelf-inventory",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.0.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,7 +19,10 @@
     "audit:fix": "pnpm audit --fix",
     "outdated": "pnpm outdated",
     "install:ci": "pnpm install --frozen-lockfile",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:e2e": "playwright test",
+    "test:ct": "cypress run --component",
+    "test": "pnpm test:ct && pnpm test:e2e"
   },
   "dependencies": {
     "@google/genai": "^2.0.0",
@@ -48,6 +51,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.2",
+    "@cypress/react": "^9.0.2",
+    "@cypress/vite-dev-server": "^7.3.4",
     "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4.3.2",
     "@types/node": "^26.1.0",
@@ -55,7 +60,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
-    "cypress": "^15.14.2",
+    "cypress": "^15.18.0",
     "husky": "^9.1.7",
     "lint-staged": "17.0.8",
     "playwright": "^1.61.0",
