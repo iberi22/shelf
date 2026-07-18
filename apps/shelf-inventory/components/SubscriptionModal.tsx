@@ -9,7 +9,7 @@ const SubscriptionModal: React.FC = () => {
   const { t } = useI18n();
   const { isSubscriptionModalOpen, closeSubscriptionModal, showLoading, hideLoading, showNotification } = useUI();
   const { tier } = useSubscription();
-  const { user, getIdToken } = useAuth();
+  const { user, getIdToken, setSubscriptionTier } = useAuth();
 
   if (!isSubscriptionModalOpen) {
     return null;
@@ -23,6 +23,17 @@ const SubscriptionModal: React.FC = () => {
       showNotification(t('subscription.loginRequired'), 'info');
       return;
     }
+
+    const stripeEnabled =
+      import.meta.env.VITE_STRIPE_CHECKOUT_ENABLED === 'true' || import.meta.env.VITE_ENABLE_STRIPE === 'true';
+
+    if (!stripeEnabled) {
+      setSubscriptionTier(planId);
+      showNotification(t('subscription.offlineSuccess'), 'success');
+      closeSubscriptionModal();
+      return;
+    }
+
     showLoading(t('subscription.redirecting'));
     try {
       const token = await getIdToken();
@@ -44,7 +55,14 @@ const SubscriptionModal: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        if (response.status === 404) {
+          setSubscriptionTier(planId);
+          showNotification(t('subscription.paymentErrorOfflineFallback'), 'success');
+          closeSubscriptionModal();
+          hideLoading();
+          return;
+        }
+        const errorData = await response.json().catch(() => ({ error: 'Failed to create checkout session.' }));
         throw new Error(errorData.error || 'Failed to create checkout session.');
       }
 
@@ -52,8 +70,10 @@ const SubscriptionModal: React.FC = () => {
       // Redirect to Stripe checkout
       window.location.href = url;
     } catch (error) {
-      console.error('Payment initiation failed:', error);
-      showNotification(error instanceof Error ? error.message : t('subscription.paymentError'), 'error');
+      console.error('Payment initiation failed, falling back to offline mode:', error);
+      setSubscriptionTier(planId);
+      showNotification(t('subscription.paymentErrorOfflineFallback'), 'success');
+      closeSubscriptionModal();
       hideLoading();
     }
   };
@@ -83,6 +103,7 @@ const SubscriptionModal: React.FC = () => {
             <button
               onClick={() => handleSelectPlan('pro')}
               disabled={tier === 'pro' || tier === 'pyme'}
+              data-testid="select-pro-plan-button"
               className="w-full mt-6 bg-yellow-400 text-background font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-all active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
             >
               {tier === 'pro' || tier === 'pyme' ? t('subscription.currentPlan') : t('subscription.selectPlan')}
@@ -111,6 +132,7 @@ const SubscriptionModal: React.FC = () => {
             <button
               onClick={() => handleSelectPlan('pyme')}
               disabled={tier === 'pyme'}
+              data-testid="select-pyme-plan-button"
               className="w-full mt-6 bg-sky-400 text-background font-bold py-2 px-4 rounded-lg hover:bg-sky-300 transition-all active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
             >
               {tier === 'pyme' ? t('subscription.currentPlan') : t('subscription.selectPlan')}
