@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-07-18 (honest codebase audit)  
 **SSOT:** `.gitcore/features.json` + `.gitcore/features-details.json`  
-**Project average:** **~91%** (20 implemented / 1 partial / 0 skeleton)
+**Project average:** **~91%** (21 implemented / 0 partial / 0 skeleton)
 
 > Percentages are code + tests vs acceptance criteria. Residual work lives in per-feature `gaps` and `future_roadmap`.
 
@@ -10,12 +10,12 @@
 
 | Bucket | Count |
 |--------|------:|
-| Implemented (≥85%) | **20** |
-| Partial (40–84%) | **1** |
+| Implemented (≥85%) | **21** |
+| Partial (40–84%) | **0** |
 | Skeleton (<40%) | **0** |
 | **Average** | **91%** |
 | FUN average | **92%** |
-| Mesh/PQC/EDGE/GPU average | **88%** |
+| Mesh/PQC/EDGE/GPU average | **90%** |
 
 ## All SRC features
 
@@ -37,19 +37,19 @@
 | SRC-FUN-014 | Data Import (CSV) | implemented | 94 | hardened |
 | SRC-PQC-001 | Post-Quantum Cryptography | implemented | 90 | hardened |
 | SRC-P2P-001 | P2P Mesh Network | implemented | 90 | hardened |
-| SRC-CRDT-001 | CRDT Sync (Yjs) | implemented | 93 | hardened |
-| SRC-EDGE-001 | Edge Mesh Runtime | partial | 78 | integrated |
+| SRC-CRDT-001 | CRDT Sync (Yjs) | implemented | 95 | hardened |
+| SRC-EDGE-001 | Edge Mesh Runtime | implemented | 88 | integrated |
 | SRC-GPU-001 | GPU Agent (WebGPU edge compute) | implemented | 88 | integrated |
 | SRC-QA-001 | Testing Infrastructure | implemented | 87 | integrated |
 | SRC-PWA-001 | PWA & Offline Support | implemented | 90 | integrated |
 
 ## Top residual gaps (partial features)
 
-- **SRC-EDGE-001 (78%)**: Self-heal privilege-centric; full entity surgical revert not primary path; Maloca extract residual Phase D2
+
 
 ## Audit notes
 
-- Method: post Ola H integration (Jules PRs #301-#304 + local review) + code verify
+- Method: Ola H integrate + entity remote authz implementation
 - Playwright specs: 35 · Cypress E2E: 16 · edge-mesh units: 214
 - Auth runtime: localAuth ACs realigned (cloud=ROADMAP-003)
 - Subscription: user.subscriptionTier + settings plan UI

@@ -4,10 +4,10 @@
 
 | Estado | % |
 |--------|---|
-| **Promedio 21 features** | **91%** (honest audit 2026-07-18) |
+| **Promedio 21 features** | **91%** (post Ola I entity authz 2026-07-18)
 | **Core FUN (14)** | ~92% |
-| **P2P / Edge / PQC / GPU (5)** | ~88% |
-| **Implemented / Partial / Skeleton** | **20 / 1 / 0** |
+| **P2P / Edge / PQC / GPU (5)** | ~90% |
+| **Implemented / Partial / Skeleton** | **21 / 0 / 0** |
 | **SSOT** | `.gitcore/features.json` + `features-details.json` |
 
 > No reclamar 100% project-wide mientras existan partial. Plan histórico de sesión: `.gitcore/planning/PLAN-SESSION-FEATURES-2026-07-17.md`.
@@ -49,8 +49,8 @@
 | SRC-FUN-014 | Data Import (CSV) | P2 | implemented | 94 |
 | SRC-PQC-001 | Post-Quantum Cryptography | P0 | implemented | 90 |
 | SRC-P2P-001 | P2P Mesh Network | P0 | implemented | 90 |
-| SRC-CRDT-001 | CRDT Sync (Yjs) | P0 | implemented | 93 |
-| SRC-EDGE-001 | Edge Mesh Runtime | P0 | partial | 78 |
+| SRC-CRDT-001 | CRDT Sync (Yjs) | P0 | implemented | 95 |
+| SRC-EDGE-001 | Edge Mesh Runtime | P0 | implemented | 88 |
 | SRC-GPU-001 | GPU Agent (WebGPU edge compute) | P1 | implemented | 88 |
 | SRC-QA-001 | Testing Infrastructure | P1 | implemented | 87 |
 | SRC-PWA-001 | PWA & Offline Support | P0 | implemented | 90 |

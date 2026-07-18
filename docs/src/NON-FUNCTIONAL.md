@@ -2,7 +2,7 @@
 
 Last updated: 2026-07-17
 
-> Honest audit 2026-07-18: non-functional (PQC/P2P/CRDT/EDGE/GPU) avg ~88%. Project avg ~91%. SSOT: `.gitcore/features.json`.
+> Honest audit 2026-07-18: non-functional (PQC/P2P/CRDT/EDGE/GPU) avg ~90%. Project avg ~91%. SSOT: `.gitcore/features.json`.
 
 ## Status Summary
 
@@ -10,8 +10,8 @@ Last updated: 2026-07-17
 | --- | --- | --- | --- | ---: |
 | SRC-PQC-001 | Post-Quantum Cryptography | P0 | Implemented | 90% |
 | SRC-P2P-001 | P2P Mesh Network | P0 | Implemented | 90% |
-| SRC-CRDT-001 | CRDT Sync (Yjs) | P0 | Implemented | 93% |
-| SRC-EDGE-001 | Edge Mesh Runtime | P0 | Partial | 78% |
+| SRC-CRDT-001 | CRDT Sync (Yjs) | P0 | Implemented | 95% |
+| SRC-EDGE-001 | Edge Mesh Runtime | P0 | Implemented | 88% |
 | SRC-GPU-001 | GPU Agent (WebGPU edge compute) | P1 | Implemented | 88% |
 | SRC-QA-001 | Testing Infrastructure | P1 | Implemented | 87% |
 | SRC-PWA-001 | PWA & Offline Support | P0 | Implemented | 90% |

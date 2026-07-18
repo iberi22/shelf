@@ -2,7 +2,7 @@
 
 > Honest audit 2026-07-18 (deep codebase scan): percentages reflect code + tests vs acceptance criteria (not aspirational 100%).
 > **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
-> Project average (all 21 SRC): **~91%** · FUN avg **~92%** · 20 implemented / 1 partial / 0 skeleton
+> Project average (all 21 SRC): **~91%** · FUN avg **~92%** · 21 implemented / 0 partial / 0 skeleton
 > Human-readable mirror: `apps/shelf-inventory/FEATURES_STATUS.md`
 
 ## Status Summary

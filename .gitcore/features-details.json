@@ -1,16 +1,16 @@
 {
-  "version": "1.5.0",
+  "version": "1.6.0",
   "updated": "2026-07-18",
   "ssot_summary": ".gitcore/features.json",
   "audit": {
     "date": "2026-07-18",
-    "method": "post Ola H integration",
+    "method": "Ola I entity remote authz",
     "project_average_percent": 91,
     "fun_average_percent": 92,
-    "mesh_average_percent": 88,
+    "mesh_average_percent": 90,
     "counts": {
-      "implemented": 20,
-      "partial": 1,
+      "implemented": 21,
+      "partial": 0,
       "skeleton": 0,
       "total": 21
     }
@@ -531,7 +531,7 @@
     {
       "id": "SRC-CRDT-001",
       "name": "CRDT Sync (Yjs)",
-      "implementation_percentage": 93,
+      "implementation_percentage": 95,
       "status": "implemented",
       "maturity": "hardened",
       "priority": "P0",
@@ -553,7 +553,9 @@
         "shared_ydoc_phase_b": true,
         "remote_entity_acl_strict": false
       },
-      "gaps": [],
+      "gaps": [
+        "Optional further harden signed envelope requirement"
+      ],
       "next_actions": [
         "Optional re-harden entity remote ACL with multi-peer tests"
       ]
@@ -561,8 +563,8 @@
     {
       "id": "SRC-EDGE-001",
       "name": "Edge Mesh Runtime",
-      "implementation_percentage": 78,
-      "status": "partial",
+      "implementation_percentage": 88,
+      "status": "implemented",
       "maturity": "integrated",
       "priority": "P0",
       "category": "EDGE",
@@ -582,11 +584,15 @@
         "remote_apply_origin": true,
         "authz_path": true,
         "react_bindings": true,
-        "single_wire_path": false
+        "single_wire_path": false,
+        "namespaces_api": true,
+        "privilege_self_heal": true,
+        "entity_surgical_primary": true,
+        "single_wire_fully_secure": false
       },
       "gaps": [
-        "Self-heal privilege-centric; full entity surgical revert not primary path",
-        "Maloca extract residual Phase D2"
+        "Maloca extract residual Phase D2 (package split deferred)",
+        "requireSignedEnvelopes still optional on edge-mesh path"
       ],
       "next_actions": [
         "PHASE-D-ROADMAP items"

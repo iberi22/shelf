@@ -6,11 +6,11 @@
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
     "updated": "2026-07-18",
-    "version": "1.2.3",
-    "sdlc_phase": "ola-h-integrated",
+    "version": "1.2.4",
+    "sdlc_phase": "ola-i-edge-authz",
     "total_features": 21,
-    "features_implemented": 20,
-    "features_partial": 1,
+    "features_implemented": 21,
+    "features_partial": 0,
     "features_skeleton": 0,
     "implementation_percentage": 91,
     "stack": {
@@ -70,7 +70,7 @@
         "description": "Progressive Web App con soporte offline"
       }
     },
-    "implementation_notes": "Ola H integrated into develop: envelope encrypt, invite mesh roles, CSV column map, monetization offline fallback. Project avg ~91%. Residual partial: SRC-EDGE-001 (Phase D).",
+    "implementation_notes": "Post Ola I: entity remote canEdit ACL on primary CRDT path. Project avg ~91%. Residual polish: maloca extract, signed envelopes optional.",
     "status_model": {
       "skeleton": "API o package existe, comportamiento mock/placeholder",
       "unit": "Lógica local o unit tests; no E2E mesh endurecido",
@@ -79,12 +79,12 @@
     },
     "audit": {
       "date": "2026-07-18",
-      "method": "post Ola H integration (Jules PRs #301-#304 + local review) + code verify",
+      "method": "Ola H integrate + entity remote authz implementation",
       "simple_average_percent": 91,
       "product_core_fun_average": 92,
-      "mesh_pqc_edge_gpu_average": 88,
-      "features_ge_85": 20,
-      "features_partial_40_84": 1,
+      "mesh_pqc_edge_gpu_average": 90,
+      "features_ge_85": 21,
+      "features_partial_40_84": 0,
       "features_skeleton_lt_40": 0,
       "ssot_file": ".gitcore/features.json",
       "root_features_json": "status-only index; was falsely 100% — corrected",
@@ -102,7 +102,7 @@
       "edge_mesh_unit_tests": 214,
       "p2p_gate_e2e_local": "9/9 green (multi-peer, edge-mesh, p2p-sync, offline, conflict, three-node, security)",
       "session_gap_close": true,
-      "phase": "H-integrated",
+      "phase": "I-edge-authz",
       "invite_authority_bootstrap": true,
       "yjs_wire": "envelope-when-ready",
       "gpu": "kernels+webgpu+cpu",
@@ -713,23 +713,25 @@
         "Sincronización eficiente (solo cambios delta, no datos completos)",
         "Funciona 100% offline → sync cuando hay conexión"
       ],
-      "implementation_percentage": 93,
+      "implementation_percentage": 95,
       "maturity": "hardened",
       "evidence": [
         "database-sync.ts Y.Maps + encodeStateAsUpdate",
         "shared yDoc Phase B (AppContext + EdgeMesh)",
         "offline-sync + conflict-resolution E2E"
       ],
-      "gaps": []
+      "gaps": [
+        "Optional further harden signed envelope requirement"
+      ]
     },
     {
       "id": "SRC-EDGE-001",
       "name": "Edge Mesh Runtime",
-      "status": "partial",
+      "status": "implemented",
       "sdlc": "hardening",
       "priority": "P0",
       "category": "EDGE",
-      "description": "Runtime P2P reutilizable con namespaces, authz, Y.Doc compartido y transport late-bind",
+      "description": "Runtime P2P reutilizable con namespaces, authz, Y.Doc compartido, transport late-bind y ACL remota por colección en path primario",
       "user_story": "Como desarrollador, quiero un runtime P2P reutilizable que encapsule la logica mesh en un package independiente",
       "actor": "Desarrollador",
       "dependencies": [
@@ -751,17 +753,18 @@
         "Revoca cambios CRDT no autorizados via security origin",
         "React bindings via edge-mesh-react"
       ],
-      "implementation_percentage": 78,
+      "implementation_percentage": 88,
       "maturity": "integrated",
       "evidence": [
         "packages/edge-mesh (214 unit tests)",
         "EdgeMeshTransportBinder + usarTransport Phase C",
-        "edge-mesh-sync.spec.ts",
-        "edge-mesh features.json ~66% package-level"
+        "database-sync applyUpdate entity canEdit* surgical revert",
+        "security.test.ts vendedor product block + privilege map revert",
+        "edge-mesh-sync.spec.ts"
       ],
       "gaps": [
-        "Self-heal privilege-centric; full entity surgical revert not primary path",
-        "Maloca extract residual Phase D2"
+        "Maloca extract residual Phase D2 (package split deferred)",
+        "requireSignedEnvelopes still optional on edge-mesh path"
       ]
     },
     {
@@ -930,15 +933,15 @@
       "id": "ROADMAP-008",
       "name": "Remote Mutation Authz on Primary Path",
       "priority": "P0",
-      "status": "partial",
-      "description": "isTrustedRemoteWriter + privilege maps; full entity surgical revert dead; collection ACL remote relajada"
+      "status": "done",
+      "description": "Primary path: isTrustedRemoteWriter hard gate + surgical canEdit* entity revert + privilege maps. Done 2026-07-18."
     },
     {
       "id": "ROADMAP-009",
       "name": "Edge Mesh Secure Data Path",
       "priority": "P0",
       "status": "partial",
-      "description": "EDGE_MESH SYNC used for CRDT when all peers dual-ready; authz grants on connect"
+      "description": "EDGE_MESH envelope + dual-ready encrypt done; optional signed envelopes / marketplace residual."
     },
     {
       "id": "ROADMAP-010",
