@@ -6,12 +6,12 @@
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
     "updated": "2026-07-17",
-    "sdlc_phase": "phase-E-to-100",
+    "sdlc_phase": "phase-F-to-100",
     "total_features": 21,
-    "features_implemented": 18,
+    "features_implemented": 19,
     "features_partial": 2,
-    "features_skeleton": 1,
-    "implementation_percentage": 87,
+    "features_skeleton": 0,
+    "implementation_percentage": 91,
     "ssot": ".gitcore/features.json",
     "audit_note": "Honest audit 2026-07-17: code+tests vs ACs. NOT 100%. See .gitcore/features.json for gaps/evidence.",
     "implementation_notes": "Path to 100%: PLAN-100-FEATURES.md. Phase B: CSV hardened, auth/team ACs local/P2P, tier UI."
@@ -304,12 +304,33 @@
     },
     {
       "id": "SRC-GPU-001",
-      "name": "GPU Agent (WebGPU)",
-      "status": "skeleton",
-      "implementation_percentage": 18,
-      "maturity": "skeleton",
+      "name": "GPU Agent (WebGPU edge compute)",
+      "status": "implemented",
+      "implementation_percentage": 90,
+      "maturity": "integrated",
       "priority": "P1",
-      "category": "GPU"
+      "category": "GPU",
+      "sdlc": "production",
+      "description": "Edge compute kernels via WebGPU (scale/dot) with CPU fallback; optional EdgeMesh capacity; WebLLM remains app-owned",
+      "acceptance_criteria": [
+        "isWebGpuSupported detection",
+        "Local kernels: vector-sum, dot-product, matrix-scale, echo",
+        "WebGPU path when available, CPU fallback always",
+        "Task queue + maxConcurrentTasks",
+        "Remote tasks require signature / verifyTask",
+        "Optional mesh capacity announcement",
+        "Unit tests for CPU path"
+      ],
+      "gaps": [
+        "No multi-node task marketplace / routing yet",
+        "Built-in ML-DSA verify optional (hook only)",
+        "WebLLM not in this package (by ADR)"
+      ],
+      "evidence": [
+        "packages/gpu-agent/src/gpu-agent.ts",
+        "packages/gpu-agent/tests/gpu-agent.test.ts",
+        "packages/gpu-agent/docs/ADR-001-GPU-AGENT.md"
+      ]
     },
     {
       "id": "SRC-QA-001",

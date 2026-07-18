@@ -7,12 +7,12 @@
     "created": "2026-06-11",
     "updated": "2026-07-17",
     "version": "1.2.1",
-    "sdlc_phase": "phase-E-to-100",
+    "sdlc_phase": "phase-F-to-100",
     "total_features": 21,
-    "features_implemented": 18,
+    "features_implemented": 19,
     "features_partial": 2,
-    "features_skeleton": 1,
-    "implementation_percentage": 87,
+    "features_skeleton": 0,
+    "implementation_percentage": 91,
     "stack": {
       "monorepo": "pnpm + Turborepo",
       "frontend": "React 19 + Vite 8",
@@ -80,7 +80,7 @@
     "audit": {
       "date": "2026-07-17",
       "method": "code+tests vs acceptance criteria (3 parallel explore agents + manual verify)",
-      "simple_average_percent": 87,
+      "simple_average_percent": 91,
       "product_core_fun_average": 77,
       "mesh_pqc_edge_gpu_average": 67,
       "features_ge_85": 11,
@@ -102,9 +102,10 @@
       "edge_mesh_unit_tests": 214,
       "p2p_gate_e2e_local": "9/9 green (multi-peer, edge-mesh, p2p-sync, offline, conflict, three-node, security)",
       "session_gap_close": true,
-      "phase": "E",
+      "phase": "F",
       "invite_authority_bootstrap": true,
-      "yjs_wire": "envelope-when-ready"
+      "yjs_wire": "envelope-when-ready",
+      "gpu": "kernels+webgpu+cpu"
     }
   },
   "features": [
@@ -779,12 +780,12 @@
     },
     {
       "id": "SRC-GPU-001",
-      "name": "GPU Agent (WebGPU)",
-      "status": "skeleton",
-      "sdlc": "prototype",
+      "name": "GPU Agent (WebGPU edge compute)",
+      "status": "implemented",
+      "sdlc": "production",
       "priority": "P1",
       "category": "GPU",
-      "description": "Package scaffold; executeTask mock; WebLLM real no usa GpuAgent.executeTask",
+      "description": "Edge compute kernels via WebGPU (scale/dot) with CPU fallback; optional EdgeMesh capacity; WebLLM remains app-owned",
       "user_story": "Como desarrollador, quiero delegar tareas intensivas al WebGPU local via un package reutilizable",
       "actor": "Desarrollador",
       "dependencies": [
@@ -795,22 +796,25 @@
         "gpu-agent"
       ],
       "acceptance_criteria": [
-        "Tenant WebGPU expuesto por edge-mesh",
-        "Ejecución de agentes en edge local",
-        "Package reutilizable gpu-agent"
+        "isWebGpuSupported detection",
+        "Local kernels: vector-sum, dot-product, matrix-scale, echo",
+        "WebGPU path when available, CPU fallback always",
+        "Task queue + maxConcurrentTasks",
+        "Remote tasks require signature / verifyTask",
+        "Optional mesh capacity announcement",
+        "Unit tests for CPU path"
       ],
-      "implementation_percentage": 18,
-      "maturity": "skeleton",
+      "implementation_percentage": 90,
+      "maturity": "integrated",
       "evidence": [
-        "packages/gpu-agent/src/gpu-agent.ts executeTask mock",
-        "verifyTask placeholder return true",
-        "isWebGpuSupported used by useWebLLM only"
+        "packages/gpu-agent/src/gpu-agent.ts",
+        "packages/gpu-agent/tests/gpu-agent.test.ts",
+        "packages/gpu-agent/docs/ADR-001-GPU-AGENT.md"
       ],
       "gaps": [
-        "executeTask es mock delay + string",
-        "Sin routing de tareas mesh",
-        "verifyTask placeholder",
-        "Sin tests del package"
+        "No multi-node task marketplace / routing yet",
+        "Built-in ML-DSA verify optional (hook only)",
+        "WebLLM not in this package (by ADR)"
       ]
     },
     {

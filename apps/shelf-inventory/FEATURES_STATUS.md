@@ -2,18 +2,18 @@
 
 **Last updated:** 2026-07-17  
 **SSOT:** `.gitcore/features.json` + `.gitcore/features-details.json`  
-**Project average:** **~88%** — Phase E path-to-100 (see `.gitcore/planning/PLAN-100-FEATURES.md`)
+**Project average:** **~91%** — Phase F path-to-100 (see `.gitcore/planning/PLAN-100-FEATURES.md`)
 
-> Auth is **localAuth**. YJS wire: **envelope-when-ready** (EDGE_MESH SYNC when all peers dual-ready). Stripe optional.
+> Auth is **localAuth**. YJS wire: **envelope-when-ready**. GPU: real kernels (WebGPU/CPU), not mock. Stripe optional.
 
 ## Summary counts
 
 | Bucket | Count | Rule of thumb |
 |--------|------:|---------------|
-| Implemented | 18 | ≥85% and core ACs met |
+| Implemented | 19 | ≥85% and core ACs met |
 | Partial | 2 | Usable with material gaps |
-| Skeleton | 1 | Mock / placeholder |
-| **Average** | **~88%** | Simple mean of 21 SRC features |
+| Skeleton | 0 | — |
+| **Average** | **~91%** | Simple mean of 21 SRC features |
 
 ## Feature Status (honest audit + session fixes)
 
@@ -37,7 +37,7 @@
 | SRC-P2P-001 | P2P Mesh | partial | 85 | Single PeerJS Phase C; broker still required |
 | SRC-CRDT-001 | CRDT Yjs | partial | 84 | Shared Y.Doc Phase B; remote entity ACL relaxed |
 | SRC-EDGE-001 | Edge Mesh Runtime | partial | 72 | Dual wire path; Phase D open |
-| SRC-GPU-001 | GPU Agent | skeleton | **18** | executeTask **mock** |
+| SRC-GPU-001 | GPU Agent | implemented | **90** | WebGPU kernels + CPU fallback; ADR-001 |
 | SRC-QA-001 | Testing | partial | 78 | Playwright strong; GHA infra flaky |
 | SRC-PWA-001 | PWA & Offline | implemented | 86 | SW + IDB + update banner |
 
@@ -78,3 +78,4 @@
 3. Root `features.json` — index only  
 4. This file — human-readable status for app folder  
 5. `docs/src/REQUIREMENTS.md` / `NON-FUNCTIONAL.md` — must match SSOT (not 100%)
+
