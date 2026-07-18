@@ -283,21 +283,25 @@
     },
     "import": {
       "button": "Importar CSV",
-      "cardDescription": "Añade o actualiza productos en masa desde un archivo CSV.",
+      "cardDescription": "A├▒ade o actualiza productos en masa desde un archivo CSV.",
       "title": "Importar Productos desde CSV",
-      "description": "Sube un archivo CSV para añadir o actualizar múltiples productos a la vez. Para mejores resultados, descarga y usa nuestra plantilla.",
+      "description": "Sube un archivo CSV para a├▒adir o actualizar m├║ltiples productos a la vez. Para mejores resultados, descarga y usa nuestra plantilla.",
       "downloadTemplate": "Descargar Plantilla",
       "selectFile": "Selecciona un archivo .csv",
-      "noFileSelected": "Ningún archivo seleccionado",
+      "noFileSelected": "Ning├║n archivo seleccionado",
       "conflictStrategy": "Si un producto con el mismo SKU ya existe:",
       "strategySkip": "Omitirlo (mantener existente)",
       "strategyUpdate": "Actualizarlo (sobrescribir con nuevos datos)",
       "importing": "Importando...",
-      "success": "Se importaron {{count}} productos con éxito.",
-      "error": "La importación falló: {{error}}",
-      "invalidHeaderError": "Archivo CSV no válido. Por favor, asegúrate de que las cabeceras coincidan con la plantilla.",
+      "success": "Se importaron {{count}} productos con ├®xito.",
+      "error": "La importaci├│n fall├│: {{error}}",
+      "invalidHeaderError": "Archivo CSV no v├ílido. Por favor, aseg├║rate de que las cabeceras coincidan con la plantilla.",
       "rowErrors": "Algunas filas se omitieron:",
-      "invalidFile": "Selecciona un archivo .csv válido."
+      "invalidFile": "Selecciona un archivo .csv v├ílido.",
+      "mapColumns": "Asociar columnas del CSV",
+      "mapColumnsDesc": "Selecciona qu├® campo coincide con cada columna de tu archivo. El campo Nombre de Producto es obligatorio.",
+      "ignoreColumn": "(Ignorar)",
+      "nameRequiredError": "* Se requiere la asociaci├│n de Nombre del Producto para habilitar la importaci├│n."
     },
     "reset": {
       "button": "Reiniciar Datos",
@@ -316,7 +320,9 @@
       "roles": {
         "owner": "Propietario",
         "admin": "Admin",
-        "member": "Miembro"
+        "member": "Miembro",
+        "collaborator": "Colaborador",
+        "vendedor": "Vendedor"
       },
       "sendInvitation": "Enviar Invitación",
       "emailPlaceholder": "miembro@ejemplo.com",
@@ -378,7 +384,9 @@
       "description": "El plan local controla funciones Pro y anuncios. Stripe es opcional si hay backend.",
       "current": "Plan actual",
       "updated": "Plan actualizado a {{plan}}",
-      "stripeCheckout": "Abrir checkout Stripe (si está configurado)"
+      "stripeCheckout": "Abrir checkout Stripe (si está configurado)",
+      "offlineNotice": "Los planes locales son offline-first. El pago por Stripe solo es necesario cuando la integración en la nube está activa.",
+      "confirmUpgrade": "¿Estás seguro de que deseas actualizar tu plan?"
     },
     "language": "Idioma"
   },
@@ -459,6 +467,8 @@
     "loginRequired": "Debes iniciar sesión para suscribirte.",
     "redirecting": "Redirigiendo al pago...",
     "paymentError": "Error al iniciar el proceso de pago. Inténtalo de nuevo.",
+    "offlineSuccess": "Plan local activado correctamente (Modo Offline).",
+    "paymentErrorOfflineFallback": "Error al iniciar el pago, pero el plan local se activó correctamente (Modo Offline).",
     "upgradeToPyme": "Actualizar a PYME",
     "pro": {
       "title": "Pro",
@@ -579,6 +589,7 @@
     "statusConnecting": "Conectando...",
     "configCollaboratorTitle": "Configuración del Colaborador",
     "roleAdmin": "Admin",
+    "roleCollaborator": "Colaborador",
     "roleVendedor": "Vendedor",
     "roleCustom": "Personalizado",
     "peerId": "Peer ID",

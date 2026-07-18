@@ -46,7 +46,10 @@
     "sortBy": "Sort by",
     "editItem": "Edit {{item}}",
     "deleteItem": "Delete {{item}}",
-    "done": "Done"
+    "done": "Done",
+    "accessDenied": "Access Denied",
+    "accessDeniedDescription": "You do not have permission to view this section.",
+    "language": "Language"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -109,7 +112,8 @@
       "noVariantGroup": "No variant group",
       "newVariantGroup": "Create new variant group",
       "variantSiblings": "Products in the same group:",
-      "noSiblings": "No other products in this group"
+      "noSiblings": "No other products in this group",
+      "duplicateSku": "SKU already exists: {{sku}}"
     },
     "batchProcessing": "Processing images...",
     "batchCompiling": "Compressing and preparing batch:"
@@ -167,7 +171,11 @@
     "orderDate": "Order Date",
     "statusPending": "Pending",
     "statusReceived": "Received",
+    "statusCancelled": "Cancelled",
     "markAsReceived": "Mark as Received",
+    "cancel": "Cancel order",
+    "cancelConfirm": "Cancel this purchase order? Stock will not change.",
+    "cancelSuccess": "Purchase order cancelled",
     "form": {
       "selectSupplier": "Select a supplier...",
       "selectSupplierAlert": "Please select a supplier.",
@@ -217,7 +225,17 @@
     "valuation": {
       "totalValue": "Total Value",
       "grandTotal": "Grand Total"
-    }
+    },
+    "aiEngineHintLocal": "Local WebLLM (WebGPU) — data stays on device",
+    "aiEngineHintNano": "Gemini Nano (browser built-in)",
+    "aiEngineHintGemini": "Gemini API key (client) — optional proxy URL in settings",
+    "aiEngineHintAuto": "Auto: local if no Gemini key, else cloud engines",
+    "aiHelpHowTitle": "How it works",
+    "aiHelpHowBody": "Ask about inventory, recent sales, or analysis (e.g. low stock). I use your local data as context.",
+    "aiHelpLocalTitle": "Local / Nano",
+    "aiHelpLocalBody": "Data stays on-device. No extra API cost. Local uses WebLLM + WebGPU when available.",
+    "aiHelpCloudTitle": "Gemini / proxy",
+    "aiHelpCloudBody": "Optional API key or proxy URL in Settings. Not required for offline-first use."
   },
   "settings": {
     "title": "Settings",
@@ -279,7 +297,13 @@
       "importing": "Importing...",
       "success": "Successfully imported {{count}} products.",
       "error": "Import failed: {{error}}",
-      "invalidHeaderError": "Invalid CSV file. Please make sure the headers match the template."
+      "invalidHeaderError": "Invalid CSV file. Please make sure the headers match the template.",
+      "rowErrors": "Algunas filas se omitieron:",
+      "invalidFile": "Selecciona un archivo .csv válido.",
+      "mapColumns": "Map CSV Columns",
+      "mapColumnsDesc": "Select which field matches each column in your file. The Product Name field is required.",
+      "ignoreColumn": "(Ignore)",
+      "nameRequiredError": "* Product Name mapping is required to enable import."
     },
     "reset": {
       "button": "Reset Data",
@@ -298,10 +322,13 @@
       "roles": {
         "owner": "Owner",
         "admin": "Admin",
-        "member": "Member"
+        "member": "Member",
+        "collaborator": "Collaborator",
+        "vendedor": "Seller"
       },
       "sendInvitation": "Send Invitation",
-      "emailPlaceholder": "member@example.com"
+      "emailPlaceholder": "member@example.com",
+      "linkCopied": "Invite link copied to clipboard"
     },
     "feedback": {
       "title": "Feedback & Support",
@@ -327,9 +354,12 @@
       "localModel": "Local Model",
       "modelSmall": "Small (Phi-3 Mini)",
       "modelMedium": "Medium (Qwen 2.5 1.5B)",
-      "proxyUrl": "Local Proxy URL (Optional)"
+      "proxyUrl": "Local Proxy URL (Optional)",
+      "localOcrTitle": "Local invoice OCR",
+      "localOcrDescription": "Use Tesseract.js for 100% offline invoice OCR. When off, Gemini API is used (requires internet and API key).",
+      "localOcrOn": "Local (On)",
+      "localOcrOff": "Cloud (Gemini)"
     },
-
     "branches": {
       "title": "Branches / Warehouses",
       "description": "Manage the physical locations of your inventory.",
@@ -350,7 +380,17 @@
       "successAdd": "Branch added.",
       "successUpdate": "Branch updated.",
       "successDelete": "Branch deleted successfully."
-    }
+    },
+    "plan": {
+      "title": "Plan / Subscription",
+      "description": "Local plan controls Pro features and ads. Stripe is optional if backend is configured.",
+      "current": "Current plan",
+      "updated": "Plan updated to {{plan}}",
+      "stripeCheckout": "Open Stripe checkout (if configured)",
+      "offlineNotice": "Local plans are offline-first. Stripe payments are only required when cloud integration is enabled.",
+      "confirmUpgrade": "Are you sure you want to upgrade your plan?"
+    },
+    "language": "Language"
   },
   "auth": {
     "login": "Login",
@@ -417,6 +457,8 @@
     "loginRequired": "You must be logged in to subscribe.",
     "redirecting": "Redirecting to payment...",
     "paymentError": "Failed to initiate payment process. Please try again.",
+    "offlineSuccess": "Local plan activated successfully (Offline Mode).",
+    "paymentErrorOfflineFallback": "Failed to initiate payment, but local plan was activated successfully (Offline Mode).",
     "upgradeToPyme": "Upgrade to PYME",
     "pro": {
       "title": "Pro",
@@ -537,6 +579,7 @@
     "statusConnecting": "Connecting...",
     "configCollaboratorTitle": "Collaborator Configuration",
     "roleAdmin": "Admin",
+    "roleCollaborator": "Collaborator",
     "roleVendedor": "Seller",
     "roleCustom": "Custom",
     "peerId": "Peer ID",

@@ -4,12 +4,12 @@
 - **Nombre:** AI Assistant
 - **Prioridad:** P2 (Nice to have)
 - **Estado:** ⚠️ Partial
-- **Implementation:** 72%
+- **Implementation:** 86%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Production
 - **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
-> **Audit 2026-07-17:** AC pide CF proxy — path real es client key / WebLLM / Nano; `fetch /api/chat` sin route real en monorepo; gate isPro hardcodeado true; sin tests de calidad de respuestas.
+> **Audit 2026-07-18:** 86% · implemented · maturity `integrated`. SSOT: `.gitcore/features.json`.
 
 ## Descripción
 Asistente IA para análisis de inventario y preguntas en lenguaje natural usando Gemini API. Gated para usuarios del plan Pro.

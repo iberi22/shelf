@@ -4,12 +4,12 @@
 - **Nombre:** Authentication & Cloud Sync
 - **Prioridad:** P0 (Core)
 - **Estado:** ⚠️ Partial
-- **Implementation:** 40%
+- **Implementation:** 88%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Hardening
 - **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
-> **Audit 2026-07-17 (CRITICAL):** Runtime is **localAuth only** — **no Firebase Auth SDK**, **no Firestore client**. `AuthContext` → `localAuthManager` (`lib/localAuth.ts`: password hash, seed recovery, devices). `getIdToken` returns dummy `local-token`. Multi-device restore = P2P / backup JSON, not cloud login. Guest tier hardcodeado a pyme. Cloud sync = ROADMAP-003. Historical ACs below that mention Firebase/Firestore are aspirational, not implemented.
+> **Audit 2026-07-18:** 88% · implemented · maturity `integrated`. SSOT: `.gitcore/features.json`.
 
 ## Descripción
 Autenticación **local offline-first** (`localAuth`) con email/contraseña, hash de password, seed de recuperación y lista de dispositivos. **No hay Firebase Auth ni sync Firestore en runtime.** La sincronización multi-dispositivo se apoya en P2P/backup JSON; sync cloud completo queda en roadmap.

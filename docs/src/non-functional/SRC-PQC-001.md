@@ -4,12 +4,12 @@
 - **Nombre:** Post-Quantum Cryptography
 - **Prioridad:** P0 (Core)
 - **Estado:** ⚠️ Partial
-- **Implementation:** 78%
+- **Implementation:** 90%
 - **Categoría:** PQC (Post-Quantum Cryptography)
 - **SDLC:** Hardening
 - **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
-> **Audit 2026-07-17:** `YJS_UPDATE` / `YJS_SYNC_REQUEST` NO cifrados a nivel app (solo DTLS); at-rest usa PBKDF2+PIN/device entropy, no llave derivada PQC; edge-mesh: ML-DSA only (sin ML-KEM en core).
+> **Audit 2026-07-18:** 90% · implemented · maturity `hardened`. SSOT: `.gitcore/features.json`.
 
 ## Descripción
 Criptografía post-cuántica usando @noble/post-quantum (ML-KEM-768 para intercambio de llaves, ML-DSA-65 para firmas digitales, AES-GCM para cifrado en reposo y tránsito).

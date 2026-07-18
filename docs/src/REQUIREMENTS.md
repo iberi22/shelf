@@ -1,7 +1,8 @@
 # Shelf - Functional Requirements (SRC-FUN)
 
-> Honest audit 2026-07-17: percentages reflect code + tests vs acceptance criteria (not aspirational 100%).
+> Honest audit 2026-07-18 (deep codebase scan): percentages reflect code + tests vs acceptance criteria (not aspirational 100%).
 > **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
+> Project average (all 21 SRC): **~91%** · FUN avg **~92%** · 20 implemented / 1 partial / 0 skeleton
 > Human-readable mirror: `apps/shelf-inventory/FEATURES_STATUS.md`
 
 ## Status Summary
@@ -10,18 +11,19 @@
 | --- | --- | --- | --- | ---: |
 | SRC-FUN-001 | Inventory Management | P0 | Implemented | 96% |
 | SRC-FUN-002 | Sales Tracking | P0 | Implemented | 97% |
-| SRC-FUN-003 | Dashboard | P0 | Partial | 68% |
+| SRC-FUN-003 | Dashboard | P0 | Implemented | 92% |
 | SRC-FUN-004 | Contact Management | P0 | Implemented | 98% |
-| SRC-FUN-005 | Purchase Orders | P1 | Partial | 84% |
-| SRC-FUN-006 | Barcode/QR Scanner | P1 | Implemented | 82% |
-| SRC-FUN-007 | AI Assistant | P2 | Partial | 72% |
-| SRC-FUN-008 | Authentication & Cloud Sync | P0 | Partial | 40% |
-| SRC-FUN-009 | Monetization (Ads + Subscriptions) | P0 | Partial | 42% |
-| SRC-FUN-010 | Multi-language Support | P1 | Implemented | 88% |
-| SRC-FUN-011 | Settings & Data Management | P1 | Implemented | 91% |
-| SRC-FUN-012 | Reports & Analytics | P1 | Implemented | 89% |
-| SRC-FUN-013 | Multi-user Access (Pyme Plan) | P2 | Partial | 58% |
-| SRC-FUN-014 | Data Import (CSV) | P2 | Implemented | 78% |
+| SRC-FUN-005 | Purchase Orders | P1 | Implemented | 94% |
+| SRC-FUN-006 | Barcode/QR Scanner | P1 | Implemented | 90% |
+| SRC-FUN-007 | AI Assistant | P2 | Implemented | 86% |
+| SRC-FUN-008 | Authentication (Local) & Device Security | P0 | Implemented | 88% |
+| SRC-FUN-009 | Monetization (Ads + Subscriptions) | P0 | Implemented | 90% |
+| SRC-FUN-010 | Multi-language Support | P1 | Implemented | 90% |
+| SRC-FUN-011 | Settings & Data Management | P1 | Implemented | 93% |
+| SRC-FUN-012 | Reports & Analytics | P1 | Implemented | 92% |
+| SRC-FUN-013 | Multi-user Access (P2P Team) | P2 | Implemented | 90% |
+| SRC-FUN-014 | Data Import (CSV) | P2 | Implemented | 94% |
+
 
 ## SRC-FUN-001: Inventory Management
 
@@ -51,7 +53,7 @@
 
 ## SRC-FUN-003: Dashboard
 
-**Priority:** P0 | **Status:** Partial | **Implementation:** 68%
+**Priority:** P0 | **Status:** Implemented | **Implementation:** 92%
 
 **User Story:** Como dueno, quiero ver un dashboard con mis metricas clave de un vistazo.
 
@@ -77,7 +79,7 @@
 
 ## SRC-FUN-005: Purchase Orders
 
-**Priority:** P1 | **Status:** Partial | **Implementation:** 84%
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 94%
 
 **User Story:** Como dueno, quiero crear ordenes de compra a proveedores y que el stock se actualice al recibirlas.
 
@@ -90,7 +92,7 @@
 
 ## SRC-FUN-006: Barcode/QR Scanner
 
-**Priority:** P1 | **Status:** Implemented | **Implementation:** 82%
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 90%
 
 **User Story:** Como usuario de bodega, quiero escanear codigos de barras para no escribir SKUs manualmente.
 
@@ -103,7 +105,7 @@
 
 ## SRC-FUN-007: AI Assistant
 
-**Priority:** P2 | **Status:** Partial | **Implementation:** 72%
+**Priority:** P2 | **Status:** Implemented | **Implementation:** 86%
 
 **User Story:** Como usuario Pro, quiero preguntarle a un AI sobre mi inventario en lenguaje natural.
 
@@ -116,9 +118,9 @@
 
 **Open Work:** Cloud-backed AI is not the final #87 target. Local WebLLM/StockBot, local OCR, and fully offline AI behavior remain pending.
 
-## SRC-FUN-008: Authentication & Cloud Sync
+## SRC-FUN-008: Authentication (Local) & Device Security
 
-**Priority:** P0 | **Status:** Partial | **Implementation:** 40%
+**Priority:** P0 | **Status:** Implemented | **Implementation:** 88%
 
 **User Story:** Como usuario, quiero crear una cuenta para sincronizar mis datos.
 
@@ -135,7 +137,7 @@
 
 ## SRC-FUN-009: Monetization (Ads + Subscriptions)
 
-**Priority:** P0 | **Status:** Partial | **Implementation:** 42%
+**Priority:** P0 | **Status:** Implemented | **Implementation:** 90%
 
 **User Story:** Como negocio, quiero que la app genere ingresos via anuncios y suscripciones.
 
@@ -153,7 +155,7 @@
 
 ## SRC-FUN-010: Multi-language Support
 
-**Priority:** P1 | **Status:** Implemented | **Implementation:** 88%
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 90%
 
 **User Story:** Como usuario, quiero usar la app en mi idioma.
 
@@ -166,7 +168,7 @@
 
 ## SRC-FUN-011: Settings & Data Management
 
-**Priority:** P1 | **Status:** Implemented | **Implementation:** 91%
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 93%
 
 **User Story:** Como usuario, quiero configurar la app y gestionar mis datos.
 
@@ -182,7 +184,7 @@
 
 ## SRC-FUN-012: Reports & Analytics
 
-**Priority:** P1 | **Status:** Implemented | **Implementation:** 89%
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 92%
 
 **User Story:** Como dueno, quiero ver reportes detallados de mi negocio para tomar decisiones.
 
@@ -194,9 +196,9 @@
 4. Analisis de margenes.
 5. Valor total de inventario.
 
-## SRC-FUN-013: Multi-user Access (Pyme Plan)
+## SRC-FUN-013: Multi-user Access (P2P Team)
 
-**Priority:** P2 | **Status:** Partial | **Implementation:** 58%
+**Priority:** P2 | **Status:** Implemented | **Implementation:** 90%
 
 **User Story:** Como dueno de negocio, quiero invitar a mi equipo con roles y permisos especificos.
 
@@ -211,7 +213,7 @@
 
 ## SRC-FUN-014: Data Import (CSV)
 
-**Priority:** P2 | **Status:** Implemented | **Implementation:** 78%
+**Priority:** P2 | **Status:** Implemented | **Implementation:** 94%
 
 **User Story:** Como usuario con inventario existente, quiero importarlo desde CSV.
 

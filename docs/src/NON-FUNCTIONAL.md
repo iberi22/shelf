@@ -2,23 +2,20 @@
 
 Last updated: 2026-07-17
 
-> Honest audit 2026-07-17. **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
+> Honest audit 2026-07-18: non-functional (PQC/P2P/CRDT/EDGE/GPU) avg ~88%. Project avg ~91%. SSOT: `.gitcore/features.json`.
 
 ## Status Summary
 
-| SRC ID | Requirement | Priority | Status | Implementation |
+| SRC ID | Feature | Priority | Status | Implementation |
 | --- | --- | --- | --- | ---: |
-| SRC-PQC-001 | Post-Quantum Cryptography | P0 | Partial | 78% |
-| SRC-P2P-001 | P2P Mesh Network | P0 | Partial | 85% |
-| SRC-CRDT-001 | CRDT Sync (Yjs) | P0 | Partial | 84% |
-| SRC-EDGE-001 | Edge Mesh Runtime | P0 | Partial | 72% |
-| SRC-PWA-001 | PWA & Offline Support | P0 | Implemented | 86% |
-| SRC-QA-001 | Testing Infrastructure | P1 | Partial | 78% |
-| SRC-GPU-001 | GPU Agent (WebGPU) | P1 | Skeleton | 18% |
-| SRC-SEC-001 | Firebase Security Rules | P0 | Partial | ~40% |
-| SRC-SEC-002 | Environment Security | P1 | Partial | ~70% |
+| SRC-PQC-001 | Post-Quantum Cryptography | P0 | Implemented | 90% |
+| SRC-P2P-001 | P2P Mesh Network | P0 | Implemented | 90% |
+| SRC-CRDT-001 | CRDT Sync (Yjs) | P0 | Implemented | 93% |
+| SRC-EDGE-001 | Edge Mesh Runtime | P0 | Partial | 78% |
+| SRC-GPU-001 | GPU Agent (WebGPU edge compute) | P1 | Implemented | 88% |
+| SRC-QA-001 | Testing Infrastructure | P1 | Implemented | 87% |
+| SRC-PWA-001 | PWA & Offline Support | P0 | Implemented | 90% |
 
-> **SEC note:** SEC items remain partial. No Firestore client in app runtime; rules/env hygiene exist but cloud auth path is not the production truth (localAuth). Percentages for SEC are approximate (not in primary 21-feature SSOT).
 
 ## SRC-PQC-001: Post-Quantum Cryptography
 

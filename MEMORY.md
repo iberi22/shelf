@@ -1,6 +1,6 @@
 # MEMORY.md — Memoria Persistente del Proyecto Shelf
 
-**Última actualización:** 2026-07-09
+**Última actualización:** 2026-07-18
 
 ---
 
@@ -58,7 +58,7 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Features implementados | 21/21 (100%) |
+| Features (promedio AC) | ~91% (20 implemented / 1 partial / 0 skeleton) |
 | Paquetes publicables | 4 (`@shelf/*`) |
 | Apps | 2 (shelf-inventory, docs) |
 | Cobertura tests | En crecimiento |

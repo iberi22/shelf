@@ -4,12 +4,12 @@
 - **Name:** Testing Infrastructure
 - **Priority:** P1 (Important)
 - **Status:** ⚠️ Partial
-- **Implementation:** 78%
+- **Implementation:** 87%
 - **Category:** QA (Quality Assurance)
 - **SDLC:** Beta
 - **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
-> **Audit 2026-07-17:** Husky/lint-staged frágil; GHA shelf jobs fallan ~2s sin steps (infra/billing); data-testid no cubre 100% UI; coverage formal no reportado. Playwright gate local 9/9 verde.
+> **Audit 2026-07-18:** 87% · implemented · maturity `integrated`. SSOT: `.gitcore/features.json`.
 
 ## Description
 

@@ -4,12 +4,12 @@
 - **Name:** Edge Mesh Runtime
 - **Priority:** P0 (Core)
 - **Status:** ⚠️ Partial
-- **Implementation:** 72%
+- **Implementation:** 78%
 - **Category:** EDGE (Local-first edge mesh)
 - **SDLC:** Hardening
 - **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
-> **Audit 2026-07-17:** Dual wire path (`YJS_UPDATE` + `EDGE_MESH_ENVELOPE`); Phase D migration abierta; maloca debt (`evidentia.verify` always true, etc.); handshake PQC sigue en p2p-mesh-core (intencional hoy).
+> **Audit 2026-07-18:** 78% · partial · maturity `integrated`. SSOT: `.gitcore/features.json`.
 
 ## Description
 

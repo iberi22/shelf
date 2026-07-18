@@ -1100,7 +1100,8 @@ class P2PManager {
 		}
 		if (
 			message.type === "YJS_UPDATE" ||
-			message.type === "YJS_SYNC_REQUEST"
+			message.type === "YJS_SYNC_REQUEST" ||
+			message.type === "EDGE_MESH_ENVELOPE"
 		) {
 			return (
 				this.encryptYjsWhenDualReady && this.dualReadyEncryption.has(peerId)
@@ -1118,6 +1119,7 @@ class P2PManager {
 			"RECOVERY_APPROVED",
 			"YJS_UPDATE",
 			"YJS_SYNC_REQUEST",
+			"EDGE_MESH_ENVELOPE",
 		].includes(message.type);
 	}
 
@@ -1128,6 +1130,11 @@ class P2PManager {
 			this.dualReadyEncryption.has(peerId) &&
 			this.encryptionKeys.has(peerId)
 		);
+	}
+
+	/** Helper to check if EDGE_MESH_ENVELOPE is encrypted for peer. */
+	public isEdgeMeshEnvelopeEncryptedForPeer(peerId: string): boolean {
+		return this.isYjsAppEncryptedForPeer(peerId);
 	}
 
 	private onEncryptionReady(peerId: string) {
