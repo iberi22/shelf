@@ -7,10 +7,10 @@
     "created": "2026-06-11",
     "updated": "2026-07-17",
     "version": "1.2.1",
-    "sdlc_phase": "phase-D-to-100",
+    "sdlc_phase": "phase-E-to-100",
     "total_features": 21,
-    "features_implemented": 17,
-    "features_partial": 3,
+    "features_implemented": 18,
+    "features_partial": 2,
     "features_skeleton": 1,
     "implementation_percentage": 87,
     "stack": {
@@ -102,8 +102,9 @@
       "edge_mesh_unit_tests": 214,
       "p2p_gate_e2e_local": "9/9 green (multi-peer, edge-mesh, p2p-sync, offline, conflict, three-node, security)",
       "session_gap_close": true,
-      "phase": "D",
-      "invite_authority_bootstrap": true
+      "phase": "E",
+      "invite_authority_bootstrap": true,
+      "yjs_wire": "envelope-when-ready"
     }
   },
   "features": [
@@ -686,7 +687,7 @@
         "Reconexión automática ante caídas",
         "Empaquetado como p2p-mesh-core (package reutilizable)"
       ],
-      "implementation_percentage": 92,
+      "implementation_percentage": 94,
       "maturity": "hardened",
       "evidence": [
         "packages/p2p-mesh-core/src/p2p.ts",
@@ -694,8 +695,8 @@
         "multi-peer / three-node / offline E2E green"
       ],
       "gaps": [
-        "PeerJS broker still required for signaling",
-        "Phase D thin p2p-mesh-core still open"
+        "PeerJS broker required",
+        "Full thin p2p-core deferred"
       ]
     },
     {
@@ -722,7 +723,7 @@
         "Sincronización eficiente (solo cambios delta, no datos completos)",
         "Funciona 100% offline → sync cuando hay conexión"
       ],
-      "implementation_percentage": 92,
+      "implementation_percentage": 94,
       "maturity": "hardened",
       "evidence": [
         "database-sync.ts Y.Maps + encodeStateAsUpdate",
@@ -730,14 +731,13 @@
         "offline-sync + conflict-resolution E2E"
       ],
       "gaps": [
-        "Primary wire still YJS_UPDATE (encrypted when dual-ready)",
-        "Remote entity ACL trust-gate model"
+        "Sync request path still legacy YJS until dual-ready envelope catch-up"
       ]
     },
     {
       "id": "SRC-EDGE-001",
       "name": "Edge Mesh Runtime",
-      "status": "partial",
+      "status": "implemented",
       "sdlc": "hardening",
       "priority": "P0",
       "category": "EDGE",
@@ -763,7 +763,7 @@
         "Revoca cambios CRDT no autorizados via security origin",
         "React bindings via edge-mesh-react"
       ],
-      "implementation_percentage": 80,
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "evidence": [
         "packages/edge-mesh (214 unit tests)",
@@ -772,8 +772,9 @@
         "edge-mesh features.json ~66% package-level"
       ],
       "gaps": [
-        "Dual wire path residual (YJS + EDGE_MESH_ENVELOPE)",
-        "Phase D maloca extract open"
+        "Maloca still in edge-mesh package (D2 extract)",
+        "p2p-mesh-core still owns PeerJS+PQC (D1 full thin not done)",
+        "YJS_SYNC_REQUEST catch-up still legacy wire"
       ]
     },
     {
@@ -940,7 +941,7 @@
       "name": "P2P Stack Unification",
       "priority": "P0",
       "status": "partial",
-      "description": "Phase B shared Y.Doc + Phase C single PeerJS DONE; Phase D thin p2p-mesh-core OPEN"
+      "description": "Phase B/C/D/E done: shared doc, single Peer, dual-ready encrypt, envelope-when-ready YJS. Residual: thin p2p-core, maloca extract."
     },
     {
       "id": "ROADMAP-008",
@@ -954,7 +955,7 @@
       "name": "Edge Mesh Secure Data Path",
       "priority": "P0",
       "status": "partial",
-      "description": "MemoryTransport + authz tests en edge-mesh; inventario principal aún YJS_UPDATE"
+      "description": "EDGE_MESH SYNC used for CRDT when all peers dual-ready; authz grants on connect"
     },
     {
       "id": "ROADMAP-010",

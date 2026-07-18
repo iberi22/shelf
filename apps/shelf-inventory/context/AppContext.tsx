@@ -580,9 +580,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [state]);
 
-  // Phase B+C: shared Y.Doc + single PeerJS (p2pManager) via P2PManagerTransport adapter.
-  // EdgeMesh never opens its own Peer (no peerId). YJS inventory still uses YJS_UPDATE on that Peer;
-  // EdgeMesh protocol uses EDGE_MESH_ENVELOPE on the same channel (see EdgeMeshTransportBinder).
+  // Phase B+C+E: shared Y.Doc + single PeerJS via P2PManagerTransport.
+  // Wire path: legacy YJS_UPDATE until all peers dual-ready, then EDGE_MESH_ENVELOPE SYNC
+  // (p2pManager.yjsWireMode=envelope-when-ready + setEdgeYjsRelay). relayLocalYjs stays false
+  // so EdgeMesh does not double-subscribe; host calls mesh.broadcastYjsUpdate via the relay.
   const edgeMeshConfig = useMemo(() => {
     if (!state.localPeerId) return null;
     return {
@@ -590,7 +591,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       yDoc: dbSync.doc as unknown as import('edge-mesh').EdgeMeshConfig['yDoc'],
       storageBackend: 'mem' as const,
       requireAuthz: true,
-      // Host (p2pManager.initYjsSync) already broadcasts local CRDT patches — do not double-relay.
+      defaultSyncNamespace: 'global',
       relayLocalYjs: false,
     };
   }, [state.localPeerId]);

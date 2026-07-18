@@ -6,10 +6,10 @@
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
     "updated": "2026-07-17",
-    "sdlc_phase": "phase-D-to-100",
+    "sdlc_phase": "phase-E-to-100",
     "total_features": 21,
-    "features_implemented": 17,
-    "features_partial": 3,
+    "features_implemented": 18,
+    "features_partial": 2,
     "features_skeleton": 1,
     "implementation_percentage": 87,
     "ssot": ".gitcore/features.json",
@@ -267,39 +267,39 @@
       "id": "SRC-P2P-001",
       "name": "P2P Mesh Network",
       "status": "implemented",
-      "implementation_percentage": 92,
+      "implementation_percentage": 94,
       "maturity": "hardened",
       "priority": "P0",
       "category": "P2P",
       "gaps": [
-        "PeerJS broker still required for signaling",
-        "Phase D thin p2p-mesh-core still open"
+        "PeerJS broker required",
+        "Full thin p2p-core deferred"
       ]
     },
     {
       "id": "SRC-CRDT-001",
       "name": "CRDT Sync (Yjs)",
       "status": "implemented",
-      "implementation_percentage": 92,
+      "implementation_percentage": 94,
       "maturity": "hardened",
       "priority": "P0",
       "category": "CRDT",
       "gaps": [
-        "Primary wire still YJS_UPDATE (encrypted when dual-ready)",
-        "Remote entity ACL trust-gate model"
+        "Sync request path still legacy YJS until dual-ready envelope catch-up"
       ]
     },
     {
       "id": "SRC-EDGE-001",
       "name": "Edge Mesh Runtime",
-      "status": "partial",
-      "implementation_percentage": 80,
+      "status": "implemented",
+      "implementation_percentage": 90,
       "maturity": "integrated",
       "priority": "P0",
       "category": "EDGE",
       "gaps": [
-        "Dual wire path residual (YJS + EDGE_MESH_ENVELOPE)",
-        "Phase D maloca extract open"
+        "Maloca still in edge-mesh package (D2 extract)",
+        "p2p-mesh-core still owns PeerJS+PQC (D1 full thin not done)",
+        "YJS_SYNC_REQUEST catch-up still legacy wire"
       ]
     },
     {

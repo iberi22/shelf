@@ -2,18 +2,18 @@
 
 **Last updated:** 2026-07-17  
 **SSOT:** `.gitcore/features.json` + `.gitcore/features-details.json`  
-**Project average:** **~87%** — Phase D path-to-100 (see `.gitcore/planning/PLAN-100-FEATURES.md`)
+**Project average:** **~88%** — Phase E path-to-100 (see `.gitcore/planning/PLAN-100-FEATURES.md`)
 
-> Auth is **localAuth**. YJS app-layer encrypt = **dual-ready** after `ENCRYPTION_READY`. Stripe optional (`docs/STRIPE_AND_PLANS.md`).
+> Auth is **localAuth**. YJS wire: **envelope-when-ready** (EDGE_MESH SYNC when all peers dual-ready). Stripe optional.
 
 ## Summary counts
 
 | Bucket | Count | Rule of thumb |
 |--------|------:|---------------|
-| Implemented | 17 | ≥85% and core ACs met |
-| Partial | 3 | Usable with material gaps |
+| Implemented | 18 | ≥85% and core ACs met |
+| Partial | 2 | Usable with material gaps |
 | Skeleton | 1 | Mock / placeholder |
-| **Average** | **~87%** | Simple mean of 21 SRC features |
+| **Average** | **~88%** | Simple mean of 21 SRC features |
 
 ## Feature Status (honest audit + session fixes)
 

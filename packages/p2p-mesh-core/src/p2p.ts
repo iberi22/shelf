@@ -144,6 +144,18 @@ class P2PManager {
 	 * Set false to force DTLS-only for YJS (debug / regression).
 	 */
 	public encryptYjsWhenDualReady = true;
+	/**
+	 * Phase E wire path for local CRDT patches:
+	 * - `legacy`: always YJS_UPDATE (encrypted when dual-ready)
+	 * - `envelope-when-ready`: when all connected peers are dual-ready and an
+	 *   edgeYjsRelay is registered, broadcast via EDGE_MESH_ENVELOPE SYNC only
+	 *   (collapses dual protocol to a single type for that mesh).
+	 */
+	public yjsWireMode: "legacy" | "envelope-when-ready" = "envelope-when-ready";
+	/** Set by EdgeMeshTransportBinder to publish CRDT via edge-mesh envelopes. */
+	private edgeYjsRelay:
+		| ((update: Uint8Array, branchId?: string) => Promise<void>)
+		| null = null;
 	private peerBranches: Map<string, string> = new Map();
 	private health = createPeerHealthMonitor({
 		staleAfterMs: 30000,
@@ -287,6 +299,36 @@ class P2PManager {
 		return false;
 	}
 
+	/**
+	 * Phase E: host app registers EdgeMesh.broadcastYjsUpdate as the envelope path.
+	 * Pass null to detach (falls back to legacy YJS_UPDATE).
+	 */
+	public setEdgeYjsRelay(
+		relay: ((update: Uint8Array, branchId?: string) => Promise<void>) | null,
+	): void {
+		this.edgeYjsRelay = relay;
+	}
+
+	/** True when every open connection is dual-ready for app-layer crypto. */
+	public areAllConnectedPeersDualReady(): boolean {
+		const peers = this.getConnectedPeerIds();
+		if (peers.length === 0) return false;
+		return peers.every((id) => this.dualReadyEncryption.has(id));
+	}
+
+	/** Observability: which wire path local CRDT patches will use. */
+	public getActiveYjsWirePath(): "legacy-yjs" | "edge-envelope" | "idle" {
+		if (this.getConnectedPeerIds().length === 0) return "idle";
+		if (
+			this.yjsWireMode === "envelope-when-ready" &&
+			this.edgeYjsRelay &&
+			this.areAllConnectedPeersDualReady()
+		) {
+			return "edge-envelope";
+		}
+		return "legacy-yjs";
+	}
+
 	private initYjsSync() {
 		if (this.yjsSyncInitialized) return;
 		this.yjsSyncInitialized = true;
@@ -294,24 +336,51 @@ class P2PManager {
 		dbSync.onChange((update, origin) => {
 			if (!dbSync.isReady) return;
 			// Only broadcast if the update originated locally to prevent infinite loops
-			const isLocal = typeof origin === "object" && origin !== null ? (origin as any).origin === "local" : origin === "local";
-			if (isLocal) {
-				const branchId = typeof origin === "object" && origin !== null ? (origin as any).branchId : undefined;
-				const message: SyncMessage = {
-					type: "YJS_UPDATE",
-					payload: { update: toHex(update), branchId },
-				};
+			const isLocal =
+				typeof origin === "object" && origin !== null
+					? (origin as { origin?: string }).origin === "local"
+					: origin === "local";
+			if (!isLocal) return;
 
-				this.broadcast(message);
+			const branchId =
+				typeof origin === "object" && origin !== null
+					? (origin as { branchId?: string }).branchId
+					: undefined;
 
-				// Retry the same patch a couple of times to recover from transient
-				// data-channel drops. Yjs updates are idempotent, so this is safe.
-				for (const delay of this.yjsRetryDelays) {
-					setTimeout(() => {
-						if (!this.connections.size) return;
-						this.broadcast(message);
-					}, delay);
-				}
+			// Phase E: single wire type when envelope relay is ready for full mesh
+			if (
+				this.yjsWireMode === "envelope-when-ready" &&
+				this.edgeYjsRelay &&
+				this.areAllConnectedPeersDualReady()
+			) {
+				void this.edgeYjsRelay(update, branchId).catch((err) =>
+					logger.error("[P2P] edge YJS envelope relay failed", err),
+				);
+				return;
+			}
+
+			const message: SyncMessage = {
+				type: "YJS_UPDATE",
+				payload: { update: toHex(update), branchId },
+			};
+
+			this.broadcast(message);
+
+			// Retry the same patch a couple of times to recover from transient
+			// data-channel drops. Yjs updates are idempotent, so this is safe.
+			for (const delay of this.yjsRetryDelays) {
+				setTimeout(() => {
+					if (!this.connections.size) return;
+					// If mesh became fully dual-ready mid-retry, stop legacy retries
+					if (
+						this.yjsWireMode === "envelope-when-ready" &&
+						this.edgeYjsRelay &&
+						this.areAllConnectedPeersDualReady()
+					) {
+						return;
+					}
+					this.broadcast(message);
+				}, delay);
 			}
 		});
 

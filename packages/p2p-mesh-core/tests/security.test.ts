@@ -293,4 +293,29 @@ describe('Security: dual-ready YJS app encryption', () => {
     p2p.dualReadyEncryption.clear();
     p2p.encryptionKeys.clear();
   });
+
+  it('getActiveYjsWirePath prefers edge-envelope when dual-ready + relay set', () => {
+    const p2p: any = p2pManager;
+    p2p.dualReadyEncryption.clear();
+    p2p.encryptionKeys.clear();
+    p2p.yjsWireMode = 'envelope-when-ready';
+    p2p.setEdgeYjsRelay(null);
+    p2p.connections = new Map();
+
+    expect(p2pManager.getActiveYjsWirePath()).toBe('idle');
+
+    p2p.connections.set('p1', { open: true });
+    p2p.getConnectedPeerIds = () => ['p1'];
+    expect(p2pManager.getActiveYjsWirePath()).toBe('legacy-yjs');
+
+    p2p.dualReadyEncryption.add('p1');
+    p2p.encryptionKeys.set('p1', {} as CryptoKey);
+    p2p.setEdgeYjsRelay(async () => {});
+    expect(p2pManager.getActiveYjsWirePath()).toBe('edge-envelope');
+
+    p2p.setEdgeYjsRelay(null);
+    p2p.dualReadyEncryption.clear();
+    p2p.encryptionKeys.clear();
+    p2p.yjsWireMode = 'envelope-when-ready';
+  });
 });
