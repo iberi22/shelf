@@ -117,7 +117,7 @@ export interface PurchaseOrder extends BaseEntity {
 	supplierId: string;
 	supplierName: string;
 	items: PurchaseOrderItem[];
-	status: "pending" | "received";
+	status: "pending" | "received" | "cancelled";
 	orderDate: string; // YYYY-MM-DD
 	receivedDate?: string; // YYYY-MM-DD
 	branchId?: string;

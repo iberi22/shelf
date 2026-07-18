@@ -1,31 +1,31 @@
 # Shelf - Functional Requirements (SRC-FUN)
 
-> Base CRUD and operational features are implemented, but the full strategic roadmap is not 100% complete.
-> Current percentages are tracked in `apps/shelf-inventory/FEATURES_STATUS.md`.
-> Source of truth for generated feature definitions: `.gitcore/features.json`.
+> Honest audit 2026-07-17: percentages reflect code + tests vs acceptance criteria (not aspirational 100%).
+> **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
+> Human-readable mirror: `apps/shelf-inventory/FEATURES_STATUS.md`
 
 ## Status Summary
 
 | SRC ID | Feature | Priority | Status | Implementation |
 | --- | --- | --- | --- | ---: |
-| SRC-FUN-001 | Inventory Management | P0 | Implemented | 100% |
-| SRC-FUN-002 | Sales Tracking | P0 | Implemented | 100% |
-| SRC-FUN-003 | Dashboard | P0 | Implemented | 100% |
-| SRC-FUN-004 | Contact Management | P0 | Implemented | 100% |
-| SRC-FUN-005 | Purchase Orders | P1 | Implemented | 100% |
-| SRC-FUN-006 | Barcode/QR Scanner | P1 | Implemented | 100% |
-| SRC-FUN-007 | AI Assistant | P2 | Partial | 80% |
-| SRC-FUN-008 | Authentication & Cloud Sync | P0 | Partial | 65% |
-| SRC-FUN-009 | Monetization (Ads + Subscriptions) | P0 | Partial | 75% |
-| SRC-FUN-010 | Multi-language Support | P1 | Implemented | 100% |
-| SRC-FUN-011 | Settings & Data Management | P1 | Implemented | 95% |
-| SRC-FUN-012 | Reports & Analytics | P1 | Implemented | 100% |
-| SRC-FUN-013 | Multi-user Access (Pyme Plan) | P2 | Partial | 70% |
-| SRC-FUN-014 | Data Import (CSV) | P2 | Implemented | 100% |
+| SRC-FUN-001 | Inventory Management | P0 | Implemented | 96% |
+| SRC-FUN-002 | Sales Tracking | P0 | Implemented | 97% |
+| SRC-FUN-003 | Dashboard | P0 | Partial | 68% |
+| SRC-FUN-004 | Contact Management | P0 | Implemented | 98% |
+| SRC-FUN-005 | Purchase Orders | P1 | Partial | 84% |
+| SRC-FUN-006 | Barcode/QR Scanner | P1 | Implemented | 82% |
+| SRC-FUN-007 | AI Assistant | P2 | Partial | 72% |
+| SRC-FUN-008 | Authentication & Cloud Sync | P0 | Partial | 40% |
+| SRC-FUN-009 | Monetization (Ads + Subscriptions) | P0 | Partial | 42% |
+| SRC-FUN-010 | Multi-language Support | P1 | Implemented | 88% |
+| SRC-FUN-011 | Settings & Data Management | P1 | Implemented | 91% |
+| SRC-FUN-012 | Reports & Analytics | P1 | Implemented | 89% |
+| SRC-FUN-013 | Multi-user Access (Pyme Plan) | P2 | Partial | 58% |
+| SRC-FUN-014 | Data Import (CSV) | P2 | Implemented | 78% |
 
 ## SRC-FUN-001: Inventory Management
 
-**Priority:** P0 | **Status:** Implemented | **Implementation:** 100%
+**Priority:** P0 | **Status:** Implemented | **Implementation:** 96%
 
 **User Story:** Como dueno de negocio, quiero gestionar mi inventario digitalmente para saber exactamente que tengo en stock.
 
@@ -38,7 +38,7 @@
 
 ## SRC-FUN-002: Sales Tracking
 
-**Priority:** P0 | **Status:** Implemented | **Implementation:** 100%
+**Priority:** P0 | **Status:** Implemented | **Implementation:** 97%
 
 **User Story:** Como vendedor, quiero registrar ventas para que el stock se actualice automaticamente.
 
@@ -51,7 +51,7 @@
 
 ## SRC-FUN-003: Dashboard
 
-**Priority:** P0 | **Status:** Implemented | **Implementation:** 100%
+**Priority:** P0 | **Status:** Partial | **Implementation:** 68%
 
 **User Story:** Como dueno, quiero ver un dashboard con mis metricas clave de un vistazo.
 
@@ -64,7 +64,7 @@
 
 ## SRC-FUN-004: Contact Management
 
-**Priority:** P0 | **Status:** Implemented | **Implementation:** 100%
+**Priority:** P0 | **Status:** Implemented | **Implementation:** 98%
 
 **User Story:** Como usuario, quiero gestionar clientes y proveedores desde un mismo lugar.
 
@@ -77,7 +77,7 @@
 
 ## SRC-FUN-005: Purchase Orders
 
-**Priority:** P1 | **Status:** Implemented | **Implementation:** 100%
+**Priority:** P1 | **Status:** Partial | **Implementation:** 84%
 
 **User Story:** Como dueno, quiero crear ordenes de compra a proveedores y que el stock se actualice al recibirlas.
 
@@ -90,7 +90,7 @@
 
 ## SRC-FUN-006: Barcode/QR Scanner
 
-**Priority:** P1 | **Status:** Implemented | **Implementation:** 100%
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 82%
 
 **User Story:** Como usuario de bodega, quiero escanear codigos de barras para no escribir SKUs manualmente.
 
@@ -103,7 +103,7 @@
 
 ## SRC-FUN-007: AI Assistant
 
-**Priority:** P2 | **Status:** Partial | **Implementation:** 80%
+**Priority:** P2 | **Status:** Partial | **Implementation:** 72%
 
 **User Story:** Como usuario Pro, quiero preguntarle a un AI sobre mi inventario en lenguaje natural.
 
@@ -118,24 +118,28 @@
 
 ## SRC-FUN-008: Authentication & Cloud Sync
 
-**Priority:** P0 | **Status:** Partial | **Implementation:** 65%
+**Priority:** P0 | **Status:** Partial | **Implementation:** 40%
 
 **User Story:** Como usuario, quiero crear una cuenta para sincronizar mis datos.
 
-**Acceptance Criteria:**
+**Runtime reality (Audit 2026-07-17):** Auth is **localAuth only** (no Firebase Auth SDK, no Firestore client). Cloud sync remains ROADMAP-003.
 
-1. Registro y login con email y password.
-2. Sync de estado local a Firestore.
-3. Restauracion de datos en otro dispositivo.
-4. Segregacion de datos por usuario.
+**Acceptance Criteria (historical / aspirational):**
 
-**Open Work:** Full cloud sync is not fully verified as the strategic direction. The #87 local-only pivot may require reducing or degrading cloud dependencies.
+1. Registro y login con email y password (AC original: Firebase Auth — **not runtime**).
+2. Sync de estado local a Firestore (**not implemented**).
+3. Restauracion de datos en otro dispositivo (P2P/backup JSON, not cloud login).
+4. Segregacion de datos por usuario (local device profile only).
+
+**Open Work:** Align ACs to localAuth; optional future cloud = ROADMAP-003. Guest tier must not hardcode pyme.
 
 ## SRC-FUN-009: Monetization (Ads + Subscriptions)
 
-**Priority:** P0 | **Status:** Partial | **Implementation:** 75%
+**Priority:** P0 | **Status:** Partial | **Implementation:** 42%
 
 **User Story:** Como negocio, quiero que la app genere ingresos via anuncios y suscripciones.
+
+**Runtime reality (Audit 2026-07-17):** `SubscriptionContext` hardcodes `isPro`/`isPyme` true — ads never show; checkout always looks like current plan.
 
 **Acceptance Criteria:**
 
@@ -145,11 +149,11 @@
 4. Anuncios ocultos para usuarios con suscripcion activa.
 5. AdSense IDs configurados via environment variables.
 
-**Open Work:** Environment variables, backend deployment, and production webhook verification remain required before this should be counted as complete.
+**Open Work:** Wire real tier from localAuth; Stripe backend + webhooks; Basic plan; ads gating.
 
 ## SRC-FUN-010: Multi-language Support
 
-**Priority:** P1 | **Status:** Implemented | **Implementation:** 100%
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 88%
 
 **User Story:** Como usuario, quiero usar la app en mi idioma.
 
@@ -162,7 +166,7 @@
 
 ## SRC-FUN-011: Settings & Data Management
 
-**Priority:** P1 | **Status:** Implemented | **Implementation:** 95%
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 91%
 
 **User Story:** Como usuario, quiero configurar la app y gestionar mis datos.
 
@@ -178,7 +182,7 @@
 
 ## SRC-FUN-012: Reports & Analytics
 
-**Priority:** P1 | **Status:** Implemented | **Implementation:** 100%
+**Priority:** P1 | **Status:** Implemented | **Implementation:** 89%
 
 **User Story:** Como dueno, quiero ver reportes detallados de mi negocio para tomar decisiones.
 
@@ -192,7 +196,7 @@
 
 ## SRC-FUN-013: Multi-user Access (Pyme Plan)
 
-**Priority:** P2 | **Status:** Partial | **Implementation:** 70%
+**Priority:** P2 | **Status:** Partial | **Implementation:** 58%
 
 **User Story:** Como dueno de negocio, quiero invitar a mi equipo con roles y permisos especificos.
 
@@ -207,7 +211,7 @@
 
 ## SRC-FUN-014: Data Import (CSV)
 
-**Priority:** P2 | **Status:** Implemented | **Implementation:** 100%
+**Priority:** P2 | **Status:** Implemented | **Implementation:** 78%
 
 **User Story:** Como usuario con inventario existente, quiero importarlo desde CSV.
 

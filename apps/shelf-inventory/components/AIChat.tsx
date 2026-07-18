@@ -243,23 +243,42 @@ const AIChat: React.FC = () => {
     }
   };
 
+  const engineHint =
+    aiEngine === 'local'
+      ? t('reports.aiEngineHintLocal') || 'Local WebLLM (WebGPU) — data stays on device'
+      : aiEngine === 'nano'
+        ? t('reports.aiEngineHintNano') || 'Gemini Nano (browser built-in)'
+        : aiEngine === 'gemini'
+          ? t('reports.aiEngineHintGemini') || 'Gemini API key (client) — optional proxy URL in settings'
+          : t('reports.aiEngineHintAuto') ||
+            'Auto: local if no Gemini key, else cloud engines';
+
   return (
-    <div className="flex flex-col h-[50vh] md:h-[60vh] p-3 md:p-4">
-      <div className="flex justify-between items-center mb-2 px-1">
-        <p className="text-[10px] text-[#F5F5DC]/40 italic">
-          {t('reports.aiPrivacyNote') ||
-            'Note: A limited subset of your inventory and sales data is used to provide context.'}
+    <div className="flex flex-col h-[50vh] md:h-[60vh] p-3 md:p-4" data-testid="ai-chat-panel">
+      <div className="flex flex-col gap-1 mb-2 px-1">
+        <div className="flex justify-between items-center gap-2">
+          <p className="text-[10px] text-[#F5F5DC]/40 italic">
+            {t('reports.aiPrivacyNote') ||
+              'Note: A limited subset of your inventory and sales data is used to provide context.'}
+          </p>
+          <select
+            value={aiEngine}
+            data-testid="ai-engine-select"
+            onChange={(e) => setAiEngine(e.target.value as 'auto' | 'local' | 'gemini' | 'nano')}
+            className="text-[10px] bg-transparent border border-[#F5F5DC]/20 rounded px-1 py-0.5 text-[#F5F5DC]/60 focus:outline-none"
+            disabled={isAIDisabled}
+          >
+            <option value="auto">Auto</option>
+            <option value="local">Local</option>
+            <option value="gemini">Gemini</option>
+            <option value="nano">Nano</option>
+          </select>
+        </div>
+        <p className="text-[10px] text-[#F5F5DC]/50" data-testid="ai-engine-hint">
+          {isAIDisabled
+            ? t('reports.aiDisabledWelcome') || 'AI requires Pro or Pyme plan'
+            : engineHint}
         </p>
-        <select
-          value={aiEngine}
-          onChange={(e) => setAiEngine(e.target.value as any)}
-          className="text-[10px] bg-transparent border border-[#F5F5DC]/20 rounded px-1 py-0.5 text-[#F5F5DC]/60 focus:outline-none"
-        >
-          <option value="auto">Auto</option>
-          <option value="local">Local</option>
-          <option value="gemini">Gemini</option>
-          <option value="nano">Nano</option>
-        </select>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
@@ -288,26 +307,24 @@ const AIChat: React.FC = () => {
                   </button>
                 </div>
                 {showHelp && (
-                  <div className="text-xs text-[#F5F5DC]/80 space-y-2 mt-3 border-t border-[#F5F5DC]/10 pt-2">
+                  <div
+                    className="text-xs text-[#F5F5DC]/80 space-y-2 mt-3 border-t border-[#F5F5DC]/10 pt-2"
+                    data-testid="ai-help-panel"
+                  >
                     <p>
-                      <strong>¿Cómo funciona?</strong> Puedes preguntarme sobre tus inventarios, ventas recientes o
-                      pedirme análisis (ej. "¿Cuáles son los productos con bajo stock?"). Analizaré tus datos y
-                      responderé.
+                      <strong>{t('reports.aiHelpHowTitle') || 'How it works'}:</strong>{' '}
+                      {t('reports.aiHelpHowBody') ||
+                        'Ask about inventory, recent sales, or analysis (e.g. low stock). I use your local data as context.'}
                     </p>
                     <p>
-                      <strong>Modelos Locales (Local / Nano):</strong> Tienen la gran ventaja de que tus datos nunca
-                      salen de tu dispositivo, garantizando total privacidad. Además,{' '}
-                      <strong>no tienen costo extra</strong> por consumo de API.
+                      <strong>{t('reports.aiHelpLocalTitle') || 'Local / Nano'}:</strong>{' '}
+                      {t('reports.aiHelpLocalBody') ||
+                        'Data stays on-device. No extra API cost. Local uses WebLLM + WebGPU when available.'}
                     </p>
                     <p>
-                      <strong>WEBGPU:</strong> Si eliges 'Local', estamos utilizando WebGPU (si tu navegador lo soporta)
-                      a través de WebLLM para acelerar la inteligencia artificial usando la tarjeta gráfica de tu
-                      dispositivo.
-                    </p>
-                    <p>
-                      <strong>Teléfonos Celulares:</strong> Sí, puedes ejecutar modelos locales en celulares modernos
-                      que soporten WebGPU (como Chrome en Android o Safari 18+ en iOS). Si tu teléfono es muy antiguo o
-                      no soporta WebGPU, el sistema usará automáticamente los modelos en la nube.
+                      <strong>{t('reports.aiHelpCloudTitle') || 'Gemini / proxy'}:</strong>{' '}
+                      {t('reports.aiHelpCloudBody') ||
+                        'Optional API key or proxy URL in Settings. Not required for offline-first use.'}
                     </p>
                   </div>
                 )}
@@ -338,6 +355,7 @@ const AIChat: React.FC = () => {
       <div className="mt-4 flex gap-2 border-t border-[#F5F5DC]/20 pt-4">
         <input
           type="text"
+          data-testid="ai-chat-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -346,6 +364,8 @@ const AIChat: React.FC = () => {
           disabled={isLoading || isAIDisabled || isInitializing}
         />
         <button
+          type="button"
+          data-testid="ai-chat-send"
           onClick={handleSendMessage}
           disabled={isLoading || !input.trim() || isAIDisabled || isInitializing}
           className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-opacity-80 transition-all active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"

@@ -38,7 +38,9 @@ const Dashboard: React.FC = () => {
       {
         titleKey: 'dashboard.totalProducts',
         icon: '📦',
-        getValue: () => state.products.reduce((acc, product) => acc + product.quantity, 0).toString(),
+        // Product count (active SKUs), not sum of stock quantities
+        getValue: () =>
+          state.products.filter((product) => product.isActive !== false).length.toString(),
       },
     ],
     [state.sales, state.products, formatCurrency],

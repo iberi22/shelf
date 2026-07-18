@@ -3,10 +3,13 @@
 - **ID:** SRC-P2P-001
 - **Name:** P2P Mesh Network
 - **Priority:** P0 (Core)
-- **Status:** Partial
-- **Implementation:** 80%
+- **Status:** ⚠️ Partial
+- **Implementation:** 85%
 - **Category:** P2P (P2P Mesh Sync)
-- **SDLC:** Production
+- **SDLC:** Hardening
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
+
+> **Audit 2026-07-17:** Broker PeerJS aún requerido para signaling; Phase D (thin p2p-mesh-core / migración total) abierta; residual invite-and-sync authority/master.
 
 ## Description
 

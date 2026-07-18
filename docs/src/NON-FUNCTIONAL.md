@@ -1,23 +1,28 @@
 # Shelf - Non-Functional Requirements
 
-Last updated: 2026-06-14
+Last updated: 2026-07-17
+
+> Honest audit 2026-07-17. **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
 ## Status Summary
 
 | SRC ID | Requirement | Priority | Status | Implementation |
 | --- | --- | --- | --- | ---: |
-| SRC-PQC-001 | Post-Quantum Cryptography | P0 | Implemented | 90% |
-| SRC-P2P-001 | P2P Mesh Network | P0 | Partial | 80% |
-| SRC-CRDT-001 | CRDT Sync (Yjs) | P0 | Partial | 70% |
-| SRC-EDGE-001 | Edge Mesh Runtime | P0 | Partial | 70% |
-| SRC-PWA-001 | PWA & Offline Support | P0 | Partial | 75% |
-| SRC-QA-001 | Testing Infrastructure | P1 | Partial | 80% |
-| SRC-SEC-001 | Firebase Security Rules | P0 | Partial | 75% |
-| SRC-SEC-002 | Environment Security | P1 | Partial | 75% |
+| SRC-PQC-001 | Post-Quantum Cryptography | P0 | Partial | 78% |
+| SRC-P2P-001 | P2P Mesh Network | P0 | Partial | 85% |
+| SRC-CRDT-001 | CRDT Sync (Yjs) | P0 | Partial | 84% |
+| SRC-EDGE-001 | Edge Mesh Runtime | P0 | Partial | 72% |
+| SRC-PWA-001 | PWA & Offline Support | P0 | Implemented | 86% |
+| SRC-QA-001 | Testing Infrastructure | P1 | Partial | 78% |
+| SRC-GPU-001 | GPU Agent (WebGPU) | P1 | Skeleton | 18% |
+| SRC-SEC-001 | Firebase Security Rules | P0 | Partial | ~40% |
+| SRC-SEC-002 | Environment Security | P1 | Partial | ~70% |
+
+> **SEC note:** SEC items remain partial. No Firestore client in app runtime; rules/env hygiene exist but cloud auth path is not the production truth (localAuth). Percentages for SEC are approximate (not in primary 21-feature SSOT).
 
 ## SRC-PQC-001: Post-Quantum Cryptography
 
-**Priority:** P0 | **Status:** Implemented | **Implementation:** 90%
+**Priority:** P0 | **Status:** Partial | **Implementation:** 78%
 
 **Technical Stack:** `@noble/post-quantum` (ML-KEM-768, ML-DSA-65), AES-GCM, `p2p-mesh-core`
 
@@ -33,7 +38,7 @@ Last updated: 2026-06-14
 
 ## SRC-P2P-001: P2P Mesh Network
 
-**Priority:** P0 | **Status:** Partial | **Implementation:** 80%
+**Priority:** P0 | **Status:** Partial | **Implementation:** 85%
 
 **Technical Stack:** PeerJS, WebRTC, `p2p-mesh-core`, `@shelf/edge-mesh`
 
@@ -50,7 +55,7 @@ Last updated: 2026-06-14
 
 ## SRC-CRDT-001: CRDT Sync (Yjs)
 
-**Priority:** P0 | **Status:** Partial | **Implementation:** 70%
+**Priority:** P0 | **Status:** Partial | **Implementation:** 84%
 
 **Technical Stack:** Yjs, `@shelf/edge-mesh`, Playwright
 
@@ -66,7 +71,7 @@ Last updated: 2026-06-14
 
 ## SRC-EDGE-001: Edge Mesh Runtime
 
-**Priority:** P0 | **Status:** Partial | **Implementation:** 70%
+**Priority:** P0 | **Status:** Partial | **Implementation:** 72%
 
 **Technical Stack:** `@shelf/edge-mesh`, `edge-mesh-react`, Yjs, PeerJS/WebRTC, WebGPU extension point
 
@@ -85,9 +90,9 @@ Last updated: 2026-06-14
 
 ## SRC-PWA-001: PWA & Offline Support
 
-**Priority:** P0 | **Status:** Partial | **Implementation:** 75%
+**Priority:** P0 | **Status:** Implemented | **Implementation:** 86%
 
-**Technical Stack:** `vite-plugin-pwa`, Workbox, local storage, IndexedDB roadmap
+**Technical Stack:** `vite-plugin-pwa`, Workbox, local storage, IndexedDB
 
 **Acceptance Criteria:**
 
@@ -101,7 +106,7 @@ Last updated: 2026-06-14
 
 ## SRC-QA-001: Testing Infrastructure
 
-**Priority:** P1 | **Status:** Partial | **Implementation:** 80%
+**Priority:** P1 | **Status:** Partial | **Implementation:** 78%
 
 **Technical Stack:** Playwright, Vitest, Biome, GitHub Actions, Vercel
 
@@ -116,9 +121,23 @@ Last updated: 2026-06-14
 
 **Open Work:** `p2p-sync-advanced.spec.ts` is blocked by overlay helper behavior, manual browser verification is blocked by the landing translation bug, and Dependabot vulnerabilities must be audited before a broad release.
 
+## SRC-GPU-001: GPU Agent (WebGPU)
+
+**Priority:** P1 | **Status:** Skeleton | **Implementation:** 18%
+
+**Technical Stack:** `@shelf/gpu-agent`, WebGPU API (stub)
+
+**Acceptance Criteria:**
+
+1. WebGPU tenant exposed via edge-mesh.
+2. Local edge agent task execution.
+3. Reusable `gpu-agent` package.
+
+**Audit 2026-07-17:** Package scaffold only. `executeTask` is mock delay+string; `verifyTask` placeholder; no mesh task routing; no package tests. WebLLM uses `isWebGpuSupported` only — not `GpuAgent.executeTask`.
+
 ## SRC-SEC-001: Firebase Security Rules
 
-**Priority:** P0 | **Status:** Partial | **Implementation:** 75%
+**Priority:** P0 | **Status:** Partial | **Implementation:** ~40%
 
 **Acceptance Criteria:**
 
@@ -126,11 +145,13 @@ Last updated: 2026-06-14
 2. Data segregation by user.
 3. Cloud Functions secrets configured.
 
-**Open Work:** Firebase/cloud dependencies should be re-evaluated against #87 before expanding this as the long-term architecture.
+**Audit 2026-07-17:** `firestore.rules` may exist, but **no Firestore client** in app runtime (localAuth only). Cloud rules are not the active data path. Treat as partial / legacy until ROADMAP-003.
+
+**Open Work:** Re-evaluate Firebase/cloud against local-first architecture before expanding as long-term security model.
 
 ## SRC-SEC-002: Environment Security
 
-**Priority:** P1 | **Status:** Partial | **Implementation:** 75%
+**Priority:** P1 | **Status:** Partial | **Implementation:** ~70%
 
 **Acceptance Criteria:**
 
@@ -138,5 +159,7 @@ Last updated: 2026-06-14
 2. `.env.example` documents required values.
 3. Production and development secrets are separated.
 4. Stripe webhook secret is verified in production.
+
+**Audit 2026-07-17:** Env patterns exist; Stripe live webhooks and full production secret verification remain open. SEC items stay partial.
 
 **Open Work:** Production environment verification and Dependabot vulnerability audit remain required.

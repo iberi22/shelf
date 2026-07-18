@@ -20,6 +20,8 @@ import { logger, setLoggerPeerId } from "./utils/logger";
 
 export type SyncMessage =
 	| { type: "ENCRYPTED_PAYLOAD"; payload: { ciphertext: string } }
+	/** Sent after local AES key is ready; peer marks dual-ready when both have keys. */
+	| { type: "ENCRYPTION_READY"; payload?: { v?: number } }
 	| { type: "STATE_UPDATE"; payload: Partial<AppState> }
 	| { type: "REQUEST_FULL_STATE" }
 	| { type: "PROMOTE_ADMIN"; payload: { targetPeerId: string } }
@@ -132,6 +134,28 @@ class P2PManager {
 	private connections: Map<string, DataConnection> = new Map();
 	private sharedSecrets: Map<string, Uint8Array> = new Map();
 	private encryptionKeys: Map<string, CryptoKey> = new Map();
+	/** Peers for which we hold AES key AND received ENCRYPTION_READY (mutual). */
+	private dualReadyEncryption: Set<string> = new Set();
+	/** ENCRYPTION_READY arrived before our setupEncryption finished. */
+	private pendingEncryptionReady: Set<string> = new Set();
+	/**
+	 * When true (default), YJS_* is app-layer encrypted only after dual-ready.
+	 * Before dual-ready, YJS falls back to WebRTC DTLS (plain SyncMessage).
+	 * Set false to force DTLS-only for YJS (debug / regression).
+	 */
+	public encryptYjsWhenDualReady = true;
+	/**
+	 * Phase E wire path for local CRDT patches:
+	 * - `legacy`: always YJS_UPDATE (encrypted when dual-ready)
+	 * - `envelope-when-ready`: when all connected peers are dual-ready and an
+	 *   edgeYjsRelay is registered, broadcast via EDGE_MESH_ENVELOPE SYNC only
+	 *   (collapses dual protocol to a single type for that mesh).
+	 */
+	public yjsWireMode: "legacy" | "envelope-when-ready" = "envelope-when-ready";
+	/** Set by EdgeMeshTransportBinder to publish CRDT via edge-mesh envelopes. */
+	private edgeYjsRelay:
+		| ((update: Uint8Array, branchId?: string) => Promise<void>)
+		| null = null;
 	private peerBranches: Map<string, string> = new Map();
 	private health = createPeerHealthMonitor({
 		staleAfterMs: 30000,
@@ -233,9 +257,16 @@ class P2PManager {
 
 	private isLocalAuthorityPeer(): boolean {
 		if (!this.localPeerId) return false;
+		// Prefer CRDT authority (masterPeerId / linkedNodes.isMaster)
+		if (dbSync.isLocalAuthority()) return true;
 		const masterId = this.getMasterPeerId();
 		if (masterId) return masterId === this.localPeerId;
-		return this.role === "admin";
+		// Bootstrap: UI admin with no master yet becomes master so CHANGE_ROLE can flow
+		if (this.role === "admin") {
+			dbSync.setMasterPeerId(this.localPeerId);
+			return dbSync.isLocalAuthority();
+		}
+		return false;
 	}
 
 	private isAuthorityMessage(message: SyncMessage): boolean {
@@ -246,9 +277,56 @@ class P2PManager {
 		);
 	}
 
+	/**
+	 * Accept authority messages only from the mesh master.
+	 * Bootstrap: if master is not yet known on this node (Yjs metadata lag),
+	 * adopt the first PQC-verified authority sender as master.
+	 */
 	private isAuthorizedAuthoritySender(fromPeerId: string): boolean {
 		const masterId = this.getMasterPeerId();
-		return Boolean(masterId && fromPeerId === masterId);
+		if (masterId) return fromPeerId === masterId;
+		if (dbSync.isAuthorityPeerId(fromPeerId)) return true;
+		if (dbSync.isPeerVerified(fromPeerId)) {
+			// Mesh bootstrap — first verified authority peer becomes master
+			dbSync.setMasterPeerId(fromPeerId);
+			dbSync.updateLinkedNode(
+				fromPeerId,
+				{ role: "admin", isMaster: true },
+				fromPeerId,
+			);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Phase E: host app registers EdgeMesh.broadcastYjsUpdate as the envelope path.
+	 * Pass null to detach (falls back to legacy YJS_UPDATE).
+	 */
+	public setEdgeYjsRelay(
+		relay: ((update: Uint8Array, branchId?: string) => Promise<void>) | null,
+	): void {
+		this.edgeYjsRelay = relay;
+	}
+
+	/** True when every open connection is dual-ready for app-layer crypto. */
+	public areAllConnectedPeersDualReady(): boolean {
+		const peers = this.getConnectedPeerIds();
+		if (peers.length === 0) return false;
+		return peers.every((id) => this.dualReadyEncryption.has(id));
+	}
+
+	/** Observability: which wire path local CRDT patches will use. */
+	public getActiveYjsWirePath(): "legacy-yjs" | "edge-envelope" | "idle" {
+		if (this.getConnectedPeerIds().length === 0) return "idle";
+		if (
+			this.yjsWireMode === "envelope-when-ready" &&
+			this.edgeYjsRelay &&
+			this.areAllConnectedPeersDualReady()
+		) {
+			return "edge-envelope";
+		}
+		return "legacy-yjs";
 	}
 
 	private initYjsSync() {
@@ -258,24 +336,51 @@ class P2PManager {
 		dbSync.onChange((update, origin) => {
 			if (!dbSync.isReady) return;
 			// Only broadcast if the update originated locally to prevent infinite loops
-			const isLocal = typeof origin === "object" && origin !== null ? (origin as any).origin === "local" : origin === "local";
-			if (isLocal) {
-				const branchId = typeof origin === "object" && origin !== null ? (origin as any).branchId : undefined;
-				const message: SyncMessage = {
-					type: "YJS_UPDATE",
-					payload: { update: toHex(update), branchId },
-				};
+			const isLocal =
+				typeof origin === "object" && origin !== null
+					? (origin as { origin?: string }).origin === "local"
+					: origin === "local";
+			if (!isLocal) return;
 
-				this.broadcast(message);
+			const branchId =
+				typeof origin === "object" && origin !== null
+					? (origin as { branchId?: string }).branchId
+					: undefined;
 
-				// Retry the same patch a couple of times to recover from transient
-				// data-channel drops. Yjs updates are idempotent, so this is safe.
-				for (const delay of this.yjsRetryDelays) {
-					setTimeout(() => {
-						if (!this.connections.size) return;
-						this.broadcast(message);
-					}, delay);
-				}
+			// Phase E: single wire type when envelope relay is ready for full mesh
+			if (
+				this.yjsWireMode === "envelope-when-ready" &&
+				this.edgeYjsRelay &&
+				this.areAllConnectedPeersDualReady()
+			) {
+				void this.edgeYjsRelay(update, branchId).catch((err) =>
+					logger.error("[P2P] edge YJS envelope relay failed", err),
+				);
+				return;
+			}
+
+			const message: SyncMessage = {
+				type: "YJS_UPDATE",
+				payload: { update: toHex(update), branchId },
+			};
+
+			this.broadcast(message);
+
+			// Retry the same patch a couple of times to recover from transient
+			// data-channel drops. Yjs updates are idempotent, so this is safe.
+			for (const delay of this.yjsRetryDelays) {
+				setTimeout(() => {
+					if (!this.connections.size) return;
+					// If mesh became fully dual-ready mid-retry, stop legacy retries
+					if (
+						this.yjsWireMode === "envelope-when-ready" &&
+						this.edgeYjsRelay &&
+						this.areAllConnectedPeersDualReady()
+					) {
+						return;
+					}
+					this.broadcast(message);
+				}, delay);
 			}
 		});
 
@@ -618,6 +723,11 @@ class P2PManager {
 					return;
 				}
 
+				if (message.type === "ENCRYPTION_READY") {
+					this.onEncryptionReady(conn.peer);
+					return;
+				}
+
 				if (message.type === "PQC_KEM_REPLY") {
 					const sharedSecret = decapsulate(
 						fromHex(message.payload.ciphertext),
@@ -826,6 +936,7 @@ class P2PManager {
 			});
 
 			conn.on("close", () => {
+				this.clearPeerCrypto(conn.peer);
 				this.connections.delete(conn.peer);
 				this.sharedSecrets.delete(conn.peer);
 				this.lastMessageTime.delete(conn.peer);
@@ -962,9 +1073,9 @@ class P2PManager {
 			return;
 		}
 
-		// Encrypt sensitive messages if we have a shared key
+		// Encrypt sensitive messages if we have a shared key (YJS only when dual-ready)
 		const key = this.encryptionKeys.get(peerId);
-		if (key && this.isSensitive(message)) {
+		if (key && this.shouldEncryptMessage(peerId, message)) {
 			const ciphertext = await encryptData(JSON.stringify(message), key);
 			conn.send({
 				type: "ENCRYPTED_PAYLOAD",
@@ -975,27 +1086,99 @@ class P2PManager {
 		}
 	}
 
+	/** Authority/recovery always; YJS only after mutual ENCRYPTION_READY. */
+	private shouldEncryptMessage(peerId: string, message: SyncMessage): boolean {
+		if (
+			[
+				"PROMOTE_ADMIN",
+				"CHANGE_ROLE",
+				"UPDATE_PEER_PERMISSIONS",
+				"RECOVERY_APPROVED",
+			].includes(message.type)
+		) {
+			return true;
+		}
+		if (
+			message.type === "YJS_UPDATE" ||
+			message.type === "YJS_SYNC_REQUEST"
+		) {
+			return (
+				this.encryptYjsWhenDualReady && this.dualReadyEncryption.has(peerId)
+			);
+		}
+		return false;
+	}
+
+	/** Authority/recovery types always sensitive (YJS uses dual-ready path). */
 	private isSensitive(message: SyncMessage): boolean {
-		// Authority/recovery always app-layer encrypted when a peer AES key exists.
-		// CRDT (YJS_*) stays on WebRTC DTLS for now: encrypting YJS before both peers
-		// finish setupEncryption caused silent drops (handleEncryptedMessage returns if no key)
-		// and broke multi-peer product sync. Track dual-ready encrypt as follow-up.
 		return [
 			"PROMOTE_ADMIN",
 			"CHANGE_ROLE",
 			"UPDATE_PEER_PERMISSIONS",
 			"RECOVERY_APPROVED",
+			"YJS_UPDATE",
+			"YJS_SYNC_REQUEST",
 		].includes(message.type);
+	}
+
+	/** Test/observability: true when YJS would be app-encrypted for this peer. */
+	public isYjsAppEncryptedForPeer(peerId: string): boolean {
+		return (
+			this.encryptYjsWhenDualReady &&
+			this.dualReadyEncryption.has(peerId) &&
+			this.encryptionKeys.has(peerId)
+		);
+	}
+
+	private onEncryptionReady(peerId: string) {
+		if (this.encryptionKeys.has(peerId)) {
+			const wasReady = this.dualReadyEncryption.has(peerId);
+			this.dualReadyEncryption.add(peerId);
+			this.pendingEncryptionReady.delete(peerId);
+			if (!wasReady) {
+				logger.log(`[PQC] Dual-ready encryption with ${peerId} (YJS app encrypt ON)`);
+				// Re-sync CRDT so subsequent deltas can go encrypted
+				this.requestYjsSync(peerId);
+			}
+		} else {
+			// Peer is ready before we finished setupEncryption
+			this.pendingEncryptionReady.add(peerId);
+		}
 	}
 
 	private async setupEncryption(peerId: string, sharedSecret: Uint8Array) {
 		const key = await importPQCSharedSecret(toHex(sharedSecret));
 		this.encryptionKeys.set(peerId, key);
+		// Announce we can decrypt ENCRYPTED_PAYLOAD from this peer
+		const conn = this.connections.get(peerId);
+		if (conn?.open) {
+			try {
+				conn.send({ type: "ENCRYPTION_READY", payload: { v: 1 } });
+			} catch (e) {
+				logger.warn(`[PQC] Failed to send ENCRYPTION_READY to ${peerId}`, e);
+			}
+		}
+		// If peer already announced ready, promote to dual-ready
+		if (this.pendingEncryptionReady.has(peerId)) {
+			this.onEncryptionReady(peerId);
+		}
+	}
+
+	private clearPeerCrypto(peerId: string) {
+		this.encryptionKeys.delete(peerId);
+		this.sharedSecrets.delete(peerId);
+		this.dualReadyEncryption.delete(peerId);
+		this.pendingEncryptionReady.delete(peerId);
 	}
 
 	private async handleEncryptedMessage(fromPeerId: string, ciphertext: string) {
 		const key = this.encryptionKeys.get(fromPeerId);
-		if (!key) return;
+		if (!key) {
+			logger.warn(
+				`[SECURITY] Dropped ENCRYPTED_PAYLOAD from ${fromPeerId} (no local AES key yet)`,
+			);
+			return;
+		}
 
 		try {
 			const decrypted = await decryptData(ciphertext, key);
@@ -1250,18 +1433,20 @@ class P2PManager {
 		if (conn) {
 			conn.close();
 			this.connections.delete(peerId);
-			this.sharedSecrets.delete(peerId);
+			this.clearPeerCrypto(peerId);
 			this.health.markOffline(peerId);
 			this.notifyConnectionChange();
 		}
 	}
 
 	public disconnect() {
+		for (const peerId of Array.from(this.connections.keys())) {
+			this.clearPeerCrypto(peerId);
+		}
 		for (const conn of Array.from(this.connections.values())) {
 			conn.close();
 		}
 		this.connections.clear();
-		this.sharedSecrets.clear();
 		this.pendingConnectionRequests.clear();
 		this.peer?.destroy();
 		this.peer = null;

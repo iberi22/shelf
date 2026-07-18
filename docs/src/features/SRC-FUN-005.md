@@ -3,9 +3,13 @@
 - **ID:** SRC-FUN-005
 - **Nombre:** Purchase Orders
 - **Prioridad:** P1 (Importante)
-- **Estado:** ✅ Implementado
+- **Estado:** ⚠️ Partial
+- **Implementation:** 84%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Production
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
+
+> **Audit 2026-07-17:** Falta status `cancelled` en dominio y UI; sin E2E que assert stock on receive; lista única sin tabs/filtros por estado.
 
 ## Descripción
 Órdenes de compra a proveedores con estados (pendiente, recibida, cancelada). Al marcar como recibida, el stock se incrementa automáticamente.

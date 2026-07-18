@@ -3,9 +3,11 @@
 - **ID:** SRC-FUN-014
 - **Nombre:** Data Import (CSV)
 - **Prioridad:** P2 (Nice to have)
-- **Estado:** ✅ Implementado
+- **Estado:** ✅ Implemented
+- **Implementation:** 78%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Production
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
 ## Descripción
 Importación de inventario desde archivos CSV con parseo automático de columnas, validación de datos y feedback visual del proceso.

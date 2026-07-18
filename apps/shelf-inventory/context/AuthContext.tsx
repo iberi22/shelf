@@ -26,6 +26,8 @@ interface AuthContextType {
   revokeDevice: (deviceId: string) => void;
   loginLocal: (email: string, password: string) => Promise<void>;
   createLocalAccount: (email: string, password: string) => Promise<{ seed: string[] }>;
+  /** Update local/guest subscription tier and refresh session user (drives ads/pro gates). */
+  setSubscriptionTier: (tier: User['subscriptionTier']) => void;
 }
 
 const hashPin = async (pin: string): Promise<string> => {
@@ -94,7 +96,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const guestUser: User = {
       uid: existingPeerId,
       email: null,
-      subscriptionTier: 'pyme', // Guests get full access for offline demo
+      // Free by default so ads/gates are honest. Opt-in: localStorage shelf_demo_full_access=true
+      subscriptionTier: 'free',
       isGuest: true,
     };
     localStorage.setItem('guest_user', JSON.stringify(guestUser));
@@ -186,6 +189,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { seed };
   };
 
+  const setSubscriptionTier = (tier: User['subscriptionTier']) => {
+    // Persisted override — wins over shelf_demo_full_access in SubscriptionContext
+    localStorage.setItem('shelf_subscription_tier_override', tier);
+    if (tier === 'free') {
+      localStorage.removeItem('shelf_demo_full_access');
+    }
+    if (user?.isGuest || !user) {
+      const base =
+        user ||
+        ({
+          uid: localStorage.getItem('shelf_local_peer_id') || `guest_${Date.now()}`,
+          email: null,
+          isGuest: true,
+        } as User);
+      const next = { ...base, subscriptionTier: tier, isGuest: true as const };
+      localStorage.setItem('guest_user', JSON.stringify(next));
+      setUser(next);
+    } else {
+      localAuthManager.updateSubscriptionTier(tier);
+      const refreshed = localAuthManager.getCurrentUser();
+      if (refreshed) setUser({ ...refreshed, subscriptionTier: tier });
+    }
+    window.dispatchEvent(new Event('shelf-tier-changed'));
+  };
+
   const value = {
     user,
     isLoading,
@@ -206,6 +234,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     revokeDevice,
     loginLocal,
     createLocalAccount,
+    setSubscriptionTier,
   };
 
   return (

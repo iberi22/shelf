@@ -79,6 +79,30 @@ const PurchaseOrders: React.FC = () => {
     }
   };
 
+  const handleCancel = (po: PurchaseOrder) => {
+    if (!canEdit || po.status !== 'pending') return;
+    if (window.confirm(t('purchases.cancelConfirm') || 'Cancel this purchase order?')) {
+      const updatedPO: PurchaseOrder = {
+        ...po,
+        status: 'cancelled',
+      };
+      dispatch({ type: 'UPDATE_PURCHASE_ORDER', payload: updatedPO });
+      showNotification(t('purchases.cancelSuccess') || 'Purchase order cancelled', 'info');
+    }
+  };
+
+  const statusLabel = (status: PurchaseOrder['status']) => {
+    if (status === 'received') return t('purchases.statusReceived');
+    if (status === 'cancelled') return t('purchases.statusCancelled') || 'Cancelled';
+    return t('purchases.statusPending');
+  };
+
+  const statusClass = (status: PurchaseOrder['status']) => {
+    if (status === 'received') return 'bg-green-500/20 text-green-300';
+    if (status === 'cancelled') return 'bg-red-500/20 text-red-300';
+    return 'bg-yellow-500/20 text-yellow-300';
+  };
+
   const SortableHeader: React.FC<{ sortKey: keyof PurchaseOrder; labelKey: string }> = ({ sortKey, labelKey }) => (
     <th className="p-4">
       <button
@@ -126,10 +150,8 @@ const PurchaseOrders: React.FC = () => {
             <>
               <td className="p-4">{po.supplierName}</td>
               <td className="p-4">
-                <span
-                  className={`px-2 py-1 text-xs font-semibold rounded-full ${po.status === 'received' ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'}`}
-                >
-                  {po.status === 'received' ? t('purchases.statusReceived') : t('purchases.statusPending')}
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusClass(po.status)}`}>
+                  {statusLabel(po.status)}
                 </span>
               </td>
               <td className="p-4">{po.orderDate}</td>
@@ -144,13 +166,24 @@ const PurchaseOrders: React.FC = () => {
                     ✏️
                   </button>
                   {po.status === 'pending' && (
-                    <button
-                      onClick={() => handleMarkAsReceived(po)}
-                      className="text-green-400 transition-transform active:scale-95"
-                      title={t('purchases.markAsReceived')}
-                    >
-                      ✔️
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleMarkAsReceived(po)}
+                        className="text-green-400 transition-transform active:scale-95"
+                        title={t('purchases.markAsReceived')}
+                        data-testid="po-mark-received"
+                      >
+                        ✔️
+                      </button>
+                      <button
+                        onClick={() => handleCancel(po)}
+                        className="text-orange-400 transition-transform active:scale-95"
+                        title={t('purchases.cancel') || 'Cancel'}
+                        data-testid="po-cancel"
+                      >
+                        🚫
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={() => handleDelete(po.id)}
@@ -181,10 +214,8 @@ const PurchaseOrders: React.FC = () => {
                     {t('purchases.orderDate')}: {po.orderDate}
                   </p>
                 </div>
-                <span
-                  className={`flex-shrink-0 px-2 py-1 text-xs font-semibold rounded-full ${po.status === 'received' ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'}`}
-                >
-                  {po.status === 'received' ? t('purchases.statusReceived') : t('purchases.statusPending')}
+                <span className={`flex-shrink-0 px-2 py-1 text-xs font-semibold rounded-full ${statusClass(po.status)}`}>
+                  {statusLabel(po.status)}
                 </span>
               </div>
               <p className="text-xs text-[#F5F5DC]/70 mb-3">
@@ -199,12 +230,21 @@ const PurchaseOrders: React.FC = () => {
                     ✏️ {t('common.edit')}
                   </button>
                   {po.status === 'pending' && (
-                    <button
-                      onClick={() => handleMarkAsReceived(po)}
-                      className="flex-1 bg-transparent border border-green-500/50 text-green-400 font-bold py-2.5 px-3 rounded-lg hover:bg-green-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
-                    >
-                      ✔️ {t('purchases.markAsReceived')}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleMarkAsReceived(po)}
+                        className="flex-1 bg-transparent border border-green-500/50 text-green-400 font-bold py-2.5 px-3 rounded-lg hover:bg-green-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
+                      >
+                        ✔️ {t('purchases.markAsReceived')}
+                      </button>
+                      <button
+                        onClick={() => handleCancel(po)}
+                        className="flex-1 bg-transparent border border-orange-500/50 text-orange-400 font-bold py-2.5 px-3 rounded-lg hover:bg-orange-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
+                        data-testid="po-cancel-mobile"
+                      >
+                        🚫
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={() => handleDelete(po.id)}

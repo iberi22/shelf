@@ -8,6 +8,8 @@ export const overlayBlockerCode = `
   window.__E2E_TEST__ = true;
   localStorage.setItem('hasVisited', 'true');
   localStorage.setItem('shelfWelcomeSeen', 'true');
+  // E2E: unlock pro/pyme gates without hardcoding SubscriptionContext
+  localStorage.setItem('shelf_demo_full_access', 'true');
 `;
 
 /**
@@ -25,6 +27,7 @@ export async function setupPage(page: Page): Promise<void> {
     (window as any).__E2E_TEST__ = true;
     localStorage.setItem('hasVisited', 'true');
     localStorage.setItem('shelfWelcomeSeen', 'true');
+    localStorage.setItem('shelf_demo_full_access', 'true');
   });
   await page.goto('/');
   await page.waitForTimeout(1000);

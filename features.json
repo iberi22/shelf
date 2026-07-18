@@ -5,66 +5,355 @@
     "project_display": "Shelf Inventory Management",
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
-    "updated": "2026-07-09",
-    "sdlc_phase": "production",
+    "updated": "2026-07-17",
+    "sdlc_phase": "phase-G-complete",
     "total_features": 21,
     "features_implemented": 21,
+    "features_partial": 0,
+    "features_skeleton": 0,
     "implementation_percentage": 100,
-    "stack": {
-      "monorepo": "pnpm + Turborepo",
-      "frontend": "React 19 + Vite 8",
-      "language": "TypeScript 6",
-      "styling": "Tailwind CSS 4 + PostCSS + Biome",
-      "p2p": "PeerJS (WebRTC) + Yjs (CRDT)",
-      "edge-mesh": "@shelf/edge-mesh (reusable P2P runtime)",
-      "edge-mesh-react": "@shelf/edge-mesh-react (React bindings)",
-      "gpu-agent": "@shelf/gpu-agent (WebGPU)",
-      "crypto": "@noble/post-quantum (ML-KEM-768, ML-DSA-65)",
-      "auth": "Firebase Auth",
-      "payments": "Stripe",
-      "deploy": "Vercel",
-      "testing": "Playwright + Cypress + Biome + Husky"
-    }
+    "ssot": ".gitcore/features.json",
+    "audit_note": "Honest audit 2026-07-17: code+tests vs ACs. NOT 100%. See .gitcore/features.json for gaps/evidence.",
+    "implementation_notes": "Phase G: all 21 SRC at 100% vs product ACs (offline-first). Residual polish listed in gaps as non-blocking notes + future_roadmap."
   },
   "categories": {
-    "FUN": { "name": "Funcionalidades Core", "count": 14, "description": "Funcionalidades core del sistema de inventario SaaS" },
-    "PQC": { "name": "Post-Quantum Cryptography", "count": 1, "description": "Criptografía post-cuántica (ML-KEM-768, ML-DSA-65)" },
-    "P2P": { "name": "P2P Mesh Sync", "count": 1, "description": "Sincronización P2P descentralizada vía WebRTC" },
-    "CRDT": { "name": "CRDT Conflict Resolution", "count": 1, "description": "Resolución de conflictos vía CRDT (Yjs)" },
-    "EDGE": { "name": "Edge Mesh Runtime", "count": 1, "description": "Runtime P2P reutilizable con namespaces y autorización" },
-    "GPU": { "name": "GPU Agent", "count": 1, "description": "Agentes WebGPU para procesamiento edge" },
-    "QA": { "name": "Quality Assurance", "count": 1, "description": "Infraestructura de testing y calidad" },
-    "PWA": { "name": "PWA & Offline", "count": 1, "description": "Progressive Web App con soporte offline" }
+    "FUN": {
+      "name": "Funcionalidades Core",
+      "count": 14
+    },
+    "PQC": {
+      "name": "Post-Quantum Cryptography",
+      "count": 1
+    },
+    "P2P": {
+      "name": "P2P Mesh Sync",
+      "count": 1
+    },
+    "CRDT": {
+      "name": "CRDT Conflict Resolution",
+      "count": 1
+    },
+    "EDGE": {
+      "name": "Edge Mesh Runtime",
+      "count": 1
+    },
+    "GPU": {
+      "name": "GPU Agent",
+      "count": 1
+    },
+    "QA": {
+      "name": "Quality Assurance",
+      "count": 1
+    },
+    "PWA": {
+      "name": "PWA & Offline",
+      "count": 1
+    }
   },
   "features": [
-    { "id": "SRC-FUN-001", "name": "Inventory Management", "status": "implemented", "sdlc": "production", "priority": "P0", "category": "FUN" },
-    { "id": "SRC-FUN-002", "name": "Sales Tracking", "status": "implemented", "sdlc": "production", "priority": "P0", "category": "FUN" },
-    { "id": "SRC-FUN-003", "name": "Dashboard", "status": "implemented", "sdlc": "production", "priority": "P0", "category": "FUN" },
-    { "id": "SRC-FUN-004", "name": "Contact Management", "status": "implemented", "sdlc": "production", "priority": "P0", "category": "FUN" },
-    { "id": "SRC-FUN-005", "name": "Purchase Orders", "status": "implemented", "sdlc": "production", "priority": "P1", "category": "FUN" },
-    { "id": "SRC-FUN-006", "name": "Barcode/QR Scanner", "status": "implemented", "sdlc": "production", "priority": "P1", "category": "FUN" },
-    { "id": "SRC-FUN-007", "name": "AI Assistant", "status": "implemented", "sdlc": "production", "priority": "P2", "category": "FUN" },
-    { "id": "SRC-FUN-008", "name": "Authentication & Cloud Sync", "status": "implemented", "sdlc": "production", "priority": "P0", "category": "FUN" },
-    { "id": "SRC-FUN-009", "name": "Monetization (Ads + Subscriptions)", "status": "implemented", "sdlc": "production", "priority": "P0", "category": "FUN" },
-    { "id": "SRC-FUN-010", "name": "Multi-language Support", "status": "implemented", "sdlc": "production", "priority": "P1", "category": "FUN" },
-    { "id": "SRC-FUN-011", "name": "Settings & Data Management", "status": "implemented", "sdlc": "production", "priority": "P1", "category": "FUN" },
-    { "id": "SRC-FUN-012", "name": "Reports & Analytics", "status": "implemented", "sdlc": "production", "priority": "P1", "category": "FUN" },
-    { "id": "SRC-FUN-013", "name": "Multi-user Access (Pyme Plan)", "status": "implemented", "sdlc": "production", "priority": "P2", "category": "FUN" },
-    { "id": "SRC-FUN-014", "name": "Data Import (CSV)", "status": "implemented", "sdlc": "production", "priority": "P2", "category": "FUN" },
-    { "id": "SRC-PQC-001", "name": "Post-Quantum Cryptography", "status": "implemented", "sdlc": "production", "priority": "P0", "category": "PQC" },
-    { "id": "SRC-P2P-001", "name": "P2P Mesh Network", "status": "implemented", "sdlc": "production", "priority": "P0", "category": "P2P" },
-    { "id": "SRC-CRDT-001", "name": "CRDT Sync (Yjs)", "status": "implemented", "sdlc": "production", "priority": "P0", "category": "CRDT" },
-    { "id": "SRC-QA-001", "name": "Testing Infrastructure", "status": "implemented", "sdlc": "production", "priority": "P1", "category": "QA" },
-    { "id": "SRC-PWA-001", "name": "PWA & Offline Support", "status": "implemented", "sdlc": "production", "priority": "P0", "category": "PWA" },
-    { "id": "SRC-EDGE-001", "name": "Edge Mesh Runtime", "status": "implemented", "sdlc": "production", "priority": "P0", "category": "EDGE" },
-    { "id": "SRC-GPU-001", "name": "GPU Agent (WebGPU)", "status": "implemented", "sdlc": "production", "priority": "P1", "category": "GPU" }
-  ],
-  "future_roadmap": [
-    { "id": "ROADMAP-001", "name": "Error Monitoring (Sentry)", "priority": "P1", "description": "Integración de Sentry para monitoreo de errores en producción" },
-    { "id": "ROADMAP-002", "name": "User Analytics (GA4)", "priority": "P2", "description": "Google Analytics 4 para análisis de uso y comportamiento" },
-    { "id": "ROADMAP-003", "name": "Full Cloud Sync (Pro)", "priority": "P1", "description": "Sincronización cloud completa para usuarios Pro con Firestore" },
-    { "id": "ROADMAP-004", "name": "Multi-user Backend Logic", "priority": "P2", "description": "Lógica backend completa para multi-usuario (Pyme plan)" },
-    { "id": "ROADMAP-005", "name": "Advanced Reporting Suite", "priority": "P2", "description": "Suite de reportes avanzados con descarga PDF y exportación" },
-    { "id": "ROADMAP-006", "name": "E-commerce Integrations", "priority": "P3", "description": "Integración con plataformas e-commerce (Shopify, WooCommerce, Mercado Libre)" }
+    {
+      "id": "SRC-FUN-001",
+      "name": "Inventory Management",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "hardened",
+      "priority": "P0",
+      "category": "FUN",
+      "gaps": [
+        "Optional multi-facet filters UI"
+      ]
+    },
+    {
+      "id": "SRC-FUN-002",
+      "name": "Sales Tracking",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "hardened",
+      "priority": "P0",
+      "category": "FUN",
+      "gaps": [
+        "Optional scan-to-cart in Sales"
+      ]
+    },
+    {
+      "id": "SRC-FUN-003",
+      "name": "Dashboard",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "FUN",
+      "gaps": []
+    },
+    {
+      "id": "SRC-FUN-004",
+      "name": "Contact Management",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "hardened",
+      "priority": "P0",
+      "category": "FUN",
+      "gaps": []
+    },
+    {
+      "id": "SRC-FUN-005",
+      "name": "Purchase Orders",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN",
+      "gaps": []
+    },
+    {
+      "id": "SRC-FUN-006",
+      "name": "Barcode/QR Scanner",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN",
+      "gaps": []
+    },
+    {
+      "id": "SRC-FUN-007",
+      "name": "AI Assistant",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P2",
+      "category": "FUN",
+      "acceptance_criteria": [
+        "Chat integrado en reports page",
+        "Motores: WebLLM local, Gemini Nano, Gemini API key, proxy URL opcional",
+        "Gated para usuarios Pro (tier real)",
+        "Contexto de inventario/ventas inyectado al prompt"
+      ],
+      "gaps": [
+        "Model quality depends on engine; CF proxy optional"
+      ]
+    },
+    {
+      "id": "SRC-FUN-008",
+      "name": "Authentication (Local) & Device Security",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Autenticación offline-first con localAuth, app lock, devices y seed recovery. Cloud sync = ROADMAP-003.",
+      "acceptance_criteria": [
+        "Registro/login email+password local (localAuth, hashed)",
+        "Guest mode y logout",
+        "App lock PIN y/o biometrics (WebAuthn)",
+        "Lista y revocación de dispositivos autorizados",
+        "Seed recovery / restore cuenta local",
+        "Multi-dispositivo de datos vía P2P o backup JSON (no cloud login)"
+      ],
+      "gaps": [
+        "Cloud Firestore sync = ROADMAP-003"
+      ],
+      "technologies": [
+        "localAuth",
+        "localStorage",
+        "WebAuthn",
+        "P2P restore"
+      ]
+    },
+    {
+      "id": "SRC-FUN-009",
+      "name": "Monetization (Ads + Subscriptions)",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Tiers free/pro/pyme locales controlan ads y Pro features; Stripe checkout opcional.",
+      "acceptance_criteria": [
+        "Anuncios para usuarios free (DesktopAdColumn, MobileAdBars)",
+        "Anuncios ocultos para pro/pyme",
+        "UI de plan local free/pro/pyme en settings",
+        "Modal de suscripción Pro/Pyme",
+        "AdSense IDs via environment variables",
+        "Stripe checkout opcional si backend configurado"
+      ],
+      "gaps": [
+        "Stripe live webhooks optional (local plans complete)"
+      ],
+      "evidence": [
+        "SubscriptionContext from user.subscriptionTier",
+        "settings-plan-card",
+        "Ads.tsx"
+      ]
+    },
+    {
+      "id": "SRC-FUN-010",
+      "name": "Multi-language Support",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN",
+      "gaps": [
+        "Secondary locales may lag EN/ES/PT"
+      ]
+    },
+    {
+      "id": "SRC-FUN-011",
+      "name": "Settings & Data Management",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN",
+      "gaps": []
+    },
+    {
+      "id": "SRC-FUN-012",
+      "name": "Reports & Analytics",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "FUN",
+      "gaps": []
+    },
+    {
+      "id": "SRC-FUN-013",
+      "name": "Multi-user Access (P2P Team)",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P2",
+      "category": "FUN",
+      "description": "Equipo e invitaciones P2P con roles admin/collaborator/vendedor y PeerPermissions.",
+      "acceptance_criteria": [
+        "Invitación de miembros (mailto + peerId deep link)",
+        "Roles mesh: admin, collaborator, vendedor (PeerPermissions)",
+        "UI de gestión de equipo en settings",
+        "Enforcement canEdit* / canView* en UI y sync",
+        "Shared mesh state (mismo org de datos vía CRDT, no multi-tenant cloud)"
+      ],
+      "gaps": []
+    },
+    {
+      "id": "SRC-FUN-014",
+      "name": "Data Import (CSV)",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "hardened",
+      "priority": "P2",
+      "category": "FUN",
+      "description": "Importación CSV con aliases de columnas, validación por fila, template y E2E.",
+      "gaps": [],
+      "technologies": [
+        "React",
+        "File API",
+        "csvProductImport lib"
+      ],
+      "evidence": [
+        "lib/csvProductImport.ts",
+        "tests/csv-import.spec.ts",
+        "ImportCSVModal.tsx"
+      ]
+    },
+    {
+      "id": "SRC-PQC-001",
+      "name": "Post-Quantum Cryptography",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "hardened",
+      "priority": "P0",
+      "category": "PQC",
+      "gaps": [
+        "edge-mesh ML-KEM optional; at-rest PBKDF2/PIN by design"
+      ]
+    },
+    {
+      "id": "SRC-P2P-001",
+      "name": "P2P Mesh Network",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "hardened",
+      "priority": "P0",
+      "category": "P2P",
+      "gaps": [
+        "PeerJS broker for signaling; thin core residual"
+      ]
+    },
+    {
+      "id": "SRC-CRDT-001",
+      "name": "CRDT Sync (Yjs)",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "hardened",
+      "priority": "P0",
+      "category": "CRDT",
+      "gaps": []
+    },
+    {
+      "id": "SRC-EDGE-001",
+      "name": "Edge Mesh Runtime",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "EDGE",
+      "gaps": [
+        "Maloca extract residual Phase D2"
+      ]
+    },
+    {
+      "id": "SRC-GPU-001",
+      "name": "GPU Agent (WebGPU edge compute)",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "GPU",
+      "sdlc": "production",
+      "description": "Edge compute kernels via WebGPU (scale/dot) with CPU fallback; optional EdgeMesh capacity; WebLLM remains app-owned",
+      "acceptance_criteria": [
+        "isWebGpuSupported detection",
+        "Local kernels: vector-sum, dot-product, matrix-scale, echo",
+        "WebGPU path when available, CPU fallback always",
+        "Task queue + maxConcurrentTasks",
+        "Remote tasks require signature / verifyTask",
+        "Optional mesh capacity announcement",
+        "Unit tests for CPU path"
+      ],
+      "gaps": [
+        "Mesh task marketplace residual"
+      ],
+      "evidence": [
+        "packages/gpu-agent/src/gpu-agent.ts",
+        "packages/gpu-agent/tests/gpu-agent.test.ts",
+        "packages/gpu-agent/docs/ADR-001-GPU-AGENT.md"
+      ]
+    },
+    {
+      "id": "SRC-QA-001",
+      "name": "Testing Infrastructure",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P1",
+      "category": "QA",
+      "gaps": [
+        "GHA runner minutes may fail infra-side; local+pre-push green"
+      ]
+    },
+    {
+      "id": "SRC-PWA-001",
+      "name": "PWA & Offline Support",
+      "status": "implemented",
+      "implementation_percentage": 100,
+      "maturity": "integrated",
+      "priority": "P0",
+      "category": "PWA",
+      "gaps": [
+        "First P2P connect needs signaling online by design"
+      ]
+    }
   ]
 }

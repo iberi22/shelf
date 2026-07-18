@@ -3,10 +3,13 @@
 - **ID:** SRC-CRDT-001
 - **Name:** CRDT Sync (Yjs)
 - **Priority:** P0 (Core)
-- **Status:** Partial
-- **Implementation:** 70%
+- **Status:** ⚠️ Partial
+- **Implementation:** 84%
 - **Category:** CRDT (Conflict-free Replicated Data Types)
-- **SDLC:** Production
+- **SDLC:** Hardening
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
+
+> **Audit 2026-07-17:** Remote entity ACL relajada (`isTrustedRemoteWriter`); surgical full-collection revert dead code; branch scoping en metadata, no maps por branch; path principal sigue siendo legacy `YJS_UPDATE`.
 
 ## Description
 

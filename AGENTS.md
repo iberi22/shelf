@@ -116,7 +116,7 @@ Shelf usa el protocolo GitCore. Archivos importantes:
 | Archivo | Propósito |
 |---------|-----------|
 | `.gitcore/ARCHITECTURE.md` | Stack, patrones, capas |
-| `.gitcore/features.json` | 21 features, 100% implementados |
+| `.gitcore/features.json` | 21 features, ~75% real (8 implemented / 12 partial / 1 skeleton) |
 | `.gitcore/SDLC_WORKFLOW.md` | Ciclo de vida: ANALYSIS → DESIGN → IMPLEMENT → TEST → DEPLOY |
 | `.gitcore/AGENT_INDEX.md` | Labels de agentes (jules, opencode, gemini, claude) |
 | `.gitcore/planning/TASK.md` | Tareas activas |

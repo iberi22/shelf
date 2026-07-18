@@ -49,8 +49,9 @@ const NetworkConfig: React.FC = () => {
   const [isInviteModalOpen, setInviteModalOpen] = useState(false);
   const [feedback, setFeedback] = useState('');
 
-  const { isPyme } = useSubscription();
-  const { user, hasAppLock, hasBiometricLock, setAppLock, setBiometricLock } = useAuth();
+  const { isPyme, tier } = useSubscription();
+  const { user, hasAppLock, hasBiometricLock, setAppLock, setBiometricLock, setSubscriptionTier } =
+    useAuth();
   const [newPin, setNewPin] = useState('');
   const [biometricsSupported, setBiometricsSupported] = useState(false);
 
@@ -189,7 +190,7 @@ const NetworkConfig: React.FC = () => {
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-sm font-semibold text-[#F5F5DC]/90">
               <Languages className="h-4 w-4 text-[#4ADE80]" aria-hidden="true" />
-              Idioma
+              {t('settings.language') || t('common.language') || 'Language'}
             </div>
             <p className="mt-1 text-xs text-[#F5F5DC]/60">Cambia el idioma de la interfaz desde configuracion.</p>
           </div>
@@ -336,6 +337,57 @@ const NetworkConfig: React.FC = () => {
         </div>
       </CollapsibleCard>
 
+      {/* Local plan / monetization tier (offline-first; Stripe is optional remote) */}
+      <CollapsibleCard
+        title={t('settings.plan.title') || 'Plan / Subscription'}
+        description={
+          t('settings.plan.description') ||
+          'Local plan controls Pro features and ads. Cloud Stripe checkout is optional when backend is configured.'
+        }
+        icon={<Coins className="h-5 w-5" />}
+        testId="settings-plan-card"
+      >
+        <div className="space-y-3" data-testid="subscription-tier-controls">
+          <p className="text-sm text-[#F5F5DC]/80">
+            {t('settings.plan.current') || 'Current plan'}:{' '}
+            <span className="font-bold text-yellow-400" data-testid="subscription-tier-value">
+              {tier}
+            </span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {(['free', 'pro', 'pyme'] as const).map((plan) => (
+              <button
+                key={plan}
+                type="button"
+                data-testid={`set-tier-${plan}`}
+                onClick={() => {
+                  setSubscriptionTier(plan);
+                  showNotification(
+                    t('settings.plan.updated', { plan }) || `Plan set to ${plan}`,
+                    'success',
+                  );
+                }}
+                className={`text-sm font-bold py-2 px-4 rounded-lg border min-h-[40px] transition-colors active:scale-95 ${
+                  tier === plan
+                    ? 'bg-yellow-400/20 border-yellow-400 text-yellow-300'
+                    : 'bg-transparent border-[#F5F5DC]/40 text-[#F5F5DC] hover:bg-[#F5F5DC]/10'
+                }`}
+              >
+                {plan}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            data-testid="open-subscription-modal-button"
+            onClick={() => openSubscriptionModal()}
+            className="text-sm text-sky-400 hover:text-sky-300 font-semibold"
+          >
+            {t('settings.plan.stripeCheckout') || 'Open Stripe checkout (if configured)'}
+          </button>
+        </div>
+      </CollapsibleCard>
+
       {/* AI Settings */}
       <CollapsibleCard
         title={`🤖 ${t('settings.ai.title')}`}
@@ -347,18 +399,23 @@ const NetworkConfig: React.FC = () => {
           <div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-[#F5F5DC]/90">OCR de Facturas Local</label>
+                <label className="block text-sm font-medium text-[#F5F5DC]/90">
+                  {t('settings.ai.localOcrTitle') || 'Local invoice OCR'}
+                </label>
                 <p className="mt-1 text-xs text-[#F5F5DC]/60">
-                  Usa Tesseract.js para procesar facturas 100% offline. Si está desactivado, se usará la API de Gemini
-                  (requiere internet y API Key).
+                  {t('settings.ai.localOcrDescription') ||
+                    'Use Tesseract.js for 100% offline invoice OCR. When off, Gemini API is used (requires internet and API key).'}
                 </p>
               </div>
               <button
                 type="button"
+                data-testid="toggle-local-ocr"
                 onClick={() => setUseLocalOcr(!useLocalOcr)}
                 className={`bg-transparent border border-[#F5F5DC]/30 text-[#F5F5DC] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-all text-sm cursor-pointer ${useLocalOcr ? 'bg-[#4ADE80]/10 border-[#4ADE80]/30' : ''}`}
               >
-                {useLocalOcr ? 'Local (Activado)' : 'Cloud (Gemini)'}
+                {useLocalOcr
+                  ? t('settings.ai.localOcrOn') || 'Local (On)'
+                  : t('settings.ai.localOcrOff') || 'Cloud (Gemini)'}
               </button>
             </div>
           </div>
@@ -611,6 +668,7 @@ const NetworkConfig: React.FC = () => {
             <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.import.cardDescription')}</p>
             <button
               type="button"
+              data-testid="open-import-csv-button"
               onClick={() => setIsImportModalOpen(true)}
               className="w-full mt-2 text-sm bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 cursor-pointer"
             >

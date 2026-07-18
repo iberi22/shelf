@@ -3,12 +3,16 @@
 - **ID:** SRC-FUN-009
 - **Nombre:** Monetization (Ads + Subscriptions)
 - **Prioridad:** P0 (Core)
-- **Estado:** ✅ Implementado
+- **Estado:** ⚠️ Partial
+- **Implementation:** 42%
 - **Categoría:** FUN (Funcionalidades Core)
-- **SDLC:** Production
+- **SDLC:** Hardening
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
+
+> **Audit 2026-07-17:** `SubscriptionContext` hardcodes `isPro`/`isPyme` true, `isFree` false — ads never show; checkout always appears as current plan. Sin backend Stripe ejecutable en monorepo; plan Basic ausente en modal; tokens auth dummy para checkout.
 
 ## Descripción
-Sistema de monetización con anuncios (DesktopAdColumn, MobileAdBars) para usuarios free y planes de suscripción (Basic, Pro, Pyme) procesados vía Stripe.
+Sistema de monetización con anuncios (DesktopAdColumn, MobileAdBars) para usuarios free y planes de suscripción (Basic, Pro, Pyme) procesados vía Stripe. **UI presente; billing y ads efectivamente stub por hardcode Pro.**
 
 ## Actor Principal
 Usuario Free / Usuario Pro

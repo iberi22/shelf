@@ -3,12 +3,14 @@
 - **ID:** SRC-PWA-001
 - **Nombre:** PWA & Offline Support
 - **Prioridad:** P0 (Core)
-- **Estado:** ✅ Implementado
+- **Estado:** ✅ Implemented
+- **Implementation:** 86%
 - **Categoría:** PWA (PWA & Offline)
 - **SDLC:** Production
+- **SSOT:** `.gitcore/features.json` and `.gitcore/features-details.json`
 
 ## Descripción
-Progressive Web App con soporte offline completo. Instalable, funciona 100% sin conexión a internet, con Service Worker configurado para caching offline y persistencia en localStorage + IndexedDB.
+Progressive Web App con soporte offline. Instalable, opera sin conexión para workflows base, con Service Worker (`vite-plugin-pwa`) y persistencia en localStorage + IndexedDB.
 
 ## Actor Principal
 Usuario Free
