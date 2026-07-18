@@ -134,10 +134,19 @@ export type UserRole = "owner" | "admin" | "member";
 
 export type P2PRole = "admin" | "collaborator" | "vendedor" | "custom";
 
+export type TeamMemberRole = "owner" | P2PRole | "member";
+
 export interface TeamMember {
 	id: string;
 	email: string | null;
-	role: UserRole;
+	role: TeamMemberRole;
+}
+
+export function teamRoleToP2PRole(role: TeamMemberRole): P2PRole {
+	if (role === 'owner' || role === 'admin') return 'admin';
+	if (role === 'vendedor') return 'vendedor';
+	if (role === 'custom') return 'custom';
+	return 'collaborator'; // collaborator + legacy member
 }
 
 export interface PeerPermissions {

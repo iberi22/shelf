@@ -1,4 +1,4 @@
-import type { UserRole } from 'p2p-mesh-core';
+import type { TeamMemberRole } from 'p2p-mesh-core';
 import type React from 'react';
 import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
@@ -16,11 +16,11 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
   const { showNotification } = useUI();
   const { state, dispatch } = useAppContext();
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<UserRole>('member');
+  const [role, setRole] = useState<TeamMemberRole>('collaborator');
   const [error, setError] = useState('');
   const [lastLink, setLastLink] = useState<string | null>(null);
 
-  const generateInviteLink = (peerId: string, inviteRole: UserRole, inviteEmail: string) => {
+  const generateInviteLink = (peerId: string, inviteRole: TeamMemberRole, inviteEmail: string) => {
     const baseUrl = window.location.origin;
     const params = new URLSearchParams({
       peerId,
@@ -113,11 +113,12 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
             id="invite-role"
             data-testid="invite-role-select"
             value={role}
-            onChange={(e) => setRole(e.target.value as UserRole)}
+            onChange={(e) => setRole(e.target.value as TeamMemberRole)}
             className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
           >
-            <option value="member">{t('settings.team.roles.member')}</option>
-            <option value="admin">{t('settings.team.roles.admin')}</option>
+            <option value="collaborator">{t('p2pSync.roleCollaborator') || 'Collaborator'}</option>
+            <option value="admin">{t('p2pSync.roleAdmin') || 'Admin'}</option>
+            <option value="vendedor">{t('p2pSync.roleVendedor') || 'Vendedor'}</option>
           </select>
         </div>
         {lastLink && (
