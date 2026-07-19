@@ -1138,6 +1138,7 @@ const P2PSyncManager: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowConfirmConnectModal(false)}
+                      aria-label={t('p2pSync.close') || 'Cerrar'}
                       className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
                     >
                       <X size={20} />
@@ -1210,6 +1211,7 @@ const P2PSyncManager: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowConfirmConnectModal(false)}
+
                       className="w-full rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444] sm:w-auto"
                     >
                       {t('p2pSync.close') || 'Cerrar'}
@@ -1235,7 +1237,7 @@ const P2PSyncManager: React.FC = () => {
                       <Info size={18} className="text-yellow-400" />
                       {t('p2pSync.infoTitle')}
                     </h3>
-                    <button onClick={() => setShowInfoModal(false)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
+                    <button onClick={() => setShowInfoModal(false)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]" aria-label={t('p2pSync.close') || 'Cerrar'}>
                       <X size={20} />
                     </button>
                   </div>
@@ -1285,6 +1287,7 @@ const P2PSyncManager: React.FC = () => {
                     </h3>
                     <button
                       onClick={() => setShowConfigModal(false)}
+                      aria-label={t('p2pSync.close') || 'Cerrar'}
                       className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
                     >
                       <X size={20} />
@@ -1431,7 +1434,7 @@ const P2PSyncManager: React.FC = () => {
                       <QrCode size={18} className="text-yellow-400" />
                       {t('p2pSync.myQrTitle')}
                     </h3>
-                    <button onClick={() => setShowMyQrModal(false)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
+                    <button onClick={() => setShowMyQrModal(false)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]" aria-label={t('p2pSync.close') || 'Cerrar'}>
                       <X size={20} />
                     </button>
                   </div>
@@ -1504,6 +1507,7 @@ const P2PSyncManager: React.FC = () => {
                     </h3>
                     <button
                       onClick={() => setShowHistoryForPeer(null)}
+                      aria-label={t('p2pSync.close') || 'Cerrar'}
                       className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
                     >
                       <X size={20} />
@@ -1597,7 +1601,7 @@ const P2PSyncManager: React.FC = () => {
                     <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
                       📋 Registro de Actividad
                     </h3>
-                    <button onClick={() => setShowLogsForPeer(null)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
+                    <button onClick={() => setShowLogsForPeer(null)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]" aria-label={t('p2pSync.close') || 'Cerrar'}>
                       <X size={20} />
                     </button>
                   </div>
