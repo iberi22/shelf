@@ -17,33 +17,58 @@ const Dashboard: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isProSectionHidden, setIsProSectionHidden] = useState(false);
 
-  // Define all possible stat cards with their key and how to calculate their value
+  // Pre-calculate stats in a single pass to avoid O(N) operations on every render
+  const { totalRevenue, totalProfit, totalSales, activeProductsCount } = useMemo(() => {
+    let revenue = 0;
+    let profit = 0;
+
+    // Use for loops instead of reduce/filter to minimize GC overhead and array allocations
+    for (let i = 0; i < state.sales.length; i++) {
+      revenue += state.sales[i].totalPrice || 0;
+      profit += state.sales[i].profit || 0;
+    }
+
+    let activeProducts = 0;
+    for (let i = 0; i < state.products.length; i++) {
+      if (state.products[i].isActive !== false) {
+        activeProducts++;
+      }
+    }
+
+    return {
+      totalRevenue: revenue,
+      totalProfit: profit,
+      totalSales: state.sales.length,
+      activeProductsCount: activeProducts
+    };
+  }, [state.sales, state.products]);
+
+  // Define all possible stat cards with their key and pre-calculated value
   const allStatsDefinitions = useMemo(
     () => [
       {
         titleKey: 'dashboard.totalRevenue',
         icon: '💰',
-        getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.totalPrice, 0)),
+        value: formatCurrency(totalRevenue),
       },
       {
         titleKey: 'dashboard.totalProfit',
         icon: '💹',
-        getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.profit, 0)),
+        value: formatCurrency(totalProfit),
       },
       {
         titleKey: 'dashboard.totalSales',
         icon: '🛒',
-        getValue: () => state.sales.length.toString(),
+        value: totalSales.toString(),
       },
       {
         titleKey: 'dashboard.totalProducts',
         icon: '📦',
         // Product count (active SKUs), not sum of stock quantities
-        getValue: () =>
-          state.products.filter((product) => product.isActive !== false).length.toString(),
+        value: activeProductsCount.toString(),
       },
     ],
-    [state.sales, state.products, formatCurrency],
+    [totalRevenue, totalProfit, totalSales, activeProductsCount, formatCurrency],
   );
 
   const [cardVisibility, setCardVisibility] = useLocalStorage(
@@ -104,7 +129,7 @@ const Dashboard: React.FC = () => {
                 />
               </div>
             )}
-            <StatCard titleKey={stat.titleKey} value={stat.getValue()} icon={stat.icon} />
+            <StatCard titleKey={stat.titleKey} value={stat.value} icon={stat.icon} />
           </div>
         ))}
         {/* Message when no cards are visible */}
