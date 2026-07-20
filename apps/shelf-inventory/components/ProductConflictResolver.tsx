@@ -138,6 +138,7 @@ const ProductConflictResolver: React.FC<ProductConflictResolverProps> = ({ isOpe
           <button
             onClick={onClose}
             className="text-[#F5F5DC]/60 hover:text-[#F5F5DC] p-1 rounded-md hover:bg-white/5 transition-colors"
+            aria-label={t('modal.close')}
           >
             <X size={20} />
           </button>

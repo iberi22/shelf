@@ -183,6 +183,7 @@ const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, onClose
             onClick={onClose}
             className="p-2 bg-white/5 hover:bg-red-500/20 hover:text-red-400 rounded-full transition-colors"
             title="Cerrar Documentación"
+            aria-label="Cerrar Documentación"
           >
             <X className="w-5 h-5" />
           </button>
