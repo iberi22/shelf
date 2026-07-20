@@ -30,8 +30,14 @@ async function hmacSha256(secret: Uint8Array, data: Uint8Array): Promise<Uint8Ar
   return new Uint8Array(sig);
 }
 
-// Secreto para JWT
-const JWT_SECRET = new TextEncoder().encode("maloca-gateway-default-secret-change-me");
+/** Obtiene el secreto de JWT de las variables de entorno o usa un default inseguro */
+function getJwtSecret(): Uint8Array {
+  if (typeof process !== 'undefined' && process.env && process.env.MALOCA_JWT_SECRET) {
+    return new TextEncoder().encode(process.env.MALOCA_JWT_SECRET);
+  }
+  console.warn("WARNING: MALOCA_JWT_SECRET is not set, using default insecure secret.");
+  return new TextEncoder().encode("maloca-gateway-default-secret-change-me");
+}
 
 /** Deriva un profileId corto desde una clave pública PQC */
 function deriveProfileId(publicKey: ParPublico): string {
@@ -71,7 +77,7 @@ export async function generateJWT(profileId: string): Promise<string> {
     })
   ));
 
-  const hmacResult = await hmacSha256(JWT_SECRET, new TextEncoder().encode(`${headerEncoded}.${payloadEncoded}`));
+  const hmacResult = await hmacSha256(getJwtSecret(), new TextEncoder().encode(`${headerEncoded}.${payloadEncoded}`));
   const signatureEncoded = base64url(hmacResult);
 
   return `${headerEncoded}.${payloadEncoded}.${signatureEncoded}`;
@@ -86,7 +92,7 @@ export async function verifyToken(token: string): Promise<boolean> {
     if (parts.length !== 3) return false;
     const [header, payload, signature] = parts;
 
-    const hmacResult = await hmacSha256(JWT_SECRET, new TextEncoder().encode(`${header}.${payload}`));
+    const hmacResult = await hmacSha256(getJwtSecret(), new TextEncoder().encode(`${header}.${payload}`));
     const expectedSignature = base64url(hmacResult);
 
     if (signature !== expectedSignature) return false;
