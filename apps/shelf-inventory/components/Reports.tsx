@@ -91,17 +91,24 @@ const Reports: React.FC = () => {
 
   const aggregatedInventory = useMemo(() => {
     const agg: Record<string, { sku: string; name: string; quantities: Record<string, number>; total: number }> = {};
+    const branchesSet = new Set<string>();
 
-    consolidatedData.products.forEach((p) => {
-      if (!p.isActive) return;
+    // ⚡ Bolt: Replaced .forEach() and chained .filter().map() with a single loop to prevent O(N) intermediate array allocations on every render
+    const len = consolidatedData.products.length;
+    for (let i = 0; i < len; i++) {
+      const p = consolidatedData.products[i];
+      if (!p.isActive) continue;
+
+      const bName = (p.branchName || 'Global') as string;
+      branchesSet.add(bName);
+
       const key = p.sku || p.name;
       if (!agg[key]) {
         agg[key] = { sku: p.sku || '', name: p.name, quantities: {}, total: 0 };
       }
-      const bName = p.branchName || 'Global';
       agg[key].quantities[bName] = (agg[key].quantities[bName] || 0) + p.quantity;
       agg[key].total += p.quantity;
-    });
+    }
 
     return {
       items: Object.values(agg).sort((a, b) => a.name.localeCompare(b.name)) as Array<{
@@ -110,23 +117,25 @@ const Reports: React.FC = () => {
         quantities: Record<string, number>;
         total: number;
       }>,
-      branches: Array.from(
-        new Set(
-          consolidatedData.products
-            .filter((p: any) => p.isActive)
-            .map((p: any) => (p.branchName || 'Global') as string),
-        ),
-      ),
+      branches: Array.from(branchesSet),
     };
   }, [consolidatedData.products]);
 
   const inventoryStats = useMemo(() => {
-    const skus = new Set(consolidatedData.products.filter((p: any) => p.isActive).map((p: any) => p.sku || p.name))
-      .size;
-    const totalStock = consolidatedData.products
-      .filter((p: any) => p.isActive)
-      .reduce((sum: number, p: any) => sum + p.quantity, 0);
-    return { skus, totalStock };
+    const skusSet = new Set<string>();
+    let totalStock = 0;
+
+    // ⚡ Bolt: Replaced chained .filter().map() and .filter().reduce() with a single loop to avoid intermediate array allocations
+    const len = consolidatedData.products.length;
+    for (let i = 0; i < len; i++) {
+      const p = consolidatedData.products[i];
+      if (!p.isActive) continue;
+
+      skusSet.add(p.sku || p.name);
+      totalStock += p.quantity;
+    }
+
+    return { skus: skusSet.size, totalStock };
   }, [consolidatedData.products]);
 
   const filteredSales = useMemo(() => {
