@@ -31,7 +31,18 @@ async function hmacSha256(secret: Uint8Array, data: Uint8Array): Promise<Uint8Ar
 }
 
 // Secreto para JWT
-const JWT_SECRET = new TextEncoder().encode("maloca-gateway-default-secret-change-me");
+const getJwtSecret = (): Uint8Array => {
+  let secret: string | undefined = undefined;
+  if (typeof (globalThis as any).process !== "undefined" && (globalThis as any).process.env) {
+    secret = (globalThis as any).process.env.MALOCA_JWT_SECRET;
+  }
+  if (secret) {
+    return new TextEncoder().encode(secret);
+  }
+  console.warn("WARNING: Using default insecure JWT secret. Set MALOCA_JWT_SECRET in production.");
+  return new TextEncoder().encode("maloca-gateway-default-secret-change-me");
+};
+const JWT_SECRET = getJwtSecret();
 
 /** Deriva un profileId corto desde una clave pública PQC */
 function deriveProfileId(publicKey: ParPublico): string {

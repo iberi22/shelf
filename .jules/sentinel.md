@@ -1,0 +1,4 @@
+## 2026-07-21 - [Sentinel] Fix Hardcoded JWT Secret in Edge Mesh
+**Vulnerability:** A hardcoded default secret ('maloca-gateway-default-secret-change-me') was present for JWT generation in `packages/edge-mesh/src/maloca/gateway/auth.ts`. This could allow attackers to forge tokens if deployed as-is.
+**Learning:** Security secrets need safe fallback mechanics (like checking `process.env`) but must account for different JavaScript environments. A direct `process.env` check can fail with a `ReferenceError` in browsers or certain edge runtimes.
+**Prevention:** Access environment variables safely by verifying the global context first (`typeof (globalThis as any).process !== 'undefined'`), and document how to provide the secret (`MALOCA_JWT_SECRET`) via environment configuration for production setups.
