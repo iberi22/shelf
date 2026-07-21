@@ -18,33 +18,49 @@ const Dashboard: React.FC = () => {
   const [isProSectionHidden, setIsProSectionHidden] = useState(false);
 
   // Define all possible stat cards with their key and how to calculate their value
-  const allStatsDefinitions = useMemo(
-    () => [
+  const allStatsDefinitions = useMemo(() => {
+    let totalRevenue = 0;
+    let totalProfit = 0;
+    for (let i = 0; i < state.sales.length; i++) {
+      totalRevenue += state.sales[i].totalPrice || 0;
+      totalProfit += state.sales[i].profit || 0;
+    }
+    const formattedRevenue = formatCurrency(totalRevenue);
+    const formattedProfit = formatCurrency(totalProfit);
+
+    let activeProductsCount = 0;
+    for (let i = 0; i < state.products.length; i++) {
+      if (state.products[i].isActive !== false) {
+        activeProductsCount++;
+      }
+    }
+    const activeProductsStr = activeProductsCount.toString();
+    const totalSalesStr = state.sales.length.toString();
+
+    return [
       {
         titleKey: 'dashboard.totalRevenue',
         icon: '💰',
-        getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.totalPrice, 0)),
+        getValue: () => formattedRevenue,
       },
       {
         titleKey: 'dashboard.totalProfit',
         icon: '💹',
-        getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.profit, 0)),
+        getValue: () => formattedProfit,
       },
       {
         titleKey: 'dashboard.totalSales',
         icon: '🛒',
-        getValue: () => state.sales.length.toString(),
+        getValue: () => totalSalesStr,
       },
       {
         titleKey: 'dashboard.totalProducts',
         icon: '📦',
         // Product count (active SKUs), not sum of stock quantities
-        getValue: () =>
-          state.products.filter((product) => product.isActive !== false).length.toString(),
+        getValue: () => activeProductsStr,
       },
-    ],
-    [state.sales, state.products, formatCurrency],
-  );
+    ];
+  }, [state.sales, state.products, formatCurrency]);
 
   const [cardVisibility, setCardVisibility] = useLocalStorage(
     'dashboardCardVisibility',

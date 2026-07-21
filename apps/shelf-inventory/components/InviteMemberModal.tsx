@@ -121,7 +121,10 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
           </select>
         </div>
         {lastLink && (
-          <div className="text-xs break-all bg-background/50 border border-[#F5F5DC]/20 rounded p-2" data-testid="invite-link-preview">
+          <div
+            className="text-xs break-all bg-background/50 border border-[#F5F5DC]/20 rounded p-2"
+            data-testid="invite-link-preview"
+          >
             {lastLink}
           </div>
         )}

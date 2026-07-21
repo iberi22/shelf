@@ -250,8 +250,7 @@ const AIChat: React.FC = () => {
         ? t('reports.aiEngineHintNano') || 'Gemini Nano (browser built-in)'
         : aiEngine === 'gemini'
           ? t('reports.aiEngineHintGemini') || 'Gemini API key (client) — optional proxy URL in settings'
-          : t('reports.aiEngineHintAuto') ||
-            'Auto: local if no Gemini key, else cloud engines';
+          : t('reports.aiEngineHintAuto') || 'Auto: local if no Gemini key, else cloud engines';
 
   return (
     <div className="flex flex-col h-[50vh] md:h-[60vh] p-3 md:p-4" data-testid="ai-chat-panel">
@@ -275,9 +274,7 @@ const AIChat: React.FC = () => {
           </select>
         </div>
         <p className="text-[10px] text-[#F5F5DC]/50" data-testid="ai-engine-hint">
-          {isAIDisabled
-            ? t('reports.aiDisabledWelcome') || 'AI requires Pro or Pyme plan'
-            : engineHint}
+          {isAIDisabled ? t('reports.aiDisabledWelcome') || 'AI requires Pro or Pyme plan' : engineHint}
         </p>
       </div>
 

@@ -1,0 +1,3 @@
+## 2024-05-24 - [Dashboard Stats Bottleneck]
+**Learning:** Found a critical anti-pattern in React component `apps/shelf-inventory/components/Dashboard.tsx` where O(N) operations (like `reduce` and `filter` over arrays of sales and products) were embedded inside getter functions returned by a `useMemo` block. Because these getters were called within the render cycle (e.g. `stat.getValue()`), the expensive computations ran on *every render*, completely bypassing the performance benefits of `useMemo`.
+**Action:** Always pre-calculate derived values using efficient single-pass loops directly *inside* the `useMemo` block, and return primitive values (like strings or numbers) from the memoized object instead of closures containing O(N) operations.

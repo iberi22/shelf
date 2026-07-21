@@ -50,8 +50,7 @@ const NetworkConfig: React.FC = () => {
   const [feedback, setFeedback] = useState('');
 
   const { isPyme, tier } = useSubscription();
-  const { user, hasAppLock, hasBiometricLock, setAppLock, setBiometricLock, setSubscriptionTier } =
-    useAuth();
+  const { user, hasAppLock, hasBiometricLock, setAppLock, setBiometricLock, setSubscriptionTier } = useAuth();
   const [newPin, setNewPin] = useState('');
   const [biometricsSupported, setBiometricsSupported] = useState(false);
 
@@ -362,10 +361,7 @@ const NetworkConfig: React.FC = () => {
                 data-testid={`set-tier-${plan}`}
                 onClick={() => {
                   setSubscriptionTier(plan);
-                  showNotification(
-                    t('settings.plan.updated', { plan }) || `Plan set to ${plan}`,
-                    'success',
-                  );
+                  showNotification(t('settings.plan.updated', { plan }) || `Plan set to ${plan}`, 'success');
                 }}
                 className={`text-sm font-bold py-2 px-4 rounded-lg border min-h-[40px] transition-colors active:scale-95 ${
                   tier === plan

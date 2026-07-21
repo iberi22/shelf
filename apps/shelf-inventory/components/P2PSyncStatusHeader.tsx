@@ -122,7 +122,11 @@ const P2PSyncStatusHeader: React.FC = () => {
           {syncStatus === 'disconnected' ? (
             <WifiOff size={18} data-testid="offline-indicator" aria-label={t('common.offline') || 'Offline'} />
           ) : (
-            <Wifi size={18} className={syncStatus === 'syncing' ? 'animate-pulse' : ''} data-testid="online-indicator" />
+            <Wifi
+              size={18}
+              className={syncStatus === 'syncing' ? 'animate-pulse' : ''}
+              data-testid="online-indicator"
+            />
           )}
 
           {/* Pulsing indicator dot */}
