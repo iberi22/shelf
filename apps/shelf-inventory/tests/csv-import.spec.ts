@@ -64,4 +64,3 @@ test.describe('CSV product import (SRC-FUN-014)', () => {
     await expect(page.getByText('Coffee Mug').first()).toBeVisible({ timeout: 10000 });
   });
 });
-

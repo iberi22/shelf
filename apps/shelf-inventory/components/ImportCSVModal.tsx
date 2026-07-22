@@ -54,10 +54,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
       const { products, errors } = parseProductCsv(text);
 
       if (products.length === 0) {
-        const msg =
-          errors[0]?.message ||
-          t('settings.import.invalidHeaderError') ||
-          'No valid products found in CSV';
+        const msg = errors[0]?.message || t('settings.import.invalidHeaderError') || 'No valid products found in CSV';
         throw new Error(msg);
       }
 
@@ -67,8 +64,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
 
       dispatch({ type: 'IMPORT_PRODUCTS', payload: { products, strategy } });
       showNotification(
-        t('settings.import.success', { count: products.length }) ||
-          `Imported ${products.length} products`,
+        t('settings.import.success', { count: products.length }) || `Imported ${products.length} products`,
         errors.length > 0 ? 'info' : 'success',
       );
       if (errors.length === 0) {
@@ -114,9 +110,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
         </div>
 
         <div>
-          <p className="block text-sm font-medium text-foreground mb-2">
-            {t('settings.import.conflictStrategy')}
-          </p>
+          <p className="block text-sm font-medium text-foreground mb-2">{t('settings.import.conflictStrategy')}</p>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input

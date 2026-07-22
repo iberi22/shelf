@@ -18,17 +18,33 @@ const Dashboard: React.FC = () => {
   const [isProSectionHidden, setIsProSectionHidden] = useState(false);
 
   // Define all possible stat cards with their key and how to calculate their value
-  const allStatsDefinitions = useMemo(
-    () => [
+  const allStatsDefinitions = useMemo(() => {
+    // ⚡ Bolt: Pre-calculate O(N) operations inside useMemo block using for loops
+    // to avoid executing them on every render when mapped.
+    let totalRevenue = 0;
+    let totalProfit = 0;
+    for (let i = 0; i < state.sales.length; i++) {
+      totalRevenue += state.sales[i].totalPrice;
+      totalProfit += state.sales[i].profit;
+    }
+
+    let activeProductCount = 0;
+    for (let i = 0; i < state.products.length; i++) {
+      if (state.products[i].isActive !== false) {
+        activeProductCount++;
+      }
+    }
+
+    return [
       {
         titleKey: 'dashboard.totalRevenue',
         icon: '💰',
-        getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.totalPrice, 0)),
+        getValue: () => formatCurrency(totalRevenue),
       },
       {
         titleKey: 'dashboard.totalProfit',
         icon: '💹',
-        getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.profit, 0)),
+        getValue: () => formatCurrency(totalProfit),
       },
       {
         titleKey: 'dashboard.totalSales',
@@ -39,12 +55,10 @@ const Dashboard: React.FC = () => {
         titleKey: 'dashboard.totalProducts',
         icon: '📦',
         // Product count (active SKUs), not sum of stock quantities
-        getValue: () =>
-          state.products.filter((product) => product.isActive !== false).length.toString(),
+        getValue: () => activeProductCount.toString(),
       },
-    ],
-    [state.sales, state.products, formatCurrency],
-  );
+    ];
+  }, [state.sales, state.products, formatCurrency]);
 
   const [cardVisibility, setCardVisibility] = useLocalStorage(
     'dashboardCardVisibility',

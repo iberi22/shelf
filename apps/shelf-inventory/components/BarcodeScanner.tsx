@@ -68,10 +68,13 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
           };
 
           await qrCodeScanner.start({ facingMode: 'environment' }, config, handleScanSuccess, handleScanError);
-          
+
           if (!isMounted) {
             if (scannerRef.current?.isScanning) {
-              scannerRef.current.stop().then(() => scannerRef.current?.clear()).catch(console.error);
+              scannerRef.current
+                .stop()
+                .then(() => scannerRef.current?.clear())
+                .catch(console.error);
             }
             return;
           }
