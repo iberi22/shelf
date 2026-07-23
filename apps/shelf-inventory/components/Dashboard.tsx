@@ -18,33 +18,53 @@ const Dashboard: React.FC = () => {
   const [isProSectionHidden, setIsProSectionHidden] = useState(false);
 
   // Define all possible stat cards with their key and how to calculate their value
-  const allStatsDefinitions = useMemo(
-    () => [
+  const allStatsDefinitions = useMemo(() => {
+    // ⚡ Bolt: Pre-calculate totals upfront inside useMemo to avoid O(N) operations inside
+    // getter functions that run on every render.
+    let totalRevenue = 0;
+    let totalProfit = 0;
+    for (let i = 0; i < state.sales.length; i++) {
+      const sale = state.sales[i];
+      totalRevenue += sale.totalPrice;
+      totalProfit += sale.profit;
+    }
+
+    let activeProductsCount = 0;
+    for (let i = 0; i < state.products.length; i++) {
+      if (state.products[i].isActive !== false) {
+        activeProductsCount++;
+      }
+    }
+
+    const formattedTotalRevenue = formatCurrency(totalRevenue);
+    const formattedTotalProfit = formatCurrency(totalProfit);
+    const totalSalesStr = state.sales.length.toString();
+    const activeProductsStr = activeProductsCount.toString();
+
+    return [
       {
         titleKey: 'dashboard.totalRevenue',
         icon: '💰',
-        getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.totalPrice, 0)),
+        getValue: () => formattedTotalRevenue,
       },
       {
         titleKey: 'dashboard.totalProfit',
         icon: '💹',
-        getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.profit, 0)),
+        getValue: () => formattedTotalProfit,
       },
       {
         titleKey: 'dashboard.totalSales',
         icon: '🛒',
-        getValue: () => state.sales.length.toString(),
+        getValue: () => totalSalesStr,
       },
       {
         titleKey: 'dashboard.totalProducts',
         icon: '📦',
         // Product count (active SKUs), not sum of stock quantities
-        getValue: () =>
-          state.products.filter((product) => product.isActive !== false).length.toString(),
+        getValue: () => activeProductsStr,
       },
-    ],
-    [state.sales, state.products, formatCurrency],
-  );
+    ];
+  }, [state.sales, state.products, formatCurrency]);
 
   const [cardVisibility, setCardVisibility] = useLocalStorage(
     'dashboardCardVisibility',
