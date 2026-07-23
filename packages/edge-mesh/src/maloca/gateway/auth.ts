@@ -31,7 +31,17 @@ async function hmacSha256(secret: Uint8Array, data: Uint8Array): Promise<Uint8Ar
 }
 
 // Secreto para JWT
-const JWT_SECRET = new TextEncoder().encode("maloca-gateway-default-secret-change-me");
+const JWT_SECRET = (() => {
+  if (typeof (globalThis as any).process !== "undefined" && (globalThis as any).process.env?.MALOCA_JWT_SECRET) {
+    return new TextEncoder().encode((globalThis as any).process.env.MALOCA_JWT_SECRET);
+  }
+
+  // Ephemeral secure random secret for local dev if missing
+  console.warn("⚠️ SECURITY WARNING: MALOCA_JWT_SECRET not found. Generating ephemeral random secret for this process.");
+  const randomSecret = new Uint8Array(32);
+  crypto.getRandomValues(randomSecret);
+  return randomSecret;
+})();
 
 /** Deriva un profileId corto desde una clave pública PQC */
 function deriveProfileId(publicKey: ParPublico): string {
