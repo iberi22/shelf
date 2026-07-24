@@ -197,16 +197,10 @@ const Inventory: React.FC = () => {
     const skuNorm = productData.sku?.trim().toLowerCase();
     if (skuNorm) {
       const duplicate = state.products.find(
-        (p) =>
-          p.isActive !== false &&
-          p.id !== editingProduct?.id &&
-          (p.sku || '').trim().toLowerCase() === skuNorm,
+        (p) => p.isActive !== false && p.id !== editingProduct?.id && (p.sku || '').trim().toLowerCase() === skuNorm,
       );
       if (duplicate) {
-        showNotification(
-          t('inventory.form.duplicateSku') || `SKU already exists: ${productData.sku}`,
-          'error',
-        );
+        showNotification(t('inventory.form.duplicateSku') || `SKU already exists: ${productData.sku}`, 'error');
         return;
       }
     }
@@ -767,7 +761,7 @@ const Inventory: React.FC = () => {
               </span>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );

@@ -1,4 +1,3 @@
-
 import {
   Activity,
   AlertCircle,
@@ -418,7 +417,6 @@ const P2PSyncManager: React.FC = () => {
         clearInterval(interval);
       }
     }, 1000);
-
 
     return () => {
       // Cleanup interval if component unmounts before it fires

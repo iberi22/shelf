@@ -132,9 +132,7 @@ const ProChartsTeaserCard: React.FC<ProChartsTeaserCardProps> = ({
   const lineData = useMemo(() => {
     const labels =
       salesByDay.length > 0
-        ? salesByDay.map(([day]) =>
-            new Date(day).toLocaleDateString(locale, { month: 'short', day: 'numeric' }),
-          )
+        ? salesByDay.map(([day]) => new Date(day).toLocaleDateString(locale, { month: 'short', day: 'numeric' }))
         : [t('dashboard.proCharts.emptyLabel') || '—'];
     const data = salesByDay.length > 0 ? salesByDay.map(([, v]) => v) : [0];
     return {
@@ -307,7 +305,9 @@ const ProChartsTeaserCard: React.FC<ProChartsTeaserCardProps> = ({
               <div className="h-[200px]">{chart.render()}</div>
 
               {!isPro && (
-                <div className={`absolute inset-0 ${veilOpacityClass} flex items-end justify-start p-4 pointer-events-none`}>
+                <div
+                  className={`absolute inset-0 ${veilOpacityClass} flex items-end justify-start p-4 pointer-events-none`}
+                >
                   <div className="text-xs font-bold text-[#F5F5DC]/90">{t('dashboard.proCharts.proOnlyNote')}</div>
                 </div>
               )}

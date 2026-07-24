@@ -24,9 +24,7 @@ const AccessDenied = () => {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center" data-testid="access-denied">
       <div className="text-6xl mb-4">🔒</div>
-      <h2 className="text-2xl font-bold text-red-500 mb-2">
-        {t('common.accessDenied') || 'Access Denied'}
-      </h2>
+      <h2 className="text-2xl font-bold text-red-500 mb-2">{t('common.accessDenied') || 'Access Denied'}</h2>
       <p className="text-foreground/70">
         {t('common.accessDeniedDescription') || 'You do not have permission to view this section.'}
       </p>

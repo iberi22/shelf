@@ -1,14 +1,7 @@
 import type { Product } from 'p2p-mesh-core';
 
 /** Canonical CSV columns for product import */
-export const CANONICAL_CSV_HEADERS = [
-  'name',
-  'sku',
-  'quantity',
-  'price',
-  'cost',
-  'imageUrl',
-] as const;
+export const CANONICAL_CSV_HEADERS = ['name', 'sku', 'quantity', 'price', 'cost', 'imageUrl'] as const;
 
 export type CanonicalCsvHeader = (typeof CANONICAL_CSV_HEADERS)[number];
 
@@ -21,7 +14,7 @@ const HEADER_ALIASES: Record<string, CanonicalCsvHeader> = {
   sku: 'sku',
   code: 'sku',
   codigo: 'sku',
-  'código': 'sku',
+  código: 'sku',
   quantity: 'quantity',
   qty: 'quantity',
   cantidad: 'quantity',
@@ -48,7 +41,10 @@ export interface CsvProductParseResult {
 }
 
 function normalizeHeader(raw: string): string {
-  return raw.replace(/^\uFEFF/, '').trim().toLowerCase();
+  return raw
+    .replace(/^\uFEFF/, '')
+    .trim()
+    .toLowerCase();
 }
 
 /**
@@ -169,9 +165,7 @@ export function parseProductCsv(text: string): CsvProductParseResult {
     });
   }
 
-  const mappedHeaders = [
-    ...new Set(mapping.filter((m): m is CanonicalCsvHeader => m !== null)),
-  ];
+  const mappedHeaders = [...new Set(mapping.filter((m): m is CanonicalCsvHeader => m !== null))];
 
   return { products, errors, mappedHeaders };
 }
