@@ -715,7 +715,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
               </button>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </form>
   );

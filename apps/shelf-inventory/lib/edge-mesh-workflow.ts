@@ -61,11 +61,7 @@ const isEqualEntity = (left: unknown, right: unknown) => {
  * Unified mode: plain name (`products`).
  * Legacy prefix mode: `${prefix}_${collection}` (e.g. `shelf_products`).
  */
-export const shelfEdgeMapKey = (
-  collection: string,
-  prefix = '',
-  unified = SHELF_EDGE_UNIFIED_DOC,
-): string => {
+export const shelfEdgeMapKey = (collection: string, prefix = '', unified = SHELF_EDGE_UNIFIED_DOC): string => {
   if (unified || !prefix) return collection;
   return `${prefix}_${collection}`;
 };
@@ -90,11 +86,7 @@ export const getShelfEdgeStats = (
   return stats;
 };
 
-export const readShelfEdgeState = (
-  doc: Y.Doc,
-  prefix = '',
-  unified = SHELF_EDGE_UNIFIED_DOC,
-): Partial<AppState> => {
+export const readShelfEdgeState = (doc: Y.Doc, prefix = '', unified = SHELF_EDGE_UNIFIED_DOC): Partial<AppState> => {
   const partial: Partial<AppState> = {};
 
   for (const collection of SHELF_EDGE_COLLECTIONS) {

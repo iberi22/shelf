@@ -1,0 +1,3 @@
+## 2024-07-25 - React Memoization and Computed Values
+**Learning:** A codebase-specific performance anti-pattern found in `Dashboard.tsx` is to house O(N) operations (like `reduce` or `filter`) inside getter functions of memoized arrays. These getters execute on every render when mapped over, defeating the purpose of the array's memoization and creating continuous garbage collection overhead.
+**Action:** When creating arrays of objects in `useMemo` that provide values to UI components, pre-calculate the totals directly inside the `useMemo` block using standard `for` loops (to prevent array allocations) and return the computed scalars via the getter.
