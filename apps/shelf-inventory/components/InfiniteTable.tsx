@@ -84,6 +84,7 @@ export function InfiniteTable<T>({
               onClick={() => setCurrentPage(1)}
               disabled={safePage === 1}
               className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-[#F5F5DC] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Ir a la primera página"
             >
               Primera
             </button>
@@ -92,6 +93,7 @@ export function InfiniteTable<T>({
               onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
               disabled={safePage === 1}
               className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-[#F5F5DC] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Ir a la página anterior"
             >
               Anterior
             </button>
@@ -103,6 +105,7 @@ export function InfiniteTable<T>({
               onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
               disabled={safePage === totalPages}
               className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-[#F5F5DC] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Ir a la página siguiente"
             >
               Siguiente
             </button>
@@ -111,6 +114,7 @@ export function InfiniteTable<T>({
               onClick={() => setCurrentPage(totalPages)}
               disabled={safePage === totalPages}
               className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-[#F5F5DC] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Ir a la última página"
             >
               Ultima
             </button>
