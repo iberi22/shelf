@@ -1,0 +1,4 @@
+## 2024-05-18 - [XSS Attribute Injection in HTML Escape Utilities]
+**Vulnerability:** A custom HTML escape function relying solely on assigning text to `div.textContent` and returning `div.innerHTML` left single and double quotes unescaped, allowing for attribute injection XSS.
+**Learning:** Native DOM properties like `textContent` naturally escape `<` and `>` but DO NOT escape quotes (`"` or `'`). If the returned "escaped" string is used within HTML attributes, an attacker can break out of the attribute block and inject malicious payloads (e.g. `onload="alert(1)"`).
+**Prevention:** Always follow up `textContent` escaping with explicit string replacements for quotes (`.replace(/"/g, '&quot;').replace(/'/g, '&#39;')`) when the output is intended for general HTML escaping that includes attribute contexts.
