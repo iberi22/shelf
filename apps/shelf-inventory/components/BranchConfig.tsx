@@ -337,6 +337,7 @@ const BranchConfig: React.FC = () => {
                     type="button"
                     onClick={() => removeVariantAttribute(index)}
                     className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs cursor-pointer"
+                    aria-label={t('common.delete')}
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </button>
@@ -375,6 +376,7 @@ const BranchConfig: React.FC = () => {
                     type="button"
                     onClick={() => removeMeasureOption(index)}
                     className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs cursor-pointer"
+                    aria-label={t('common.delete')}
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </button>
@@ -436,6 +438,7 @@ const BranchConfig: React.FC = () => {
                     type="button"
                     onClick={() => removeInventoryField(index)}
                     className="w-full px-3 py-2.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs min-h-[44px] md:w-auto cursor-pointer"
+                    aria-label={t('common.delete')}
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </button>
@@ -510,16 +513,18 @@ const BranchConfig: React.FC = () => {
                               onClick={() => handleEditBranch(branch)}
                               className="p-2 text-[#4ADE80] hover:bg-[#4ADE80]/10 rounded-md transition-colors cursor-pointer"
                               title={t('common.edit')}
+                              aria-label={t('common.edit')}
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="h-4 w-4" aria-hidden="true" />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteBranch(branch.id)}
                               className="p-2 text-red-400 hover:bg-red-400/10 rounded-md transition-colors cursor-pointer"
                               title={t('common.delete')}
+                              aria-label={t('common.delete')}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
                             </button>
                           </div>
                         </td>

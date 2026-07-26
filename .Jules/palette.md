@@ -1,0 +1,3 @@
+## 2025-02-20 - [ARIA labels for icon-only buttons in BranchConfig]
+**Learning:** Icon-only buttons used for configuration modifications (e.g., removing variants or custom fields) in `BranchConfig.tsx` rely on the translation fallback strings from `t('common.delete')` and `t('common.edit')`. Since these buttons use nested SVG components from `lucide-react`, they require `aria-hidden="true"` on the icon and `aria-label={t('...')}` on the wrapping button element to prevent screen reader redundancy and ensure proper announce behavior.
+**Action:** When creating or modifying lists that contain interactive edit/delete controls in configuration forms, always apply `aria-hidden="true"` to the nested icon and use the `useI18n` translation keys for the button's `aria-label`.
