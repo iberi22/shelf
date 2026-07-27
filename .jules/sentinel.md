@@ -1,0 +1,4 @@
+## 2025-01-20 - HTML Escaping Vulnerability in `textContent` Assignment
+**Vulnerability:** XSS breakout possible via attributes (e.g., `alt`, `src`) because custom `escapeHtml` functions relying only on `element.textContent = text; return element.innerHTML;` fail to escape single and double quotes.
+**Learning:** This approach safely encodes `<` and `>` into `&lt;` and `&gt;`, but leaves `"` and `'` unescaped. When the returned string is injected into HTML attributes without quotes, an attacker can break out of the attribute and inject arbitrary JavaScript.
+**Prevention:** Always ensure single and double quotes are escaped when writing custom HTML escaping utilities. Explicitly append `.replace(/"/g, '&quot;').replace(/'/g, '&#39;')` to the output of `innerHTML` if using this pattern. Better yet, use established security libraries or robust sanitizers where available.
