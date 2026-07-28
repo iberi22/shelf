@@ -162,9 +162,9 @@ test.describe('P2P Conflict Resolution', () => {
 
     // Verify settings page loaded (prefer stable test id / single heading)
     await expect(
-      adminPage.getByRole('heading', { name: 'Settings', exact: true }).or(
-        adminPage.getByRole('heading', { name: 'Configuración', exact: true }),
-      ),
+      adminPage
+        .getByRole('heading', { name: 'Settings', exact: true })
+        .or(adminPage.getByRole('heading', { name: 'Configuración', exact: true })),
     ).toBeVisible();
 
     await adminContext.close();
