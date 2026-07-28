@@ -1,0 +1,4 @@
+## 2024-05-15 - DOM Property Assignment Escaping Bypass
+**Vulnerability:** XSS vulnerability in Catalog HTML export due to relying solely on `div.textContent = text; return div.innerHTML;` for escaping HTML.
+**Learning:** This approach safely escapes `<` and `>` but does not escape single (`'`) or double (`"`) quotes. When the resulting output is used inside HTML attributes (like `<img alt="${escapeHtml(product.name)}" />`), an attacker can supply a payload like `" onload="alert(1)"` to break out of the attribute and inject an event handler.
+**Prevention:** When creating custom HTML escaping utilities for preventing Cross-Site Scripting (XSS), explicitly append `.replace(/"/g, '&quot;').replace(/'/g, '&#39;')` to the output of `innerHTML` to ensure HTML attributes are not vulnerable to injection breakouts.
