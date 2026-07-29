@@ -1,0 +1,305 @@
+{
+  "schema": "gitcore.feature-verify/v2",
+  "project": "shelf",
+  "project_root": "E:\\proyectosSWAL\\shelf",
+  "features_json": "E:\\proyectosSWAL\\shelf\\.gitcore\\features.json",
+  "srs_path": "E:\\proyectosSWAL\\shelf\\docs\\SRS\\REQUIREMENTS.md",
+  "generated_at": "2026-07-29T02:45:00.0000000-05:00",
+  "feature_id": "SRC-FUN-001",
+  "name": "Inventory Management",
+  "status": "implemented",
+  "claimed_pct": 97.0,
+  "claimed_source": "implementation_percentage",
+  "suggested_pct": 95,
+  "delta_pct": -2.0,
+  "auto_verdict": "confirmed",
+  "suggest_breakdown": {
+    "evidence": "45 (exists=11/11)",
+    "tests": "25 (test_files=8)",
+    "code_size": "15 (lines=2731)",
+    "keywords": "10 (hits=9)",
+    "status_prior": "8 (implemented)",
+    "gaps_penalty": -8
+  },
+  "category": "FUN",
+  "description": "CRUD completo de productos con nombre, SKU, cantidad, precio, costo e imágenes; variantes empaquetables (colores, medidas, versiones/modelos) con catálogos configurables; listas paginadas para inventarios grandes",
+  "gaps": [
+    "Optional multi-facet filters UI"
+  ],
+  "steps": null,
+  "acceptance": [
+    "Crear producto con nombre, SKU, cantidad, precio, costo, imagen",
+    "Empaquetar variantes en el producto desde el panel de edición: colores, medidas y versiones/modelos, cada combinación con stock/precio/costo propios",
+    "Catálogos de colores y medidas gestionables desde Configuración y reutilizables en el formulario de producto",
+    "Editar producto existente",
+    "Eliminar producto",
+    "Listar productos con búsqueda y filtros, incluidos valores de variantes",
+    "Lista móvil con paginación incremental (50 por página) para inventarios de miles de productos",
+    "Cantidad se actualiza automáticamente al vender"
+  ],
+  "srs_links": [],
+  "evidence_paths": [
+    "apps/shelf-inventory/components/Inventory.tsx",
+    "apps/shelf-inventory/lib/productVariants.ts",
+    "apps/shelf-inventory/lib/inventoryConfig.ts",
+    "apps/shelf-inventory/lib/productVariants.spec.ts",
+    "apps/shelf-inventory/lib/inventoryConfig.spec.ts",
+    "tests/product-variants-flow.spec.ts",
+    "tests/variant-catalog.spec.ts",
+    "tests/inventory-config-catalog.spec.ts",
+    "tests/mobile-pagination.spec.ts",
+    "tests/crud-operations.spec.ts",
+    "cypress/e2e/inventory.cy.ts"
+  ],
+  "evidence_resolved": [
+    {
+      "Rel": "apps/shelf-inventory/components/Inventory.tsx",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\components\\Inventory.tsx",
+      "Exists": true,
+      "TotalLines": 2244,
+      "Bytes": 104303,
+      "IsTest": false,
+      "ExcerptOf": "1-8"
+    },
+    {
+      "Rel": "apps/shelf-inventory/lib/productVariants.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\lib\\productVariants.ts",
+      "Exists": true,
+      "TotalLines": 313,
+      "Bytes": 11241,
+      "IsTest": false,
+      "ExcerptOf": "1-8"
+    },
+    {
+      "Rel": "apps/shelf-inventory/lib/inventoryConfig.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\lib\\inventoryConfig.ts",
+      "Exists": true,
+      "TotalLines": 174,
+      "Bytes": 6128,
+      "IsTest": false,
+      "ExcerptOf": "1-8"
+    },
+    {
+      "Rel": "apps/shelf-inventory/lib/productVariants.spec.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\lib\\productVariants.spec.ts",
+      "Exists": true,
+      "TotalLines": 176,
+      "Bytes": 6067,
+      "IsTest": true,
+      "ExcerptOf": "1-8"
+    },
+    {
+      "Rel": "apps/shelf-inventory/lib/inventoryConfig.spec.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\lib\\inventoryConfig.spec.ts",
+      "Exists": true,
+      "TotalLines": 80,
+      "Bytes": 3010,
+      "IsTest": true,
+      "ExcerptOf": "1-8"
+    },
+    {
+      "Rel": "tests/product-variants-flow.spec.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\tests\\product-variants-flow.spec.ts",
+      "Exists": true,
+      "TotalLines": 135,
+      "Bytes": 6256,
+      "IsTest": true,
+      "ExcerptOf": "1-8"
+    },
+    {
+      "Rel": "tests/variant-catalog.spec.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\tests\\variant-catalog.spec.ts",
+      "Exists": true,
+      "TotalLines": 68,
+      "Bytes": 2955,
+      "IsTest": true,
+      "ExcerptOf": "1-8"
+    },
+    {
+      "Rel": "tests/inventory-config-catalog.spec.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\tests\\inventory-config-catalog.spec.ts",
+      "Exists": true,
+      "TotalLines": 68,
+      "Bytes": 3307,
+      "IsTest": true,
+      "ExcerptOf": "1-8"
+    },
+    {
+      "Rel": "tests/mobile-pagination.spec.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\tests\\mobile-pagination.spec.ts",
+      "Exists": true,
+      "TotalLines": 98,
+      "Bytes": 3234,
+      "IsTest": true,
+      "ExcerptOf": "1-8"
+    },
+    {
+      "Rel": "tests/crud-operations.spec.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\tests\\crud-operations.spec.ts",
+      "Exists": true,
+      "TotalLines": 206,
+      "Bytes": 8205,
+      "IsTest": true,
+      "ExcerptOf": "1-8"
+    },
+    {
+      "Rel": "cypress/e2e/inventory.cy.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\cypress\\e2e\\inventory.cy.ts",
+      "Exists": true,
+      "TotalLines": 58,
+      "Bytes": 1958,
+      "IsTest": true,
+      "ExcerptOf": "1-8"
+    }
+  ],
+  "evidence_score_pct": 100.0,
+  "keywords": [
+    "001",
+    "Inventory",
+    "Management",
+    "Crear",
+    "producto",
+    "variantes",
+    "colores",
+    "medidas",
+    "versiones",
+    "paginación"
+  ],
+  "keyword_hits": [
+    {
+      "Path": "apps/shelf-inventory/components/Inventory.tsx",
+      "Keyword": "Inventory",
+      "Line": 2,
+      "Snippet": ">L    2|import type { InventoryConfig, Product } from 'p2p-mesh-core';"
+    },
+    {
+      "Path": "apps/shelf-inventory/lib/productVariants.ts",
+      "Keyword": "versiones",
+      "Line": 23,
+      "Snippet": ">L   23|const VERSION_ATTRIBUTE_ALIASES = new Set(['version', 'versión', 'modelo', 'model', 'edicion', 'edición']);"
+    },
+    {
+      "Path": "apps/shelf-inventory/lib/inventoryConfig.ts",
+      "Keyword": "colores",
+      "Line": 20,
+      "Snippet": ">L   20|  colorOptions: ["
+    },
+    {
+      "Path": "tests/product-variants-flow.spec.ts",
+      "Keyword": "variantes",
+      "Line": 4,
+      "Snippet": ">L    4|test.describe('Product variants flow (SRC-FUN-001)', () => {"
+    },
+    {
+      "Path": "tests/variant-catalog.spec.ts",
+      "Keyword": "Inventory",
+      "Line": 4,
+      "Snippet": ">L    4|test.describe('Variant Catalog (SRC-FUN-001)', () => {"
+    },
+    {
+      "Path": "tests/inventory-config-catalog.spec.ts",
+      "Keyword": "Inventory",
+      "Line": 4,
+      "Snippet": ">L    4|test.describe('Inventory config catalogs (SRC-FUN-001)', () => {"
+    },
+    {
+      "Path": "tests/mobile-pagination.spec.ts",
+      "Keyword": "paginación",
+      "Line": 50,
+      "Snippet": ">L   50|test.describe('Mobile inventory list pagination (SRC-FUN-001)', () => {"
+    },
+    {
+      "Path": "tests/crud-operations.spec.ts",
+      "Keyword": "Inventory",
+      "Line": 4,
+      "Snippet": ">L    4|test.describe('CRUD Operations — Inventory, Sales, Clients, Suppliers', () => {"
+    },
+    {
+      "Path": "cypress/e2e/inventory.cy.ts",
+      "Keyword": "Inventory",
+      "Line": 1,
+      "Snippet": ">L    1|describe('Inventory', () => {"
+    }
+  ],
+  "excerpts": [
+    {
+      "Path": "apps/shelf-inventory/components/Inventory.tsx",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\components\\Inventory.tsx",
+      "Mode": "head",
+      "Start": 1,
+      "End": 8,
+      "TotalLines": 2244,
+      "IsTest": false,
+      "Text": "L    1|import { Box, History, Images, Layers3, Package2, PencilLine, RotateCcw, Ruler, Trash2 } from 'lucide-react';\nL    2|import type { InventoryConfig, Product } from 'p2p-mesh-core';\nL    3|import type React from 'react';\nL    4|import { useCallback, useEffect, useMemo, useRef, useState } from 'react';\nL    5|import { createPortal } from 'react-dom';\nL    6|import { useAppContext } from '../context/AppContext';\nL    7|import { useCurrency } from '../context/CurrencyContext';\nL    8|import { useI18n } from '../context/I18nContext';"
+    },
+    {
+      "Path": "apps/shelf-inventory/lib/productVariants.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\lib\\productVariants.ts",
+      "Mode": "head",
+      "Start": 1,
+      "End": 8,
+      "TotalLines": 313,
+      "IsTest": false,
+      "Text": "L    1|import type { Product, ProductVariant } from 'p2p-mesh-core';\nL    2|\nL    3|export type VariantDraft = {\nL    4|  id: string;\nL    5|  sku: string;\nL    6|  quantity: number | string;\nL    7|  price: number | string;\nL    8|  cost: number | string;"
+    },
+    {
+      "Path": "apps/shelf-inventory/lib/inventoryConfig.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\lib\\inventoryConfig.ts",
+      "Mode": "head",
+      "Start": 1,
+      "End": 8,
+      "TotalLines": 174,
+      "IsTest": false,
+      "Text": "L    1|import type { InventoryColorOption, InventoryConfig, InventoryFieldDefinition, Product } from 'p2p-mesh-core';\nL    2|\nL    3|const createId = (prefix) => {\nL    4|  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {\nL    5|    return `${prefix}_${crypto.randomUUID()}`;\nL    6|  }\nL    7|\nL    8|  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;"
+    },
+    {
+      "Path": "tests/product-variants-flow.spec.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\tests\\product-variants-flow.spec.ts",
+      "Mode": "head",
+      "Start": 1,
+      "End": 8,
+      "TotalLines": 135,
+      "IsTest": true,
+      "Text": "L    1|import { expect, test } from '@playwright/test';\nL    2|import { dismissModals, setupPage } from './helpers';\nL    3|\nL    4|const PIXEL_PNG_BASE64 =\nL    5|  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';\nL    6|\nL    7|const readProduct = (page: any, name: string) =>\nL    8|  page.evaluate((productName: string) => {"
+    },
+    {
+      "Path": "tests/mobile-pagination.spec.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\tests\\mobile-pagination.spec.ts",
+      "Mode": "head",
+      "Start": 1,
+      "End": 8,
+      "TotalLines": 98,
+      "IsTest": true,
+      "Text": "L    1|import { expect, test } from '@playwright/test';\nL    2|import { dismissModals, setupPage } from './helpers';\nL    3|\nL    4|const SEED_COUNT = 60;\nL    5|\nL    6|// Playwright serializes init scripts without closures: the count arrives as an argument\nL    7|const seedProducts = (count: number) => {\nL    8|  const now = new Date().toISOString();"
+    },
+    {
+      "Path": "tests/crud-operations.spec.ts",
+      "Abs": "E:\\proyectosSWAL\\shelf\\apps\\shelf-inventory\\tests\\crud-operations.spec.ts",
+      "Mode": "head",
+      "Start": 1,
+      "End": 8,
+      "TotalLines": 206,
+      "IsTest": true,
+      "Text": "L    1|import { expect, test } from '@playwright/test';\nL    2|import { dismissModals, setupPage } from './helpers';\nL    3|\nL    4|test.describe('CRUD Operations — Inventory, Sales, Clients, Suppliers', () => {\nL    5|  test.beforeEach(async ({ page }) => {\nL    6|    await setupPage(page);\nL    7|  });\nL    8|"
+    }
+  ],
+  "agent_checks": [
+    "Confirm evidence files exist and match feature description.",
+    "Review documented gaps field for residual work.",
+    "Map acceptance_criteria to tests or code paths.",
+    "Compare CLAIMED_PCT vs SUGGESTED_PCT (DiffClaimed heuristic); adjust features.json if overstated.",
+    "Do NOT re-implement; only verify and report VERDICT."
+  ],
+  "agent_verdict": {
+    "verdict": "confirmed",
+    "auto_verdict": "confirmed",
+    "claimed_pct": 97,
+    "suggested_pct": 95,
+    "agent_suggested_pct": 97,
+    "srs_reqs": "none",
+    "notes": "Verified 2026-07-29 after hardening pass: variant packaging (colors x measures x versions) now covered by E2E with save+reload assertions (product-variants-flow.spec.ts), config catalogs covered (inventory-config-catalog.spec.ts), variant-catalog.spec.ts strengthened with real assertions, mobile list paginates incrementally (mobile-pagination.spec.ts), and unit tests cover productVariants.ts/inventoryConfig.ts (vitest, 23 tests green). PullToRefresh refactored: stable listeners + rAF DOM transforms, no per-frame re-render.",
+    "missing_evidence": "none"
+  },
+  "mode": "head",
+  "lines": 8
+}

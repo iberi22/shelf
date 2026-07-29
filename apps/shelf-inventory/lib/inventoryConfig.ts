@@ -1,4 +1,4 @@
-import type { InventoryConfig, InventoryFieldDefinition, Product } from 'p2p-mesh-core';
+import type { InventoryColorOption, InventoryConfig, InventoryFieldDefinition, Product } from 'p2p-mesh-core';
 
 const createId = (prefix: string) => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -17,10 +17,29 @@ export const DEFAULT_INVENTORY_CONFIG: InventoryConfig = {
     { id: 'field-material', key: 'material', label: 'Material', type: 'text' },
   ],
   measureOptions: ['5CM', '7CM', '10CM', '12CM', '14CM', '15CM', '17CM', '20CM', '28CM'],
+  colorOptions: [
+    { name: 'Negro', hex: '#1a1a1a' },
+    { name: 'Marfil', hex: '#FFFFF0' },
+    { name: 'Blanco', hex: '#FFFFFF' },
+    { name: 'Terracota', hex: '#E2725B' },
+    { name: 'Rojo', hex: '#CC3333' },
+    { name: 'Azul', hex: '#3355CC' },
+    { name: 'Verde', hex: '#338833' },
+    { name: 'Marrón', hex: '#8B4513' },
+    { name: 'Beige', hex: '#F5F5DC' },
+    { name: 'Gris', hex: '#808080' },
+    { name: 'Oro', hex: '#D4A017' },
+    { name: 'Plateado', hex: '#C0C0C0' },
+  ],
   autoApplyProductUpdates: false,
   productHistoryLimit: 5,
   useEdgeMeshSync: false,
 };
+
+const FALLBACK_COLOR_HEX = '#808080';
+
+const normalizeColorHex = (value: string): string =>
+  /^#[0-9a-f]{6}$/i.test(value.trim()) ? value.trim() : FALLBACK_COLOR_HEX;
 
 const LEGACY_DEFAULT_MEASURE_OPTIONS = ['30CM', '40CM', '50CM', '60CM'];
 
@@ -78,10 +97,29 @@ export const normalizeInventoryConfig = (config?: Partial<InventoryConfig> | nul
     ? DEFAULT_INVENTORY_CONFIG.measureOptions
     : normalizedMeasureOptions;
 
+  const rawColorOptions = (
+    Array.isArray(config?.colorOptions) && config.colorOptions.length > 0
+      ? config.colorOptions
+      : DEFAULT_INVENTORY_CONFIG.colorOptions
+  ) as InventoryColorOption[];
+  const seenColorNames = new Set<string>();
+  const colorOptions = rawColorOptions
+    .map((option) => ({
+      name: String(option?.name || '').trim(),
+      hex: normalizeColorHex(String(option?.hex || '')),
+    }))
+    .filter((option) => {
+      const key = option.name.toLowerCase();
+      if (!key || seenColorNames.has(key)) return false;
+      seenColorNames.add(key);
+      return true;
+    });
+
   return {
     variantAttributes: variantAttributes.length > 0 ? variantAttributes : DEFAULT_INVENTORY_CONFIG.variantAttributes,
     fields: fields.length > 0 ? fields : DEFAULT_INVENTORY_CONFIG.fields,
     measureOptions: measureOptions.length > 0 ? measureOptions : DEFAULT_INVENTORY_CONFIG.measureOptions,
+    colorOptions: colorOptions.length > 0 ? colorOptions : DEFAULT_INVENTORY_CONFIG.colorOptions,
     autoApplyProductUpdates: Boolean(config?.autoApplyProductUpdates),
     productHistoryLimit: Math.min(5, Math.max(1, Number(config?.productHistoryLimit) || 5)),
     useEdgeMeshSync: Boolean(config?.useEdgeMeshSync),

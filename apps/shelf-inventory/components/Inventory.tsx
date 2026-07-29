@@ -1,7 +1,7 @@
 import { Box, History, Images, Layers3, Package2, PencilLine, RotateCcw, Ruler, Trash2 } from 'lucide-react';
 import type { InventoryConfig, Product } from 'p2p-mesh-core';
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -11,7 +11,12 @@ import useLocalStorage from '../hooks/useLocalStorage';
 import { useSortableTable } from '../hooks/useSortableTable';
 import { compressImage } from '../lib/imageCompression';
 import { DEFAULT_INVENTORY_CONFIG, getInventoryFieldValue, normalizeInventoryConfig } from '../lib/inventoryConfig';
-import { createVariantDraft, summarizeVariantValues, type VariantDraft } from '../lib/productVariants';
+import {
+  createVariantDraft,
+  isVersionAttributeLabel,
+  summarizeVariantValues,
+  type VariantDraft,
+} from '../lib/productVariants';
 import { telemetry } from '../lib/telemetry';
 import BarcodeScanner from './BarcodeScanner';
 import { InfiniteTable } from './InfiniteTable';
@@ -19,20 +24,7 @@ import Modal from './Modal';
 
 const isValidHexColor = (color: string): boolean => /^#[0-9a-f]{6}$/i.test(color);
 
-const PRESET_COLORS = [
-  { name: 'Negro', hex: '#1a1a1a' },
-  { name: 'Marfil', hex: '#FFFFF0' },
-  { name: 'Blanco', hex: '#FFFFFF' },
-  { name: 'Terracota', hex: '#E2725B' },
-  { name: 'Rojo', hex: '#CC3333' },
-  { name: 'Azul', hex: '#3355CC' },
-  { name: 'Verde', hex: '#338833' },
-  { name: 'Marrón', hex: '#8B4513' },
-  { name: 'Beige', hex: '#F5F5DC' },
-  { name: 'Gris', hex: '#808080' },
-  { name: 'Oro', hex: '#D4A017' },
-  { name: 'Plateado', hex: '#C0C0C0' },
-];
+const MOBILE_PAGE_SIZE = 50;
 
 const isColorAttribute = (label: string, config: InventoryConfig): boolean => {
   const normalizedLabel = label.trim().toLowerCase();
@@ -144,6 +136,18 @@ const Inventory: React.FC = () => {
   } = useSortableTable<Product>(activeProducts, { key: 'name', direction: 'asc' });
 
   const [filter, setFilter] = useState('');
+  const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_PAGE_SIZE);
+  const mobileSentinelRef = useRef<HTMLDivElement>(null);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the first mobile page must be restored whenever the search filter changes
+  useEffect(() => {
+    setMobileVisibleCount(MOBILE_PAGE_SIZE);
+  }, [filter]);
+
+  const handleSort: typeof requestSort = (key) => {
+    setMobileVisibleCount(MOBILE_PAGE_SIZE);
+    requestSort(key);
+  };
 
   const filteredProducts = useMemo(() => {
     if (!filter) return sortedProducts;
@@ -164,6 +168,24 @@ const Inventory: React.FC = () => {
         ),
     );
   }, [sortedProducts, filter, inventoryFieldDefinitions]);
+
+  const mobileHasMore = mobileVisibleCount < filteredProducts.length;
+
+  useEffect(() => {
+    if (!mobileHasMore) return;
+    const sentinel = mobileSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setMobileVisibleCount((current) => current + MOBILE_PAGE_SIZE);
+        }
+      },
+      { rootMargin: '300px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [mobileHasMore]);
 
   const getVariantSummary = (product: Product) => {
     const variants = product.variants || [];
@@ -197,16 +219,10 @@ const Inventory: React.FC = () => {
     const skuNorm = productData.sku?.trim().toLowerCase();
     if (skuNorm) {
       const duplicate = state.products.find(
-        (p) =>
-          p.isActive !== false &&
-          p.id !== editingProduct?.id &&
-          (p.sku || '').trim().toLowerCase() === skuNorm,
+        (p) => p.isActive !== false && p.id !== editingProduct?.id && (p.sku || '').trim().toLowerCase() === skuNorm,
       );
       if (duplicate) {
-        showNotification(
-          t('inventory.form.duplicateSku') || `SKU already exists: ${productData.sku}`,
-          'error',
-        );
+        showNotification(t('inventory.form.duplicateSku') || `SKU already exists: ${productData.sku}`, 'error');
         return;
       }
     }
@@ -289,7 +305,7 @@ const Inventory: React.FC = () => {
     <th className="p-2 md:p-3">
       <button
         data-testid={`sort-by-${sortKey}`}
-        onClick={() => requestSort(sortKey)}
+        onClick={() => handleSort(sortKey)}
         className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors"
         aria-label={`${t('common.sortBy')} ${label}`}
       >
@@ -429,7 +445,7 @@ const Inventory: React.FC = () => {
               <SortableHeader sortKey="color" label={colorField?.label || t('common.color')} />
               <th className="hidden xl:table-cell p-4">
                 <button
-                  onClick={() => requestSort('dimensions')}
+                  onClick={() => handleSort('dimensions')}
                   className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors"
                   aria-label={`${t('common.sortBy')} ${dimensionsField?.label || t('common.dimensions')}`}
                 >
@@ -439,7 +455,7 @@ const Inventory: React.FC = () => {
               </th>
               <th className="hidden xl:table-cell p-4">
                 <button
-                  onClick={() => requestSort('capacity')}
+                  onClick={() => handleSort('capacity')}
                   className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors"
                   aria-label={`${t('common.sortBy')} ${capacityField?.label || t('common.capacity')}`}
                 >
@@ -449,7 +465,7 @@ const Inventory: React.FC = () => {
               </th>
               <th className="hidden xl:table-cell p-4">
                 <button
-                  onClick={() => requestSort('material')}
+                  onClick={() => handleSort('material')}
                   className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors"
                   aria-label={`${t('common.sortBy')} ${materialField?.label || t('common.material')}`}
                 >
@@ -459,7 +475,7 @@ const Inventory: React.FC = () => {
               </th>
               <th className="hidden xl:table-cell p-4">
                 <button
-                  onClick={() => requestSort('cost')}
+                  onClick={() => handleSort('cost')}
                   className="flex items-center gap-2 font-bold hover:text-yellow-300 transition-colors"
                   aria-label={`${t('common.sortBy')} ${t('common.cost')}`}
                 >
@@ -614,7 +630,7 @@ const Inventory: React.FC = () => {
 
       <div className="sm:hidden flex flex-col gap-2.5" data-testid="product-list">
         {filteredProducts.length > 0 ? (
-          filteredProducts.map((product) => (
+          filteredProducts.slice(0, mobileVisibleCount).map((product) => (
             <div
               key={product.id}
               data-testid={`product-card-${product.id}`}
@@ -742,6 +758,17 @@ const Inventory: React.FC = () => {
             {t('inventory.empty')}
           </div>
         )}
+        {filteredProducts.length > 0 && (
+          <p className="text-center text-[10px] text-[#F5F5DC]/40" data-testid="mobile-list-count">
+            {t('inventory.showingCount', {
+              shown: Math.min(mobileVisibleCount, filteredProducts.length),
+              total: filteredProducts.length,
+            })}
+          </p>
+        )}
+        {mobileHasMore && (
+          <div ref={mobileSentinelRef} data-testid="mobile-list-sentinel" className="h-1" aria-hidden="true" />
+        )}
       </div>
 
       {isModalOpen && (
@@ -767,7 +794,7 @@ const Inventory: React.FC = () => {
               </span>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );
@@ -824,22 +851,32 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     if (product?.dimensions) return [product.dimensions];
     return [];
   });
+  const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
   const [comboValues, setComboValues] = useState<Record<string, { quantity: number; price: number; cost: number }>>({});
 
   const isEditing = product !== null;
-  const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1;
+  const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1 || selectedVersions.length > 1;
 
-  const getComboEntries = useCallback((colors: string[], sizes: string[]): string[] => {
-    if (colors.length > 0 && sizes.length > 0) {
-      return colors.flatMap((c) => sizes.map((s) => `${c}|${s}`));
-    }
-    return colors.map((c) => `color:${c}`).concat(sizes.map((s) => `size:${s}`));
+  // Combo keys are prefix-encoded (c:/s:/v:) so any subset of dimensions combines safely
+  const getComboEntries = useCallback((colors: string[], sizes: string[], versions: string[]): string[] => {
+    const dimensions = [
+      colors.map((value) => `c:${value}`),
+      sizes.map((value) => `s:${value}`),
+      versions.map((value) => `v:${value}`),
+    ].filter((dimension) => dimension.length > 0);
+
+    if (dimensions.length === 0) return [];
+
+    return dimensions.reduce<string[]>(
+      (combos, dimension) => combos.flatMap((combo) => dimension.map((value) => (combo ? `${combo}|${value}` : value))),
+      [''],
+    );
   }, []);
 
   // Update comboValues when selections change
   useEffect(() => {
     if (!isEditing && isMultiMode) {
-      const combos = getComboEntries(selectedColors, selectedSizes);
+      const combos = getComboEntries(selectedColors, selectedSizes, selectedVersions);
       setComboValues((prev) => {
         const updated: Record<string, { quantity: number; price: number; cost: number }> = {};
         for (const key of combos) {
@@ -851,8 +888,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   }, [
     selectedColors.length,
     selectedSizes.length,
+    selectedVersions.length,
     isMultiMode,
     selectedSizes,
+    selectedVersions,
     cost,
     price,
     selectedColors,
@@ -1084,9 +1123,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
         }
       });
     } else if (!isEditing && isMultiMode) {
-      const keys = getComboEntries(selectedColors, selectedSizes);
+      const keys = getComboEntries(selectedColors, selectedSizes, selectedVersions);
       if (keys.length === 0) {
-        newErrors.variants = 'Selecciona al menos un color o medida.';
+        newErrors.variants = 'Selecciona al menos un color, medida o versión.';
       }
       for (const key of keys) {
         const val = comboValues[key];
@@ -1151,19 +1190,15 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
       return;
     }
 
-    // Multi-mode: new product with multiple colors/measures
+    // Multi-mode: new product with multiple colors/measures/versions
     if (!isEditing && isMultiMode) {
-      const keys = getComboEntries(selectedColors, selectedSizes);
+      const keys = getComboEntries(selectedColors, selectedSizes, selectedVersions);
       const variants = keys.map((key) => {
-        const parts = key.split('|');
         const attributes: Record<string, string> = {};
-        if (selectedColors.length > 0 && selectedSizes.length > 0) {
-          attributes.Color = parts[0];
-          attributes.Medida = parts[1];
-        } else if (selectedColors.length > 0) {
-          attributes.Color = key.replace('color:', '');
-        } else {
-          attributes.Medida = key.replace('size:', '');
+        for (const part of key.split('|')) {
+          if (part.startsWith('c:')) attributes.Color = part.slice(2);
+          else if (part.startsWith('s:')) attributes.Medida = part.slice(2);
+          else if (part.startsWith('v:')) attributes.Versión = part.slice(2);
         }
         const val = comboValues[key] || { quantity: 0, price: 0, cost: 0 };
         return {
@@ -1177,12 +1212,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
         } as VariantDraft;
       });
       const totalQty = variants.reduce((sum, v) => sum + Number(v.quantity), 0);
-      const attrLabels =
-        selectedColors.length > 0 && selectedSizes.length > 0
-          ? ['Color', 'Medida']
-          : selectedColors.length > 0
-            ? ['Color']
-            : ['Medida'];
+      const attrLabels = [
+        ...(selectedColors.length > 0 ? ['Color'] : []),
+        ...(selectedSizes.length > 0 ? ['Medida'] : []),
+        ...(selectedVersions.length > 0 ? ['Versión'] : []),
+      ];
 
       onSave({
         name,
@@ -1376,7 +1410,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     <label className="block text-xs text-[#F5F5DC]/60">{field.label}</label>
                     {isColorField && (
                       <div className="flex flex-wrap gap-2">
-                        {PRESET_COLORS.map((preset) => (
+                        {inventoryConfig.colorOptions.map((preset) => (
                           <button
                             key={`${field.key}-${preset.name}`}
                             type="button"
@@ -1470,12 +1504,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     Colores (Selecciona o escribe varios para crear variantes)
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {PRESET_COLORS.map((preset) => {
+                    {inventoryConfig.colorOptions.map((preset) => {
                       const selected = selectedColors.includes(preset.name);
                       return (
                         <button
                           key={`mc-${preset.name}`}
                           type="button"
+                          data-testid={`mc-color-${preset.name}`}
                           onClick={() => {
                             setSelectedColors((prev) =>
                               selected ? prev.filter((c) => c !== preset.name) : [...prev, preset.name],
@@ -1528,7 +1563,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-[#0f0f0f] rounded border border-[#F5F5DC]/5">
                       <span className="text-xs text-[#F5F5DC]/50 mr-1">Seleccionados:</span>
                       {selectedColors.map((c) => {
-                        const preset = PRESET_COLORS.find((p) => p.name === c);
+                        const preset = inventoryConfig.colorOptions.find((p) => p.name === c);
                         return (
                           <div
                             key={`selc-${c}`}
@@ -1566,6 +1601,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                         <button
                           key={`ms-${suggestion}`}
                           type="button"
+                          data-testid={`mc-measure-${suggestion}`}
                           onClick={() => {
                             setSelectedSizes((prev) =>
                               selected ? prev.filter((s) => s !== suggestion) : [...prev, suggestion],
@@ -1634,6 +1670,73 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       <button
                         type="button"
                         onClick={() => setSelectedSizes([])}
+                        className="text-xs text-red-300 hover:text-red-200 ml-auto px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
+                  <label className="block text-xs text-[#F5F5DC]/60">
+                    Versiones o modelos (escribe varios para crear variantes)
+                  </label>
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      type="text"
+                      placeholder="Versión o modelo (ej. V2, Modelo 2026)"
+                      className="flex-1 p-1.5 text-xs bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded"
+                      data-testid="version-custom-input"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = e.currentTarget.value.trim();
+                          if (val && !selectedVersions.includes(val)) {
+                            setSelectedVersions((prev) => [...prev, val]);
+                            e.currentTarget.value = '';
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 rounded transition-colors text-[#F5F5DC]"
+                      data-testid="version-add-button"
+                      onClick={(e) => {
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                        const val = input.value.trim();
+                        if (val && !selectedVersions.includes(val)) {
+                          setSelectedVersions((prev) => [...prev, val]);
+                          input.value = '';
+                        }
+                      }}
+                    >
+                      Añadir
+                    </button>
+                  </div>
+                  {selectedVersions.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-[#0f0f0f] rounded border border-[#F5F5DC]/5">
+                      <span className="text-xs text-[#F5F5DC]/50 mr-1">Seleccionadas:</span>
+                      {selectedVersions.map((v) => (
+                        <div
+                          key={`selv-${v}`}
+                          className="flex items-center gap-1 bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded-full pl-2 pr-1 py-1"
+                          data-testid={`version-chip-${v}`}
+                        >
+                          <span className="text-xs text-[#F5F5DC]">{v}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedVersions((prev) => prev.filter((x) => x !== v))}
+                            className="w-4 h-4 rounded-full hover:bg-red-500/20 text-[#F5F5DC]/50 hover:text-red-300 flex items-center justify-center transition-colors"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedVersions([])}
                         className="text-xs text-red-300 hover:text-red-200 ml-auto px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20"
                       >
                         Limpiar
@@ -1714,7 +1817,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                             <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">{label}</label>
                             {isColorAttribute(label, inventoryConfig) && (
                               <div className="flex flex-wrap gap-1.5 mb-2 max-w-full">
-                                {PRESET_COLORS.map((preset) => {
+                                {inventoryConfig.colorOptions.map((preset) => {
                                   const selected = row.attributes?.[label] === preset.name;
                                   return (
                                     <button
@@ -1764,7 +1867,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                               value={row.attributes?.[label] || ''}
                               onChange={(e) => updateVariantAttributeValue(rowIndex, label, e.target.value)}
                               className="w-full min-w-0 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded-md text-sm"
-                              placeholder={`Valor de ${label.toLowerCase()}`}
+                              placeholder={
+                                isVersionAttributeLabel(label)
+                                  ? 'Ej. V2, Modelo 2026'
+                                  : `Valor de ${label.toLowerCase()}`
+                              }
                             />
                           </div>
                         ))}
@@ -1866,7 +1973,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       <label className="block text-xs text-[#F5F5DC]/60">{field.label}</label>
                       {isColorField && (
                         <div className="flex flex-wrap gap-2">
-                          {PRESET_COLORS.map((preset) => (
+                          {inventoryConfig.colorOptions.map((preset) => (
                             <button
                               key={`${field.key}-${preset.name}`}
                               type="button"
@@ -1971,20 +2078,20 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-[#F5F5DC]">
-                      {selectedColors.length > 0 && selectedSizes.length > 0
-                        ? `Combinaciones (${selectedColors.length} x ${selectedSizes.length})`
-                        : `Variantes (${selectedColors.length || selectedSizes.length})`}
+                      {`Variantes (${getComboEntries(selectedColors, selectedSizes, selectedVersions).length})`}
                     </h3>
                   </div>
 
-                  {(selectedColors.length > 0 || selectedSizes.length > 0) && (
+                  {(selectedColors.length > 0 || selectedSizes.length > 0 || selectedVersions.length > 0) && (
                     <div className="space-y-2">
                       {(() => {
-                        const keys = getComboEntries(selectedColors, selectedSizes);
+                        const keys = getComboEntries(selectedColors, selectedSizes, selectedVersions);
 
                         return keys.map((key, i) => {
-                          const parts = key.split('|');
-                          const label = parts.length > 1 ? parts.join(' / ') : parts[0].replace(/^(color:|size:)/, '');
+                          const label = key
+                            .split('|')
+                            .map((part) => part.replace(/^[csv]:/, ''))
+                            .join(' / ');
                           const val = comboValues[key] || {
                             quantity: 0,
                             price: Number(price) || 0,
@@ -1995,6 +2102,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                             <div
                               key={`combo-${i}`}
                               className="rounded-lg border border-[#F5F5DC]/15 bg-[#121212] p-3 space-y-2"
+                              data-testid={`combo-card-${label}`}
                             >
                               <div className="text-xs font-semibold text-[#F5F5DC]/60 uppercase tracking-wide">
                                 {label}
@@ -2060,9 +2168,14 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                 <div className="flex items-center gap-2 text-xs text-[#F5F5DC]/50">
                   <Ruler className="h-3 w-3" />
                   <span>
-                    {selectedColors.length > 0 && selectedSizes.length > 0
-                      ? `${selectedColors.length} color(es) x ${selectedSizes.length} medida(s) = ${selectedColors.length * selectedSizes.length} combinaciones`
-                      : `${selectedColors.length || selectedSizes.length} variante(s)`}
+                    {[
+                      selectedColors.length > 0 ? `${selectedColors.length} color(es)` : '',
+                      selectedSizes.length > 0 ? `${selectedSizes.length} medida(s)` : '',
+                      selectedVersions.length > 0 ? `${selectedVersions.length} versión(es)` : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' x ')}
+                    {` = ${getComboEntries(selectedColors, selectedSizes, selectedVersions).length} combinaciones`}
                   </span>
                 </div>
               </>

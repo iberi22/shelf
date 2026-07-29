@@ -143,10 +143,10 @@ export interface TeamMember {
 }
 
 export function teamRoleToP2PRole(role: TeamMemberRole): P2PRole {
-	if (role === 'owner' || role === 'admin') return 'admin';
-	if (role === 'vendedor') return 'vendedor';
-	if (role === 'custom') return 'custom';
-	return 'collaborator'; // collaborator + legacy member
+	if (role === "owner" || role === "admin") return "admin";
+	if (role === "vendedor") return "vendedor";
+	if (role === "custom") return "custom";
+	return "collaborator"; // collaborator + legacy member
 }
 
 export interface PeerPermissions {
@@ -290,10 +290,16 @@ export interface InventoryFieldDefinition {
 	type: InventoryFieldType;
 }
 
+export interface InventoryColorOption {
+	name: string;
+	hex: string;
+}
+
 export interface InventoryConfig {
 	variantAttributes: string[];
 	fields: InventoryFieldDefinition[];
 	measureOptions: string[];
+	colorOptions: InventoryColorOption[];
 	autoApplyProductUpdates: boolean;
 	productHistoryLimit: number;
 	useEdgeMeshSync: boolean;

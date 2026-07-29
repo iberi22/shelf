@@ -1,5 +1,5 @@
 import { Building2, Pencil, Plus, Save, SlidersHorizontal, Trash2 } from 'lucide-react';
-import type { Branch, InventoryConfig, InventoryFieldDefinition } from 'p2p-mesh-core';
+import type { Branch, InventoryColorOption, InventoryConfig, InventoryFieldDefinition } from 'p2p-mesh-core';
 import { dbSync } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
@@ -120,6 +120,29 @@ const BranchConfig: React.FC = () => {
     }));
   };
 
+  const updateColorOption = (index: number, patch: Partial<InventoryColorOption>) => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      colorOptions: current.colorOptions.map((option, optionIndex) =>
+        optionIndex === index ? { ...option, ...patch } : option,
+      ),
+    }));
+  };
+
+  const addColorOption = () => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      colorOptions: [...current.colorOptions, { name: `Color ${current.colorOptions.length + 1}`, hex: '#808080' }],
+    }));
+  };
+
+  const removeColorOption = (index: number) => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      colorOptions: current.colorOptions.filter((_, optionIndex) => optionIndex !== index),
+    }));
+  };
+
   const updateInventorySyncSetting = (patch: Partial<InventoryConfig>) => {
     setInventoryConfigDraft((current) => normalizeInventoryConfig({ ...current, ...patch }));
   };
@@ -129,8 +152,17 @@ const BranchConfig: React.FC = () => {
       { label: 'Campos visibles', value: inventoryConfigDraft.fields.length },
       { label: 'Atributos de variante', value: inventoryConfigDraft.variantAttributes.filter(Boolean).length },
       { label: 'Medidas sugeridas', value: inventoryConfigDraft.measureOptions.filter(Boolean).length },
+      {
+        label: 'Colores sugeridos',
+        value: inventoryConfigDraft.colorOptions.filter((option) => option.name.trim()).length,
+      },
     ],
-    [inventoryConfigDraft.fields.length, inventoryConfigDraft.measureOptions, inventoryConfigDraft.variantAttributes],
+    [
+      inventoryConfigDraft.fields.length,
+      inventoryConfigDraft.measureOptions,
+      inventoryConfigDraft.colorOptions,
+      inventoryConfigDraft.variantAttributes,
+    ],
   );
 
   const validateInventoryConfigDraft = () => {
@@ -150,11 +182,17 @@ const BranchConfig: React.FC = () => {
         variantAttributes.findIndex((candidate) => candidate.toLowerCase() === attribute.toLowerCase()) !== index,
     );
 
+    const colorNames = inventoryConfigDraft.colorOptions.map((option) => option.name.trim()).filter(Boolean);
+    const duplicateColorNames = colorNames.filter(
+      (name, index) => colorNames.findIndex((candidate) => candidate.toLowerCase() === name.toLowerCase()) !== index,
+    );
+
     if (normalizedFields.length === 0) errors.push('Agrega al menos un campo de producto.');
     if (normalizedFields.some((field) => !field.label)) errors.push('Cada campo necesita una etiqueta visible.');
     if (duplicateKeys.length > 0) errors.push('Hay claves de campos duplicadas. Usa una clave unica por parametro.');
     if (variantAttributes.length === 0) errors.push('Agrega al menos un atributo para variantes.');
     if (duplicateVariantAttributes.length > 0) errors.push('Hay atributos de variante repetidos.');
+    if (duplicateColorNames.length > 0) errors.push('Hay colores sugeridos repetidos.');
 
     setInventoryConfigErrors(errors);
     return errors.length === 0;
@@ -238,25 +276,27 @@ const BranchConfig: React.FC = () => {
       {/* Configuration of Articles */}
       <CollapsibleCard
         title="Configuración de artículos"
-        description="Ajusta los campos del producto, los atributos de variante y las medidas sugeridas."
+        description="Ajusta los campos del producto, los atributos de variante y las listas sugeridas de medidas y colores."
         icon={<SlidersHorizontal className="h-5 w-5" />}
         testId="settings-articles-config-card"
       >
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-4">
           <p className="text-xs text-[#F5F5DC]/70">
-            Ajusta los campos del producto, los atributos de variante y las medidas sugeridas desde aquí.
+            Ajusta los campos del producto, los atributos de variante y las listas sugeridas de medidas y colores desde
+            aquí.
           </p>
           <button
             type="button"
             onClick={saveInventoryConfig}
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#F5F5DC] px-4 py-2.5 text-sm font-bold text-[#121212] min-h-[44px] hover:bg-opacity-80 active:scale-95 md:w-auto cursor-pointer shrink-0"
+            data-testid="save-inventory-config"
           >
             <Save className="h-4 w-4" aria-hidden="true" />
             Guardar configuración
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 mb-5">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-4 mb-5">
           {inventoryConfigSummary.map((item) => (
             <div key={item.label} className="rounded-md border border-white/10 bg-[#121212] p-3">
               <div className="text-[11px] uppercase tracking-[0.12em] text-[#F5F5DC]/45">{item.label}</div>
@@ -355,6 +395,7 @@ const BranchConfig: React.FC = () => {
                 type="button"
                 onClick={addMeasureOption}
                 className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
+                data-testid="add-measure-option"
               >
                 <span className="inline-flex items-center gap-2">
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -370,11 +411,66 @@ const BranchConfig: React.FC = () => {
                     onChange={(e) => updateMeasureOption(index, e.target.value)}
                     className="w-full min-w-0 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
                     placeholder={`Medida ${index + 1}`}
+                    data-testid={`measure-option-input-${index}`}
                   />
                   <button
                     type="button"
                     onClick={() => removeMeasureOption(index)}
                     className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs cursor-pointer"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
+            <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <h4 className="font-semibold text-[#F5F5DC]">Colores sugeridos</h4>
+                <p className="text-xs text-[#F5F5DC]/55">
+                  Catalogo de colores disponibles al crear o editar productos y sus variantes.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={addColorOption}
+                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
+                data-testid="add-color-option"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                  Color
+                </span>
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2" data-testid="color-options-list">
+              {inventoryConfigDraft.colorOptions.map((option, index) => (
+                <div
+                  key={`${option.name}-${index}`}
+                  className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 min-w-0"
+                >
+                  <input
+                    type="color"
+                    value={/^#[0-9a-f]{6}$/i.test(option.hex) ? option.hex : '#808080'}
+                    onChange={(e) => updateColorOption(index, { hex: e.target.value })}
+                    className="h-10 w-10 shrink-0 cursor-pointer rounded-md border border-[#F5F5DC]/20 bg-[#0f0f0f] p-1"
+                    aria-label={`Tono de ${option.name || `color ${index + 1}`}`}
+                    data-testid={`color-option-hex-${index}`}
+                  />
+                  <input
+                    value={option.name}
+                    onChange={(e) => updateColorOption(index, { name: e.target.value })}
+                    className="w-full min-w-0 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
+                    placeholder={`Color ${index + 1}`}
+                    data-testid={`color-option-name-${index}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeColorOption(index)}
+                    className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs cursor-pointer"
+                    data-testid={`color-option-remove-${index}`}
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </button>

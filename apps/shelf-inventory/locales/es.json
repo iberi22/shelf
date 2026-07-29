@@ -88,6 +88,7 @@
     "lowStock": "¡Stock bajo!",
     "empty": "Tu inventario está vacío. Haz clic en 'Añadir Producto' para empezar.",
     "searchPlaceholder": "Buscar por nombre o SKU...",
+    "showingCount": "Mostrando {{shown}} de {{total}}",
     "form": {
       "namePlaceholder": "Nombre del Producto (ej. Camiseta)",
       "skuPlaceholder": "SKU o Código de Barras (opcional)",

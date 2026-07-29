@@ -20,9 +20,10 @@
     "outdated": "pnpm outdated",
     "install:ci": "pnpm install --frozen-lockfile",
     "prepare": "husky",
+    "test:unit": "vitest run lib api",
     "test:e2e": "playwright test",
     "test:ct": "cypress run --component",
-    "test": "pnpm test:ct && pnpm test:e2e"
+    "test": "pnpm test:unit && pnpm test:ct && pnpm test:e2e"
   },
   "dependencies": {
     "@google/genai": "^2.0.0",

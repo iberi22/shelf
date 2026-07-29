@@ -1,56 +1,68 @@
 import { expect, test } from '@playwright/test';
 import { dismissModals, setupPage } from './helpers';
 
-test.describe('Variant Catalog', () => {
-  test.setTimeout(60000);
+test.describe('Variant Catalog (SRC-FUN-001)', () => {
+  test.setTimeout(90000);
 
-  test('Product variants are displayed in catalog and filterable', async ({ page }) => {
+  test('products with variants are listed and filterable by variant attribute values', async ({ page }) => {
     await setupPage(page);
-
-    // Navigate to catalog
     await page.locator('[data-testid="nav-item-nav.inventory"]').last().click();
     await dismissModals(page);
-    await page.waitForTimeout(1500);
 
-    // Verify catalog page loaded — check for product table or list
-    const productList = page.locator(
-      '[data-testid="catalog-grid"], [data-testid="product-list"], [data-testid="inventory-table"], [data-testid="empty-inventory-message"], table',
-    );
-    await expect(productList.first()).toBeVisible({ timeout: 10000 });
+    // Create a product with 2 colors x 2 measures using multi-variant creation
+    await page.getByTestId('add-product-button').click();
+    await expect(page.getByTestId('product-form')).toBeVisible();
+    await page.getByTestId('product-name-input').fill('Catalog Variant Product');
+    await page.getByTestId('product-sku-input').fill('CVP-001');
+    await page.getByTestId('product-price-input').fill('120');
+    await page.getByTestId('product-cost-input').fill('60');
 
-    // Check for variant indicators in product rows
-    const variantBadges = page.locator('[data-testid="variant-badge"], [class*="variant"], [class*="variante"]');
-    const badgeCount = await variantBadges.count();
-    console.log('Variant badges found:', badgeCount);
+    await page.getByTestId('mc-color-Rojo').click();
+    await page.getByTestId('mc-color-Verde').click();
+    await page.getByTestId('mc-measure-20CM').click();
+    await page.getByTestId('mc-measure-28CM').click();
 
-    // If there are products with variants, verify variant details are accessible
-    const firstVariantRow = page.locator('[data-testid^="product-row-"]').first();
-    if (await firstVariantRow.isVisible().catch(() => false)) {
-      await firstVariantRow.click();
-      await page.waitForTimeout(1000);
-
-      // Check variant detail section
-      const variantDetail = page.locator('[data-testid="variant-detail"], [class*="variant-detail"]');
-      const hasVariantDetail = await variantDetail.isVisible().catch(() => false);
-      console.log('Variant detail visible:', hasVariantDetail);
+    const comboCards = page.locator('[data-testid^="combo-card-"]');
+    await expect(comboCards).toHaveCount(4);
+    for (let i = 0; i < 4; i++) {
+      await comboCards.nth(i).locator('input').first().fill('3');
     }
 
-    // Verify search/filter works
-    const searchInput = page.locator(
-      '[data-testid="search-input"], input[placeholder*="buscar"], input[placeholder*="search"]',
-    );
-    if (await searchInput.isVisible().catch(() => false)) {
-      await searchInput.fill('test');
-      await page.waitForTimeout(500);
-      // Catalog is still rendered (didn't crash)
-      await expect(productList.first()).toBeAttached();
-    }
+    await page.getByTestId('save-product-button').click();
+    await expect(page.locator('text=Catalog Variant Product').first()).toBeVisible({ timeout: 10000 });
 
-    // Verify catalog is functional — product count is accessible
-    const productRows = await page
-      .locator('[data-testid^="product-row-"], table tbody tr, [class*="product-card"]')
-      .count();
-    console.log('Product rows in catalog:', productRows);
-    expect(productRows).toBeGreaterThanOrEqual(0);
+    // The product persists 4 variants with their attribute combinations
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const state = (window as any).__shelfAppStateForTest;
+          const product = state?.products?.find((item: any) => item.name === 'Catalog Variant Product');
+          if (!product) return null;
+          return {
+            variantCount: product.variants?.length ?? 0,
+            quantity: Number(product.quantity),
+            labels: product.variantAttributes ?? [],
+          };
+        }),
+      )
+      .toEqual({ variantCount: 4, quantity: 12, labels: ['Color', 'Medida'] });
+
+    // Search matches variant attribute values (color)
+    await page.getByTestId('inventory-search-input').fill('Verde');
+    await expect(page.getByTestId('inventory-table').first()).toContainText('Catalog Variant Product', {
+      timeout: 5000,
+    });
+
+    // Search matches variant attribute values (measure)
+    await page.getByTestId('inventory-search-input').fill('28CM');
+    await expect(page.getByTestId('inventory-table').first()).toContainText('Catalog Variant Product', {
+      timeout: 5000,
+    });
+
+    // A non-matching query removes it from the list
+    await page.getByTestId('inventory-search-input').fill('valor-que-no-existe');
+    await expect(page.getByTestId('inventory-table').first()).not.toContainText('Catalog Variant Product', {
+      timeout: 5000,
+    });
   });
 });

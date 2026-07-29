@@ -1,0 +1,2 @@
+"id","claimed_pct","suggested_pct","delta_pct","auto_verdict","status","evidence_score","evidence_exists","evidence_missing","srs_links","pack"
+"SRC-FUN-001","97","95","-2","confirmed","implemented","100","11","0","System.Object[]","feature-SRC-FUN-001.md"

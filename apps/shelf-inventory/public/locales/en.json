@@ -88,6 +88,7 @@
     "lowStock": "Low stock!",
     "empty": "Your inventory is empty. Click 'Add Product' to get started.",
     "searchPlaceholder": "Search by name or SKU...",
+    "showingCount": "Showing {{shown}} of {{total}}",
     "form": {
       "namePlaceholder": "Product Name (e.g., T-Shirt)",
       "skuPlaceholder": "SKU or Barcode (optional)",

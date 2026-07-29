@@ -20,6 +20,11 @@ const LEGACY_ATTRIBUTE_ALIASES: Record<string, string[]> = {
   Material: ['material'],
 };
 
+const VERSION_ATTRIBUTE_ALIASES = new Set(['version', 'versión', 'modelo', 'model', 'edicion', 'edición']);
+
+export const isVersionAttributeLabel = (label: string): boolean =>
+  VERSION_ATTRIBUTE_ALIASES.has(label.trim().toLowerCase());
+
 const DEFAULT_VARIANT_ID = 'base';
 
 const normalizeLabel = (value: string): string => value.trim().replace(/\s+/g, ' ');

@@ -1,0 +1,25 @@
+{
+  "schema": "gitcore.feature-verify-index/v2",
+  "project": "shelf",
+  "generated_at": "2026-07-29T02:45:00.0000000-05:00",
+  "features_json": "E:\\proyectosSWAL\\shelf\\.gitcore\\features.json",
+  "srs_path": "E:\\proyectosSWAL\\shelf\\docs\\SRS\\REQUIREMENTS.md",
+  "count": 1,
+  "mode": "head",
+  "diff_claimed": true,
+  "items": [
+    {
+      "id": "SRC-FUN-001",
+      "claimed_pct": 97.0,
+      "suggested_pct": 95,
+      "delta_pct": -2.0,
+      "auto_verdict": "confirmed",
+      "status": "implemented",
+      "evidence_score": 100.0,
+      "evidence_exists": 11,
+      "evidence_missing": 0,
+      "srs_links": [],
+      "pack": "feature-SRC-FUN-001.md"
+    }
+  ]
+}
