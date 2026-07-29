@@ -28,10 +28,12 @@ const PLANT_BACKGROUND_SVG = `
 </svg>
 `;
 
+// Security: Escape HTML to prevent XSS. textContent/innerHTML handles < and >,
+// but we explicitly replace quotes to prevent attribute injection breakouts.
 const escapeHtml = (text: string) => {
   const div = document.createElement('div');
   div.textContent = text;
-  return div.innerHTML;
+  return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 };
 
 const Catalog: React.FC = () => {
