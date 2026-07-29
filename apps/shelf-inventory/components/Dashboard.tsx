@@ -18,33 +18,45 @@ const Dashboard: React.FC = () => {
   const [isProSectionHidden, setIsProSectionHidden] = useState(false);
 
   // Define all possible stat cards with their key and how to calculate their value
-  const allStatsDefinitions = useMemo(
-    () => [
+  const allStatsDefinitions = useMemo(() => {
+    let totalRevenue = 0;
+    let totalProfit = 0;
+    for (let i = 0; i < state.sales.length; i++) {
+      totalRevenue += state.sales[i].totalPrice;
+      totalProfit += state.sales[i].profit;
+    }
+
+    let activeProductsCount = 0;
+    for (let i = 0; i < state.products.length; i++) {
+      if (state.products[i].isActive !== false) {
+        activeProductsCount++;
+      }
+    }
+
+    return [
       {
         titleKey: 'dashboard.totalRevenue',
         icon: '💰',
-        getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.totalPrice, 0)),
+        value: formatCurrency(totalRevenue),
       },
       {
         titleKey: 'dashboard.totalProfit',
         icon: '💹',
-        getValue: () => formatCurrency(state.sales.reduce((acc, sale) => acc + sale.profit, 0)),
+        value: formatCurrency(totalProfit),
       },
       {
         titleKey: 'dashboard.totalSales',
         icon: '🛒',
-        getValue: () => state.sales.length.toString(),
+        value: state.sales.length.toString(),
       },
       {
         titleKey: 'dashboard.totalProducts',
         icon: '📦',
         // Product count (active SKUs), not sum of stock quantities
-        getValue: () =>
-          state.products.filter((product) => product.isActive !== false).length.toString(),
+        value: activeProductsCount.toString(),
       },
-    ],
-    [state.sales, state.products, formatCurrency],
-  );
+    ];
+  }, [state.sales, state.products, formatCurrency]);
 
   const [cardVisibility, setCardVisibility] = useLocalStorage(
     'dashboardCardVisibility',
@@ -104,7 +116,7 @@ const Dashboard: React.FC = () => {
                 />
               </div>
             )}
-            <StatCard titleKey={stat.titleKey} value={stat.getValue()} icon={stat.icon} />
+            <StatCard titleKey={stat.titleKey} value={stat.value} icon={stat.icon} />
           </div>
         ))}
         {/* Message when no cards are visible */}
