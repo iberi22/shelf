@@ -162,11 +162,142 @@ test.describe('P2P Conflict Resolution', () => {
 
     // Verify settings page loaded (prefer stable test id / single heading)
     await expect(
-      adminPage.getByRole('heading', { name: 'Settings', exact: true }).or(
-        adminPage.getByRole('heading', { name: 'Configuración', exact: true }),
-      ),
+      adminPage
+        .getByRole('heading', { name: 'Settings', exact: true })
+        .or(adminPage.getByRole('heading', { name: 'Configuración', exact: true })),
     ).toBeVisible();
 
     await adminContext.close();
+  });
+
+  test('Vendedor remote update is reverted and logged in audit logs', async ({ browser }) => {
+    const adminContext = await browser.newContext();
+    const vendedorContext = await browser.newContext();
+
+    const adminPage = await adminContext.newPage();
+    const vendedorPage = await vendedorContext.newPage();
+
+    await setupPage(adminPage);
+    await setupPage(vendedorPage);
+
+    await adminPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
+    await vendedorPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
+    await dismissModals(adminPage);
+    await dismissModals(vendedorPage);
+
+    const vendedorId = await getLocalPeerId(vendedorPage);
+    const adminId = await getLocalPeerId(adminPage);
+
+    // Initialize admin as master/admin
+    await adminPage.evaluate((authorityPeerId) => {
+      const dbSync = (window as any)._dbSyncForTest;
+      if (!dbSync) return;
+      dbSync.setMasterPeerId(authorityPeerId);
+      dbSync.updateLinkedNode(authorityPeerId, { role: 'admin', isMaster: true }, authorityPeerId);
+    }, adminId);
+
+    // Connect vendedor to admin
+    await adminPage.evaluate((targetPeerId: string) => {
+      (window as any)._p2pManagerForTest?.connect(targetPeerId);
+    }, vendedorId);
+
+    // Wait for connection to be active
+    await expect
+      .poll(
+        async () => {
+          return adminPage.evaluate(() => {
+            const db = (window as any)._dbSyncForTest;
+            return db?.getLinkedNodes()?.length || 0;
+          });
+        },
+        { timeout: 30000 },
+      )
+      .toBeGreaterThanOrEqual(1);
+
+    // Configure the remote peer as 'vendedor' with no edit permission
+    await adminPage.evaluate(
+      ({ targetPeerId, adminId }) => {
+        const p2p = (window as any)._p2pManagerForTest;
+        const dbSync = (window as any)._dbSyncForTest;
+        if (!p2p || !dbSync) return;
+
+        const vendedorPerms = {
+          canViewProducts: true,
+          canEditProducts: false,
+          canViewSales: true,
+          canEditSales: true,
+          canViewClients: true,
+          canEditClients: true,
+          canViewSuppliers: false,
+          canEditSuppliers: false,
+          canViewPurchaseOrders: false,
+          canEditPurchaseOrders: false,
+          canViewReports: false,
+          canViewArqueo: false,
+          canViewDashboard: false,
+        };
+
+        dbSync.updatePeerConfig(targetPeerId, 'vendedor', vendedorPerms, adminId);
+        dbSync.updateLinkedNode(targetPeerId, { role: 'vendedor', permissions: vendedorPerms }, adminId);
+        p2p.sendTo(targetPeerId, {
+          type: 'CHANGE_ROLE',
+          payload: { targetPeerId, role: 'vendedor', permissions: vendedorPerms },
+        });
+      },
+      { targetPeerId: vendedorId, adminId },
+    );
+
+    // Clear admin products to be clean
+    await adminPage.evaluate(() => {
+      const dbSync = (window as any)._dbSyncForTest;
+      const productsMap = dbSync?.doc?.getMap('products');
+      if (productsMap) {
+        productsMap.forEach((_v: any, k: string) => {
+          productsMap.delete(k);
+        });
+      }
+    });
+
+    // Let Vendedor attempt to maliciously write a product directly to the Yjs doc and broadcast
+    await vendedorPage.evaluate(() => {
+      const dbSync = (window as any)._dbSyncForTest;
+      if (!dbSync) return;
+
+      dbSync.doc.transact(() => {
+        dbSync.doc.getMap('products').set('vendedor-malicious-product', {
+          id: 'vendedor-malicious-product',
+          name: 'Vendedor Bypassed Product',
+          quantity: 12,
+          price: 55,
+          cost: 30,
+          isActive: true,
+          updatedBy: dbSync.localPeerId,
+          updatedAt: new Date().toISOString(),
+        });
+      }, 'local');
+    });
+
+    // Wait and verify on Admin page that:
+    // 1. The product is NOT added (reverted)
+    // 2. An audit log entry is written for the REJECTED_MUTATION
+    await expect
+      .poll(
+        async () => {
+          return adminPage.evaluate((vId) => {
+            const dbSync = (window as any)._dbSyncForTest;
+            const state = dbSync?.getState();
+            const productExists = state?.products?.some((p: any) => p.id === 'vendedor-malicious-product');
+            const rejectedAuditExists = state?.auditLogs?.some(
+              (log: any) => log.action === 'REJECTED_MUTATION' && log.peerId === vId,
+            );
+            return { productExists, rejectedAuditExists };
+          }, vendedorId);
+        },
+        { timeout: 30000 },
+      )
+      .toEqual({ productExists: false, rejectedAuditExists: true });
+
+    await adminContext.close();
+    await vendedorContext.close();
   });
 });

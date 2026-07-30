@@ -20,6 +20,10 @@ import type {
 } from "./types";
 import { logger } from "./utils/logger";
 
+if (typeof window !== "undefined") {
+	(window as any).Y = Y;
+}
+
 export type ConnectionEvent = {
 	peerId: string;
 	eventType:
@@ -1246,23 +1250,31 @@ export class DatabaseSyncManager {
 			return false;
 		}
 
-		// Entity collections: trusted writers keep their merge (isTrustedRemoteWriter already gated)
-		if (
-			collectionName === "products" ||
-			collectionName === "productChangeHistory" ||
-			collectionName === "sales" ||
-			collectionName === "clients" ||
-			collectionName === "suppliers" ||
-			collectionName === "purchaseOrders" ||
-			collectionName === "ocrResults" ||
-			collectionName === "arqueoSessions" ||
-			collectionName === "branches" ||
-			collectionName === "auditLogs"
-		) {
-			return true;
-		}
+		const perms: Partial<PeerPermissions> = effective.permissions || {};
 
-		return false;
+		// Entity collections: remote writer must have corresponding permission
+		switch (collectionName) {
+			case "products":
+			case "productChangeHistory":
+				return !!perms.canEditProducts;
+			case "sales":
+				return !!perms.canEditSales;
+			case "clients":
+				return !!perms.canEditClients;
+			case "suppliers":
+				return !!perms.canEditSuppliers;
+			case "purchaseOrders":
+			case "ocrResults":
+				return !!perms.canEditPurchaseOrders;
+			case "arqueoSessions":
+				return !!perms.canViewArqueo;
+			case "branches":
+				return true; // Allow for now, might need more granular perms later
+			case "auditLogs":
+				return true; // Non-privilege escalation audits are allowed
+			default:
+				return false;
+		}
 	}
 
 	private snapshotCollectionMaps(): Map<
@@ -1319,6 +1331,23 @@ export class DatabaseSyncManager {
 							yMap.set(key, previous);
 						}
 						touched = true;
+
+						// Log the rejected mutation
+						const auditId = `reject-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+						this.auditLogs.set(auditId, {
+							id: auditId,
+							timestamp: new Date().toISOString(),
+							peerId: peerId,
+							action: "REJECTED_MUTATION",
+							entityId: key,
+							entityType: name as any,
+							details: {
+								peerId,
+								entity: name,
+								timestamp: new Date().toISOString(),
+								key,
+							},
+						} as any);
 					}
 				}
 
@@ -1328,6 +1357,23 @@ export class DatabaseSyncManager {
 						if (!this.checkRemotePermissions(peerId, name, previous as Partial<EntityRecord>)) {
 							yMap.set(key, previous);
 							touched = true;
+
+							// Log the rejected mutation
+							const auditId = `reject-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+							this.auditLogs.set(auditId, {
+								id: auditId,
+								timestamp: new Date().toISOString(),
+								peerId: peerId,
+								action: "REJECTED_MUTATION",
+								entityId: key,
+								entityType: name as any,
+								details: {
+									peerId,
+									entity: name,
+									timestamp: new Date().toISOString(),
+									key,
+								},
+							} as any);
 						}
 					}
 				}
@@ -1359,9 +1405,9 @@ export class DatabaseSyncManager {
 			return;
 		}
 
-		const beforePrivilege = this.snapshotPrivilegeMaps();
+		const beforeCollection = this.snapshotCollectionMaps();
 		Y.applyUpdate(this.doc, update, origin);
-		this.revertUnauthorizedPrivilegeMaps(peerId, beforePrivilege);
+		this.revertUnauthorizedRemoteChanges(peerId, beforeCollection);
 	}
 
 	private static readonly PRIVILEGE_COLLECTIONS = [
