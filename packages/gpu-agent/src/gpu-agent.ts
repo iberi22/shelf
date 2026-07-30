@@ -6,12 +6,7 @@
 
 import type { EdgeMesh } from 'edge-mesh';
 
-export type TaskType =
-  | 'vector-sum'
-  | 'dot-product'
-  | 'matrix-scale'
-  | 'echo'
-  | string;
+export type TaskType = 'vector-sum' | 'dot-product' | 'matrix-scale' | 'echo' | string;
 
 export interface Task {
   id: string;
@@ -103,9 +98,7 @@ export class GpuAgent {
     return Array.from(this.capabilities);
   }
 
-  public async runLocalTask(
-    task: Omit<Task, 'peerId' | 'id'> & { id?: string },
-  ): Promise<TaskResult> {
+  public async runLocalTask(task: Omit<Task, 'peerId' | 'id'> & { id?: string }): Promise<TaskResult> {
     const fullTask: Task = {
       ...task,
       id: task.id ?? `task_${Math.random().toString(36).slice(2, 11)}`,
@@ -137,10 +130,7 @@ export class GpuAgent {
   /**
    * Announce worker capacity on the mesh (best-effort transmit).
    */
-  public async offerWorkerCapacity(capacity: {
-    maxConcurrentTasks: number;
-    capabilities?: string[];
-  }): Promise<void> {
+  public async offerWorkerCapacity(capacity: { maxConcurrentTasks: number; capabilities?: string[] }): Promise<void> {
     this.maxConcurrentTasks = capacity.maxConcurrentTasks;
     if (capacity.capabilities) {
       this.capabilities = new Set(capacity.capabilities);
@@ -212,19 +202,14 @@ export class GpuAgent {
   }
 
   private processQueue() {
-    while (
-      this.taskQueue.length > 0 &&
-      this.runningTasks < this.maxConcurrentTasks
-    ) {
+    while (this.taskQueue.length > 0 && this.runningTasks < this.maxConcurrentTasks) {
       const next = this.taskQueue.shift();
       if (!next) break;
       void this.runTaskNow(next.task).then(next.resolve, next.reject);
     }
   }
 
-  private async executeTask(
-    task: Task,
-  ): Promise<{ output: unknown; backend: 'webgpu' | 'cpu' }> {
+  private async executeTask(task: Task): Promise<{ output: unknown; backend: 'webgpu' | 'cpu' }> {
     switch (task.type) {
       case 'vector-sum': {
         const input = task.input as VectorSumInput;
@@ -308,7 +293,7 @@ export class GpuAgent {
     if (!device || values.length === 0) return null;
     try {
       const data = new Float32Array(values);
-      const result = await this.webGpuMapScale(device, data, 1);
+      const result = await this.webGpuVectorSum(device, data);
       if (!result) return null;
       return cpuSum(Array.from(result));
     } catch {
@@ -320,9 +305,9 @@ export class GpuAgent {
     const device = await this.getDevice();
     if (!device || a.length === 0) return null;
     try {
-      const products = await this.webGpuElementMul(device, new Float32Array(a), new Float32Array(b));
-      if (!products) return null;
-      return cpuSum(Array.from(products));
+      const result = await this.webGpuDotProduct(device, new Float32Array(a), new Float32Array(b));
+      if (!result) return null;
+      return cpuSum(Array.from(result));
     } catch {
       return null;
     }
@@ -340,11 +325,222 @@ export class GpuAgent {
   }
 
   /** WebGPU usage flags as numbers to avoid DOM lib type conflicts. */
-  private async webGpuMapScale(
-    device: any,
-    data: Float32Array,
-    scale: number,
-  ): Promise<Float32Array | null> {
+  private async webGpuVectorSum(device: any, data: Float32Array): Promise<Float32Array | null> {
+    const STORAGE = 0x80;
+    const COPY_DST = 0x8;
+    const COPY_SRC = 0x4;
+    const UNIFORM = 0x40;
+    const MAP_READ = 0x1;
+    const workgroupSize = 128;
+
+    const shader = `
+      @group(0) @binding(0) var<storage, read> input: array<f32>;
+      @group(0) @binding(1) var<storage, read_write> output: array<f32>;
+      @group(0) @binding(2) var<uniform> size: u32;
+
+      var<workgroup> shared_data: array<f32, ${workgroupSize}>;
+
+      @compute @workgroup_size(${workgroupSize})
+      fn main(
+        @builtin(global_invocation_id) global_id: vec3<u32>,
+        @builtin(local_invocation_id) local_id: vec3<u32>,
+        @builtin(workgroup_id) wg_id: vec3<u32>
+      ) {
+        let g_id = global_id.x;
+        let l_id = local_id.x;
+
+        if (g_id < size) {
+          shared_data[l_id] = input[g_id];
+        } else {
+          shared_data[l_id] = 0.0;
+        }
+
+        workgroupBarrier();
+
+        for (var s = ${workgroupSize / 2}u; s > 0u; s = s >> 1u) {
+          if (l_id < s) {
+            shared_data[l_id] = shared_data[l_id] + shared_data[l_id + s];
+          }
+          workgroupBarrier();
+        }
+
+        if (l_id == 0u) {
+          output[wg_id.x] = shared_data[0];
+        }
+      }
+    `;
+
+    const module = device.createShaderModule({ code: shader });
+    const pipeline = device.createComputePipeline({
+      layout: 'auto',
+      compute: { module, entryPoint: 'main' },
+    });
+
+    const inputBuffer = device.createBuffer({
+      size: Math.max(4, data.byteLength),
+      usage: STORAGE | COPY_DST,
+    });
+    device.queue.writeBuffer(inputBuffer, 0, data.buffer, data.byteOffset, data.byteLength);
+
+    const numWorkgroups = Math.ceil(data.length / workgroupSize) || 1;
+    const outputBuffer = device.createBuffer({
+      size: numWorkgroups * 4,
+      usage: STORAGE | COPY_SRC,
+    });
+
+    const sizeData = new Uint32Array([data.length, 0, 0, 0]);
+    const sizeBuffer = device.createBuffer({
+      size: 16,
+      usage: UNIFORM | COPY_DST,
+    });
+    device.queue.writeBuffer(sizeBuffer, 0, sizeData.buffer, sizeData.byteOffset, sizeData.byteLength);
+
+    const bindGroup = device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: inputBuffer } },
+        { binding: 1, resource: { buffer: outputBuffer } },
+        { binding: 2, resource: { buffer: sizeBuffer } },
+      ],
+    });
+
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginComputePass();
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, bindGroup);
+    pass.dispatchWorkgroups(numWorkgroups);
+    pass.end();
+
+    const readBuffer = device.createBuffer({
+      size: numWorkgroups * 4,
+      usage: COPY_DST | MAP_READ,
+    });
+    encoder.copyBufferToBuffer(outputBuffer, 0, readBuffer, 0, numWorkgroups * 4);
+    device.queue.submit([encoder.finish()]);
+
+    await readBuffer.mapAsync(MAP_READ);
+    const copy = new Float32Array(readBuffer.getMappedRange().slice(0));
+    readBuffer.unmap();
+    inputBuffer.destroy();
+    outputBuffer.destroy();
+    sizeBuffer.destroy();
+    readBuffer.destroy();
+    return copy;
+  }
+
+  private async webGpuDotProduct(device: any, a: Float32Array, b: Float32Array): Promise<Float32Array | null> {
+    const STORAGE = 0x80;
+    const COPY_DST = 0x8;
+    const COPY_SRC = 0x4;
+    const UNIFORM = 0x40;
+    const MAP_READ = 0x1;
+    const workgroupSize = 128;
+
+    const shader = `
+      @group(0) @binding(0) var<storage, read> a: array<f32>;
+      @group(0) @binding(1) var<storage, read> b: array<f32>;
+      @group(0) @binding(2) var<storage, read_write> output: array<f32>;
+      @group(0) @binding(3) var<uniform> size: u32;
+
+      var<workgroup> shared_data: array<f32, ${workgroupSize}>;
+
+      @compute @workgroup_size(${workgroupSize})
+      fn main(
+        @builtin(global_invocation_id) global_id: vec3<u32>,
+        @builtin(local_invocation_id) local_id: vec3<u32>,
+        @builtin(workgroup_id) wg_id: vec3<u32>
+      ) {
+        let g_id = global_id.x;
+        let l_id = local_id.x;
+
+        if (g_id < size) {
+          shared_data[l_id] = a[g_id] * b[g_id];
+        } else {
+          shared_data[l_id] = 0.0;
+        }
+
+        workgroupBarrier();
+
+        for (var s = ${workgroupSize / 2}u; s > 0u; s = s >> 1u) {
+          if (l_id < s) {
+            shared_data[l_id] = shared_data[l_id] + shared_data[l_id + s];
+          }
+          workgroupBarrier();
+        }
+
+        if (l_id == 0u) {
+          output[wg_id.x] = shared_data[0];
+        }
+      }
+    `;
+
+    const module = device.createShaderModule({ code: shader });
+    const pipeline = device.createComputePipeline({
+      layout: 'auto',
+      compute: { module, entryPoint: 'main' },
+    });
+
+    const aBuffer = device.createBuffer({
+      size: Math.max(4, a.byteLength),
+      usage: STORAGE | COPY_DST,
+    });
+    device.queue.writeBuffer(aBuffer, 0, a.buffer, a.byteOffset, a.byteLength);
+
+    const bBuffer = device.createBuffer({
+      size: Math.max(4, b.byteLength),
+      usage: STORAGE | COPY_DST,
+    });
+    device.queue.writeBuffer(bBuffer, 0, b.buffer, b.byteOffset, b.byteLength);
+
+    const numWorkgroups = Math.ceil(a.length / workgroupSize) || 1;
+    const outputBuffer = device.createBuffer({
+      size: numWorkgroups * 4,
+      usage: STORAGE | COPY_SRC,
+    });
+
+    const sizeData = new Uint32Array([a.length, 0, 0, 0]);
+    const sizeBuffer = device.createBuffer({
+      size: 16,
+      usage: UNIFORM | COPY_DST,
+    });
+    device.queue.writeBuffer(sizeBuffer, 0, sizeData.buffer, sizeData.byteOffset, sizeData.byteLength);
+
+    const bindGroup = device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: aBuffer } },
+        { binding: 1, resource: { buffer: bBuffer } },
+        { binding: 2, resource: { buffer: outputBuffer } },
+        { binding: 3, resource: { buffer: sizeBuffer } },
+      ],
+    });
+
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginComputePass();
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, bindGroup);
+    pass.dispatchWorkgroups(numWorkgroups);
+    pass.end();
+
+    const readBuffer = device.createBuffer({
+      size: numWorkgroups * 4,
+      usage: COPY_DST | MAP_READ,
+    });
+    encoder.copyBufferToBuffer(outputBuffer, 0, readBuffer, 0, numWorkgroups * 4);
+    device.queue.submit([encoder.finish()]);
+
+    await readBuffer.mapAsync(MAP_READ);
+    const copy = new Float32Array(readBuffer.getMappedRange().slice(0));
+    readBuffer.unmap();
+    aBuffer.destroy();
+    bBuffer.destroy();
+    outputBuffer.destroy();
+    sizeBuffer.destroy();
+    readBuffer.destroy();
+    return copy;
+  }
+
+  private async webGpuMapScale(device: any, data: Float32Array, scale: number): Promise<Float32Array | null> {
     const STORAGE = 0x80;
     const COPY_DST = 0x8;
     const COPY_SRC = 0x4;
@@ -409,91 +605,6 @@ export class GpuAgent {
     paramsBuffer.destroy();
     readBuffer.destroy();
     return copy.subarray(0, data.length);
-  }
-
-  private async webGpuElementMul(
-    device: any,
-    a: Float32Array,
-    b: Float32Array,
-  ): Promise<Float32Array | null> {
-    const STORAGE = 0x80;
-    const COPY_DST = 0x8;
-    const COPY_SRC = 0x4;
-    const UNIFORM = 0x40;
-    const MAP_READ = 0x1;
-    const workgroupSize = 64;
-    const shader = `
-      @group(0) @binding(0) var<storage, read> a: array<f32>;
-      @group(0) @binding(1) var<storage, read> b: array<f32>;
-      @group(0) @binding(2) var<storage, read_write> out: array<f32>;
-      @group(0) @binding(3) var<uniform> params: vec4<f32>;
-      @compute @workgroup_size(${workgroupSize})
-      fn main(@builtin(global_invocation_id) id: vec3<u32>) {
-        let i = id.x;
-        if (i >= u32(params.x)) { return; }
-        out[i] = a[i] * b[i];
-      }
-    `;
-    const module = device.createShaderModule({ code: shader });
-    const pipeline = device.createComputePipeline({
-      layout: 'auto',
-      compute: { module, entryPoint: 'main' },
-    });
-
-    const mkStorage = (data: Float32Array) => {
-      const buf = device.createBuffer({
-        size: Math.max(4, data.byteLength),
-        usage: STORAGE | COPY_DST,
-      });
-      device.queue.writeBuffer(buf, 0, data.buffer, data.byteOffset, data.byteLength);
-      return buf;
-    };
-
-    const aBuf = mkStorage(a);
-    const bBuf = mkStorage(b);
-    const outBuf = device.createBuffer({
-      size: Math.max(4, a.byteLength),
-      usage: STORAGE | COPY_SRC,
-    });
-    const params = new Float32Array([a.length, 0, 0, 0]);
-    const pBuf = device.createBuffer({
-      size: 16,
-      usage: UNIFORM | COPY_DST,
-    });
-    device.queue.writeBuffer(pBuf, 0, params.buffer, params.byteOffset, params.byteLength);
-
-    const bindGroup = device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: aBuf } },
-        { binding: 1, resource: { buffer: bBuf } },
-        { binding: 2, resource: { buffer: outBuf } },
-        { binding: 3, resource: { buffer: pBuf } },
-      ],
-    });
-
-    const encoder = device.createCommandEncoder();
-    const pass = encoder.beginComputePass();
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup);
-    pass.dispatchWorkgroups(Math.ceil(a.length / workgroupSize) || 1);
-    pass.end();
-
-    const readBuffer = device.createBuffer({
-      size: Math.max(4, a.byteLength),
-      usage: COPY_DST | MAP_READ,
-    });
-    encoder.copyBufferToBuffer(outBuf, 0, readBuffer, 0, a.byteLength || 4);
-    device.queue.submit([encoder.finish()]);
-    await readBuffer.mapAsync(MAP_READ);
-    const copy = new Float32Array(readBuffer.getMappedRange().slice(0));
-    readBuffer.unmap();
-    aBuf.destroy();
-    bBuf.destroy();
-    outBuf.destroy();
-    pBuf.destroy();
-    readBuffer.destroy();
-    return copy.subarray(0, a.length);
   }
 }
 
