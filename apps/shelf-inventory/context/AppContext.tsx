@@ -653,6 +653,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
     });
 
+    // Initialize P2P node immediately at app startup (not deferred to Settings page)
+    p2pManager.init();
+
+    // Poll until localPeerId is available, then store it in state
+    const peerIdInterval = setInterval(() => {
+      if (p2pManager.localPeerId) {
+        rawDispatch({ type: 'SET_LOCAL_PEER_ID', payload: p2pManager.localPeerId });
+        clearInterval(peerIdInterval);
+      }
+    }, 500);
+
     // Expose for Playwright testing
     if (typeof window !== 'undefined') {
       window._p2pManagerForTest = p2pManager;
@@ -660,6 +671,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     return () => {
+      clearInterval(peerIdInterval);
       unobserve();
       p2pManager.disconnect();
     };

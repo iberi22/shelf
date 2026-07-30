@@ -58,7 +58,9 @@
     padding: 0;
     min-height: var(--app-height, 100vh);
     overflow-x: hidden;
-    overscroll-behavior-y: none;
+    /* overscroll-behavior-y is intentionally NOT set here;
+       it is applied only to the main app scroll container
+       so the LandingPage can scroll freely on desktop */
   }
 
   #root {

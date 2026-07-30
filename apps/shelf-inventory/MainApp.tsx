@@ -105,7 +105,7 @@ const MainApp: React.FC = () => {
           <PullToRefresh>
             <main
               id="main-scroll-area"
-              className="flex-1 min-w-0 p-4 pt-16 sm:p-6 md:p-8 overflow-y-auto pb-24 md:pb-8 h-full"
+              className="flex-1 min-w-0 p-4 pt-16 sm:p-6 md:p-8 overflow-y-auto pb-24 md:pb-8 h-full overscroll-y-contain"
             >
               <P2PSyncStatusHeader />
               {renderComponent()}
