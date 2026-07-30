@@ -201,7 +201,7 @@ class P2PManager {
 	private healthEventsBound = false;
 
 	public localPeerId: string | null = null;
-	public role: P2PRole = "collaborator";
+	public role: P2PRole = "vendedor";
 	private peers: PeerInfo[] = [];
 	private lastMessageTime = new Map<string, number>();
 	private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
@@ -513,7 +513,12 @@ class P2PManager {
 			dbSync.masterRole = this.role;
 
 			const currentMaster = dbSync.getMasterPeerId();
-			if (!currentMaster) {
+			const hasInviteInUrl = typeof window !== "undefined" && (
+				window.location.search.includes("invite=") ||
+				window.location.search.includes("peerId=")
+			);
+
+			if (!currentMaster && !hasInviteInUrl) {
 				dbSync.setMasterPeerId(id);
 				dbSync.updateLinkedNode(
 					id,
@@ -549,9 +554,9 @@ class P2PManager {
 					this.notifyConnectionChange();
 				} else {
 					logger.error(
-						"[SECURITY] Local DSA key does not match master key in CRDT. Fallback to collaborator.",
+						"[SECURITY] Local DSA key does not match master key in CRDT. Fallback to vendedor.",
 					);
-					this.role = "collaborator";
+					this.role = "vendedor";
 				}
 			}
 
@@ -639,7 +644,7 @@ class P2PManager {
 		conn.on("open", () => {
 			this.connections.set(conn.peer, conn);
 			this.health.markConnected(conn.peer);
-			this.updatePeerList(conn.peer, "collaborator");
+			this.updatePeerList(conn.peer, "vendedor");
 
 			// Broadcast updated peer list to the mesh
 			this.broadcastPeerList();
@@ -779,7 +784,7 @@ class P2PManager {
 								dsaPublicKey: dsaPubKey || undefined,
 							});
 							this.health.markPong(conn.peer);
-							this.updatePeerList(conn.peer, "collaborator");
+							this.updatePeerList(conn.peer, "vendedor");
 							this.notifyConnectionChange();
 							this.requestYjsSync(conn.peer);
 						} else {
@@ -814,7 +819,7 @@ class P2PManager {
 							dsaPublicKey: dsaPubKey,
 						});
 						this.health.markPong(conn.peer);
-						this.updatePeerList(conn.peer, "collaborator");
+						this.updatePeerList(conn.peer, "vendedor");
 						this.notifyConnectionChange();
 						this.requestYjsSync(conn.peer);
 					} else {
@@ -824,6 +829,20 @@ class P2PManager {
 						conn.close();
 					}
 					return;
+				}
+
+				if (message.type === "CHANGE_ROLE") {
+					if (!this.isAuthorizedAuthoritySender(conn.peer)) {
+						const errMsg = `[SECURITY] CHANGE_ROLE rejected: sender ${conn.peer} is not authorized (not master/admin)`;
+						logger.error(errMsg);
+						this.emitConnectionError({
+							peerId: conn.peer,
+							source: "connection",
+							type: "unauthorized-role-change",
+							message: errMsg,
+						});
+						return;
+					}
 				}
 
 				if (this.isAuthorityMessage(message)) {
@@ -1183,6 +1202,20 @@ class P2PManager {
 		try {
 			const decrypted = await decryptData(ciphertext, key);
 			const message = JSON.parse(decrypted) as SyncMessage;
+
+			if (message.type === "CHANGE_ROLE") {
+				if (!this.isAuthorizedAuthoritySender(fromPeerId)) {
+					const errMsg = `[SECURITY] CHANGE_ROLE rejected: sender ${fromPeerId} is not authorized (not master/admin)`;
+					logger.error(errMsg);
+					this.emitConnectionError({
+						peerId: fromPeerId,
+						source: "connection",
+						type: "unauthorized-role-change",
+						message: errMsg,
+					});
+					return;
+				}
+			}
 
 			if (
 				this.isAuthorityMessage(message) &&

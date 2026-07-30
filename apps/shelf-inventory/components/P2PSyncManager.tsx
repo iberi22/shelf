@@ -1,4 +1,3 @@
-
 import {
   Activity,
   AlertCircle,
@@ -248,8 +247,8 @@ const P2PSyncManager: React.FC = () => {
   }, [wakeLockActive]);
   const [isForcingSync, setIsForcingSync] = useState(false);
   const [branchInput, setBranchInput] = useState(state.activeBranch || '');
-  const [selectedRole, setSelectedRole] = useState<P2PRole>('collaborator');
-  const [selectedPermissions, setSelectedPermissions] = useState<PeerPermissions>(permissionPresets.collaborator);
+  const [selectedRole, setSelectedRole] = useState<P2PRole>('vendedor');
+  const [selectedPermissions, setSelectedPermissions] = useState<PeerPermissions>(permissionPresets.vendedor);
   const [peerHealth, setPeerHealth] = useState<Record<string, PeerHealthInfo>>(() => {
     return Object.fromEntries(p2pManager.getPeerHealthList().map((health) => [health.peerId, health]));
   });
@@ -286,8 +285,8 @@ const P2PSyncManager: React.FC = () => {
     ) => {
       if (!p2pManager.localPeerId) return;
       const isLocalHost = dbSync.getMasterPeerId() === p2pManager.localPeerId;
-      const effectiveRole = !isLocalHost && role === 'admin' ? 'collaborator' : role;
-      const effectivePermissions = effectiveRole === role ? permissions : permissions || permissionPresets.collaborator;
+      const effectiveRole = !isLocalHost && role === 'admin' ? 'vendedor' : role;
+      const effectivePermissions = effectiveRole === role ? permissions : permissions || permissionPresets.vendedor;
 
       p2pManager.role = effectiveRole;
       dbSync.masterRole = effectiveRole;
@@ -419,7 +418,6 @@ const P2PSyncManager: React.FC = () => {
       }
     }, 1000);
 
-
     return () => {
       // Cleanup interval if component unmounts before it fires
       clearInterval(interval);
@@ -429,7 +427,7 @@ const P2PSyncManager: React.FC = () => {
       unsubscribePeerHealth();
       // NOTE: For a full fix, p2pManager should expose offMessage
     };
-  }, [dispatch, showNotification, state.inventoryConfig.useEdgeMeshSync]);
+  }, [dispatch, showNotification]);
 
   useEffect(() => {
     if (syncProgress >= 100) {
@@ -470,8 +468,8 @@ const P2PSyncManager: React.FC = () => {
 
     if (isLocalHostAuthority) {
       setPendingPeerId(peerId.trim());
-      setSelectedRole('collaborator');
-      setSelectedPermissions(permissionPresets.collaborator);
+      setSelectedRole('vendedor');
+      setSelectedPermissions(permissionPresets.vendedor);
       setShowConfirmConnectModal(true);
       return;
     }
@@ -592,6 +590,37 @@ const P2PSyncManager: React.FC = () => {
       }
     }
   }, [state.peers, pendingConfigs, dispatch, isLocalHostAuthority, state.localPeerId]);
+
+  // Automatic default role assignment and propagation for peers without an explicit role
+  useEffect(() => {
+    if (isLocalHostAuthority && state.localPeerId) {
+      for (const peer of state.peers) {
+        if (peer.id !== state.localPeerId && peer.status === 'verified') {
+          const linkedNode = dbSync.getLinkedNodes().find((n) => n.id === peer.id);
+          // If the peer is not in linkedNodes yet, or has no role
+          if (!linkedNode?.role) {
+            const defaultRole: P2PRole = 'vendedor';
+            const defaultPerms = permissionPresets[defaultRole];
+
+            dbSync.updatePeerConfig(peer.id, defaultRole, defaultPerms, state.localPeerId);
+            dispatch({
+              type: 'UPDATE_PEER_CONFIG',
+              payload: { targetPeerId: peer.id, role: defaultRole, permissions: defaultPerms },
+            });
+
+            p2pManager.sendTo(peer.id, {
+              type: 'CHANGE_ROLE',
+              payload: { targetPeerId: peer.id, role: defaultRole, permissions: defaultPerms },
+            });
+            p2pManager.sendTo(peer.id, {
+              type: 'UPDATE_PEER_PERMISSIONS',
+              payload: { targetPeerId: peer.id, role: defaultRole, permissions: defaultPerms },
+            });
+          }
+        }
+      }
+    }
+  }, [state.peers, isLocalHostAuthority, state.localPeerId, dispatch]);
 
   const getDbStats = () => {
     const counts = {

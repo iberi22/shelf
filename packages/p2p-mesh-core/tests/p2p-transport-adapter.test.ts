@@ -156,4 +156,14 @@ describe("P2PManagerTransport (Phase C)", () => {
 		await transport.cerrar();
 		expect(unsub).toHaveBeenCalled();
 	});
+
+	it("enviar accepts string NodoId and converts to wire destinations correctly", async () => {
+		const host = createMockHost();
+		const transport = createP2PManagerTransport(host, "local-1" as never);
+
+		await transport.enviar("peer-b" as never, { text: "hello" }, "sync");
+
+		expect(host.sent).toHaveLength(1);
+		expect(host.sent[0].peerId).toBe("peer-b");
+	});
 });

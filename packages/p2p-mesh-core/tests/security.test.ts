@@ -319,3 +319,65 @@ describe('Security: dual-ready YJS app encryption', () => {
     p2p.yjsWireMode = 'envelope-when-ready';
   });
 });
+
+describe('Security: Role change authority & defaulting', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    (dbSync as any).linkedNodes.clear();
+    (dbSync as any).ephemeralNodes.clear();
+    (dbSync as any).metadata.clear();
+    dbSync.localPeerId = 'victim-peer';
+    dbSync.setMasterPeerId('victim-peer');
+    dbSync.isReady = true;
+    dbSync.updateLinkedNode(
+      'victim-peer',
+      { role: 'admin', isMaster: true, dsaPublicKey: 'victim-key' },
+      'victim-peer',
+    );
+  });
+
+  it('rejects role change if not sent by master/admin', async () => {
+    const p2p: any = p2pManager;
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const logSpy = vi.spyOn(p2p, 'emitConnectionError').mockImplementation(() => {});
+
+    // Simulate incoming message on connection
+    const msg = {
+      type: 'CHANGE_ROLE',
+      payload: { targetPeerId: 'victim-peer', role: 'admin' },
+    };
+
+    // We simulate a message from a non-master peer 'attacker'
+    const isAuth = p2p.isAuthorizedAuthoritySender('attacker');
+    expect(isAuth).toBe(false);
+
+    // Now test handleEncryptedMessage with this message from 'attacker'
+    p2p.encryptionKeys.set('attacker', {} as CryptoKey);
+    // Mock decryptData
+    const cryptoModule = await import('../src/crypto');
+    const decryptSpy = vi.spyOn(cryptoModule, 'decryptData').mockResolvedValue(JSON.stringify(msg));
+
+    await p2p.handleEncryptedMessage('attacker', 'cipher');
+
+    expect(logSpy).toHaveBeenCalled();
+    const lastCall = logSpy.mock.calls[0][0];
+    expect(lastCall.type).toBe('unauthorized-role-change');
+    expect(lastCall.message).toContain('CHANGE_ROLE rejected');
+
+    decryptSpy.mockRestore();
+    errSpy.mockRestore();
+    logSpy.mockRestore();
+  });
+
+  it('defaults a peer without an explicit role to vendedor', () => {
+    const config = dbSync.getState('unknown-peer');
+    expect(config.role).toBe('vendedor');
+
+    const linkedNodes = dbSync.getLinkedNodes();
+    // Ephemeral nodes with no explicit roles should default to vendedor
+    dbSync.updateEphemeralNode('node-x', { status: 'verified' });
+    const peers = dbSync.getLinkedNodes();
+    const nodeX = peers.find(p => p.id === 'node-x');
+    expect(nodeX?.role).toBe('vendedor');
+  });
+});

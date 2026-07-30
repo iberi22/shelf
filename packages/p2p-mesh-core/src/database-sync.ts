@@ -142,7 +142,7 @@ export class DatabaseSyncManager {
 	} {
 		if (!peerId) {
 			return {
-				role: "collaborator" as P2PRole,
+				role: "vendedor" as P2PRole,
 				permissions: undefined as PeerPermissions | undefined,
 				isMaster: false,
 			};
@@ -155,7 +155,7 @@ export class DatabaseSyncManager {
 
 		if (!node) {
 			return {
-				role: (this.metadata.get("role") || "collaborator") as P2PRole,
+				role: (this.metadata.get("role") || "vendedor") as P2PRole,
 				permissions: undefined,
 				isMaster: isMasterPeer && (peerId === this.localPeerId || isVerified),
 			};
@@ -172,10 +172,10 @@ export class DatabaseSyncManager {
 			};
 		}
 
-		const rawRole = node.role || "collaborator";
+		const rawRole = node.role || "vendedor";
 		const effectiveRole =
 			rawRole === "admin" && !canAssumePrivilegedRole
-				? "collaborator"
+				? "vendedor"
 				: rawRole;
 
 		const defaults = this.getDefaultPermissions(effectiveRole as P2PRole);
@@ -569,7 +569,7 @@ export class DatabaseSyncManager {
 		const peers = this.getLinkedNodes();
 		const effectiveLocalId = localPeerId || this.localPeerId;
 
-		let resolvedRole: P2PRole = "collaborator";
+		let resolvedRole: P2PRole = "vendedor";
 		let resolvedPermissions: PeerPermissions | undefined;
 
 		if (effectiveLocalId) {
@@ -583,7 +583,7 @@ export class DatabaseSyncManager {
 				resolvedRole = effectiveSelf.role;
 				resolvedPermissions = effectiveSelf.permissions;
 			} else {
-				resolvedRole = "collaborator";
+				resolvedRole = "vendedor";
 			}
 		} else {
 			resolvedRole = "admin";
@@ -736,7 +736,7 @@ export class DatabaseSyncManager {
 			if (!peersMap.has(id)) {
 				peersMap.set(id, {
 					id,
-					role: "collaborator",
+					role: "vendedor",
 					...ephem,
 					lastSeen: ephem.lastSeen || new Date().toISOString(),
 				});
@@ -778,7 +778,7 @@ export class DatabaseSyncManager {
 			const nextRole =
 				canEditPeerConfig && info.role
 					? info.role
-					: existingRecord.role || "collaborator";
+					: existingRecord.role || "vendedor";
 			const nextPermissions =
 				canEditPeerConfig && info.permissions
 					? info.permissions
@@ -827,7 +827,7 @@ export class DatabaseSyncManager {
 	}
 
 	private getDefaultPermissions(
-		role: P2PRole = "collaborator",
+		role: P2PRole = "vendedor",
 	): PeerPermissions {
 		if (role === "admin") {
 			return {
