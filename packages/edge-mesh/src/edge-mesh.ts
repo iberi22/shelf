@@ -1,42 +1,42 @@
-import * as Y from "yjs";
+import * as Y from 'yjs';
 import {
 	CAPACIDAD_ESTANDAR,
 	createNamespaceAuthorizer,
 	type NamespaceAuthorizer,
-} from "./authz/index.js";
-import { createEdgeMeshNode, type EdgeMeshNode } from "./core/node.js";
+} from './authz/index.js';
+import { createEdgeMeshNode, type EdgeMeshNode } from './core/node.js';
 import {
 	createGovernanceManager,
 	type GovernanceManager,
-} from "./governance/index.js";
+} from './governance/index.js';
 import {
 	createPostQuantumIdentity,
 	generateKeypair,
 	identityFromSecret,
 	type PostQuantumIdentity,
-} from "./identity/index.js";
-import { NamespaceManager } from "./namespaces/index.js";
-import { OpLog } from "./op-log/index.js";
-import { PresenceManager } from "./presence/index.js";
+} from './identity/index.js';
+import { NamespaceManager } from './namespaces/index.js';
+import { OpLog } from './op-log/index.js';
+import { PresenceManager } from './presence/index.js';
 import {
 	createEnvelope,
 	MessageDeduplicator,
 	signEnvelope,
 	validateEnvelope,
 	verifyEnvelopeSignature,
-} from "./protocol/index.js";
+} from './protocol/index.js';
 import {
 	createSnapshotManager,
 	type SnapshotManager,
-} from "./snapshot/index.js";
-import { InMemoryStorage, StorageManager } from "./storage/index.js";
-import { SyncEngine } from "./sync/engine.js";
-import { MemoryTransport } from "./transport/memory.js";
+} from './snapshot/index.js';
+import { InMemoryStorage, StorageManager } from './storage/index.js';
+import { SyncEngine } from './sync/engine.js';
+import { MemoryTransport } from './transport/memory.js';
 import {
 	PeerJSTransport,
 	type PeerJSTransportOptions,
-} from "./transport/peerjs.js";
-import type { ITransport } from "./transport/types.js";
+} from './transport/peerjs.js';
+import type { ITransport } from './transport/types.js';
 import type {
 	EdgeMeshConfig,
 	EdgeMeshEventMap,
@@ -44,8 +44,8 @@ import type {
 	NodoId,
 	ParPublico,
 	TipoMensaje,
-} from "./types/index.js";
-import { TIPO_MENSAJE } from "./types/index.js";
+} from './types/index.js';
+import { TIPO_MENSAJE } from './types/index.js';
 
 // ─── YJS ADAPTER ───────────────────────────────────────────────────────────
 
@@ -65,15 +65,15 @@ export class YjsAdapter {
 	}
 
 	onUpdate(handler: (update: Uint8Array, origin: unknown) => void): () => void {
-		const id = "global";
+		const id = 'global';
 		const handlers = this.listeners.get(id) ?? new Set();
 		handlers.add(handler);
 		this.listeners.set(id, handlers);
 
-		this.doc.on("update", handler as never);
+		this.doc.on('update', handler as never);
 
 		return () => {
-			this.doc.off("update", handler as never);
+			this.doc.off('update', handler as never);
 			handlers.delete(handler);
 		};
 	}
@@ -110,7 +110,7 @@ export class YjsAdapter {
 		// Detach update handlers first
 		for (const handlers of this.listeners.values()) {
 			for (const handler of handlers) {
-				this.doc.off("update", handler as never);
+				this.doc.off('update', handler as never);
 			}
 		}
 		this.listeners.clear();
@@ -161,11 +161,10 @@ export class EdgeMesh {
 		this.peerPublicKeys = new Map();
 		this.requireAuthz = config.requireAuthz !== false;
 		this.requireSignedEnvelopes = config.requireSignedEnvelopes === true;
-		this.defaultSyncNamespace = config.defaultSyncNamespace ?? "global";
+		this.defaultSyncNamespace = config.defaultSyncNamespace ?? 'global';
 		this.sharesExternalDoc = config.yDoc !== undefined;
 		// Host-owned doc (dbSync) already broadcasts via p2pManager YJS_UPDATE — avoid double relay.
-		this.relayLocalYjs =
-			config.relayLocalYjs ?? (config.yDoc === undefined);
+		this.relayLocalYjs = config.relayLocalYjs ?? config.yDoc === undefined;
 
 		// Core — mesh uses its own EventTarget so emit("error") does not re-enter nodo handlers
 		this.nodo = createEdgeMeshNode(config.nodoId);
@@ -174,7 +173,7 @@ export class EdgeMesh {
 
 		// Storage
 		this.storage =
-			config.storageBackend === "mem"
+			config.storageBackend === 'mem'
 				? new InMemoryStorage()
 				: new StorageManager({
 						dbName: `edge-mesh-${config.nodoId}`,
@@ -185,12 +184,12 @@ export class EdgeMesh {
 			this.identity = identityFromSecret(
 				config.nodoId,
 				config.identitySecret,
-				"maestra",
+				'maestra',
 			);
 		} else {
 			this.identity = createPostQuantumIdentity(
 				config.nodoId,
-				generateKeypair("maestra"),
+				generateKeypair('maestra'),
 			);
 		}
 		this.registrarClavePublica(config.nodoId, this.identity.exportarPublico());
@@ -215,16 +214,16 @@ export class EdgeMesh {
 		this.namespaces = new NamespaceManager();
 
 		// Re-encolar eventos del nodo (forward to mesh EventTarget without looping)
-		this.nodo.on("nodoConectado", (ev) => {
+		this.nodo.on('nodoConectado', (ev) => {
 			this.onNodoConectado(ev.detail.nodoId);
-			this.emit("nodoConectado", ev.detail);
+			this.emit('nodoConectado', ev.detail);
 		});
-		this.nodo.on("nodoDesconectado", (ev) => {
+		this.nodo.on('nodoDesconectado', (ev) => {
 			this.onNodoDesconectado(ev.detail.nodoId);
-			this.emit("nodoDesconectado", ev.detail);
+			this.emit('nodoDesconectado', ev.detail);
 		});
-		this.nodo.on("estadoCambiado", (ev) => {
-			this.emit("estadoCambiado", ev.detail);
+		this.nodo.on('estadoCambiado', (ev) => {
+			this.emit('estadoCambiado', ev.detail);
 		});
 		// Note: do NOT re-emit nodo "error" onto the same shared target pattern —
 		// mesh-level errors use this.emit("error") on a dedicated EventTarget.
@@ -249,14 +248,14 @@ export class EdgeMesh {
 	 */
 	usarTransport(transport: ITransport): void {
 		if (this.transport && this.transportMessageHandler) {
-			this.transport.off("mensaje", this.transportMessageHandler as never);
+			this.transport.off('mensaje', this.transportMessageHandler as never);
 		}
 
 		this.transport = transport;
 		this.transportMessageHandler = (ev) => {
 			void this.procesarMensaje(ev.detail.envolvente);
 		};
-		this.transport.on("mensaje", this.transportMessageHandler as never);
+		this.transport.on('mensaje', this.transportMessageHandler as never);
 
 		// Late-bind Yjs relay if mesh already started
 		if (this.iniciado) {
@@ -267,7 +266,7 @@ export class EdgeMesh {
 	/** Detach transport without destroying host PeerJS (adapter.cerrar only unsubscribes). */
 	detachTransport(): void {
 		if (this.transport && this.transportMessageHandler) {
-			this.transport.off("mensaje", this.transportMessageHandler as never);
+			this.transport.off('mensaje', this.transportMessageHandler as never);
 		}
 		this.transportMessageHandler = null;
 		this.transport = null;
@@ -281,13 +280,13 @@ export class EdgeMesh {
 		if (this.unsubYjs || this.transport === null || !this.relayLocalYjs) return;
 
 		this.unsubYjs = this.yjsAdapter.onUpdate((update, origin) => {
-			if (origin === "remote" || origin === this.config.nodoId) return;
+			if (origin === 'remote' || origin === this.config.nodoId) return;
 			// Local writes: string "local" or object { origin: "local", branchId }
 			const isLocalObject =
-				typeof origin === "object" &&
+				typeof origin === 'object' &&
 				origin !== null &&
-				(origin as { origin?: string }).origin === "local";
-			if (origin !== "local" && !isLocalObject && origin !== null) return;
+				(origin as { origin?: string }).origin === 'local';
+			if (origin !== 'local' && !isLocalObject && origin !== null) return;
 			void this.broadcastYjsUpdate(update);
 		});
 	}
@@ -331,7 +330,7 @@ export class EdgeMesh {
 
 		if (this.transport !== null) {
 			if (this.transportMessageHandler) {
-				this.transport.off("mensaje", this.transportMessageHandler as never);
+				this.transport.off('mensaje', this.transportMessageHandler as never);
 				this.transportMessageHandler = null;
 			}
 			await this.transport.cerrar();
@@ -382,7 +381,7 @@ export class EdgeMesh {
 	 */
 	async broadcastYjsUpdate(
 		update: Uint8Array,
-		docId = "default",
+		docId = 'default',
 	): Promise<void> {
 		const payload = {
 			docId,
@@ -394,7 +393,7 @@ export class EdgeMesh {
 		let env = createEnvelope(
 			TIPO_MENSAJE.SYNC,
 			this.config.nodoId,
-			"*",
+			'*',
 			payload,
 		);
 
@@ -420,22 +419,33 @@ export class EdgeMesh {
 
 		if (this.deduplicator.esDuplicado(envolvente)) return;
 
-		// Signature gate for sensitive message types
+		// Signature gate for all message types except YJS_UPDATE when requireSignedEnvelopes is enabled
 		if (
 			this.requireSignedEnvelopes &&
-			(envolvente.tipo === TIPO_MENSAJE.SYNC ||
-				envolvente.tipo === TIPO_MENSAJE.AUTHZ)
+			(envolvente.tipo as string) !== 'YJS_UPDATE'
 		) {
+			if (!envolvente.firma || envolvente.firma.length === 0) {
+				console.warn(
+					`Envelope sin firma de ${envolvente.origen} (${envolvente.tipo})`,
+				);
+				this.emit('error', {
+					mensaje: `Firma ausente de ${envolvente.origen} (${envolvente.tipo})`,
+				});
+				return;
+			}
 			const ok = await this.verificarFirmaEnvelope(envolvente);
 			if (!ok) {
-				this.emit("error", {
-					mensaje: `Firma invalida o ausente de ${envolvente.origen} (${envolvente.tipo})`,
+				console.error(
+					`Envelope con firma invalida de ${envolvente.origen} (${envolvente.tipo})`,
+				);
+				this.emit('error', {
+					mensaje: `Firma invalida de ${envolvente.origen} (${envolvente.tipo})`,
 				});
 				return;
 			}
 		}
 
-		this.emit("mensajeRecibido", { envolvente });
+		this.emit('mensajeRecibido', { envolvente });
 
 		switch (envolvente.tipo) {
 			case TIPO_MENSAJE.HEARTBEAT:
@@ -476,7 +486,7 @@ export class EdgeMesh {
 	private decodeSyncBytes(datos: unknown): Uint8Array | null {
 		if (datos instanceof Uint8Array) return datos;
 		if (Array.isArray(datos)) return new Uint8Array(datos);
-		if (typeof datos === "object" && datos !== null && "data" in datos) {
+		if (typeof datos === 'object' && datos !== null && 'data' in datos) {
 			const arr = (datos as { data: number[] }).data;
 			if (Array.isArray(arr)) return new Uint8Array(arr);
 		}
@@ -490,7 +500,7 @@ export class EdgeMesh {
 			clock?: number;
 			namespace?: string;
 		};
-		if (payload === undefined || typeof payload !== "object") return;
+		if (payload === undefined || typeof payload !== 'object') return;
 
 		const docId = payload.docId;
 		if (docId === undefined) return;
@@ -516,7 +526,7 @@ export class EdgeMesh {
 				);
 
 			if (!allowed) {
-				this.emit("error", {
+				this.emit('error', {
 					mensaje: `SYNC denegado: ${env.origen} sin write/sync en ${namespace}`,
 				});
 				return;
@@ -528,7 +538,7 @@ export class EdgeMesh {
 
 		this.yjsAdapter.applyUpdate(bytes, env.origen);
 
-		this.emit("syncCompletado", {
+		this.emit('syncCompletado', {
 			docId,
 			clock: payload.clock ?? 0,
 		});
@@ -560,7 +570,7 @@ export class EdgeMesh {
 			voto: unknown;
 		};
 
-		if (payload.accion === "votar" && payload.voto !== undefined) {
+		if (payload.accion === 'votar' && payload.voto !== undefined) {
 			this.governance.votar(payload.propuesta, payload.voto as never);
 		}
 	}
@@ -588,7 +598,7 @@ export class EdgeMesh {
 				// Even without requireSignedEnvelopes, still require admin capability
 				// for remote grants when requireAuthz is on.
 				if (!isAdmin) {
-					this.emit("error", {
+					this.emit('error', {
 						mensaje: `AUTHZ denegado: ${env.origen} no es admin de ${payload.espacio}`,
 					});
 					return;
@@ -596,7 +606,7 @@ export class EdgeMesh {
 			}
 		}
 
-		if (payload.accion === "conceder") {
+		if (payload.accion === 'conceder') {
 			this.authorizer.concederCapacidad(
 				payload.espacio,
 				payload.sujeto,
@@ -612,7 +622,7 @@ export class EdgeMesh {
 			nodoId: NodoId;
 		};
 
-		if (payload.accion === "unir") {
+		if (payload.accion === 'unir') {
 			const espacio = this.namespaces.obtenerEspacioPorNombre(payload.espacio);
 			if (espacio !== null) {
 				this.namespaces.unirNodo(espacio.id, payload.nodoId);
@@ -624,7 +634,7 @@ export class EdgeMesh {
 
 	private onNodoConectado(nodoId: NodoId): void {
 		this.namespaces.unirNodo(
-			this.namespaces.obtenerEspacioPorNombre("global")?.id ?? "",
+			this.namespaces.obtenerEspacioPorNombre('global')?.id ?? '',
 			nodoId,
 		);
 	}
@@ -704,7 +714,7 @@ export class EdgeMesh {
 
 	private emit<K extends keyof EdgeMeshEventMap>(
 		tipo: K,
-		detalle: EdgeMeshEventMap[K]["detail"],
+		detalle: EdgeMeshEventMap[K]['detail'],
 	): void {
 		const evento = new CustomEvent(tipo as string, { detail: detalle });
 		this.eventTarget.dispatchEvent(evento);

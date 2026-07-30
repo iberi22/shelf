@@ -1,6 +1,11 @@
-import type { PostQuantumIdentity } from "../identity/index.js";
-import type { Envolvente, NodoId, ParPublico, TipoMensaje } from "../types/index.js";
-import { TIPO_MENSAJE } from "../types/index.js";
+import type { PostQuantumIdentity } from '../identity/index.js';
+import type {
+	Envolvente,
+	NodoId,
+	ParPublico,
+	TipoMensaje,
+} from '../types/index.js';
+import { TIPO_MENSAJE } from '../types/index.js';
 
 // ─── ENVELOPE CREATION ─────────────────────────────────────────────────────
 
@@ -17,14 +22,14 @@ function generarNonce(): string {
 	const buf = new Uint8Array(16);
 	crypto.getRandomValues(buf);
 	return Array.from(buf)
-		.map((b) => b.toString(36).padStart(2, "0"))
-		.join("");
+		.map((b) => b.toString(36).padStart(2, '0'))
+		.join('');
 }
 
 export function createEnvelope(
 	tipo: TipoMensaje,
 	origen: NodoId,
-	destino: NodoId | "*",
+	destino: NodoId | '*',
 	payload: unknown,
 	firma: Uint8Array | null = null,
 ): Envolvente {
@@ -42,14 +47,14 @@ export function createEnvelope(
 }
 
 export function validateEnvelope(env: Envolvente): boolean {
-	if (!env.id || typeof env.id !== "string") return false;
+	if (!env.id || typeof env.id !== 'string') return false;
 	if (!env.tipo || !Object.values(TIPO_MENSAJE).includes(env.tipo))
 		return false;
-	if (!env.origen || typeof env.origen !== "string") return false;
-	if (!env.destino || typeof env.destino !== "string") return false;
-	if (typeof env.timestamp !== "number" || env.timestamp <= 0) return false;
+	if (!env.origen || typeof env.origen !== 'string') return false;
+	if (!env.destino || typeof env.destino !== 'string') return false;
+	if (typeof env.timestamp !== 'number' || env.timestamp <= 0) return false;
 	if (env.version < 1) return false;
-	if (!env.nonce || typeof env.nonce !== "string") return false;
+	if (!env.nonce || typeof env.nonce !== 'string') return false;
 	return true;
 }
 
@@ -79,17 +84,19 @@ export async function signEnvelope(
 	return { ...env, firma };
 }
 
+/**
+ * Cryptographically verifies the signature on an envelope using ML-DSA-65.
+ * Returns false if the signature is missing (null/empty) or invalid.
+ */
 export async function verifyEnvelopeSignature(
 	env: Envolvente,
 	parPublico: ParPublico,
 	identity: PostQuantumIdentity,
 ): Promise<boolean> {
-	if (!env.firma || env.firma.length === 0) return false;
-	return identity.verificar(
-		canonicalEnvelopeBytes(env),
-		env.firma,
-		parPublico,
-	);
+	if (!env.firma || env.firma.length === 0) {
+		return false;
+	}
+	return identity.verificar(canonicalEnvelopeBytes(env), env.firma, parPublico);
 }
 
 // ─── MESSAGE DEDUPLICATOR ──────────────────────────────────────────────────

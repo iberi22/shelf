@@ -1,115 +1,204 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createEnvelope, validateEnvelope, MessageDeduplicator } from "../../src/protocol/index.js";
-import type { NodoId } from "../../src/types/index.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+	createPostQuantumIdentity,
+	generateKeypair,
+} from '../../src/identity/index.js';
+import {
+	createEnvelope,
+	MessageDeduplicator,
+	signEnvelope,
+	validateEnvelope,
+	verifyEnvelopeSignature,
+} from '../../src/protocol/index.js';
+import type { NodoId } from '../../src/types/index.js';
 
-describe("protocol", () => {
-  const mockNodoId = "nodo-1" as NodoId;
-  const mockDestinoId = "nodo-2" as NodoId;
+describe('protocol', () => {
+	const mockNodoId = 'nodo-1' as NodoId;
+	const mockDestinoId = 'nodo-2' as NodoId;
 
-  describe("createEnvelope", () => {
-    it("should create a valid envelope with given parameters", () => {
-      const payload = { data: "test" };
-      const env = createEnvelope("sync", mockNodoId, mockDestinoId, payload);
+	describe('verifyEnvelopeSignature with post-quantum identity', () => {
+		it('should return false for missing or empty signature', async () => {
+			const identity = createPostQuantumIdentity(
+				mockNodoId,
+				generateKeypair('maestra'),
+			);
+			const env = createEnvelope('sync', mockNodoId, mockDestinoId, {});
 
-      expect(env.tipo).toBe("sync");
-      expect(env.origen).toBe(mockNodoId);
-      expect(env.destino).toBe(mockDestinoId);
-      expect(env.payload).toEqual(payload);
-      expect(env.version).toBe(1);
-      expect(typeof env.id).toBe("string");
-      expect(typeof env.nonce).toBe("string");
-      expect(typeof env.timestamp).toBe("number");
-    });
+			const ok = await verifyEnvelopeSignature(
+				env,
+				identity.exportarPublico(),
+				identity,
+			);
+			expect(ok).toBe(false);
 
-    it("should include firma if provided", () => {
-      const firma = new Uint8Array([1, 2, 3]);
-      const env = createEnvelope("sync", mockNodoId, mockDestinoId, {}, firma);
-      expect(env.firma).toEqual(firma);
-    });
-  });
+			const envEmptyFirma = { ...env, firma: new Uint8Array() };
+			const okEmpty = await verifyEnvelopeSignature(
+				envEmptyFirma,
+				identity.exportarPublico(),
+				identity,
+			);
+			expect(okEmpty).toBe(false);
+		});
 
-  describe("validateEnvelope", () => {
-    it("should return true for valid envelope", () => {
-      const env = createEnvelope("sync", mockNodoId, mockDestinoId, {});
-      expect(validateEnvelope(env)).toBe(true);
-    });
+		it('should return true for valid cryptographic signature', async () => {
+			const identity = createPostQuantumIdentity(
+				mockNodoId,
+				generateKeypair('maestra'),
+			);
+			const env = createEnvelope('sync', mockNodoId, mockDestinoId, {});
+			const signedEnv = await signEnvelope(env, identity);
 
-    it("should return false for invalid envelope fields", () => {
-      const env = createEnvelope("sync", mockNodoId, mockDestinoId, {});
+			const ok = await verifyEnvelopeSignature(
+				signedEnv,
+				identity.exportarPublico(),
+				identity,
+			);
+			expect(ok).toBe(true);
+		});
 
-      expect(validateEnvelope({ ...env, id: "" })).toBe(false);
-      expect(validateEnvelope({ ...env, tipo: "invalid" as any })).toBe(false);
-      expect(validateEnvelope({ ...env, origen: "" as any })).toBe(false);
-      expect(validateEnvelope({ ...env, destino: "" as any })).toBe(false);
-      expect(validateEnvelope({ ...env, timestamp: 0 })).toBe(false);
-      expect(validateEnvelope({ ...env, version: 0 })).toBe(false);
-      expect(validateEnvelope({ ...env, nonce: "" })).toBe(false);
-    });
-  });
+		it('should return false for invalid cryptographic signature', async () => {
+			const identity = createPostQuantumIdentity(
+				mockNodoId,
+				generateKeypair('maestra'),
+			);
+			const env = createEnvelope('sync', mockNodoId, mockDestinoId, {});
+			const signedEnv = await signEnvelope(env, identity);
 
-  describe("MessageDeduplicator", () => {
-    let deduplicator: MessageDeduplicator;
+			// Modify the signature payload slightly to make it invalid
+			const firma = signedEnv.firma;
+			if (!firma) {
+				throw new Error('Expected firma to be present');
+			}
+			const tamperedFirma = new Uint8Array(firma);
+			tamperedFirma[0] ^= 0xff; // Flip first byte
+			const tamperedEnv = { ...signedEnv, firma: tamperedFirma };
 
-    beforeEach(() => {
-      vi.useFakeTimers();
-      deduplicator = new MessageDeduplicator({ ventanaMs: 1000 });
-    });
+			const ok = await verifyEnvelopeSignature(
+				tamperedEnv,
+				identity.exportarPublico(),
+				identity,
+			);
+			expect(ok).toBe(false);
+		});
+	});
 
-    afterEach(() => {
-      vi.useRealTimers();
-    });
+	describe('createEnvelope', () => {
+		it('should create a valid envelope with given parameters', () => {
+			const payload = { data: 'test' };
+			const env = createEnvelope('sync', mockNodoId, mockDestinoId, payload);
 
-    it("should detect duplicate messages within window", () => {
-      const env = createEnvelope("sync", mockNodoId, mockDestinoId, {});
+			expect(env.tipo).toBe('sync');
+			expect(env.origen).toBe(mockNodoId);
+			expect(env.destino).toBe(mockDestinoId);
+			expect(env.payload).toEqual(payload);
+			expect(env.version).toBe(1);
+			expect(typeof env.id).toBe('string');
+			expect(typeof env.nonce).toBe('string');
+			expect(typeof env.timestamp).toBe('number');
+		});
 
-      expect(deduplicator.esDuplicado(env)).toBe(false);
-      expect(deduplicator.esDuplicado(env)).toBe(true);
-    });
+		it('should include firma if provided', () => {
+			const firma = new Uint8Array([1, 2, 3]);
+			const env = createEnvelope('sync', mockNodoId, mockDestinoId, {}, firma);
+			expect(env.firma).toEqual(firma);
+		});
+	});
 
-    it("should not detect duplicate after window expires", () => {
-      const env = createEnvelope("sync", mockNodoId, mockDestinoId, {});
+	describe('validateEnvelope', () => {
+		it('should return true for valid envelope', () => {
+			const env = createEnvelope('sync', mockNodoId, mockDestinoId, {});
+			expect(validateEnvelope(env)).toBe(true);
+		});
 
-      expect(deduplicator.esDuplicado(env)).toBe(false);
+		it('should return false for invalid envelope fields', () => {
+			const env = createEnvelope('sync', mockNodoId, mockDestinoId, {});
 
-      vi.advanceTimersByTime(1001);
+			expect(validateEnvelope({ ...env, id: '' })).toBe(false);
+			expect(validateEnvelope({ ...env, tipo: 'invalid' as any })).toBe(false);
+			expect(validateEnvelope({ ...env, origen: '' as any })).toBe(false);
+			expect(validateEnvelope({ ...env, destino: '' as any })).toBe(false);
+			expect(validateEnvelope({ ...env, timestamp: 0 })).toBe(false);
+			expect(validateEnvelope({ ...env, version: 0 })).toBe(false);
+			expect(validateEnvelope({ ...env, nonce: '' })).toBe(false);
+		});
+	});
 
-      expect(deduplicator.esDuplicado(env)).toBe(false);
-    });
+	describe('MessageDeduplicator', () => {
+		let deduplicator: MessageDeduplicator;
 
-    it("should consider origin in uniqueness", () => {
-      const env1 = createEnvelope("sync", mockNodoId, mockDestinoId, {});
-      const env2 = { ...env1, origen: "nodo-3" as NodoId };
+		beforeEach(() => {
+			vi.useFakeTimers();
+			deduplicator = new MessageDeduplicator({ ventanaMs: 1000 });
+		});
 
-      expect(deduplicator.esDuplicado(env1)).toBe(false);
-      expect(deduplicator.esDuplicado(env2)).toBe(false);
-    });
+		afterEach(() => {
+			vi.useRealTimers();
+		});
 
-    it("should clean up old entries when max entries reached", () => {
-      const smallDeduplicator = new MessageDeduplicator({ maxEntradas: 2, ventanaMs: 1000 });
+		it('should detect duplicate messages within window', () => {
+			const env = createEnvelope('sync', mockNodoId, mockDestinoId, {});
 
-      const env1 = createEnvelope("sync", mockNodoId, mockDestinoId, {});
-      const env2 = createEnvelope("sync", "nodo-2" as NodoId, mockDestinoId, {});
-      const env3 = createEnvelope("sync", "nodo-3" as NodoId, mockDestinoId, {});
+			expect(deduplicator.esDuplicado(env)).toBe(false);
+			expect(deduplicator.esDuplicado(env)).toBe(true);
+		});
 
-      smallDeduplicator.esDuplicado(env1);
-      vi.advanceTimersByTime(100);
-      smallDeduplicator.esDuplicado(env2);
+		it('should not detect duplicate after window expires', () => {
+			const env = createEnvelope('sync', mockNodoId, mockDestinoId, {});
 
-      vi.advanceTimersByTime(1000); // env1 and env2 are now "old"
+			expect(deduplicator.esDuplicado(env)).toBe(false);
 
-      smallDeduplicator.esDuplicado(env3); // should trigger cleanup
+			vi.advanceTimersByTime(1001);
 
-      // The implementation of limpiar only deletes entries if ts < limite
-      // Since we used vi.advanceTimersByTime(1000) and ventanaMs is 1000,
-      // now - 1000 might not be strictly greater than seen timestamps.
-      // In the implementation: if (ts < limite) { this.vistos.delete(clave); }
-      // limite = ahora - 1000.
-      // env1 was at T0. env2 was at T100.
-      // env3 is at T1100. limite is 1100 - 1000 = 100.
-      // env1 (T0) < 100, so it is deleted.
-      // env2 (T100) is NOT < 100, so it is NOT deleted.
-      // Total should be 2 (env2 and env3).
-      expect(smallDeduplicator.obtenerEstadisticas().total).toBe(2);
-    });
-  });
+			expect(deduplicator.esDuplicado(env)).toBe(false);
+		});
+
+		it('should consider origin in uniqueness', () => {
+			const env1 = createEnvelope('sync', mockNodoId, mockDestinoId, {});
+			const env2 = { ...env1, origen: 'nodo-3' as NodoId };
+
+			expect(deduplicator.esDuplicado(env1)).toBe(false);
+			expect(deduplicator.esDuplicado(env2)).toBe(false);
+		});
+
+		it('should clean up old entries when max entries reached', () => {
+			const smallDeduplicator = new MessageDeduplicator({
+				maxEntradas: 2,
+				ventanaMs: 1000,
+			});
+
+			const env1 = createEnvelope('sync', mockNodoId, mockDestinoId, {});
+			const env2 = createEnvelope(
+				'sync',
+				'nodo-2' as NodoId,
+				mockDestinoId,
+				{},
+			);
+			const env3 = createEnvelope(
+				'sync',
+				'nodo-3' as NodoId,
+				mockDestinoId,
+				{},
+			);
+
+			smallDeduplicator.esDuplicado(env1);
+			vi.advanceTimersByTime(100);
+			smallDeduplicator.esDuplicado(env2);
+
+			vi.advanceTimersByTime(1000); // env1 and env2 are now "old"
+
+			smallDeduplicator.esDuplicado(env3); // should trigger cleanup
+
+			// The implementation of limpiar only deletes entries if ts < limite
+			// Since we used vi.advanceTimersByTime(1000) and ventanaMs is 1000,
+			// now - 1000 might not be strictly greater than seen timestamps.
+			// In the implementation: if (ts < limite) { this.vistos.delete(clave); }
+			// limite = ahora - 1000.
+			// env1 was at T0. env2 was at T100.
+			// env3 is at T1100. limite is 1100 - 1000 = 100.
+			// env1 (T0) < 100, so it is deleted.
+			// env2 (T100) is NOT < 100, so it is NOT deleted.
+			// Total should be 2 (env2 and env3).
+			expect(smallDeduplicator.obtenerEstadisticas().total).toBe(2);
+		});
+	});
 });
