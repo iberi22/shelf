@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { SalonVirtual, TIPO_SALON, ESTADO_SALON, type SalonConfig, SalonesManager } from '../../src/salones/manager.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EdgeMesh, YjsAdapter } from '../../src/edge-mesh.js';
+import { ESTADO_SALON, type SalonConfig, SalonesManager, SalonVirtual, TIPO_SALON } from '../../src/salones/manager.js';
 import type { NodoId } from '../../src/types/index.js';
 
 describe('SalonVirtual', () => {
@@ -8,7 +8,7 @@ describe('SalonVirtual', () => {
   const creatorId = 'peer1' as NodoId;
 
   beforeEach(() => {
-    edgeMesh = new EdgeMesh({ nodoId: creatorId, storageBackend: "mem" });
+    edgeMesh = new EdgeMesh({ nodoId: creatorId, storageBackend: 'mem' });
   });
 
   it('debería crear un salón correctamente', () => {
@@ -57,28 +57,30 @@ describe('SalonVirtual', () => {
     };
     const salon = new SalonVirtual(config);
     const mensajeListener = vi.fn();
-    salon.addEventListener('mensaje', (mensajeListener) as EventListener);
+    salon.addEventListener('mensaje', mensajeListener as EventListener);
 
     await salon.enviarMensaje('Hola salon');
 
     // El chat tarda un poco en procesar y disparar eventos
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Nota: El ChatChannel no dispara el evento 'mensaje' para el sender mismo por defecto en su lógica actual:
     // if (m.sender !== this.nodoId) { ... }
     // Así que para testear el re-envio necesitamos un mensaje de otro peer.
 
     const yjsMensajes = edgeMesh.yjsAdapter.getArray(`chat:salon:${salon.id}:mensajes`);
-    yjsMensajes.push([{
-      id: 'msg-remote',
-      sender: 'peer2',
-      text: 'Hola desde fuera',
-      timestamp: Date.now(),
-      type: 'texto',
-      canal: `salon:${salon.id}`
-    }]);
+    yjsMensajes.push([
+      {
+        id: 'msg-remote',
+        sender: 'peer2',
+        text: 'Hola desde fuera',
+        timestamp: Date.now(),
+        type: 'texto',
+        canal: `salon:${salon.id}`,
+      },
+    ]);
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     expect(mensajeListener).toHaveBeenCalled();
     const event = mensajeListener.mock.calls[0][0] as CustomEvent;
     expect(event.detail.mensaje.text).toBe('Hola desde fuera');
@@ -105,7 +107,7 @@ describe('SalonesManager', () => {
   const creatorId = 'peer1' as NodoId;
 
   beforeEach(() => {
-    edgeMesh = new EdgeMesh({ nodoId: creatorId, storageBackend: "mem" });
+    edgeMesh = new EdgeMesh({ nodoId: creatorId, storageBackend: 'mem' });
   });
 
   it('debería orquestar salones', async () => {
@@ -137,7 +139,10 @@ describe('SalonesManager', () => {
     const salon = await manager.crearSalon('Salon 1');
 
     // Intentar cerrar con otro peer (simulando cambio de identidad en edgeMesh)
-    const otherPeerEdgeMesh = new EdgeMesh({ nodoId: 'peer2' as NodoId, storageBackend: "mem" });
+    const otherPeerEdgeMesh = new EdgeMesh({
+      nodoId: 'peer2' as NodoId,
+      storageBackend: 'mem',
+    });
     const otherManager = new SalonesManager(otherPeerEdgeMesh);
 
     // Hack: forzar al otherManager a conocer el salón

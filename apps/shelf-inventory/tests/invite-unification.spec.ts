@@ -29,7 +29,7 @@ test.describe('Unify team invite roles with mesh P2PRole (SRC-FUN-013)', () => {
     const options = await roleSelect.locator('option').all();
     expect(options.length).toBe(3);
 
-    const optionValues = await Promise.all(options.map(opt => opt.getAttribute('value')));
+    const optionValues = await Promise.all(options.map((opt) => opt.getAttribute('value')));
     expect(optionValues).toContain('collaborator');
     expect(optionValues).toContain('admin');
     expect(optionValues).toContain('vendedor');

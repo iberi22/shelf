@@ -1,5 +1,5 @@
-import type { EdgeMesh } from "../../edge-mesh.js";
-import type { NodoId } from "../../types/index.js";
+import type { EdgeMesh } from '../../edge-mesh.js';
+import type { NodoId } from '../../types/index.js';
 
 export interface CodeGraphEntry {
   readonly id: string;
@@ -10,8 +10,8 @@ export interface CodeGraphEntry {
 
 export class CodeGraphAdapter {
   private readonly edgeMesh: EdgeMesh;
-  private readonly INDEX_MAP_NAME = "xavier:codegraph:index";
-  private readonly CODEGRAPH_NAMESPACE = "xavier:codegraph";
+  private readonly INDEX_MAP_NAME = 'xavier:codegraph:index';
+  private readonly CODEGRAPH_NAMESPACE = 'xavier:codegraph';
 
   constructor(edgeMesh: EdgeMesh) {
     this.edgeMesh = edgeMesh;
@@ -38,7 +38,11 @@ export class CodeGraphAdapter {
   /**
    * Indexa un plugin en el code-graph compartido.
    */
-  async indexPlugin(pluginPath: string, metadata: Record<string, unknown>, dependencies: readonly string[]): Promise<void> {
+  async indexPlugin(
+    pluginPath: string,
+    metadata: Record<string, unknown>,
+    dependencies: readonly string[],
+  ): Promise<void> {
     // 1. Asegurar que estamos en el namespace
     const ns = this.edgeMesh.namespaces.obtenerEspacioPorNombre(this.CODEGRAPH_NAMESPACE);
     let nsId: string;

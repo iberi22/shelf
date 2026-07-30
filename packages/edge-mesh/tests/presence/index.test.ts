@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { PresenceManager } from "../../src/presence/index.js";
-import { NodoId, ESTADO_SALUD } from "../../src/types/index.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PresenceManager } from '../../src/presence/index.js';
+import { ESTADO_SALUD, type NodoId } from '../../src/types/index.js';
 
-describe("PresenceManager", () => {
+describe('PresenceManager', () => {
   let presenceManager: PresenceManager;
-  const localNodoId = "local-node" as NodoId;
+  const localNodoId = 'local-node' as NodoId;
   let mockTransmitir: any;
 
   beforeEach(() => {
@@ -21,19 +21,19 @@ describe("PresenceManager", () => {
     vi.useRealTimers();
   });
 
-  it("should announce presence on start", async () => {
+  it('should announce presence on start', async () => {
     await presenceManager.iniciar(localNodoId, mockTransmitir);
     expect(mockTransmitir).toHaveBeenCalled();
     const heartbeat = mockTransmitir.mock.calls[0][0];
     expect(heartbeat.nodoId).toBe(localNodoId);
   });
 
-  it("should process incoming heartbeats", async () => {
+  it('should process incoming heartbeats', async () => {
     await presenceManager.iniciar(localNodoId, mockTransmitir);
-    const remoteId = "remote-node" as NodoId;
+    const remoteId = 'remote-node' as NodoId;
 
     const aparecioSpy = vi.fn();
-    presenceManager.on("nodoAparecio", aparecioSpy);
+    presenceManager.on('nodoAparecio', aparecioSpy);
 
     // Initial heartbeat might just update knownNodes but we need to see why the event isn't firing.
     // Looking at src/presence/index.ts:
@@ -70,14 +70,16 @@ describe("PresenceManager", () => {
 
     expect(presenceManager.obtenerNodosConocidos()).toContain(remoteId);
     expect(presenceManager.obtenerNodosActivos()).toContain(remoteId);
-    expect(aparecioSpy).toHaveBeenCalledWith(expect.objectContaining({
-      detail: { nodoId: remoteId }
-    }));
+    expect(aparecioSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: { nodoId: remoteId },
+      }),
+    );
   });
 
-  it("should detect node disappearance", async () => {
+  it('should detect node disappearance', async () => {
     await presenceManager.iniciar(localNodoId, mockTransmitir);
-    const remoteId = "remote-node" as NodoId;
+    const remoteId = 'remote-node' as NodoId;
 
     presenceManager.procesarHeartbeat({
       nodoId: remoteId,
@@ -86,7 +88,7 @@ describe("PresenceManager", () => {
     });
 
     const desaparecioSpy = vi.fn();
-    presenceManager.on("nodoDesaparecio", desaparecioSpy);
+    presenceManager.on('nodoDesaparecio', desaparecioSpy);
 
     // Advance time past timeout (3000ms)
     await vi.advanceTimersByTimeAsync(4000);
@@ -95,9 +97,9 @@ describe("PresenceManager", () => {
     expect(desaparecioSpy).toHaveBeenCalled();
   });
 
-  it("should track latency", async () => {
+  it('should track latency', async () => {
     await presenceManager.iniciar(localNodoId, mockTransmitir);
-    const remoteId = "remote-node" as NodoId;
+    const remoteId = 'remote-node' as NodoId;
 
     const now = Date.now();
     presenceManager.procesarHeartbeat({

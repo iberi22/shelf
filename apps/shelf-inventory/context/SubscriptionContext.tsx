@@ -43,6 +43,7 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, []);
 
   const value = useMemo(() => {
+    void tierEpoch;
     const tier = resolveTier(user);
     const isPyme = tier === 'pyme';
     const isPro = tier === 'pro' || isPyme;

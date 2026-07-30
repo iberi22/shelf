@@ -1,4 +1,4 @@
-import type { NodoId, ParPublico } from "../types/index.js";
+import type { NodoId, ParPublico } from '../types/index.js';
 
 export interface PerfilHumano {
   readonly id: string;

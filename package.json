@@ -22,10 +22,7 @@
     "turbo": "^2.10.3"
   },
   "lint-staged": {
-    "apps/shelf-inventory/**/*.{ts,tsx,js,jsx,json,css}": [
-      "biome check --write --no-errors-on-unmatched"
-    ],
-    "packages/**/*.{ts,tsx,js,jsx}": [
+    "*.{js,ts,jsx,tsx,json}": [
       "biome check --write --no-errors-on-unmatched"
     ]
   },

@@ -1,6 +1,6 @@
-import type { EdgeMesh } from "../../edge-mesh.js";
-import type { HealthStatus, NodoId } from "../../types/index.js";
-import type { AgentProfile } from "./agent-profile.js";
+import type { EdgeMesh } from '../../edge-mesh.js';
+import type { HealthStatus, NodoId } from '../../types/index.js';
+import type { AgentProfile } from './agent-profile.js';
 
 export interface PromptRouteResponse {
   readonly providerId: NodoId;
@@ -9,7 +9,7 @@ export interface PromptRouteResponse {
 
 export class LLMRouterAdapter {
   private readonly edgeMesh: EdgeMesh;
-  private readonly PROFILES_MAP_NAME = "xavier:profiles";
+  private readonly PROFILES_MAP_NAME = 'xavier:profiles';
 
   constructor(edgeMesh: EdgeMesh) {
     this.edgeMesh = edgeMesh;
@@ -22,13 +22,13 @@ export class LLMRouterAdapter {
   async routePrompt(prompt: string, requiredModel: string): Promise<PromptRouteResponse | null> {
     const profilesMap = this.edgeMesh.yjsAdapter.getMap(this.PROFILES_MAP_NAME);
     let bestProvider: NodoId | null = null;
-    let minLatency = Infinity;
+    let minLatency = Number.POSITIVE_INFINITY;
 
     for (const [nodeId, profile] of profilesMap.entries()) {
       const p = profile as AgentProfile;
       if (p.capacidades && p.capacidades.includes(requiredModel)) {
         const health = this.edgeMesh.presence.obtenerSalud(nodeId as NodoId);
-        if (health && health.estado === "saludable") {
+        if (health && health.estado === 'saludable') {
           if (health.latenciaMs < minLatency) {
             minLatency = health.latenciaMs;
             bestProvider = nodeId as NodoId;
@@ -42,7 +42,7 @@ export class LLMRouterAdapter {
     // En un escenario real, aquí se enviaría el prompt al proveedor.
     // Por ahora, simulamos el enrutamiento devolviendo la info del proveedor.
     await this.edgeMesh.enviar(bestProvider, {
-      tipo: "xavier:prompt",
+      tipo: 'xavier:prompt',
       prompt,
       model: requiredModel,
     });
@@ -66,7 +66,7 @@ export class LLMRouterAdapter {
   async shareContext(contexto: unknown, agentIds: readonly NodoId[]): Promise<void> {
     const promises = agentIds.map((id) =>
       this.edgeMesh.enviar(id, {
-        tipo: "xavier:context",
+        tipo: 'xavier:context',
         contexto,
       }),
     );

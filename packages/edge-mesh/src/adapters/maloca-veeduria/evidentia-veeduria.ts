@@ -1,5 +1,5 @@
-import type { EdgeMesh } from "../../edge-mesh.js";
-import type { Contrato } from "./types.js";
+import type { EdgeMesh } from '../../edge-mesh.js';
+import type { Contrato } from './types.js';
 
 export class EvidentiaVeeduria {
   private readonly mesh: EdgeMesh;
@@ -12,7 +12,7 @@ export class EvidentiaVeeduria {
    * Notariza un contrato en Evidentia y actualiza su estado en el mesh.
    */
   async notarizeContract(contratoHash: string): Promise<string> {
-    const contratosMap = this.mesh.yjsAdapter.getMap("veeduria:contratos");
+    const contratosMap = this.mesh.yjsAdapter.getMap('veeduria:contratos');
     const contrato = contratosMap.get(contratoHash) as Contrato | undefined;
 
     if (!contrato) {
@@ -24,17 +24,17 @@ export class EvidentiaVeeduria {
 
     const contratoNotarizado: Contrato = {
       ...contrato,
-      estado: "notarizado",
+      estado: 'notarizado',
     };
 
     contratosMap.set(contratoHash, contratoNotarizado);
 
     // Registrar la prueba en un mapa de notarizaciones
-    const notarizacionesMap = this.mesh.yjsAdapter.getMap("veeduria:notarizaciones");
+    const notarizacionesMap = this.mesh.yjsAdapter.getMap('veeduria:notarizaciones');
     notarizacionesMap.set(contratoHash, blockchainProof);
 
     await this.mesh.transmitir({
-      tipo: "veeduria:contrato_notarizado",
+      tipo: 'veeduria:contrato_notarizado',
       hash: contratoHash,
       proof: blockchainProof,
     });
@@ -46,7 +46,7 @@ export class EvidentiaVeeduria {
    * Obtiene la prueba de notarización de un contrato.
    */
   getBlockchainProof(contratoHash: string): string | null {
-    const notarizacionesMap = this.mesh.yjsAdapter.getMap("veeduria:notarizaciones");
+    const notarizacionesMap = this.mesh.yjsAdapter.getMap('veeduria:notarizaciones');
     return (notarizacionesMap.get(contratoHash) as string) ?? null;
   }
 }

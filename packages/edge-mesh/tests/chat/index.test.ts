@@ -1,6 +1,13 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import { ChatChannel, TIPO_MENSAJE_CHAT, TIPO_CANAL, ExamenCompartido, TIPO_PREGUNTA, type Pregunta } from '../../src/chat/index.js';
+import {
+  ChatChannel,
+  ExamenCompartido,
+  type Pregunta,
+  TIPO_CANAL,
+  TIPO_MENSAJE_CHAT,
+  TIPO_PREGUNTA,
+} from '../../src/chat/index.js';
 import { YjsAdapter } from '../../src/edge-mesh.js';
 import type { NodoId } from '../../src/types/index.js';
 
@@ -35,7 +42,7 @@ describe('ChatChannel', () => {
   it('debería disparar un evento cuando se recibe un mensaje de otro peer', async () => {
     const channel = new ChatChannel(nodoId, canalNombre, yjsAdapter);
     const mensajeListener = vi.fn();
-    channel.addEventListener('mensaje', (mensajeListener) as EventListener);
+    channel.addEventListener('mensaje', mensajeListener as EventListener);
 
     // Simular mensaje de otro peer vía Yjs
     const yjsMensajes = yjsAdapter.getArray(`chat:${canalNombre}:mensajes`);
@@ -51,7 +58,7 @@ describe('ChatChannel', () => {
     yjsMensajes.push([mensajeRemoto]);
 
     // Esperar a que el observador de Yjs se dispare y se procese
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(mensajeListener).toHaveBeenCalled();
     const event = mensajeListener.mock.calls[0][0] as CustomEvent;
@@ -61,7 +68,7 @@ describe('ChatChannel', () => {
   it('debería manejar la presencia de usuarios', async () => {
     const channel = new ChatChannel(nodoId, canalNombre, yjsAdapter);
     const conectadoListener = vi.fn();
-    channel.addEventListener('usuarioConectado', (conectadoListener) as EventListener);
+    channel.addEventListener('usuarioConectado', conectadoListener as EventListener);
 
     await channel.unirseAlCanal();
     expect(channel.obtenerUsuariosConectados()).toContain(nodoId);
@@ -70,16 +77,16 @@ describe('ChatChannel', () => {
     const yjsUsuarios = yjsAdapter.getArray(`chat:${canalNombre}:usuarios`);
     yjsUsuarios.push(['peer2']);
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     expect(conectadoListener).toHaveBeenCalled();
     expect(channel.obtenerUsuariosConectados()).toContain('peer2');
 
     const desconectadoListener = vi.fn();
-    channel.addEventListener('usuarioDesconectado', (desconectadoListener) as EventListener);
+    channel.addEventListener('usuarioDesconectado', desconectadoListener as EventListener);
 
     yjsUsuarios.delete(1, 1); // eliminar peer2
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     expect(desconectadoListener).toHaveBeenCalled();
     expect(channel.obtenerUsuariosConectados()).not.toContain('peer2');
   });
@@ -117,7 +124,14 @@ describe('ExamenCompartido', () => {
   it('debería cargar y obtener preguntas', async () => {
     const examen = new ExamenCompartido(examenId, yjsAdapter);
     const preguntas: Pregunta[] = [
-      { id: 'p1', tipo: TIPO_PREGUNTA.OPCION_MULTIPLE, enunciado: '¿2+2?', puntaje: 1, opciones: ['3', '4'], respuestaCorrecta: '4' },
+      {
+        id: 'p1',
+        tipo: TIPO_PREGUNTA.OPCION_MULTIPLE,
+        enunciado: '¿2+2?',
+        puntaje: 1,
+        opciones: ['3', '4'],
+        respuestaCorrecta: '4',
+      },
     ];
 
     await examen.cargarPreguntas(preguntas);
@@ -127,12 +141,17 @@ describe('ExamenCompartido', () => {
   it('debería agregar una pregunta y disparar evento', async () => {
     const examen = new ExamenCompartido(examenId, yjsAdapter);
     const preguntaListener = vi.fn();
-    examen.addEventListener('preguntaAgregada', (preguntaListener) as EventListener);
+    examen.addEventListener('preguntaAgregada', preguntaListener as EventListener);
 
-    const nuevaPregunta: Pregunta = { id: 'p2', tipo: TIPO_PREGUNTA.VERDADERO_FALSO, enunciado: '¿Es de día?', puntaje: 1 };
+    const nuevaPregunta: Pregunta = {
+      id: 'p2',
+      tipo: TIPO_PREGUNTA.VERDADERO_FALSO,
+      enunciado: '¿Es de día?',
+      puntaje: 1,
+    };
     await examen.agregarPregunta(nuevaPregunta);
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     expect(preguntaListener).toHaveBeenCalled();
     expect(examen.obtenerPreguntas()).toContainEqual(nuevaPregunta);
   });
@@ -140,11 +159,11 @@ describe('ExamenCompartido', () => {
   it('debería enviar respuesta y disparar evento', async () => {
     const examen = new ExamenCompartido(examenId, yjsAdapter);
     const respuestaListener = vi.fn();
-    examen.addEventListener('respuestaNueva', (respuestaListener) as EventListener);
+    examen.addEventListener('respuestaNueva', respuestaListener as EventListener);
 
     await examen.enviarRespuesta('estudiante1', 'p1', '4');
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     expect(respuestaListener).toHaveBeenCalled();
     const event = respuestaListener.mock.calls[0][0] as CustomEvent;
     expect(event.detail.estudianteId).toBe('estudiante1');
@@ -160,8 +179,8 @@ describe('ExamenCompartido', () => {
     const inicioListener = vi.fn();
     const finListener = vi.fn();
 
-    examen.addEventListener('examenIniciado', (inicioListener) as EventListener);
-    examen.addEventListener('examenFinalizado', (finListener) as EventListener);
+    examen.addEventListener('examenIniciado', inicioListener as EventListener);
+    examen.addEventListener('examenFinalizado', finListener as EventListener);
 
     await examen.iniciarExamen();
     expect(inicioListener).toHaveBeenCalled();

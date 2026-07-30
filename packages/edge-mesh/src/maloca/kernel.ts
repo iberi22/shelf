@@ -1,7 +1,7 @@
-import { EdgeMesh } from "../edge-mesh.js";
-import type { EdgeMeshConfig, NodoId } from "../types/index.js";
-import { ProfileManager, type Perfil } from "./perfil.js";
-import { KarmaManager, type TransaccionKarma } from "./karma.js";
+import { EdgeMesh } from '../edge-mesh.js';
+import type { EdgeMeshConfig, NodoId } from '../types/index.js';
+import { KarmaManager, type TransaccionKarma } from './karma.js';
+import { type Perfil, ProfileManager } from './perfil.js';
 
 export class MalocaKernel extends EdgeMesh {
   readonly profiles: ProfileManager;
@@ -11,10 +11,10 @@ export class MalocaKernel extends EdgeMesh {
   constructor(config: EdgeMeshConfig) {
     super(config);
 
-    const profileOpLog = this.obtenerOLog("maloca_profiles");
+    const profileOpLog = this.obtenerOLog('maloca_profiles');
     this.profiles = new ProfileManager(profileOpLog);
 
-    const karmaOpLog = this.obtenerOLog("maloca_karma");
+    const karmaOpLog = this.obtenerOLog('maloca_karma');
     this.karma = new KarmaManager(karmaOpLog, this.identity);
   }
 
@@ -24,12 +24,16 @@ export class MalocaKernel extends EdgeMesh {
     await this.karma.loadFromOpLog();
   }
 
-  async registerNode(tipo: "humano" | "servicio", identidad: Uint8Array, metadatos: Record<string, any>): Promise<void> {
-    if (tipo === "humano") {
+  async registerNode(
+    tipo: 'humano' | 'servicio',
+    identidad: Uint8Array,
+    metadatos: Record<string, any>,
+  ): Promise<void> {
+    if (tipo === 'humano') {
       const perfil: Perfil = {
         id: this.config.nodoId,
         identidad,
-        alias: metadatos.alias || "Anónimo",
+        alias: metadatos.alias || 'Anónimo',
         nodos: [this.config.nodoId],
         proyectos: [],
         metadatos,
@@ -38,8 +42,8 @@ export class MalocaKernel extends EdgeMesh {
     } else {
       const perfil: Perfil = {
         id: this.config.nodoId,
-        tipo: metadatos.tipo || "servicio",
-        version: metadatos.version || "1.0.0",
+        tipo: metadatos.tipo || 'servicio',
+        version: metadatos.version || '1.0.0',
         capacidades: metadatos.capacidades || [],
       };
       await this.profiles.upsertProfile(perfil, this.config.nodoId);
@@ -52,7 +56,7 @@ export class MalocaKernel extends EdgeMesh {
 
   async broadcastToNetwork(evento: any): Promise<void> {
     await this.transmitir({
-      tipo: "maloca_evento",
+      tipo: 'maloca_evento',
       payload: evento,
     });
   }
@@ -70,7 +74,7 @@ export class MalocaKernel extends EdgeMesh {
     return this.profiles.getProfile(nodeId);
   }
 
-  async emitKarma(tx: Omit<TransaccionKarma, "firma" | "timestamp" | "id">): Promise<void> {
+  async emitKarma(tx: Omit<TransaccionKarma, 'firma' | 'timestamp' | 'id'>): Promise<void> {
     await this.karma.emit(tx);
   }
 }

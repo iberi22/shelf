@@ -155,21 +155,13 @@ const canPeerMutateCollection = (
       candidate.permissions || (candidate.id === state.localPeerId ? state.permissions : undefined);
     for (const [candidateCollection, candidatePermissionKey] of Object.entries(collectionPermissionMap)) {
       if (candidatePermissions?.[candidatePermissionKey]) {
-        authorizer.concederCapacidad(
-          `${SHELF_EDGE_NAMESPACE}:${candidateCollection}`,
-          candidate.id as any,
-          'write',
-        );
+        authorizer.concederCapacidad(`${SHELF_EDGE_NAMESPACE}:${candidateCollection}`, candidate.id as any, 'write');
       }
     }
   }
 
   if (permissions?.[permissionKey] === true) {
-    authorizer.concederCapacidad(
-      `${SHELF_EDGE_NAMESPACE}:${collection}`,
-      peerId as any,
-      'write',
-    );
+    authorizer.concederCapacidad(`${SHELF_EDGE_NAMESPACE}:${collection}`, peerId as any, 'write');
   }
 
   return authorizer.verificarCapacidad(`${SHELF_EDGE_NAMESPACE}:${collection}`, peerId as any, 'write');
@@ -288,7 +280,7 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
       stats,
       totalItems,
     }));
-  }, [sharedDoc, isLoaded, isSharedWithDbSync, state.products, state.clients, state.sales, state.suppliers]);
+  }, [sharedDoc, isLoaded, isSharedWithDbSync]);
 
   // Defense-in-depth security observers on shared maps (complements dbSync.applyUpdate).
   // Does not re-dispatch SYNC_ENTITIES when sharedWithDbSync — dbSync.onObserve already owns that path.
@@ -425,10 +417,7 @@ const EdgeMeshWorkflowBridge: React.FC<EdgeMeshWorkflowBridgeProps> = ({ state, 
       });
     };
 
-    const observers = setupObservers([
-      ...SHELF_EDGE_GLOBAL_COLLECTIONS,
-      ...SHELF_EDGE_BRANCH_COLLECTIONS,
-    ]);
+    const observers = setupObservers([...SHELF_EDGE_GLOBAL_COLLECTIONS, ...SHELF_EDGE_BRANCH_COLLECTIONS]);
 
     return () => {
       if (remoteSyncTimerRef.current) {

@@ -1,7 +1,7 @@
-import type { OpLog } from "../op-log/index.js";
-import type { PostQuantumIdentity } from "../identity/index.js";
-import type { NodoId, ParPublico } from "../types/index.js";
-import type { Karma, TransaccionKarma } from "./types.js";
+import type { PostQuantumIdentity } from '../identity/index.js';
+import type { OpLog } from '../op-log/index.js';
+import type { NodoId, ParPublico } from '../types/index.js';
+import type { Karma, TransaccionKarma } from './types.js';
 
 /**
  * KarmaManager — motor de reputación para nodos de la mesh.
@@ -15,22 +15,17 @@ export type { TransaccionKarma };
  * Deterministically stringifies an object for signing.
  */
 function canonicalStringify(obj: unknown): string {
-  if (obj === null || typeof obj !== "object") {
+  if (obj === null || typeof obj !== 'object') {
     return JSON.stringify(obj);
   }
   if (Array.isArray(obj)) {
-    return "[" + obj.map(canonicalStringify).join(",") + "]";
+    return '[' + obj.map(canonicalStringify).join(',') + ']';
   }
   const keys = Object.keys(obj as Record<string, unknown>).sort();
   return (
-    "{" +
-    keys
-      .map(
-        (k) =>
-          `${JSON.stringify(k)}:${canonicalStringify((obj as Record<string, unknown>)[k])}`,
-      )
-      .join(",") +
-    "}"
+    '{' +
+    keys.map((k) => `${JSON.stringify(k)}:${canonicalStringify((obj as Record<string, unknown>)[k])}`).join(',') +
+    '}'
   );
 }
 
@@ -52,10 +47,10 @@ export class KarmaManager {
     this.cache.clear();
     const ops = await this.oplog.obtenerTodas();
     for (const op of ops) {
-      if (op.tipo === "karma:emit") {
+      if (op.tipo === 'karma:emit') {
         const tx = op.datos as TransaccionKarma;
         this.applyTransaction(tx);
-      } else if (op.tipo === "karma:decay") {
+      } else if (op.tipo === 'karma:decay') {
         const data = op.datos as { sujeto: NodoId; factor: number };
         this.applyDecayToCache(data.sujeto, data.factor);
       }
@@ -65,9 +60,7 @@ export class KarmaManager {
   /**
    * Emite una transacción de karma firmada con la identidad PQC del nodo.
    */
-  async emit(
-    txData: Omit<TransaccionKarma, "id" | "timestamp" | "firma">,
-  ): Promise<TransaccionKarma> {
+  async emit(txData: Omit<TransaccionKarma, 'id' | 'timestamp' | 'firma'>): Promise<TransaccionKarma> {
     const timestamp = Date.now();
     const id = `${txData.emisor}:${timestamp}:${Math.random().toString(36).substring(2, 9)}`;
 
@@ -90,7 +83,7 @@ export class KarmaManager {
     };
 
     this.applyTransaction(tx);
-    await this.oplog.append("karma:emit", tx, txData.emisor as any);
+    await this.oplog.append('karma:emit', tx, txData.emisor as any);
     return tx;
   }
 
@@ -112,9 +105,9 @@ export class KarmaManager {
    * Aplica decay (olvido) al score de un nodo.
    * - factor: 0.95 reduce 5%, 0.90 reduce 10%, etc.
    */
-  async applyDecay(nodeId: NodoId, factor: number = 0.95): Promise<void> {
+  async applyDecay(nodeId: NodoId, factor = 0.95): Promise<void> {
     this.applyDecayToCache(nodeId, factor);
-    await this.oplog.append("karma:decay", { sujeto: nodeId, factor }, nodeId as any);
+    await this.oplog.append('karma:decay', { sujeto: nodeId, factor }, nodeId as any);
   }
 
   /**

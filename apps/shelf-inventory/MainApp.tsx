@@ -24,9 +24,7 @@ const AccessDenied = () => {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center" data-testid="access-denied">
       <div className="text-6xl mb-4">🔒</div>
-      <h2 className="text-2xl font-bold text-red-500 mb-2">
-        {t('common.accessDenied') || 'Access Denied'}
-      </h2>
+      <h2 className="text-2xl font-bold text-red-500 mb-2">{t('common.accessDenied') || 'Access Denied'}</h2>
       <p className="text-foreground/70">
         {t('common.accessDeniedDescription') || 'You do not have permission to view this section.'}
       </p>
@@ -99,7 +97,7 @@ const MainApp: React.FC = () => {
     <div className="flex flex-col md:flex-row h-screen bg-background text-foreground">
       {showAds && <DesktopAdColumn />}
 
-      <div className={`flex flex-col flex-1 ${showAds ? 'md:ml-40' : ''}`}>
+      <div className={`flex flex-col flex-1 h-full min-h-0 overflow-hidden ${showAds ? 'md:ml-40' : ''}`}>
         {showAds && <MobileAdBars />}
         <div className="flex flex-1 overflow-hidden relative">
           <Sidebar activeComponent={activeComponent} setActiveComponent={setActiveComponent} />

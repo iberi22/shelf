@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { NamespaceAuthorizer, CAPACIDAD_ESTANDAR } from '../../src/authz/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CAPACIDAD_ESTANDAR, NamespaceAuthorizer } from '../../src/authz/index.js';
 import type { NodoId } from '../../src/types/index.js';
 
 describe('NamespaceAuthorizer', () => {
@@ -40,7 +40,7 @@ describe('NamespaceAuthorizer', () => {
     expect(authz.verificarCapacidad(espacio, sujeto, CAPACIDAD_ESTANDAR.LEER)).toBe(true);
 
     // Esperar a que expire
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await new Promise((resolve) => setTimeout(resolve, 150));
 
     expect(authz.verificarCapacidad(espacio, sujeto, CAPACIDAD_ESTANDAR.LEER)).toBe(false);
   });
@@ -49,8 +49,8 @@ describe('NamespaceAuthorizer', () => {
     const concedidaListener = vi.fn();
     const revocadaListener = vi.fn();
 
-    authz.on('capacidadConcedida', (concedidaListener) as EventListener);
-    authz.on('capacidadRevocada', (revocadaListener) as EventListener);
+    authz.on('capacidadConcedida', concedidaListener as EventListener);
+    authz.on('capacidadRevocada', revocadaListener as EventListener);
 
     authz.concederCapacidad(espacio, sujeto, CAPACIDAD_ESTANDAR.LEER);
     expect(concedidaListener).toHaveBeenCalled();
@@ -61,7 +61,7 @@ describe('NamespaceAuthorizer', () => {
 
   it('debería disparar evento de autorización fallida', () => {
     const fallidaListener = vi.fn();
-    authz.on('autorizacionFallida', (fallidaListener) as EventListener);
+    authz.on('autorizacionFallida', fallidaListener as EventListener);
 
     authz.verificarCapacidad(espacio, sujeto, CAPACIDAD_ESTANDAR.LEER);
     expect(fallidaListener).toHaveBeenCalled();

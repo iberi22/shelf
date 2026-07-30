@@ -1,5 +1,5 @@
-import React from 'react';
 import { mount } from 'cypress/react';
+import React from 'react';
 import Modal from '../../components/Modal';
 import { I18nProvider } from '../../context/I18nContext';
 
@@ -11,15 +11,11 @@ describe('Modal Component', () => {
     mount(
       <I18nProvider>
         <div style={{ height: '3000px', transform: 'translateZ(0)', position: 'relative', marginTop: '100px' }}>
-          <Modal 
-            isOpen={true} 
-            onClose={() => {}} 
-            title="Test Modal"
-          >
+          <Modal isOpen={true} onClose={() => {}} title="Test Modal">
             <div data-testid="modal-content">This is a test</div>
           </Modal>
         </div>
-      </I18nProvider>
+      </I18nProvider>,
     );
 
     // The modal backdrop should be fixed and its top should be 0, regardless of the container's 100px margin

@@ -1,5 +1,5 @@
-import type { EdgeMesh } from "../../edge-mesh.js";
-import type { Envolvente } from "../../types/index.js";
+import type { EdgeMesh } from '../../edge-mesh.js';
+import type { Envolvente } from '../../types/index.js';
 
 /**
  * WebSocket Gateway para tiempo real en el mesh Maloca.
@@ -18,7 +18,7 @@ export class MalocaWSGateway {
     console.log(`WS Client connected: ${profileId}`);
 
     // Iniciar escucha de eventos del mesh para reenviar al WS
-    this.mesh.on("mensajeRecibido", (ev) => {
+    this.mesh.on('mensajeRecibido', (ev) => {
       this.handleMeshMessage(profileId, ev.detail.envolvente);
     });
 
@@ -33,7 +33,9 @@ export class MalocaWSGateway {
    */
   subscribeToEvents(profileId: string, tipos: string[]) {
     const subs = this.activeSubscriptions.get(profileId) ?? new Set();
-    tipos.forEach(t => subs.add(t));
+    tipos.forEach((t) => {
+      subs.add(t);
+    });
     this.activeSubscriptions.set(profileId, subs);
   }
 
@@ -53,7 +55,7 @@ export class MalocaWSGateway {
    */
   private handleMeshMessage(profileId: string, envolvente: Envolvente) {
     const subs = this.activeSubscriptions.get(profileId);
-    if (subs && (subs.has("*") || subs.has(envolvente.tipo))) {
+    if (subs && (subs.has('*') || subs.has(envolvente.tipo))) {
       // En un entorno real, aquí se enviaría por el socket:
       // socket.send(JSON.stringify(envolvente));
       console.log(`WS [${profileId}] forwarding event: ${envolvente.tipo}`);

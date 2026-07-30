@@ -1,5 +1,5 @@
-import type { OpLog } from "../op-log/index.js";
-import type { PerfilHumano, PerfilServicio } from "./types.js";
+import type { OpLog } from '../op-log/index.js';
+import type { PerfilHumano, PerfilServicio } from './types.js';
 
 /**
  * ProfileManager — gestiona perfiles de nodos humanos y servicios
@@ -24,7 +24,7 @@ export class ProfileManager {
     this.cache.clear();
     const ops = await this.oplog.obtenerTodas();
     for (const op of ops) {
-      if (op.tipo === "profile:upsert") {
+      if (op.tipo === 'profile:upsert') {
         const perfil = op.datos as Perfil;
         this.cache.set(perfil.id, perfil);
       }
@@ -36,7 +36,7 @@ export class ProfileManager {
    */
   async upsertProfile(perfil: Perfil, autor: string): Promise<void> {
     this.cache.set(perfil.id, perfil);
-    await this.oplog.append("profile:upsert", perfil, autor as any);
+    await this.oplog.append('profile:upsert', perfil, autor as any);
   }
 
   /**
@@ -59,7 +59,7 @@ export class ProfileManager {
   searchProfiles(query: string): Perfil[] {
     const lower = query.toLowerCase();
     return this.listProfiles().filter((p) => {
-      if ("alias" in p) {
+      if ('alias' in p) {
         return p.alias.toLowerCase().includes(lower);
       }
       return p.id.toLowerCase().includes(lower);
@@ -72,8 +72,7 @@ export class ProfileManager {
   linkToProject(profileId: string, projectId: string): void {
     const perfil = this.cache.get(profileId);
     if (!perfil) throw new Error(`Profile ${profileId} not found`);
-    if (!("proyectos" in perfil))
-      throw new Error(`Profile ${profileId} is not a human profile`);
+    if (!('proyectos' in perfil)) throw new Error(`Profile ${profileId} is not a human profile`);
 
     const updated = {
       ...perfil,

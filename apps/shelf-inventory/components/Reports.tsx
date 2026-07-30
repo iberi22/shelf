@@ -80,8 +80,8 @@ const Reports: React.FC = () => {
 
     // Global namespace
     if (state.activeBranchId !== null) {
-      const globalSales = Array.from(mesh.yjsAdapter.doc.getMap(`shelf_sales`).values()) as any[];
-      const globalProducts = Array.from(mesh.yjsAdapter.doc.getMap(`shelf_products`).values()) as any[];
+      const globalSales = Array.from(mesh.yjsAdapter.doc.getMap('shelf_sales').values()) as any[];
+      const globalProducts = Array.from(mesh.yjsAdapter.doc.getMap('shelf_products').values()) as any[];
       allSales.push(...globalSales.map((s) => ({ ...s, branchName: 'Global' })));
       allProducts.push(...globalProducts.map((p) => ({ ...p, branchName: 'Global' })));
     }

@@ -320,7 +320,7 @@ const GlobalSearch: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };
 

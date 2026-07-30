@@ -1,4 +1,4 @@
-import type { NodoId } from "../../types/index.js";
+import type { NodoId } from '../../types/index.js';
 
 export interface Contrato {
   id: string;
@@ -9,7 +9,7 @@ export interface Contrato {
     firma: Uint8Array;
   }[];
   timestamp: number;
-  estado: "pendiente" | "registrado" | "notarizado";
+  estado: 'pendiente' | 'registrado' | 'notarizado';
 }
 
 export interface PerfilLicitante {

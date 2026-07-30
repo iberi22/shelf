@@ -10,7 +10,8 @@
     "includes": [
       "**/*",
       "!!**/dist",
-      "!!**/functions/lib",
+      "!!**/build",
+      "!!**/node_modules",
       "!!**/playwright-report",
       "!!**/test-results",
       "!!**/stats.html"

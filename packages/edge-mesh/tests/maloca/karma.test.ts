@@ -1,31 +1,31 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { MalocaKernel } from "../../src/maloca/kernel.js";
-import { generateKeypair } from "../../src/identity/index.js";
-import type { NodoId } from "../../src/types/index.js";
+import { beforeEach, describe, expect, it } from 'vitest';
+import { generateKeypair } from '../../src/identity/index.js';
+import { MalocaKernel } from '../../src/maloca/kernel.js';
+import type { NodoId } from '../../src/types/index.js';
 
-describe("KarmaManager", () => {
+describe('KarmaManager', () => {
   let kernel: MalocaKernel;
 
   beforeEach(async () => {
-    const kp = generateKeypair("maestra");
+    const kp = generateKeypair('maestra');
 
     kernel = new MalocaKernel({
-      nodoId: "test-node" as NodoId,
-      storageBackend: "mem",
+      nodoId: 'test-node' as NodoId,
+      storageBackend: 'mem',
       identitySecret: kp.parPrivado,
     });
     await kernel.iniciar();
   });
 
-  it("should emit and retrieve karma score", async () => {
+  it('should emit and retrieve karma score', async () => {
     const id = kernel.config.nodoId as NodoId;
 
     await kernel.karma.emit({
-      tipo: "contribution",
-      proyecto: "maloca",
+      tipo: 'contribution',
+      proyecto: 'maloca',
       sujeto: id,
       delta: 10,
-      razon: "feature implementation",
+      razon: 'feature implementation',
       emisor: id,
     });
 
@@ -33,24 +33,24 @@ describe("KarmaManager", () => {
     expect(score).toBe(10);
   });
 
-  it("should track scores and history", async () => {
+  it('should track scores and history', async () => {
     const id = kernel.config.nodoId as NodoId;
 
     await kernel.karma.emit({
-      tipo: "contribution",
-      proyecto: "maloca",
+      tipo: 'contribution',
+      proyecto: 'maloca',
       sujeto: id,
       delta: 5,
-      razon: "bug fix",
+      razon: 'bug fix',
       emisor: id,
     });
 
     await kernel.karma.emit({
-      tipo: "contribution",
-      proyecto: "maloca",
+      tipo: 'contribution',
+      proyecto: 'maloca',
       sujeto: id,
       delta: 3,
-      razon: "docs",
+      razon: 'docs',
       emisor: id,
     });
 
@@ -58,15 +58,15 @@ describe("KarmaManager", () => {
     expect(kernel.karma.getHistory(id)).toHaveLength(2);
   });
 
-  it("should apply decay", async () => {
+  it('should apply decay', async () => {
     const id = kernel.config.nodoId as NodoId;
 
     await kernel.karma.emit({
-      tipo: "initial",
-      proyecto: "maloca",
+      tipo: 'initial',
+      proyecto: 'maloca',
       sujeto: id,
       delta: 100,
-      razon: "setup",
+      razon: 'setup',
       emisor: id,
     });
 

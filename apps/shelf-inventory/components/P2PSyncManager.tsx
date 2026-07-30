@@ -1,4 +1,3 @@
-
 import {
   Activity,
   AlertCircle,
@@ -419,7 +418,6 @@ const P2PSyncManager: React.FC = () => {
       }
     }, 1000);
 
-
     return () => {
       // Cleanup interval if component unmounts before it fires
       clearInterval(interval);
@@ -429,7 +427,7 @@ const P2PSyncManager: React.FC = () => {
       unsubscribePeerHealth();
       // NOTE: For a full fix, p2pManager should expose offMessage
     };
-  }, [dispatch, showNotification, state.inventoryConfig.useEdgeMeshSync]);
+  }, [dispatch, showNotification]);
 
   useEffect(() => {
     if (syncProgress >= 100) {

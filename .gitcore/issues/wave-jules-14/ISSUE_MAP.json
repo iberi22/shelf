@@ -1,0 +1,161 @@
+{
+  "wave": "wave-J",
+  "generated": "2026-07-30",
+  "origin": "shelf-grok-analysis",
+  "commit": "a8f1667",
+  "issues": {
+    "J01": {
+      "title": "Dashboard: wire real sales charts from AppContext",
+      "number": 353,
+      "url": "https://github.com/iberi22/shelf/issues/353",
+      "feature_id": "SRC-FUN-003",
+      "target_pct": 97,
+      "severity": "enhancement",
+      "merge_order": 3
+    },
+    "J02": {
+      "title": "Sales: scan-to-cart flow",
+      "number": 354,
+      "url": "https://github.com/iberi22/shelf/issues/354",
+      "feature_id": "SRC-FUN-002",
+      "target_pct": 99,
+      "severity": "enhancement",
+      "merge_order": 3
+    },
+    "J03": {
+      "title": "Purchase Orders: cancelled status + E2E receive stock",
+      "number": 355,
+      "url": "https://github.com/iberi22/shelf/issues/355",
+      "feature_id": "SRC-FUN-005",
+      "target_pct": 98,
+      "severity": "enhancement",
+      "merge_order": 3
+    },
+    "J04": {
+      "title": "App Lock PIN + Biometrics UX",
+      "number": 356,
+      "url": "https://github.com/iberi22/shelf/issues/356",
+      "feature_id": "SRC-FUN-008",
+      "target_pct": 93,
+      "severity": "enhancement",
+      "merge_order": 2
+    },
+    "J05": {
+      "title": "Device list & revocation UI",
+      "number": 357,
+      "url": "https://github.com/iberi22/shelf/issues/357",
+      "feature_id": "SRC-FUN-008",
+      "target_pct": 93,
+      "severity": "enhancement",
+      "merge_order": 2
+    },
+    "J06": {
+      "title": "AI Assistant: E2E tests + quality gates",
+      "number": 358,
+      "url": "https://github.com/iberi22/shelf/issues/358",
+      "feature_id": "SRC-FUN-007",
+      "target_pct": 92,
+      "severity": "enhancement",
+      "merge_order": 3
+    },
+    "J07": {
+      "title": "Multi-language: hardcoded string sweep",
+      "number": 359,
+      "url": "https://github.com/iberi22/shelf/issues/359",
+      "feature_id": "SRC-FUN-010",
+      "target_pct": 96,
+      "severity": "enhancement",
+      "merge_order": 4
+    },
+    "J08": {
+      "title": "Data Import: all-or-nothing rollback",
+      "number": 360,
+      "url": "https://github.com/iberi22/shelf/issues/360",
+      "feature_id": "SRC-FUN-014",
+      "target_pct": 98,
+      "severity": "enhancement",
+      "merge_order": 3
+    },
+    "J09": {
+      "title": "GPU Agent: real WebGPU kernels + unit tests",
+      "number": 361,
+      "url": "https://github.com/iberi22/shelf/issues/361",
+      "feature_id": "SRC-GPU-001",
+      "target_pct": 95,
+      "severity": "enhancement",
+      "merge_order": 1
+    },
+    "J10": {
+      "title": "Edge Mesh: harden requireSignedEnvelopes",
+      "number": 362,
+      "url": "https://github.com/iberi22/shelf/issues/362",
+      "feature_id": "SRC-EDGE-001",
+      "target_pct": 93,
+      "severity": "enhancement",
+      "merge_order": 1
+    },
+    "J11": {
+      "title": "QA: CI reliability + coverage gates",
+      "number": 363,
+      "url": "https://github.com/iberi22/shelf/issues/363",
+      "feature_id": "SRC-QA-001",
+      "target_pct": 94,
+      "severity": "enhancement",
+      "merge_order": 4
+    },
+    "J12": {
+      "title": "P2P: invite authority + role fix",
+      "number": 364,
+      "url": "https://github.com/iberi22/shelf/issues/364",
+      "feature_id": "SRC-P2P-001",
+      "target_pct": 94,
+      "severity": "enhancement",
+      "merge_order": 1
+    },
+    "J13": {
+      "title": "CRDT: re-harden entity ACL multi-peer",
+      "number": 365,
+      "url": "https://github.com/iberi22/shelf/issues/365",
+      "feature_id": "SRC-CRDT-001",
+      "target_pct": 98,
+      "severity": "enhancement",
+      "merge_order": 1
+    },
+    "J14": {
+      "title": "PWA: offline fallback for P2P signaling",
+      "number": 366,
+      "url": "https://github.com/iberi22/shelf/issues/366",
+      "feature_id": "SRC-PWA-001",
+      "target_pct": 94,
+      "severity": "enhancement",
+      "merge_order": 5
+    }
+  },
+  "waves": {
+    "wave_1_core_packages": {
+      "merge_order": 1,
+      "issues": ["J09", "J10", "J12", "J13"],
+      "numbers": [361, 362, 364, 365]
+    },
+    "wave_2_auth": {
+      "merge_order": 2,
+      "issues": ["J04", "J05"],
+      "numbers": [356, 357]
+    },
+    "wave_3_app_features": {
+      "merge_order": 3,
+      "issues": ["J01", "J02", "J03", "J06", "J08"],
+      "numbers": [353, 354, 355, 358, 360]
+    },
+    "wave_4_cross_cutting": {
+      "merge_order": 4,
+      "issues": ["J07", "J11"],
+      "numbers": [359, 363]
+    },
+    "wave_5_pwa": {
+      "merge_order": 5,
+      "issues": ["J14"],
+      "numbers": [366]
+    }
+  }
+}

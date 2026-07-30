@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { NamespaceManager, NAMESPACE_POR_DEFECTO } from '../../src/namespaces/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { NAMESPACE_POR_DEFECTO, NamespaceManager } from '../../src/namespaces/index.js';
 import type { NodoId } from '../../src/types/index.js';
 
 describe('NamespaceManager', () => {
@@ -51,8 +51,8 @@ describe('NamespaceManager', () => {
     const creadoListener = vi.fn();
     const eliminadoListener = vi.fn();
 
-    manager.on('espacioCreado', (creadoListener) as EventListener);
-    manager.on('espacioEliminado', (eliminadoListener) as EventListener);
+    manager.on('espacioCreado', creadoListener as EventListener);
+    manager.on('espacioEliminado', eliminadoListener as EventListener);
 
     const espacio = manager.crearEspacio('event-test');
     expect(creadoListener).toHaveBeenCalled();
@@ -67,8 +67,8 @@ describe('NamespaceManager', () => {
     const unidoListener = vi.fn();
     const abandonoListener = vi.fn();
 
-    manager.on('nodoUnido', (unidoListener) as EventListener);
-    manager.on('nodoAbandono', (abandonoListener) as EventListener);
+    manager.on('nodoUnido', unidoListener as EventListener);
+    manager.on('nodoAbandono', abandonoListener as EventListener);
 
     const espacio = manager.crearEspacio('nodes-test');
     const nodoId = 'peer-2' as NodoId;

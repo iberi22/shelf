@@ -21,7 +21,7 @@ test('PDF Export should use iframe with srcdoc', async ({ page, context }) => {
       async () => {
         try {
           return await newPage.evaluate(() => document.querySelectorAll('iframe').length);
-        } catch (e) {
+        } catch (_e) {
           return 0; // page might be navigating
         }
       },

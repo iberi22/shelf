@@ -1,5 +1,5 @@
-import type { EdgeMesh } from "../../edge-mesh.js";
-import type { HealthStatus, NodoId } from "../../types/index.js";
+import type { EdgeMesh } from '../../edge-mesh.js';
+import type { HealthStatus, NodoId } from '../../types/index.js';
 
 export interface AgentProfile {
   readonly id: NodoId;
@@ -10,8 +10,8 @@ export interface AgentProfile {
 
 export class AgentProfileAdapter {
   private readonly edgeMesh: EdgeMesh;
-  private readonly PROFILES_MAP_NAME = "xavier:profiles";
-  private readonly AGENTS_NAMESPACE = "xavier:agents";
+  private readonly PROFILES_MAP_NAME = 'xavier:profiles';
+  private readonly AGENTS_NAMESPACE = 'xavier:agents';
 
   constructor(edgeMesh: EdgeMesh) {
     this.edgeMesh = edgeMesh;

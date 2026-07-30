@@ -1,6 +1,6 @@
-import type { EdgeMesh } from "../../edge-mesh.js";
-import type { Contrato, PerfilLicitante, LicitacionChileCompra } from "./types.js";
-import type { NodoId } from "../../types/index.js";
+import type { EdgeMesh } from '../../edge-mesh.js';
+import type { NodoId } from '../../types/index.js';
+import type { Contrato, LicitacionChileCompra, PerfilLicitante } from './types.js';
 
 export class ContractBridge {
   private readonly mesh: EdgeMesh;
@@ -26,17 +26,17 @@ export class ContractBridge {
           firma,
         },
       ],
-      estado: "registrado",
+      estado: 'registrado',
       timestamp: Date.now(),
     };
 
     // Registrar en el mesh (usando YjsAdapter para sincronizar el estado)
-    const contratosMap = this.mesh.yjsAdapter.getMap("veeduria:contratos");
+    const contratosMap = this.mesh.yjsAdapter.getMap('veeduria:contratos');
     contratosMap.set(contratoFirmado.hash, contratoFirmado);
 
     // Transmitir a la red
     await this.mesh.transmitir({
-      tipo: "veeduria:nuevo_contrato",
+      tipo: 'veeduria:nuevo_contrato',
       contrato: contratoFirmado,
     });
   }
@@ -45,7 +45,7 @@ export class ContractBridge {
    * Obtiene el estado de un contrato via mesh.
    */
   getContractStatus(hash: string): string | null {
-    const contratosMap = this.mesh.yjsAdapter.getMap("veeduria:contratos");
+    const contratosMap = this.mesh.yjsAdapter.getMap('veeduria:contratos');
     const contrato = contratosMap.get(hash) as Contrato | undefined;
     return contrato ? contrato.estado : null;
   }
@@ -54,14 +54,14 @@ export class ContractBridge {
    * Vincula un perfil de licitante a un nodo Maloca.
    */
   async linkLicitante(perfil: PerfilLicitante): Promise<void> {
-    const licitantesMap = this.mesh.yjsAdapter.getMap("veeduria:licitantes");
+    const licitantesMap = this.mesh.yjsAdapter.getMap('veeduria:licitantes');
     licitantesMap.set(perfil.id, {
       ...perfil,
       nodoId: this.mesh.config.nodoId,
     });
 
     await this.mesh.transmitir({
-      tipo: "veeduria:licitante_vinculado",
+      tipo: 'veeduria:licitante_vinculado',
       perfilId: perfil.id,
       nodoId: this.mesh.config.nodoId,
     });
@@ -71,14 +71,14 @@ export class ContractBridge {
    * Sincroniza licitaciones de ChileCompra al mesh.
    */
   async syncChileCompra(licitaciones: LicitacionChileCompra[]): Promise<void> {
-    const chileCompraMap = this.mesh.yjsAdapter.getMap("veeduria:chilecompra");
+    const chileCompraMap = this.mesh.yjsAdapter.getMap('veeduria:chilecompra');
 
     for (const licitacion of licitaciones) {
       chileCompraMap.set(licitacion.codigo, licitacion);
     }
 
     await this.mesh.transmitir({
-      tipo: "veeduria:chilecompra_sync",
+      tipo: 'veeduria:chilecompra_sync',
       cantidad: licitaciones.length,
       timestamp: Date.now(),
     });
