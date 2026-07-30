@@ -1,0 +1,3 @@
+## 2024-05-18 - Prevent O(N) recalculations inside memoized getters
+**Learning:** In React components like `Dashboard.tsx`, avoid housing O(N) array operations (like `reduce` or `filter`) inside getter functions that are invoked directly during render (`<Component value={stat.getValue()} />`). Even if the array containing the getters is memoized, invoking the getter on every render (e.g. due to unrelated UI state changes) will still cause full recalculations.
+**Action:** Extract expensive calculations outside of the render loop and pre-calculate them using `useMemo` hooks dependent only on the underlying array length or data, passing static string/number values down to child components.
