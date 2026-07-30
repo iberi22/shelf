@@ -1,0 +1,4 @@
+## 2025-02-28 - Cross-Site Scripting (XSS) vulnerability via textContent rendering
+**Vulnerability:** The `escapeHtml` utility in `Catalog.tsx` relied purely on DOM property assignments (`div.textContent`) combined with `innerHTML` reading. This pattern securely escapes `<`, `>`, and `&`, but it fails to escape single (`'`) and double (`"`) quotes, which is critical if the resulting sanitized output is ever dynamically embedded inside HTML element attributes.
+**Learning:** Relying solely on `textContent` does not cover all XSS escape scenarios, specifically attribute injection.
+**Prevention:** When writing custom `escapeHtml` methods for DOM manipulation without a third-party standard library, ensure manual regex replacement for quotes (`.replace(/"/g, '&quot;').replace(/'/g, '&#39;')`) is concatenated to the `innerHTML` extraction.
