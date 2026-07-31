@@ -1,5 +1,4 @@
 import { mount } from 'cypress/react';
-import React from 'react';
 import Modal from '../../components/Modal';
 import { I18nProvider } from '../../context/I18nContext';
 

@@ -3,19 +3,14 @@ import { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
-import { useSubscription } from '../context/SubscriptionContext';
 import useLocalStorage from '../hooks/useLocalStorage';
-import ProChartsTeaserCard from './ProChartsTeaserCard';
-import ProFeatureCard from './ProFeatureCard';
 import StatCard from './StatCard';
 
 const Dashboard: React.FC = () => {
   const { state } = useAppContext();
   const { t } = useI18n();
   const { formatCurrency } = useCurrency();
-  const { isPro } = useSubscription();
   const [isEditing, setIsEditing] = useState(false);
-  const [isProSectionHidden, setIsProSectionHidden] = useState(false);
 
   // Define all possible stat cards with their key and how to calculate their value
   const allStatsDefinitions = useMemo(
@@ -51,7 +46,6 @@ const Dashboard: React.FC = () => {
   );
 
   const handleVisibilityChange = (titleKey: string) => {
-    // FIX: Replaced out-of-scope variable `stat` with the function parameter `titleKey`.
     setCardVisibility((prev) => ({ ...prev, [titleKey]: !prev[titleKey] }));
   };
 
@@ -122,54 +116,6 @@ const Dashboard: React.FC = () => {
           </div>
         )}
       </div>
-
-      {isPro && (
-        <div className="mt-8">
-          <ProChartsTeaserCard onShowProFeatures={() => {}} />
-        </div>
-      )}
-
-      {!isPro &&
-        (isProSectionHidden ? (
-          <ProChartsTeaserCard onShowProFeatures={() => setIsProSectionHidden(false)} />
-        ) : (
-          <div className="mt-8 md:mt-12 glass-panel p-6 sm:p-8">
-            <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-8">
-              <div className="w-full sm:w-auto">
-                <h3 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
-                  {t('dashboard.proFeaturesTitle')}
-                </h3>
-                <p className="text-neutral-400 mt-2 max-w-3xl text-sm md:text-base leading-relaxed">
-                  {t('dashboard.proFeaturesDescription')}
-                </p>
-              </div>
-              <button
-                onClick={() => setIsProSectionHidden(true)}
-                className="w-full sm:w-auto bg-white/5 border border-white/10 text-white font-medium py-2 px-5 rounded-lg hover:bg-white/10 transition-all duration-200 active:scale-95 text-sm"
-              >
-                {t('dashboard.hideProSection')}
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              <ProFeatureCard
-                icon="🤖"
-                titleKey="reports.aiAssistantTitle"
-                descriptionKey="dashboard.pro.aiDescription"
-              />
-              <ProFeatureCard
-                icon="☁️"
-                titleKey="dashboard.pro.cloudSyncTitle"
-                descriptionKey="dashboard.pro.cloudSyncDescription"
-              />
-              <ProFeatureCard
-                icon="🚫"
-                titleKey="dashboard.pro.noAdsTitle"
-                descriptionKey="dashboard.pro.noAdsDescription"
-              />
-            </div>
-          </div>
-        ))}
     </div>
   );
 };

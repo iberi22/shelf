@@ -1,13 +1,12 @@
 import type { ArqueoSession, ExtractedInvoiceData, InvoiceOCRResult, Product } from 'p2p-mesh-core';
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { useSubscription } from '../context/SubscriptionContext';
+
 import InvoiceConfirmationModal from './InvoiceConfirmationModal';
 import InvoiceScannerModal from './InvoiceScannerModal';
 
 export default function Arqueo() {
   const { state, dispatch } = useApp();
-  const { isPro, isPyme } = useSubscription();
 
   const [showScanner, setShowScanner] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -16,20 +15,6 @@ export default function Arqueo() {
   const [currentExtractedData, setCurrentExtractedData] = useState<ExtractedInvoiceData | null>(null);
   const [currentImageBase64, setCurrentImageBase64] = useState<string>('');
   const [currentSession, setCurrentSession] = useState<ArqueoSession | null>(null);
-
-  // Pro feature check
-  if (!isPro && !isPyme) {
-    return (
-      <div className="p-4 text-center">
-        <div className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-[#F5F5DC] mb-2">Arqueo - Pro Feature</h2>
-          <p className="text-[#F5F5DC]/70 mb-4">
-            Invoice scanning and accounting is only available for Pro and Pyme users.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   const handleScanComplete = (imageBase64: string, extractedData: ExtractedInvoiceData) => {
     setShowScanner(false);

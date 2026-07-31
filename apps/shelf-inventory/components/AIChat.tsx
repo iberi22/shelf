@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { useSubscription } from '../context/SubscriptionContext';
+
 import useLocalStorage from '../hooks/useLocalStorage';
 import { useWebLLM } from '../hooks/useWebLLM';
 
@@ -13,14 +13,14 @@ const AIChat: React.FC = () => {
   const { t, locale } = useI18n();
   const { state } = useAppContext();
   const { getIdToken } = useAuth();
-  const { isPro } = useSubscription();
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
 
-  const [aiEngine, setAiEngine] = useLocalStorage<'auto' | 'local' | 'gemini' | 'nano'>('aiEngine', 'auto');
+  const [aiEngine, setAiEngine] = useLocalStorage<'auto' | 'cloud' | 'local' | 'gemini' | 'nano'>('aiEngine', 'auto');
   const [localAiModel] = useLocalStorage('localAiModel', 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC');
 
   const {
@@ -30,10 +30,8 @@ const AIChat: React.FC = () => {
     generateResponse,
   } = useWebLLM({ modelId: localAiModel });
 
-  const isAIDisabled = !isPro;
-
   const handleSendMessage = async () => {
-    if (!input.trim() || isLoading || isAIDisabled) return;
+    if (!input.trim() || isLoading) return;
 
     setError(null);
     const savedGeminiKey = localStorage.getItem('geminiApiKey')?.replace(/"/g, '');
@@ -86,42 +84,78 @@ const AIChat: React.FC = () => {
     const systemPrompt = `You are an inventory analyst for Shelf app. You must respond in the language of this locale code: ${locale}, or match the user's input language. Be helpful and analyze the provided data accurately.`;
 
     try {
-      // 1. Local AI (WebLLM) - Explicitly selected or Auto-fallback
-      if (aiEngine === 'local' || (aiEngine === 'auto' && !savedGeminiKey)) {
-        if (isWebGpuSupported === false) {
-          throw new Error(t('reports.aiWebGpuNotSupported'));
-        }
-
+      // 1. SWAL AI (OpenRouter / DeepSeek v4 Flash via /api/ai/chat)
+      if (aiEngine === 'cloud' || aiEngine === 'auto') {
         try {
-          // Prepare a temporary assistant message for streaming
-          setMessages((prev) => [...prev, { role: 'model', text: '' }]);
-
-          await generateResponse(
-            [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: `Data: ${contextString}. User: ${input}` },
-            ],
-            (updatedText) => {
-              setMessages((prev) => {
-                const newMessages = [...prev];
-                if (newMessages.length > 0) {
-                  newMessages[newMessages.length - 1] = { role: 'model', text: updatedText };
-                }
-                return newMessages;
-              });
+          const token = await getIdToken();
+          const response = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
-          );
+            body: JSON.stringify({
+              prompt: input,
+              systemPrompt,
+              inventoryData: contextData,
+            }),
+          });
 
-          setIsLoading(false);
-          return;
-        } catch (webLlmErr) {
-          console.log('WebLLM failed:', webLlmErr);
-          if (aiEngine === 'local') throw webLlmErr;
-          // If auto, continue to other providers
+          if (response.ok) {
+            const data = await response.json();
+            const text = data.text || data.choices?.[0]?.message?.content || 'No response';
+            setMessages((prev) => [...prev, { role: 'model', text }]);
+            setIsLoading(false);
+            return;
+          }
+          if (aiEngine === 'cloud') {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `Cloud AI error (${response.status})`);
+          }
+        } catch (cloudErr) {
+          console.log('Cloud AI (/api/ai/chat) failed:', cloudErr);
+          if (aiEngine === 'cloud') throw cloudErr;
+          // In auto mode, fall back to local/client engines
         }
       }
 
-      // 2. Gemini Nano (window.ai) - Explicitly selected or Auto-fallback
+      // 2. Local AI (WebLLM) - Explicitly selected or Auto-fallback
+      if (aiEngine === 'local' || aiEngine === 'auto') {
+        if (aiEngine === 'local' && isWebGpuSupported === false) {
+          throw new Error(t('reports.aiWebGpuNotSupported'));
+        }
+
+        if (isWebGpuSupported !== false) {
+          try {
+            // Prepare a temporary assistant message for streaming
+            setMessages((prev) => [...prev, { role: 'model', text: '' }]);
+
+            await generateResponse(
+              [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: `Data: ${contextString}. User: ${input}` },
+              ],
+              (updatedText) => {
+                setMessages((prev) => {
+                  const newMessages = [...prev];
+                  if (newMessages.length > 0) {
+                    newMessages[newMessages.length - 1] = { role: 'model', text: updatedText };
+                  }
+                  return newMessages;
+                });
+              },
+            );
+
+            setIsLoading(false);
+            return;
+          } catch (webLlmErr) {
+            console.log('WebLLM failed:', webLlmErr);
+            if (aiEngine === 'local') throw webLlmErr;
+          }
+        }
+      }
+
+      // 3. Gemini Nano (window.ai) - Explicitly selected or Auto-fallback
       if (aiEngine === 'nano' || aiEngine === 'auto') {
         try {
           if (window.ai && (await window.ai.canCreateTextSession()) === 'readily') {
@@ -145,46 +179,48 @@ const AIChat: React.FC = () => {
         }
       }
 
-      // 3. Direct Gemini API
+      // 4. Direct Gemini API
       if (aiEngine === 'gemini' || (aiEngine === 'auto' && savedGeminiKey)) {
-        if (!savedGeminiKey) {
+        if (!savedGeminiKey && aiEngine === 'gemini') {
           throw new Error('Gemini API key is required but not configured.');
         }
-        try {
-          const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${savedGeminiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [
-                      {
-                        text: `${systemPrompt} Context:
+        if (savedGeminiKey) {
+          try {
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${savedGeminiKey}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [
+                    {
+                      parts: [
+                        {
+                          text: `${systemPrompt} Context:
                   Data: ${contextString}
                   User: ${input}`,
-                      },
-                    ],
-                  },
-                ],
-              }),
-            },
-          );
-          if (response.ok) {
-            const data = await response.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
-            setMessages((prev) => [...prev, { role: 'model', text }]);
-            setIsLoading(false);
-            return;
+                        },
+                      ],
+                    },
+                  ],
+                }),
+              },
+            );
+            if (response.ok) {
+              const data = await response.json();
+              const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
+              setMessages((prev) => [...prev, { role: 'model', text }]);
+              setIsLoading(false);
+              return;
+            }
+          } catch (err) {
+            console.error('Gemini API call failed:', err);
+            if (aiEngine === 'gemini') throw err;
           }
-        } catch (err) {
-          console.error('Gemini API call failed:', err);
-          if (aiEngine === 'gemini') throw err;
         }
       }
 
-      // Priority 4: OpenCodeGo
+      // 5. OpenCodeGo (client key fallback)
       if (savedOpenCodeGoKey) {
         try {
           const response = await fetch('https://api.opencodego.com/v1/chat/completions', {
@@ -213,27 +249,7 @@ const AIChat: React.FC = () => {
         }
       }
 
-      // Fallback: Cloud API
-      const token = await getIdToken();
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          prompt: input,
-          systemPrompt,
-          inventoryData: contextData,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMessages((prev) => [...prev, { role: 'model', text: data.text }]);
-      } else {
-        throw new Error('All AI providers failed. Check your connection.');
-      }
+      throw new Error(t('reports.aiError') || 'All AI providers failed. Check your connection or AI settings.');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : t('reports.aiError');
       setError(errorMessage);
@@ -244,13 +260,15 @@ const AIChat: React.FC = () => {
   };
 
   const engineHint =
-    aiEngine === 'local'
-      ? t('reports.aiEngineHintLocal') || 'Local WebLLM (WebGPU) — data stays on device'
-      : aiEngine === 'nano'
-        ? t('reports.aiEngineHintNano') || 'Gemini Nano (browser built-in)'
-        : aiEngine === 'gemini'
-          ? t('reports.aiEngineHintGemini') || 'Gemini API key (client) — optional proxy URL in settings'
-          : t('reports.aiEngineHintAuto') || 'Auto: local if no Gemini key, else cloud engines';
+    aiEngine === 'cloud'
+      ? t('reports.aiEngineHintCloud') || 'SWAL AI (OpenRouter / DeepSeek v4 Flash)'
+      : aiEngine === 'local'
+        ? t('reports.aiEngineHintLocal') || 'Local WebLLM (WebGPU) — data stays on device'
+        : aiEngine === 'nano'
+          ? t('reports.aiEngineHintNano') || 'Gemini Nano (browser built-in)'
+          : aiEngine === 'gemini'
+            ? t('reports.aiEngineHintGemini') || 'Gemini API key (client) — optional proxy URL in settings'
+            : t('reports.aiEngineHintAuto') || 'Auto: SWAL AI first, local fallback if offline';
 
   return (
     <div className="flex flex-col h-[50vh] md:h-[60vh] p-3 md:p-4" data-testid="ai-chat-panel">
@@ -263,18 +281,19 @@ const AIChat: React.FC = () => {
           <select
             value={aiEngine}
             data-testid="ai-engine-select"
-            onChange={(e) => setAiEngine(e.target.value as 'auto' | 'local' | 'gemini' | 'nano')}
+            onChange={(e) => setAiEngine(e.target.value as 'auto' | 'cloud' | 'local' | 'gemini' | 'nano')}
             className="text-[10px] bg-transparent border border-[#F5F5DC]/20 rounded px-1 py-0.5 text-[#F5F5DC]/60 focus:outline-none"
-            disabled={isAIDisabled}
+            disabled={false}
           >
             <option value="auto">Auto</option>
+            <option value="cloud">Cloud (SWAL AI)</option>
             <option value="local">Local</option>
             <option value="gemini">Gemini</option>
             <option value="nano">Nano</option>
           </select>
         </div>
         <p className="text-[10px] text-[#F5F5DC]/50" data-testid="ai-engine-hint">
-          {isAIDisabled ? t('reports.aiDisabledWelcome') || 'AI requires Pro or Pyme plan' : engineHint}
+          {engineHint}
         </p>
       </div>
 
@@ -292,9 +311,7 @@ const AIChat: React.FC = () => {
             <div className="flex justify-start">
               <div className="p-3 rounded-lg bg-[#F5F5DC]/10 w-full">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-sm whitespace-pre-wrap font-bold">
-                    {isAIDisabled ? t('reports.aiDisabledWelcome') : t('reports.aiWelcome')}
-                  </p>
+                  <p className="text-sm whitespace-pre-wrap font-bold">{t('reports.aiWelcome')}</p>
                   <button
                     onClick={() => setShowHelp(!showHelp)}
                     className="text-[#F5F5DC]/60 hover:text-[#F5F5DC] transition-colors"
@@ -356,15 +373,15 @@ const AIChat: React.FC = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-          placeholder={isAIDisabled ? t('reports.aiDisabledPlaceholder') : t('reports.aiPlaceholder')}
+          placeholder={t('reports.aiPlaceholder')}
           className="flex-1 min-w-0 p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5F5DC] text-sm"
-          disabled={isLoading || isAIDisabled || isInitializing}
+          disabled={isLoading || isInitializing}
         />
         <button
           type="button"
           data-testid="ai-chat-send"
           onClick={handleSendMessage}
-          disabled={isLoading || !input.trim() || isAIDisabled || isInitializing}
+          disabled={isLoading || !input.trim() || isInitializing}
           className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-opacity-80 transition-all active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? '🤔' : '➤'}

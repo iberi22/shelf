@@ -24,7 +24,7 @@ test.describe('E2E: Reports PDF Export', () => {
     await page.locator('[data-testid="nav-item-nav.reports"]').last().click();
     await dismissModals(page);
 
-    // 3. Verify PDF Export buttons are present (User is pro by default in SubscriptionContext)
+    // 3. Verify PDF Export buttons are present (Available to all users)
     const valuationBtn = page.getByTestId('export-inventory-valuation-pdf');
     const lowStockBtn = page.getByTestId('export-low-stock-pdf');
 

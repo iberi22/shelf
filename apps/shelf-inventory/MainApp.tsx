@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
-import { DesktopAdColumn, MobileAdBars } from './components/Ads';
+
 import Arqueo from './components/Arqueo';
 import Catalog from './components/Catalog';
 import Clients from './components/Clients';
@@ -16,7 +16,7 @@ import Sidebar, { MobileBottomNav } from './components/Sidebar';
 import Suppliers from './components/Suppliers';
 import { useAppContext } from './context/AppContext';
 import { useI18n } from './context/I18nContext';
-import { useSubscription } from './context/SubscriptionContext';
+
 import { useFeatureFlags } from './hooks/useFeatureFlags';
 
 const AccessDenied = () => {
@@ -34,10 +34,8 @@ const AccessDenied = () => {
 
 const MainApp: React.FC = () => {
   const [activeComponent, setActiveComponent] = useState('nav.summary');
-  const { isFree } = useSubscription();
   const { state, dispatch } = useAppContext();
   const { isEnabled } = useFeatureFlags();
-  const showAds = isFree; // Ads only for free tier (tier from user.subscriptionTier)
 
   if (state.isExpelled) {
     return (
@@ -95,10 +93,7 @@ const MainApp: React.FC = () => {
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-background text-foreground">
-      {showAds && <DesktopAdColumn />}
-
-      <div className={`flex flex-col flex-1 h-full min-h-0 overflow-hidden ${showAds ? 'md:ml-40' : ''}`}>
-        {showAds && <MobileAdBars />}
+      <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
         <div className="flex flex-1 overflow-hidden relative">
           <Sidebar activeComponent={activeComponent} setActiveComponent={setActiveComponent} />
           {/* Add pt-16 on mobile to push content below the fixed hamburger menu */}

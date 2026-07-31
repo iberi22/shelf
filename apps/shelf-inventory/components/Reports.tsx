@@ -17,8 +17,6 @@ import { Line } from 'react-chartjs-2';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
-import { useSubscription } from '../context/SubscriptionContext';
-import { useUI } from '../context/UIContext';
 import useLocalStorage from '../hooks/useLocalStorage';
 import AIChat from './AIChat';
 import StatCard from './StatCard';
@@ -29,8 +27,7 @@ const Reports: React.FC = () => {
   const { t, locale } = useI18n();
   const { state } = useAppContext();
   const mesh = useEdgeMesh();
-  const { isFree } = useSubscription();
-  const { openSubscriptionModal } = useUI();
+
   const { formatCurrency } = useCurrency();
   const [lowStockThreshold] = useLocalStorage('lowStockThreshold', 5);
 
@@ -328,28 +325,26 @@ const Reports: React.FC = () => {
           <p className="text-sm md:text-base text-foreground/80">{t('reports.description')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {!isFree && (
-            <div className="flex gap-2 mr-2">
-              <button
-                onClick={generateInventoryValuationPDF}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border bg-transparent text-[#F5F5DC] border-[#F5F5DC]/30 hover:bg-[#F5F5DC]/5"
-                data-testid="export-inventory-valuation-pdf"
-                title={t('reports.inventoryValuation')}
-              >
-                <Download className="h-3.5 w-3.5" />
-                {t('reports.inventoryValuation')}
-              </button>
-              <button
-                onClick={generateLowStockPDF}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border bg-transparent text-[#F5F5DC] border-[#F5F5DC]/30 hover:bg-[#F5F5DC]/5"
-                data-testid="export-low-stock-pdf"
-                title={t('reports.lowStockReport')}
-              >
-                <Download className="h-3.5 w-3.5" />
-                {t('reports.lowStockReport')}
-              </button>
-            </div>
-          )}
+          <div className="flex gap-2 mr-2">
+            <button
+              onClick={generateInventoryValuationPDF}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border bg-transparent text-[#F5F5DC] border-[#F5F5DC]/30 hover:bg-[#F5F5DC]/5"
+              data-testid="export-inventory-valuation-pdf"
+              title={t('reports.inventoryValuation')}
+            >
+              <Download className="h-3.5 w-3.5" />
+              {t('reports.inventoryValuation')}
+            </button>
+            <button
+              onClick={generateLowStockPDF}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border bg-transparent text-[#F5F5DC] border-[#F5F5DC]/30 hover:bg-[#F5F5DC]/5"
+              data-testid="export-low-stock-pdf"
+              title={t('reports.lowStockReport')}
+            >
+              <Download className="h-3.5 w-3.5" />
+              {t('reports.lowStockReport')}
+            </button>
+          </div>
 
           {state.branches.filter((b) => b.isActive).length > 0 && reportType === 'sales' && (
             <button
@@ -615,19 +610,7 @@ const Reports: React.FC = () => {
           </h3>
         </div>
 
-        {isFree ? (
-          <div className="p-6 text-center">
-            <p className="mb-4 text-foreground/80">{t('reports.proFeatureDescription')}</p>
-            <button
-              onClick={openSubscriptionModal}
-              className="text-sm font-semibold text-[#121212] bg-yellow-400 px-4 py-2.5 rounded-lg min-h-[44px] hover:bg-yellow-300 transition-all active:scale-95"
-            >
-              {t('subscription.upgradeNow')}
-            </button>
-          </div>
-        ) : (
-          <AIChat />
-        )}
+        <AIChat />
       </div>
     </div>
   );

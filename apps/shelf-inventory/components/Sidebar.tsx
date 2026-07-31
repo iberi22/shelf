@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NAV_ITEMS } from '../constants';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
-import { useSubscription } from '../context/SubscriptionContext';
+
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
 import GlobalSearch from './GlobalSearch';
 
@@ -219,7 +219,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }) => {
   const { t } = useI18n();
-  const { isPro } = useSubscription();
+
   const [isDesktop, setIsDesktop] = useState(window.matchMedia('(min-width: 768px)').matches);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -408,12 +408,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
           </nav>
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-foreground/20 space-y-3 bg-primary">
             <div className="flex items-center justify-center gap-2">
-              <div
-                className={`w-2 h-2 rounded-full ${isPro ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500'}`}
-              />
-              <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">
-                {isPro ? t('sync.cloudSynced') : t('sync.localOnly')}
-              </p>
+              <div className="w-2 h-2 rounded-full bg-yellow-500" />
+              <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">{t('sync.localOnly')}</p>
             </div>
             <div className="text-center text-[10px] text-foreground/40 font-mono mt-2">
               v{__APP_VERSION__} • {__COMMIT_HASH__}
@@ -505,12 +501,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
           </nav>
           <div className="p-4 border-t border-foreground/20 space-y-4">
             <div className="flex items-center justify-center gap-2">
-              <div
-                className={`w-2 h-2 rounded-full ${isPro ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500'}`}
-              />
-              <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">
-                {isPro ? t('sync.cloudSynced') : t('sync.localOnly')}
-              </p>
+              <div className="w-2 h-2 rounded-full bg-yellow-500" />
+              <p className="text-[10px] uppercase tracking-wider font-bold opacity-60">{t('sync.localOnly')}</p>
             </div>
             <div className="text-center text-[10px] text-foreground/40 font-mono mt-2">
               v{__APP_VERSION__} • {__COMMIT_HASH__}

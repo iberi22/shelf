@@ -7,7 +7,6 @@ import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
-import { useSubscription } from '../context/SubscriptionContext';
 import { useUI } from '../context/UIContext';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { isBiometricsSupported } from '../lib/webauthn';
@@ -30,7 +29,7 @@ const CURRENCIES = [
 const NetworkConfig: React.FC = () => {
   const { t } = useI18n();
   const { state, dispatch } = useAppContext();
-  const { showNotification, openSubscriptionModal } = useUI();
+  const { showNotification } = useUI();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [lowStockThreshold, setLowStockThreshold] = useLocalStorage('lowStockThreshold', 5);
@@ -42,15 +41,14 @@ const NetworkConfig: React.FC = () => {
   const [showOpenCodeGoKey, setShowOpenCodeGoKey] = useState(false);
   const [openCodeGoModel, setOpenCodeGoModel] = useLocalStorage('openCodeGoModel', 'gpt-4o');
   const [aiProxyUrl, setAiProxyUrl] = useLocalStorage('aiProxyUrl', '');
-  const [aiEngine, setAiEngine] = useLocalStorage<'auto' | 'local' | 'gemini' | 'nano'>('aiEngine', 'auto');
+  const [aiEngine, setAiEngine] = useLocalStorage<'auto' | 'cloud' | 'local' | 'gemini' | 'nano'>('aiEngine', 'auto');
   const [localAiModel, setLocalAiModel] = useLocalStorage('localAiModel', 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC');
   const { currencyCode, setCurrencyCode, numberFormat, setNumberFormat } = useCurrency();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isInviteModalOpen, setInviteModalOpen] = useState(false);
   const [feedback, setFeedback] = useState('');
 
-  const { isPyme, tier } = useSubscription();
-  const { user, hasAppLock, hasBiometricLock, setAppLock, setBiometricLock, setSubscriptionTier } = useAuth();
+  const { user, hasAppLock, hasBiometricLock, setAppLock, setBiometricLock } = useAuth();
   const [newPin, setNewPin] = useState('');
   const [biometricsSupported, setBiometricsSupported] = useState(false);
 
@@ -286,23 +284,13 @@ const NetworkConfig: React.FC = () => {
       >
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
           <span className="text-xs text-[#F5F5DC]/70">{t('settings.team.description')}</span>
-          {isPyme ? (
-            <button
-              type="button"
-              onClick={() => setInviteModalOpen(true)}
-              className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-opacity-80 text-sm active:scale-95 cursor-pointer"
-            >
-              {t('settings.team.invite')}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={openSubscriptionModal}
-              className="w-full sm:w-auto bg-sky-500 text-background font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-sky-400 text-sm active:scale-95 cursor-pointer"
-            >
-              {t('subscription.upgradeToPyme')}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setInviteModalOpen(true)}
+            className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-opacity-80 text-sm active:scale-95 cursor-pointer"
+          >
+            {t('settings.team.invite')}
+          </button>
         </div>
         <div className="space-y-2">
           {team.length > 0 ? (
@@ -336,63 +324,6 @@ const NetworkConfig: React.FC = () => {
               {t('settings.team.noMembers') || 'No team members added yet.'}
             </p>
           )}
-        </div>
-      </CollapsibleCard>
-
-      {/* Local plan / monetization tier (offline-first; Stripe is optional remote) */}
-      <CollapsibleCard
-        title={t('settings.plan.title') || 'Plan / Subscription'}
-        description={
-          t('settings.plan.description') ||
-          'Local plan controls Pro features and ads. Cloud Stripe checkout is optional when backend is configured.'
-        }
-        icon={<Coins className="h-5 w-5" />}
-        testId="settings-plan-card"
-      >
-        <div className="space-y-3" data-testid="subscription-tier-controls">
-          <p className="text-sm text-[#F5F5DC]/80">
-            {t('settings.plan.current') || 'Current plan'}:{' '}
-            <span className="font-bold text-yellow-400" data-testid="subscription-tier-value">
-              {tier}
-            </span>
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {(['free', 'pro', 'pyme'] as const).map((plan) => (
-              <button
-                key={plan}
-                type="button"
-                data-testid={`set-tier-${plan}`}
-                onClick={() => {
-                  if (plan !== 'free' && tier === 'free') {
-                    const confirmed = window.confirm(
-                      t('settings.plan.confirmUpgrade') || 'Are you sure you want to upgrade your plan?',
-                    );
-                    if (!confirmed) return;
-                  }
-                  setSubscriptionTier(plan);
-                  showNotification(t('settings.plan.updated', { plan }) || `Plan set to ${plan}`, 'success');
-                }}
-                className={`text-sm font-bold py-2 px-4 rounded-lg border min-h-[40px] transition-colors active:scale-95 ${
-                  tier === plan
-                    ? 'bg-yellow-400/20 border-yellow-400 text-yellow-300'
-                    : 'bg-transparent border-[#F5F5DC]/40 text-[#F5F5DC] hover:bg-[#F5F5DC]/10'
-                }`}
-              >
-                {plan}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-[#F5F5DC]/60 italic mt-1">
-            {t('settings.plan.offlineNotice') || 'Local plans are offline-first; payment when Stripe env enabled.'}
-          </p>
-          <button
-            type="button"
-            data-testid="open-subscription-modal-button"
-            onClick={() => openSubscriptionModal()}
-            className="text-sm text-sky-400 hover:text-sky-300 font-semibold block pt-2"
-          >
-            {t('settings.plan.stripeCheckout') || 'Open Stripe checkout (if configured)'}
-          </button>
         </div>
       </CollapsibleCard>
 
@@ -438,6 +369,7 @@ const NetworkConfig: React.FC = () => {
               className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
             >
               <option value="auto">{t('settings.ai.engineAuto')}</option>
+              <option value="cloud">{t('settings.ai.engineCloud') || 'SWAL AI / OpenRouter (Cloud)'}</option>
               <option value="local">{t('settings.ai.engineLocal')}</option>
               <option value="gemini">{t('settings.ai.engineGemini')}</option>
               <option value="nano">{t('settings.ai.engineNano')}</option>

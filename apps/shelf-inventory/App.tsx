@@ -4,7 +4,7 @@ import LandingPage from './components/LandingPage';
 import LockScreen from './components/LockScreen';
 import Notification from './components/Notification';
 import RecoveryApprovalModal from './components/RecoveryApprovalModal';
-import SubscriptionModal from './components/SubscriptionModal';
+
 import UpdateNotification from './components/UpdateNotification';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -104,8 +104,6 @@ const AppContainer = () => {
       {pendingRecoveryRequest && (
         <RecoveryApprovalModal request={pendingRecoveryRequest} onClose={() => setPendingRecoveryRequest(null)} />
       )}
-
-      <SubscriptionModal />
 
       {isLoading && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[200]">

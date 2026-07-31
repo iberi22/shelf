@@ -12,9 +12,6 @@ interface UIContextProps {
   loadingMessage: string;
   showLoading: (message?: string) => void;
   hideLoading: () => void;
-  isSubscriptionModalOpen: boolean;
-  openSubscriptionModal: () => void;
-  closeSubscriptionModal: () => void;
   notification: NotificationState | null;
   showNotification: (message: string, type: NotificationState['type'], durationMs?: number) => void;
   hideNotification: () => void;
@@ -25,7 +22,6 @@ const UIContext = createContext<UIContextProps | undefined>(undefined);
 export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Loading...');
-  const [isSubscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [notification, setNotification] = useState<NotificationState | null>(null);
 
   const showLoading = useCallback((message = 'Loading...') => {
@@ -36,9 +32,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const hideLoading = useCallback(() => {
     setIsLoading(false);
   }, []);
-
-  const openSubscriptionModal = useCallback(() => setSubscriptionModalOpen(true), []);
-  const closeSubscriptionModal = useCallback(() => setSubscriptionModalOpen(false), []);
 
   const showNotification = useCallback((message: string, type: NotificationState['type'], durationMs?: number) => {
     setNotification({ message, type, durationMs });
@@ -55,9 +48,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         loadingMessage,
         showLoading,
         hideLoading,
-        isSubscriptionModalOpen,
-        openSubscriptionModal,
-        closeSubscriptionModal,
         notification,
         showNotification,
         hideNotification,

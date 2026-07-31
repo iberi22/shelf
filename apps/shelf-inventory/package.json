@@ -22,6 +22,9 @@
     "prepare": "husky",
     "test:unit": "vitest run lib api",
     "test:e2e": "playwright test",
+    "test:e2e:desktop": "playwright test --project=chromium",
+    "test:e2e:mobile": "playwright test --project=mobile-chrome",
+    "test:e2e:tablet": "playwright test --project=tablet",
     "test:ct": "cypress run --component",
     "test": "pnpm test:unit && pnpm test:ct && pnpm test:e2e"
   },
