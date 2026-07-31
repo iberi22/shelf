@@ -13,8 +13,8 @@
 > **GitCore 3.8.0** applied 2026-07-17. Full bootstrap rules are in protocol sections; preserve project-specific content below.
 # AGENTS.md — Guía para Agentes de Shelf
 
-**Última actualización:** 2026-07-18
-**Versión del proyecto:** 1.2.4
+**Última actualización:** 2026-07-30
+**Versión del proyecto:** 2.0.5
 
 ---
 

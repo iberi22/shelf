@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.1.1] - 2026-07-30
+
+### Added
+- **Proxy Backend para IA (OpenRouter)**: Endpoints Serverless/Edge de Vercel en `/api/ai/chat` y `/api/chat` para procesar consultas de IA con DeepSeek v4 Flash sin exponer claves de API en el cliente.
+- **Pruebas E2E Responsivas (Headless)**: Suite de pruebas en `tests/responsive-devices.spec.ts` validando navegaciones, modales, tablas y layouts en teléfonos móviles (8/8) y tablets (6/6).
+- **Barrera CI Pre-Push (`.husky/pre-push`)**: Pipeline automatizado que compila, verifica tipos TypeScript, ejecuta pruebas unitarias de los paquetes locales y ejecuta pruebas E2E móvil y tablet antes de permitir el push.
+
+### Changed
+- **Acceso Libre Universal (Sin versión Pro)**: Eliminadas todas las compuertas de suscripción de `SubscriptionContext`, así como modales y tarjetas promocionales de pago. Todas las funcionalidades y características del sistema están disponibles y libres para todos los usuarios.
+- **Configuración Vercel (`vercel.json` & `/api`)**: Sincronizado `vercel.json` en la raíz del monorepo con cabeceras CORS y fallbacks SPA, y añadido symlink `/api` para autodescubrimiento infalible de funciones Serverless en Vercel.
+
 ## [2.1.0] - 2026-07-14
 
 ### Added

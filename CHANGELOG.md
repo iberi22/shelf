@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.5](https://github.com/iberi22/shelf/compare/v2.0.4...v2.0.5) (2026-07-30)
+
+### Features
+* **ai:** implement proxy backend (/api/ai/chat, /api/chat) for DeepSeek v4 Flash via OpenRouter
+* **core:** eliminate Pro version subscription paywalls for universal free access
+* **qa:** add headless mobile and tablet E2E test suite (`tests/responsive-devices.spec.ts`)
+* **ci:** harden `.husky/pre-push` with build, package unit tests, and responsive mobile/tablet E2E checks
+* **deploy:** align root `vercel.json` headers and SPA rewrites with `/api` symlink for reliable Vercel Serverless Function deployments
+
 ### [2.0.4](https://github.com/iberi22/shelf/compare/v2.0.3...v2.0.4) (2026-07-14)
 
 
