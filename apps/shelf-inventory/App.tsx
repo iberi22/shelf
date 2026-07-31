@@ -27,7 +27,28 @@ interface PendingRecoveryRequest {
 
 const AppContainer = () => {
   useErrorMonitoring();
-  const [hasVisited, setHasVisited] = useLocalStorage('hasVisited', false);
+  const isTestOrDevSkip =
+    import.meta.env.MODE === 'test' ||
+    import.meta.env.VITE_SKIP_LANDING === 'true' ||
+    import.meta.env.VITE_TEST_MODE === 'true' ||
+    window.location.search.includes('test=true') ||
+    window.location.search.includes('skipLanding=true') ||
+    window.location.search.includes('testMode=true') ||
+    Boolean((window as any).__E2E_TEST__) ||
+    Boolean((window as any).Cypress);
+
+  const [hasVisited, setHasVisited] = useLocalStorage('hasVisited', isTestOrDevSkip);
+
+  useEffect(() => {
+    if (isTestOrDevSkip) {
+      try {
+        localStorage.setItem('hasVisited', 'true');
+        localStorage.setItem('shelfWelcomeSeen', 'true');
+      } catch (_e) {
+        // ignore storage errors
+      }
+    }
+  }, [isTestOrDevSkip]);
   const [pendingRecoveryRequest, setPendingRecoveryRequest] = useState<PendingRecoveryRequest | null>(null);
   const { isLoading, loadingMessage, notification, hideNotification, showNotification } = useUI();
   const { isLocked, isLocalAccount, user } = useAuth();
@@ -88,7 +109,9 @@ const AppContainer = () => {
 
   const showMainApp = () => setHasVisited(true);
 
-  if (!hasVisited) {
+  const shouldSkipLanding = hasVisited || isTestOrDevSkip;
+
+  if (!shouldSkipLanding) {
     return <LandingPage onNavigate={showMainApp} />;
   }
 

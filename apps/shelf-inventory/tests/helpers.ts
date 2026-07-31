@@ -20,14 +20,14 @@ export function addOverlayBlocker(context: BrowserContext): void {
 /**
  * Set localStorage flags and dismiss overlays on an already-open page.
  */
-export async function setupPage(page: Page): Promise<void> {
+export async function setupPage(page: Page, url = '/?testMode=true'): Promise<void> {
   await page.addInitScript(() => {
     (window as any).__E2E_TEST__ = true;
     localStorage.setItem('hasVisited', 'true');
     localStorage.setItem('shelfWelcomeSeen', 'true');
   });
-  await page.goto('/');
-  await page.waitForTimeout(1000);
+  await page.goto(url);
+  await page.waitForTimeout(300);
 }
 
 /**

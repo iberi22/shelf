@@ -15,7 +15,15 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: [
+            '--allow-loopback-in-peer-connection',
+            '--disable-features=WebRtcHideLocalIpsWithMdns',
+          ],
+        },
+      },
       testIgnore: /.*(?:responsive-devices|mobile-touch-scroll|mobile-pagination|settings-mobile-layout)\.spec\.ts/,
     },
     {
@@ -37,14 +45,28 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'pnpm run dev --host 127.0.0.1 --port 5174 --strictPort',
+      command: 'pnpm run dev:test',
       url: 'http://127.0.0.1:5174',
       reuseExistingServer: !process.env.CI,
+      env: {
+        VITE_SKIP_LANDING: 'true',
+        VITE_TEST_MODE: 'true',
+      },
     },
     {
-      command: 'pnpm dlx peer --port 9000 --path /',
+      command: 'pnpm run dev:test:2',
+      url: 'http://127.0.0.1:5175',
+      reuseExistingServer: !process.env.CI,
+      env: {
+        VITE_SKIP_LANDING: 'true',
+        VITE_TEST_MODE: 'true',
+      },
+    },
+    {
+      command: 'pnpm -w run peer-server',
       url: 'http://127.0.0.1:9000',
       reuseExistingServer: !process.env.CI,
+      timeout: 30000,
     },
   ],
 });
