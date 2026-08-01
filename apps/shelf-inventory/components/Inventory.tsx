@@ -853,6 +853,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   });
   const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
   const [comboValues, setComboValues] = useState<Record<string, { quantity: number; price: number; cost: number }>>({});
+  const [customColorValue, setCustomColorValue] = useState('');
+  const [customMeasureValue, setCustomMeasureValue] = useState('');
+  const [customVersionValue, setCustomVersionValue] = useState('');
 
   const isEditing = product !== null;
   const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1 || selectedVersions.length > 1;
@@ -1532,14 +1535,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     <input
                       type="text"
                       placeholder="Color personalizado (ej. Azul marino)"
+                      value={customColorValue}
+                      onChange={(e) => setCustomColorValue(e.target.value)}
                       className="flex-1 p-1.5 text-xs bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
-                          const val = e.currentTarget.value.trim();
+                          const val = customColorValue.trim();
                           if (val && !selectedColors.includes(val)) {
                             setSelectedColors((prev) => [...prev, val]);
-                            e.currentTarget.value = '';
+                            setCustomColorValue('');
                           }
                         }
                       }}
@@ -1547,12 +1552,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     <button
                       type="button"
                       className="px-3 py-1.5 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 rounded transition-colors text-[#F5F5DC]"
-                      onClick={(e) => {
-                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                        const val = input.value.trim();
+                      onClick={() => {
+                        const val = customColorValue.trim();
                         if (val && !selectedColors.includes(val)) {
                           setSelectedColors((prev) => [...prev, val]);
-                          input.value = '';
+                          setCustomColorValue('');
                         }
                       }}
                     >
@@ -1622,14 +1626,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     <input
                       type="text"
                       placeholder="Medida personalizada (ej. 35CM)"
+                      value={customMeasureValue}
+                      onChange={(e) => setCustomMeasureValue(e.target.value)}
                       className="flex-1 p-1.5 text-xs bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded uppercase"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
-                          const val = e.currentTarget.value.trim().toUpperCase();
+                          const val = customMeasureValue.trim().toUpperCase();
                           if (val && !selectedSizes.includes(val)) {
                             setSelectedSizes((prev) => [...prev, val]);
-                            e.currentTarget.value = '';
+                            setCustomMeasureValue('');
                           }
                         }
                       }}
@@ -1637,12 +1643,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     <button
                       type="button"
                       className="px-3 py-1.5 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 rounded transition-colors text-[#F5F5DC]"
-                      onClick={(e) => {
-                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                        const val = input.value.trim().toUpperCase();
+                      onClick={() => {
+                        const val = customMeasureValue.trim().toUpperCase();
                         if (val && !selectedSizes.includes(val)) {
                           setSelectedSizes((prev) => [...prev, val]);
-                          input.value = '';
+                          setCustomMeasureValue('');
                         }
                       }}
                     >
@@ -1686,15 +1691,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     <input
                       type="text"
                       placeholder="Versión o modelo (ej. V2, Modelo 2026)"
+                      value={customVersionValue}
+                      onChange={(e) => setCustomVersionValue(e.target.value)}
                       className="flex-1 p-1.5 text-xs bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded"
                       data-testid="version-custom-input"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
-                          const val = e.currentTarget.value.trim();
+                          const val = customVersionValue.trim();
                           if (val && !selectedVersions.includes(val)) {
                             setSelectedVersions((prev) => [...prev, val]);
-                            e.currentTarget.value = '';
+                            setCustomVersionValue('');
                           }
                         }
                       }}
@@ -1703,12 +1710,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       type="button"
                       className="px-3 py-1.5 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 rounded transition-colors text-[#F5F5DC]"
                       data-testid="version-add-button"
-                      onClick={(e) => {
-                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                        const val = input.value.trim();
+                      onClick={() => {
+                        const val = customVersionValue.trim();
                         if (val && !selectedVersions.includes(val)) {
                           setSelectedVersions((prev) => [...prev, val]);
-                          input.value = '';
+                          setCustomVersionValue('');
                         }
                       }}
                     >
