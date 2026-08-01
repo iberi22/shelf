@@ -5,8 +5,8 @@
     "project_display": "Shelf Inventory Management",
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
-    "updated": "2026-07-18",
-    "version": "1.2.4",
+    "updated": "2026-08-01",
+    "version": "2.0.5",
     "sdlc_phase": "ola-i-edge-authz",
     "total_features": 21,
     "features_implemented": 21,
@@ -24,7 +24,7 @@
       "gpu-agent": "gpu-agent (WebGPU stub)",
       "crypto": "@noble/post-quantum (ML-KEM-768, ML-DSA-65)",
       "auth": "localAuth (no Firebase runtime)",
-      "payments": "Stripe UI stub (no live billing)",
+      "payments": "None — Colaborador SWAL profit-share model",
       "deploy": "Vercel",
       "testing": "Playwright + Cypress + Biome + Husky"
     },
@@ -293,25 +293,25 @@
       "sdlc": "beta",
       "priority": "P2",
       "category": "FUN",
-      "description": "Asistente IA para análisis de inventario y preguntas en lenguaje natural (gated para usuarios Pro)",
-      "user_story": "Como usuario Pro, quiero preguntarle a un AI sobre mi inventario en lenguaje natural",
-      "actor": "Usuario Pro",
+      "description": "Asistente IA para análisis de inventario y preguntas en lenguaje natural (DeepSeek v4 Flash via OpenRouter proxy)",
+      "user_story": "Como usuario, quiero preguntarle a un AI sobre mi inventario en lenguaje natural",
+      "actor": "Todos los usuarios",
       "dependencies": ["SRC-FUN-008", "SRC-FUN-001"],
-      "technologies": ["WebLLM", "Gemini API client-side", "Gemini Nano"],
+      "technologies": ["DeepSeek v4 Flash", "OpenRouter proxy", "React"],
       "acceptance_criteria": [
         "Chat integrado en reports page",
-        "Motores: WebLLM local, Gemini Nano, Gemini API key, proxy URL opcional",
-        "Gated para usuarios Pro (tier real)",
+        "Backend proxy OpenRouter (DeepSeek v4 Flash)",
+        "Accesible para todos los usuarios (sin gate Pro)",
         "Contexto de inventario/ventas inyectado al prompt"
       ],
       "implementation_percentage": 86,
       "maturity": "integrated",
       "evidence": [
         "AIChat.tsx en Reports.tsx",
-        "useWebLLM + direct Gemini key en localStorage",
-        "isPro gate (pero isPro hardcodeado true)"
+        "lib/aiChatContext.ts (OpenRouter proxy)",
+        "lib/aiChatContext.spec.ts (46 tests)"
       ],
-      "gaps": ["Model quality depends on engine; CF proxy optional"]
+      "gaps": []
     },
     {
       "id": "SRC-FUN-008",
@@ -345,33 +345,30 @@
     },
     {
       "id": "SRC-FUN-009",
-      "name": "Monetization (Ads + Subscriptions)",
+      "name": "Monetization — Colaborador SWAL",
       "status": "implemented",
       "sdlc": "hardening",
       "priority": "P0",
       "category": "FUN",
-      "description": "Tiers free/pro/pyme locales controlan ads y Pro features; Stripe checkout opcional.",
-      "user_story": "Como negocio, quiero que la app genere ingresos vía anuncios y suscripciones Pro",
-      "actor": "Usuario Free / Pro",
+      "description": "Modelo Colaborador SWAL: todas las features gratis localmente, revenue via profit share (25/15/10%). Sin suscripciones ni ads.",
+      "user_story": "Como usuario, quiero usar todas las features sin restricciones de tier",
+      "actor": "Todos los usuarios",
       "dependencies": ["SRC-FUN-008"],
-      "technologies": ["Stripe UI", "AdSense UI", "React"],
+      "technologies": ["React"],
       "acceptance_criteria": [
-        "Anuncios para usuarios free (DesktopAdColumn, MobileAdBars)",
-        "Anuncios ocultos para pro/pyme",
-        "UI de plan local free/pro/pyme en settings",
-        "Modal de suscripción Pro/Pyme",
-        "AdSense IDs via environment variables",
-        "Stripe checkout opcional si backend configurado"
+        "Todas las features accesibles sin restricción",
+        "Sin anuncios (AdSense eliminado)",
+        "Sin modal de suscripción",
+        "UI simplificada sin tiers"
       ],
       "implementation_percentage": 90,
       "maturity": "integrated",
       "evidence": [
-        "SubscriptionContext from user.subscriptionTier",
-        "SubscriptionModal offline fallback when Stripe disabled/404",
-        "MainApp showAds = isFree",
-        "settings plan card + confirm upgrade"
+        "SubscriptionContext simplified (isPro=true always)",
+        "No ProChartsTeaserCard, no AdSenseUnit, no Ads components",
+        "Dashboard clean without upgrade sections"
       ],
-      "gaps": ["Live Stripe backend still optional; offline local plans are primary path"]
+      "gaps": []
     },
     {
       "id": "SRC-FUN-010",

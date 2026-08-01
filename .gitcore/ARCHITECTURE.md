@@ -1,14 +1,15 @@
 # Shelf Architecture — GitCore
 
-**Protocol Version:** 3.6.0
-**Updated:** 2026-06-27
+**Protocol Version:** 3.8.0
+**Updated:** 2026-08-01
+**App Version:** 2.0.5
 
 ## Stack
 - **Monorepo:** pnpm workspaces + Turborepo 2
 - **Frontend:** React 19 (Vite 8), TypeScript 6
 - **Styling:** Tailwind CSS 4, PostCSS, Biome
 - **State Management:** React Context (`useReducer`)
-- **Persistence:** localStorage (all tiers), Firebase Firestore (Pro sync)
+- **Persistence:** localStorage (all data local-first)
 - **Edge Mesh Runtime (SRC-EDGE-001):** Yjs (CRDT), PeerJS (WebRTC), WebGPU stack
 - **Packages:**
   - `@shelf/edge-mesh`: Reusable P2P browser runtime (Yjs, CRDT, authz)
@@ -16,11 +17,11 @@
   - `@shelf/gpu-agent`: WebGPU agent integration surface
   - `@shelf/p2p-mesh-core`: Core P2P engine (PQC, roles, app state contract)
 - **Security:** ML-KEM-768 (PQC), ML-DSA-65 (signatures), AES-GCM
-- **AI:** Gemini API via Firebase Cloud Functions, local WebLLM (MLC)
+- **AI:** DeepSeek v4 Flash via OpenRouter backend proxy
 - **Testing:** Playwright E2E (edge-mesh), Cypress E2E (UI), Biome linting
 - **CI/CD:** GitHub Actions, Vercel (preview + production)
-- **Payments:** Stripe (webhooks + subscriptions)
-- **Auth:** Firebase Auth (email/password)
+- **Payments:** None — all features free (Colaborador SWAL model)
+- **Auth:** Local-first (LocalAuth + device security)
 
 ## Project Structure
 ```
@@ -59,8 +60,8 @@ shelf/
 | Post-Quantum Crypto | ML-KEM-768 + ML-DSA-65 | Seguridad a futuro (NIST estandarizado 2024) |
 | Monorepo | Turborepo + pnpm | Escalabilidad, builds paralelos, shared packages |
 | State Management | Context API (no Redux) | Simplicidad, shelf no escala a cientos de componentes |
-| Offline Storage | localStorage → Firestore | Gratuito en free tier, sync cloud cuando hay internet |
-| Auth | Firebase Auth + Stripe | Monetización integrada, zero-infrastructure |
+|| Offline Storage | localStorage | 100% offline-first, no cloud dependency ||
+|| Auth | LocalAuth + PQC | Post-quantum secure, device-bound, zero cloud ||
 | i18n | Custom Context (no react-i18next) | Liviano, sin dependencias externas |
 | PWA | vite-plugin-pwa + workbox | Integración directa con Vite 8 |
 
@@ -91,13 +92,14 @@ Extension point via `@shelf/gpu-agent` para ejecución de agentes en el edge loc
 ### 6. Admin Node
 Nodo designado (primer peer en conectarse) que coordina peers y mantiene el estado global. Soporta multi-user (Pyme plan).
 
-### 7. Monetización por Tiers
-| Tier | Price | Ads | Cloud Sync | AI | Multi-user |
-|------|-------|-----|-------------|----|------------|
-| Free | $0 | ✅ | ❌ | ❌ | ❌ |
-| Basic | TBD | ❌ | ✅ | ❌ | ❌ |
-| Pro | TBD | ❌ | ✅ | ✅ | ❌ |
-| Pyme | TBD | ❌ | ✅ | ✅ | ✅ |
+### 7. Monetización — Colaborador SWAL
+| Model | Price | Features | Revenue |
+|-------|-------|----------|---------|
+| Local (default) | $0 | All features, unlimited | None |
+| Colaborador SWAL | $0 + stake | $SWAL token bonuses, priority P2P | Profit share (25/15/10%) |
+
+No suscripciones. No ads. Todo gratis localmente.
+Revenue via profit share del ecosistema SWAL.
 
 ## Architecture Layers
 
@@ -133,10 +135,10 @@ Nodo designado (primer peer en conectarse) que coordina peers y mantiene el esta
 User Action → Context Dispatch → Reducer → State Update
                                                 ↓
                 ┌─────────────────────────────────┼───────────────────┐
-                ↓                                 ↓                   ↓
-           localStorage                  Edge Mesh Broadcast    Firestore
-           (always)                      (Yjs CRDT via          (Pro only)
-                                          edge-mesh namespace)
+                ↓                                 
+           localStorage                  Edge Mesh Broadcast    
+           (always)                      (Yjs CRDT via          
+                                          edge-mesh namespace)   
 ```
 
 ### Edge Mesh Sync Workflow (SRC-EDGE-001)
