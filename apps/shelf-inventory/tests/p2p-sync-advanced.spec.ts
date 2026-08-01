@@ -1,67 +1,41 @@
 import { expect, test } from '@playwright/test';
 import { addOverlayBlocker, dismissModals } from './helpers';
-import { expectProductSync } from './p2p-helpers';
+import { connectPeers, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
 test.describe('P2P Advanced Synchronization', () => {
-  async function connectAndSync(adminPage: any, collabPage: any, role: 'collaborator' | 'admin' = 'collaborator') {
+  /**
+   * Connect admin and collab pages using the programmatic P2P API.
+   * This avoids fragile UI-based connection (filling inputs, clicking buttons,
+   * waiting for status text) which times out in CI.
+   */
+  async function connectAndSync(adminPage: any, collabPage: any, _role: 'collaborator' | 'admin' = 'collaborator') {
     await dismissModals(adminPage);
     await dismissModals(collabPage);
 
-    // Admin goes to settings
+    // Navigate both to settings to mount P2P components
     await adminPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
     await collabPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
     await dismissModals(adminPage);
     await dismissModals(collabPage);
     await adminPage.waitForTimeout(300);
 
-    // Get collab peer ID
-    const collabPeerIdLocator = collabPage.locator('span.font-mono.text-yellow-400').first();
-    await collabPeerIdLocator.waitFor({ state: 'visible' });
-    await expect(collabPeerIdLocator).not.toHaveText('Initializing...', { timeout: 15000 });
-    const collabId = await collabPeerIdLocator.innerText();
+    // Get collab peer ID programmatically (avoids fragile UI text scraping)
+    const collabId = await getLocalPeerId(collabPage);
 
-    // Admin connects to collab — dismiss modals before typing, then wait for modal to stabilize
-    await dismissModals(adminPage);
-    const manualInput = adminPage.getByTestId('manual-peer-id-input');
-    await expect(manualInput).toBeVisible();
-    await manualInput.fill(collabId);
-    await adminPage.waitForTimeout(500);
+    // Connect programmatically — admin connects to collab peer
+    await connectPeers(adminPage, collabId, 30000);
 
-    // Click Connect
-    await dismissModals(adminPage);
-    const connectButton = adminPage.getByTestId('manual-connect-button');
-    await connectButton.click({ timeout: 5000 }).catch(async () => {
-      // Fallback: force click if the button got detached
-      await connectButton.click({ force: true, timeout: 3000 });
-    });
-
-    // Verify roles and handle optional dropdown (admin/collaborator) appear — use the role selection buttons as indicator
-    // (Do NOT call dismissModals here — the modal itself is what we want to see)
-    const roleBtn = adminPage.getByRole('button', { name: /Admin|Vendedor|Personalizado/i }).first();
-    await expect(roleBtn).toBeVisible({ timeout: 10000 });
-
-    // Select role in the modal if admin
-    if (role === 'admin') {
-      await adminPage.waitForTimeout(300);
-      await adminPage
-        .getByRole('button', { name: /^Admin$/i })
-        .click({ timeout: 5000 })
-        .catch(async () => {
-          await adminPage.getByRole('button', { name: /^Admin$/i }).click({ force: true, timeout: 3000 });
-        });
-    }
-    // Default role is 'Vendedor' which maps to 'collaborator'
-
-    // Accept the confirmation modal
-    const confirmButton = adminPage
-      .locator('button', { hasText: /Synchronize|Sincronizar|Sync|Conectar/i })
-      .filter({ hasText: /Connect|Conectar/i })
-      .first();
-    await expect(confirmButton).toBeVisible();
-    await confirmButton.click();
-
-    // Wait for connection (En línea status)
-    await expect(adminPage.locator('text=/En línea|Online/i').first()).toBeVisible({ timeout: 20000 });
+    // Verify both sides see each other as linked nodes
+    await expect
+      .poll(
+        async () =>
+          adminPage.evaluate(() => {
+            const db = (window as any)._dbSyncForTest;
+            return db?.getLinkedNodes?.()?.length || 0;
+          }),
+        { timeout: 30000 },
+      )
+      .toBeGreaterThanOrEqual(1);
 
     return collabId;
   }

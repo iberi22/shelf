@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { dismissModals, setupPage } from './helpers';
+import { addOverlayBlocker, dismissModals, setupPage } from './helpers';
 import { connectPeers, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
 const collaboratorPermissions = {
@@ -28,6 +28,8 @@ test.describe('Audit Log Tracing', () => {
   test('Audit logs capture peerId, peerRole and correct action', async ({ browser }) => {
     const adminContext = await browser.newContext();
     const collabContext = await browser.newContext();
+    addOverlayBlocker(adminContext);
+    addOverlayBlocker(collabContext);
 
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:test": "VITE_SKIP_LANDING=true VITE_TEST_MODE=true vite --host 127.0.0.1 --port 5174 --strictPort",
+    "dev:test:2": "VITE_SKIP_LANDING=true VITE_TEST_MODE=true vite --host 127.0.0.1 --port 5175 --strictPort",
     "build": "tsc && vite build",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",

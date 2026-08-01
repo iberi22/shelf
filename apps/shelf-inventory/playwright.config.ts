@@ -18,9 +18,11 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {
+          executablePath: process.env.PLAYWRIGHT_CHROME_PATH || '/run/current-system/sw/bin/chromium',
           args: [
             '--allow-loopback-in-peer-connection',
             '--disable-features=WebRtcHideLocalIpsWithMdns',
+            '--no-sandbox',
           ],
         },
       },

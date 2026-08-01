@@ -2,6 +2,12 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Garbage Collection & Data Purge', () => {
   test.beforeEach(async ({ page }) => {
+    // Set localStorage flags before navigating to prevent welcome modals
+    await page.addInitScript(() => {
+      (window as any).__E2E_TEST__ = true;
+      localStorage.setItem('hasVisited', 'true');
+      localStorage.setItem('shelfWelcomeSeen', 'true');
+    });
     // Navigate to local environment to initialize the store
     await page.goto('/');
     await page.waitForLoadState('networkidle');

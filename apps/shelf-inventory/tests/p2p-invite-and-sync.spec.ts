@@ -62,7 +62,7 @@ test.describe('P2P Invite Link, Pairing, and Permission Enforcement', () => {
   }) => {
     const adminContext = await browser.newContext();
     const collabContext = await browser.newContext();
-
+    addOverlayBlocker(adminContext);
     addOverlayBlocker(collabContext);
 
     const adminPage = await adminContext.newPage();

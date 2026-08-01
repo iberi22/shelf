@@ -7,15 +7,13 @@ import {
   generateVariantsFromSelections,
   getProductVariantAttributes,
   getProductVariantDisplay,
-  getProductVariants,
   getVariantInventoryKey,
   mergeProductVariants,
   normalizeProduct,
   normalizeVariant,
   productVariantCount,
-  summarizeVariantValues,
-  splitVariantLabel,
 } from './productVariants';
+import type { VariantDraft } from './productVariants';
 
 // ─── Test data builders ───────────────────────────────────────
 
@@ -303,7 +301,7 @@ describe('normalizeVariant - extended', () => {
 
   it('parses numeric string values for quantity, price, cost', () => {
     const variant = normalizeVariant(
-      { id: 'd1', quantity: '42', price: '99.99', cost: '50', attributes: {} },
+      { id: 'd1', sku: '', quantity: '42', price: '99.99', cost: '50', attributes: {} } as VariantDraft,
       [],
     );
     expect(variant.quantity).toBe(42);

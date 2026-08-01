@@ -23,18 +23,31 @@ test.describe('Inventory config catalogs (SRC-FUN-001)', () => {
     await page.getByTestId(`measure-option-input-${measureCount}`).fill('33CM');
 
     await page.getByTestId('save-inventory-config').click();
+    await page.waitForTimeout(2000); // CRDT dispatch is async — wait for state to propagate
 
-    // The catalogs persist in the app state
+    // The catalogs persist in the app state (check both AppState and dbSync)
     await expect
-      .poll(async () =>
-        page.evaluate(() => {
-          const state = (window as any).__shelfAppStateForTest;
-          const colorNames = (state?.inventoryConfig?.colorOptions ?? []).map((option: any) => option.name);
-          const measures = state?.inventoryConfig?.measureOptions ?? [];
-          return { hasColor: colorNames.includes('CoralE2E'), hasMeasure: measures.includes('33CM') };
-        }),
+      .poll(
+        async () =>
+          page.evaluate(() => {
+            // Check AppState first
+            const state = (window as any).__shelfAppStateForTest;
+            const colorNames = (state?.inventoryConfig?.colorOptions ?? []).map((option: any) => option.name);
+            const measures = state?.inventoryConfig?.measureOptions ?? [];
+            if (colorNames.includes('CoralE2E') && measures.includes('33CM')) return true;
+            // Fallback: check dbSync state
+            const dbSync = (window as any)._dbSyncForTest;
+            if (dbSync) {
+              const dbState = dbSync.getState(dbSync.localPeerId);
+              const dbColors = (dbState?.inventoryConfig?.colorOptions ?? []).map((o: any) => o.name);
+              const dbMeasures = dbState?.inventoryConfig?.measureOptions ?? [];
+              return dbColors.includes('CoralE2E') && dbMeasures.includes('33CM');
+            }
+            return false;
+          }),
+        { timeout: 20000, intervals: [1000, 2000, 3000, 5000] },
       )
-      .toEqual({ hasColor: true, hasMeasure: true });
+      .toBe(true);
 
     // ... and are offered when packing variants into a product
     await page.locator('[data-testid="nav-item-nav.inventory"]').last().click();

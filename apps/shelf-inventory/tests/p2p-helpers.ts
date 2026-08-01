@@ -57,10 +57,27 @@ export function createMockPeer(overrides: MockPeer): PeerInfo {
   };
 }
 
-export async function getLocalPeerId(page: Page): Promise<string> {
-  const peerIdLocator = page.locator('span.font-mono.text-yellow-400, code.font-mono.text-yellow-400').first();
-  await peerIdLocator.waitFor({ state: 'visible' });
-  await expect(peerIdLocator).not.toHaveText('Initializing...', { timeout: 15000 });
+export async function getLocalPeerId(page: Page, timeout = 45000): Promise<string> {
+  // 1. First wait for _p2pManagerForTest to exist (app mounted P2P)
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() => Boolean((window as any)._p2pManagerForTest)),
+      { timeout: 30000, intervals: [500, 1000, 2000, 3000, 5000] },
+    )
+    .toBe(true);
+
+  // 2. Then wait for localPeerId to be assigned by PeerJS
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() => {
+          const id = (window as unknown as TestWindow)._dbSyncForTest?.localPeerId;
+          return id || null;
+        }),
+      { timeout, intervals: [500, 1000, 1000, 2000, 3000, 5000] },
+    )
+    .toBeTruthy();
 
   const peerId = await page.evaluate(() => (window as unknown as TestWindow)._dbSyncForTest?.localPeerId);
   expect(peerId).toBeTruthy();

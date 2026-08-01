@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { dismissModals, setupPage } from './helpers';
+import { addOverlayBlocker, dismissModals, setupPage } from './helpers';
 import { connectPeers, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
 test.describe('Data Integrity and Conflict Resolution', () => {
@@ -8,6 +8,8 @@ test.describe('Data Integrity and Conflict Resolution', () => {
   test('Two peers edit different fields of the same product concurrently', async ({ browser }) => {
     const adminContext = await browser.newContext();
     const collabContext = await browser.newContext();
+    addOverlayBlocker(adminContext);
+    addOverlayBlocker(collabContext);
 
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();
@@ -161,6 +163,9 @@ test.describe('Data Integrity and Conflict Resolution', () => {
     const contextA = await browser.newContext();
     const contextB = await browser.newContext();
     const contextC = await browser.newContext();
+    addOverlayBlocker(contextA);
+    addOverlayBlocker(contextB);
+    addOverlayBlocker(contextC);
 
     const pageA = await contextA.newPage();
     const pageB = await contextB.newPage();

@@ -42,7 +42,7 @@ test.describe('P2P host authority', () => {
 
     const peerIdLocator = page.locator('span.font-mono.text-yellow-400').first();
     await peerIdLocator.waitFor({ state: 'visible' });
-    await expect(peerIdLocator).not.toHaveText('Initializing...', { timeout: 15000 });
+    await expect.poll(async () => page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId || null), { timeout: 30000 }).toBeTruthy();
 
     const authorityState = await page.evaluate(() => {
       const dbSync = (window as any)._dbSyncForTest;

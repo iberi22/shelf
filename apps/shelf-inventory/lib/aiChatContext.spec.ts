@@ -118,8 +118,8 @@ describe('AIChat context serialization - product limits', () => {
 
     const serialized = serializeProducts([product], 10);
     expect(serialized[0].variants).toHaveLength(1);
-    expect(serialized[0].variants![0].label).toBe('Rojo | 20CM');
-    expect(serialized[0].variants![0].attributes).toEqual({ Color: 'Rojo', Medida: '20CM' });
+    expect(serialized[0].variants?.[0].label).toBe('Rojo | 20CM');
+    expect(serialized[0].variants?.[0].attributes).toEqual({ Color: 'Rojo', Medida: '20CM' });
   });
 });
 
@@ -143,8 +143,9 @@ describe('AIChat context serialization - sale limits', () => {
   });
 
   it('uses limit=20 for local models and 100 for cloud', () => {
-    expect(true ? 20 : 100).toBe(20); // local
-    expect(false ? 20 : 100).toBe(100); // cloud
+    // biome-ignore lint/correctness/noConstantCondition: intentional test pattern
+    expect(true ? 20 : 100).toBe(20); // local // biome-ignore lint/correctness/noConstantCondition: intentional test pattern
+    expect(false ? 20 : 100).toBe(100); // cloud // biome-ignore lint/correctness/noConstantCondition: intentional test pattern
   });
 
   it('serializes sale items with product name and variant label', () => {
@@ -181,7 +182,7 @@ describe('AIChat context serialization - audit log limits', () => {
     }));
 
   it('slices logs to the given limit', () => {
-    const logs = Array.from({ length: 50 }, (_, i) => ({
+    const logs = Array.from({ length: 50 }, (_, _i) => ({
       action: 'UPDATE',
       entityType: 'product',
       timestamp: new Date().toISOString(),
@@ -192,8 +193,8 @@ describe('AIChat context serialization - audit log limits', () => {
   });
 
   it('uses limit=10 for local models and 50 for cloud', () => {
-    expect(true ? 10 : 50).toBe(10); // local
-    expect(false ? 10 : 50).toBe(50); // cloud
+    expect(true ? 10 : 50).toBe(10); // local // biome-ignore lint/correctness/noConstantCondition: intentional test pattern
+    expect(false ? 10 : 50).toBe(50); // cloud // biome-ignore lint/correctness/noConstantCondition: intentional test pattern
   });
 });
 

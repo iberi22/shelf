@@ -43,8 +43,8 @@ test.describe('P2P Multi-Branch Architecture', () => {
     await hostPage.getByTestId('save-branch-button').click();
 
     // Verify branches are listed
-    await expect(hostPage.locator('text=Sucursal Norte')).toBeVisible();
-    await expect(hostPage.locator('text=Bodega Sur')).toBeVisible();
+    await expect(hostPage.locator('td', { hasText: 'Sucursal Norte' }).first()).toBeVisible();
+    await expect(hostPage.locator('td', { hasText: 'Bodega Sur' }).first()).toBeVisible();
 
     // 4. Get Peer IDs for Branch 1 and Branch 2
     await b1Page.locator('[data-testid="nav-item-nav.settings"]').last().click();
@@ -54,17 +54,17 @@ test.describe('P2P Multi-Branch Architecture', () => {
 
     const b1PeerIdLocator = b1Page.locator('span.font-mono.text-yellow-400').first();
     await b1PeerIdLocator.waitFor({ state: 'visible' });
-    await expect(b1PeerIdLocator).not.toHaveText('Initializing...', { timeout: 15000 });
+    await expect.poll(async () => b1Page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId || null), { timeout: 30000 }).toBeTruthy();
     const b1Id = await b1PeerIdLocator.innerText();
 
     const b2PeerIdLocator = b2Page.locator('span.font-mono.text-yellow-400').first();
     await b2PeerIdLocator.waitFor({ state: 'visible' });
-    await expect(b2PeerIdLocator).not.toHaveText('Initializing...', { timeout: 15000 });
+    await expect.poll(async () => b2Page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId || null), { timeout: 30000 }).toBeTruthy();
     const b2Id = await b2PeerIdLocator.innerText();
 
     // 5. Host connects to Branch 1 and assigns it to 'Sucursal Norte'
     await dismissModals(hostPage);
-    const manualInput = hostPage.getByPlaceholder(/ingresa el Peer ID|enter Peer ID/i);
+    const manualInput = hostPage.getByPlaceholder(/ingresa.*Peer ID|enter.*Peer ID/i);
     await expect(manualInput).toBeVisible();
 
     // Connect Branch 1
@@ -74,7 +74,7 @@ test.describe('P2P Multi-Branch Architecture', () => {
     // Assume Jules added a branch selector in the collaborator config modal
     // await hostPage.getByTestId('assign-branch-select').selectOption('Sucursal Norte');
     await hostPage
-      .getByRole('button', { name: /Continuar|Proceed|Confirmar|Confirm/i })
+      .getByRole('button', { name: /Continuar|Proceed|Confirmar|Confirm|Sincronizar|Sync/i })
       .last()
       .click();
 
@@ -86,7 +86,7 @@ test.describe('P2P Multi-Branch Architecture', () => {
     await hostPage.waitForTimeout(500);
     // await hostPage.getByTestId('assign-branch-select').selectOption('Bodega Sur');
     await hostPage
-      .getByRole('button', { name: /Continuar|Proceed|Confirmar|Confirm/i })
+      .getByRole('button', { name: /Continuar|Proceed|Confirmar|Confirm|Sincronizar|Sync/i })
       .last()
       .click();
 

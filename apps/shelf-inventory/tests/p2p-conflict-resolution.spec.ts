@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { dismissModals, setupPage } from './helpers';
+import { addOverlayBlocker, dismissModals, setupPage } from './helpers';
 import { expectProductSync, getLocalPeerId } from './p2p-helpers';
 
 const _collaboratorPermissions = {
@@ -24,6 +24,8 @@ test.describe('P2P Conflict Resolution', () => {
   test('Collaborator-Admin conflict is routed to pendingEdits and resolved via UI', async ({ browser }) => {
     const adminContext = await browser.newContext();
     const collabContext = await browser.newContext();
+    addOverlayBlocker(adminContext);
+    addOverlayBlocker(collabContext);
 
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();

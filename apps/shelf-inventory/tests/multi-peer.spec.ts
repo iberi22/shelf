@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { dismissModals, setupPage } from './helpers';
+import { addOverlayBlocker, dismissModals, setupPage } from './helpers';
 import { expectProductPriceSync, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
 test.describe('Multi-Peer E2E Synchronization', () => {
@@ -8,6 +8,8 @@ test.describe('Multi-Peer E2E Synchronization', () => {
   test('Peer A creates a product, Peer B syncs, Peer B edits, Peer A syncs', async ({ browser }) => {
     const adminContext = await browser.newContext();
     const collabContext = await browser.newContext();
+    addOverlayBlocker(adminContext);
+    addOverlayBlocker(collabContext);
 
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();
@@ -20,6 +22,10 @@ test.describe('Multi-Peer E2E Synchronization', () => {
     await collabPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
     await dismissModals(adminPage);
     await dismissModals(collabPage);
+
+    // Wait for P2P to be ready on both pages
+    await expect.poll(async () => adminPage.evaluate(() => Boolean((window as any)._p2pManagerForTest)), { timeout: 30000 }).toBe(true);
+    await expect.poll(async () => collabPage.evaluate(() => Boolean((window as any)._p2pManagerForTest)), { timeout: 30000 }).toBe(true);
 
     // Get Peer IDs
     const collabId = await getLocalPeerId(collabPage);

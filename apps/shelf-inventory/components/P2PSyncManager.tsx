@@ -820,6 +820,7 @@ const P2PSyncManager: React.FC = () => {
                 rel="noreferrer"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F5F5DC]/10 text-[#F5F5DC] hover:bg-[#F5F5DC]/20 text-xs transition-colors whitespace-nowrap"
                 title="PWA"
+                data-testid="p2p-pwa-link"
               >
                 <Download size={14} /> PWA
               </a>

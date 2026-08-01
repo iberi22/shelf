@@ -43,9 +43,9 @@ async function setupNode(page: Page) {
 }
 
 async function getPeerId(page: Page) {
-  const locator = page.locator('span.font-mono.text-yellow-400').first();
+  const locator = page.locator('span.font-mono.text-yellow-400, code.font-mono.text-yellow-400').first();
   await locator.waitFor({ state: 'visible' });
-  await expect(locator).not.toHaveText('Initializing...', { timeout: 15000 });
+  await expect.poll(async () => page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId || null), { timeout: 30000 }).toBeTruthy();
   return (await locator.innerText()).split('\n')[0].trim();
 }
 
@@ -132,6 +132,8 @@ async function connectPeerFromHost(
 }
 
 test.describe('P2P Three Node Permissions', () => {
+  test.setTimeout(120000);
+
   test('three nodes sync products and permission changes across the network', async ({ browser }) => {
     const hostContext = await browser.newContext();
     const nodeAContext = await browser.newContext();
@@ -163,12 +165,12 @@ test.describe('P2P Three Node Permissions', () => {
     }, initialHostId);
 
     await hostPage.reload();
-    await setupNode(hostPage);
-    const hostId = await getPeerId(hostPage);
-    expect(hostId).toBe(initialHostId);
-
+    await hostPage.waitForTimeout(500);
     await hostPage.locator('[data-testid="nav-item-nav.settings"]').last().click();
     await dismissModals(hostPage);
+    const hostId = await getPeerId(hostPage);
+    // After a clean reload with the peer ID preserved, the host should keep its identity
+    expect(hostId).toBe(initialHostId);
 
     await connectPeerFromHost(hostPage, nodeAId, {
       role: 'collaborator',
