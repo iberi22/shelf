@@ -143,6 +143,27 @@ const BranchConfig: React.FC = () => {
     }));
   };
 
+  const updateMaterialOption = (index: number, value: string) => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      materialOptions: current.materialOptions.map((option, optionIndex) => (optionIndex === index ? value : option)),
+    }));
+  };
+
+  const addMaterialOption = () => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      materialOptions: [...current.materialOptions, `Material ${current.materialOptions.length + 1}`],
+    }));
+  };
+
+  const removeMaterialOption = (index: number) => {
+    setInventoryConfigDraft((current) => ({
+      ...current,
+      materialOptions: current.materialOptions.filter((_, optionIndex) => optionIndex !== index),
+    }));
+  };
+
   const updateInventorySyncSetting = (patch: Partial<InventoryConfig>) => {
     setInventoryConfigDraft((current) => normalizeInventoryConfig({ ...current, ...patch }));
   };
@@ -156,12 +177,14 @@ const BranchConfig: React.FC = () => {
         label: 'Colores sugeridos',
         value: inventoryConfigDraft.colorOptions.filter((option) => option.name.trim()).length,
       },
+      { label: 'Materiales sugeridos', value: inventoryConfigDraft.materialOptions.filter(Boolean).length },
     ],
     [
       inventoryConfigDraft.fields.length,
       inventoryConfigDraft.measureOptions,
       inventoryConfigDraft.colorOptions,
       inventoryConfigDraft.variantAttributes,
+      inventoryConfigDraft.materialOptions,
     ],
   );
 
@@ -193,6 +216,12 @@ const BranchConfig: React.FC = () => {
     if (variantAttributes.length === 0) errors.push('Agrega al menos un atributo para variantes.');
     if (duplicateVariantAttributes.length > 0) errors.push('Hay atributos de variante repetidos.');
     if (duplicateColorNames.length > 0) errors.push('Hay colores sugeridos repetidos.');
+
+    const materialNames = inventoryConfigDraft.materialOptions.map((option) => option.trim()).filter(Boolean);
+    const duplicateMaterialNames = materialNames.filter(
+      (name, index) => materialNames.findIndex((candidate) => candidate.toLowerCase() === name.toLowerCase()) !== index,
+    );
+    if (duplicateMaterialNames.length > 0) errors.push('Hay materiales sugeridos repetidos.');
 
     setInventoryConfigErrors(errors);
     return errors.length === 0;
@@ -276,14 +305,14 @@ const BranchConfig: React.FC = () => {
       {/* Configuration of Articles */}
       <CollapsibleCard
         title="Configuración de artículos"
-        description="Ajusta los campos del producto, los atributos de variante y las listas sugeridas de medidas y colores."
+        description="Ajusta los campos del producto, los atributos de variante y las listas sugeridas de medidas, colores y materiales."
         icon={<SlidersHorizontal className="h-5 w-5" />}
         testId="settings-articles-config-card"
       >
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-4">
           <p className="text-xs text-[#F5F5DC]/70">
-            Ajusta los campos del producto, los atributos de variante y las listas sugeridas de medidas y colores desde
-            aquí.
+            Ajusta los campos del producto, los atributos de variante y las listas sugeridas de medidas, colores y
+            materiales desde aquí.
           </p>
           <button
             type="button"
@@ -296,7 +325,7 @@ const BranchConfig: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-4 mb-5">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-5 mb-5">
           {inventoryConfigSummary.map((item) => (
             <div key={item.label} className="rounded-md border border-white/10 bg-[#121212] p-3">
               <div className="text-[11px] uppercase tracking-[0.12em] text-[#F5F5DC]/45">{item.label}</div>
@@ -471,6 +500,48 @@ const BranchConfig: React.FC = () => {
                     onClick={() => removeColorOption(index)}
                     className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs cursor-pointer"
                     data-testid={`color-option-remove-${index}`}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
+            <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <h4 className="font-semibold text-[#F5F5DC]">Materiales sugeridos</h4>
+                <p className="text-xs text-[#F5F5DC]/55">
+                  Catalogo de materiales disponibles al crear o editar productos y sus variantes.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={addMaterialOption}
+                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
+                data-testid="add-material-option"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                  Material
+                </span>
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2" data-testid="material-options-list">
+              {inventoryConfigDraft.materialOptions.map((option, index) => (
+                <div key={`${option}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 min-w-0">
+                  <input
+                    value={option}
+                    onChange={(e) => updateMaterialOption(index, e.target.value)}
+                    className="w-full min-w-0 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
+                    placeholder={`Material ${index + 1}`}
+                    data-testid={`material-option-input-${index}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeMaterialOption(index)}
+                    className="min-h-[44px] px-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-300 text-xs cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </button>

@@ -21,6 +21,7 @@ import { telemetry } from '../lib/telemetry';
 import BarcodeScanner from './BarcodeScanner';
 import { InfiniteTable } from './InfiniteTable';
 import Modal from './Modal';
+import PhotoVariantPicker from './PhotoVariantPicker';
 
 const isValidHexColor = (color: string): boolean => /^#[0-9a-f]{6}$/i.test(color);
 
@@ -868,6 +869,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
   });
   const [customMaterialValue, setCustomMaterialValue] = useState('');
   const [comboValues, setComboValues] = useState<Record<string, { quantity: number; price: number; cost: number }>>({});
+  const [variantPhotoMap, setVariantPhotoMap] = useState<Record<string, string>>({});
   const [customColorValue, setCustomColorValue] = useState('');
   const [customMeasureValue, setCustomMeasureValue] = useState('');
   const [customVersionValue, setCustomVersionValue] = useState('');
@@ -878,6 +880,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     selectedSizes.length > 1 ||
     selectedVersions.length > 1 ||
     selectedMaterials.length > 1;
+
+  // Unique attribute values across all dimensions for photo assignment
+  const allAttributeValues = useMemo(() => {
+    if (!isMultiMode) return [];
+    const values = [...selectedColors, ...selectedSizes, ...selectedVersions, ...selectedMaterials];
+    return [...new Set(values)];
+  }, [isMultiMode, selectedColors, selectedSizes, selectedVersions, selectedMaterials]);
 
   // Combo keys are prefix-encoded (c:/s:/v:/m:) so any subset of dimensions combines safely
   const getComboEntries = useCallback(
@@ -1237,7 +1246,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
           quantity: Number(val.quantity) || 0,
           price: Number(val.price) || Number(price) || 0,
           cost: Number(val.cost) || Number(cost) || 0,
-          imageUrl: imageUrl || undefined,
+          imageUrl:
+            // Look for attribute-specific photo first, then fall back to product image
+            (Object.values(attributes).find((v) => variantPhotoMap[v]) &&
+              variantPhotoMap[Object.values(attributes).find((v) => variantPhotoMap[v])!]) ||
+            imageUrl ||
+            undefined,
           attributes,
         } as VariantDraft;
       });
@@ -2318,6 +2332,14 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     </div>
                   )}
                 </div>
+
+                {allAttributeValues.length > 0 && (
+                  <PhotoVariantPicker
+                    attributeValues={allAttributeValues}
+                    photoMap={variantPhotoMap}
+                    onChange={setVariantPhotoMap}
+                  />
+                )}
 
                 <div className="flex items-center gap-2 text-xs text-[#F5F5DC]/50">
                   <Ruler className="h-3 w-3" />

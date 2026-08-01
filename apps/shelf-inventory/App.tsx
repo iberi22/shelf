@@ -1,12 +1,13 @@
+import type { InventoryConfig } from 'p2p-mesh-core';
 import { p2pManager } from 'p2p-mesh-core';
 import { useEffect, useState } from 'react';
+import BusinessOnboarding from './components/BusinessOnboarding';
 import LandingPage from './components/LandingPage';
 import LockScreen from './components/LockScreen';
 import Notification from './components/Notification';
 import RecoveryApprovalModal from './components/RecoveryApprovalModal';
-
 import UpdateNotification from './components/UpdateNotification';
-import { AppProvider } from './context/AppContext';
+import { AppProvider, useAppContext } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { FeatureFlagProvider } from './context/FeatureFlagContext';
@@ -27,6 +28,7 @@ interface PendingRecoveryRequest {
 
 const AppContainer = () => {
   useErrorMonitoring();
+  const { dispatch } = useAppContext();
   const isTestOrDevSkip =
     import.meta.env.MODE === 'test' ||
     import.meta.env.VITE_SKIP_LANDING === 'true' ||
@@ -38,12 +40,17 @@ const AppContainer = () => {
     Boolean((window as any).Cypress);
 
   const [hasVisited, setHasVisited] = useLocalStorage('hasVisited', isTestOrDevSkip);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useLocalStorage(
+    'hasCompletedOnboarding',
+    isTestOrDevSkip,
+  );
 
   useEffect(() => {
     if (isTestOrDevSkip) {
       try {
         localStorage.setItem('hasVisited', 'true');
         localStorage.setItem('shelfWelcomeSeen', 'true');
+        localStorage.setItem('hasCompletedOnboarding', 'true');
       } catch (_e) {
         // ignore storage errors
       }
@@ -108,11 +115,19 @@ const AppContainer = () => {
   }, [isLocalAccount, user]);
 
   const showMainApp = () => setHasVisited(true);
+  const handleOnboardingComplete = (config: InventoryConfig) => {
+    dispatch({ type: 'UPDATE_INVENTORY_CONFIG', payload: config });
+    setHasCompletedOnboarding(true);
+  };
 
   const shouldSkipLanding = hasVisited || isTestOrDevSkip;
 
   if (!shouldSkipLanding) {
     return <LandingPage onNavigate={showMainApp} />;
+  }
+
+  if (!hasCompletedOnboarding) {
+    return <BusinessOnboarding onComplete={handleOnboardingComplete} />;
   }
 
   if (isLocked) {
