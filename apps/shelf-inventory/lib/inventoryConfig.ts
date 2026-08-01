@@ -9,14 +9,15 @@ const createId = (prefix: string) => {
 };
 
 export const DEFAULT_INVENTORY_CONFIG: InventoryConfig = {
-  variantAttributes: ['Color', 'Medida'],
+  variantAttributes: ['Color', 'Medida', 'Material'],
   fields: [
     { id: 'field-color', key: 'color', label: 'Color', type: 'color' },
     { id: 'field-dimensions', key: 'dimensions', label: 'Medida', type: 'measure' },
     { id: 'field-capacity', key: 'capacity', label: 'Capacidad', type: 'text' },
-    { id: 'field-material', key: 'material', label: 'Material', type: 'text' },
+    { id: 'field-material', key: 'material', label: 'Material', type: 'material' },
   ],
   measureOptions: ['5CM', '7CM', '10CM', '12CM', '14CM', '15CM', '17CM', '20CM', '28CM'],
+  materialOptions: ['Plástico', 'Cemento', 'Cerámica', 'Metal'],
   colorOptions: [
     { name: 'Negro', hex: '#1a1a1a' },
     { name: 'Marfil', hex: '#FFFFF0' },
@@ -115,11 +116,21 @@ export const normalizeInventoryConfig = (config?: Partial<InventoryConfig> | nul
       return true;
     });
 
+  const normalizedMaterialOptions = Array.from(
+    new Set(
+      (config?.materialOptions || DEFAULT_INVENTORY_CONFIG.materialOptions)
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  );
+
   return {
     variantAttributes: variantAttributes.length > 0 ? variantAttributes : DEFAULT_INVENTORY_CONFIG.variantAttributes,
     fields: fields.length > 0 ? fields : DEFAULT_INVENTORY_CONFIG.fields,
     measureOptions: measureOptions.length > 0 ? measureOptions : DEFAULT_INVENTORY_CONFIG.measureOptions,
     colorOptions: colorOptions.length > 0 ? colorOptions : DEFAULT_INVENTORY_CONFIG.colorOptions,
+    materialOptions:
+      normalizedMaterialOptions.length > 0 ? normalizedMaterialOptions : DEFAULT_INVENTORY_CONFIG.materialOptions,
     autoApplyProductUpdates: Boolean(config?.autoApplyProductUpdates),
     productHistoryLimit: Math.min(5, Math.max(1, Number(config?.productHistoryLimit) || 5)),
     useEdgeMeshSync: Boolean(config?.useEdgeMeshSync),

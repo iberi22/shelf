@@ -40,6 +40,15 @@ const isMeasureAttribute = (label: string, config: InventoryConfig): boolean => 
   );
 };
 
+const isMaterialAttribute = (label: string, config: InventoryConfig): boolean => {
+  const normalizedLabel = label.trim().toLowerCase();
+  return config.fields.some(
+    (f) =>
+      (f.type === 'material' || f.type === 'multiMaterial') &&
+      (f.label.toLowerCase() === normalizedLabel || f.key === normalizedLabel),
+  );
+};
+
 const csvEscape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
 const LEGACY_FIELD_KEYS = new Set(['color', 'dimensions', 'capacity', 'material']);
@@ -852,34 +861,49 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     return [];
   });
   const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>(() => {
+    if (product?.materials?.length) return product.materials;
+    if (product?.material) return [product.material];
+    return [];
+  });
+  const [customMaterialValue, setCustomMaterialValue] = useState('');
   const [comboValues, setComboValues] = useState<Record<string, { quantity: number; price: number; cost: number }>>({});
   const [customColorValue, setCustomColorValue] = useState('');
   const [customMeasureValue, setCustomMeasureValue] = useState('');
   const [customVersionValue, setCustomVersionValue] = useState('');
 
   const isEditing = product !== null;
-  const isMultiMode = selectedColors.length > 1 || selectedSizes.length > 1 || selectedVersions.length > 1;
+  const isMultiMode =
+    selectedColors.length > 1 ||
+    selectedSizes.length > 1 ||
+    selectedVersions.length > 1 ||
+    selectedMaterials.length > 1;
 
-  // Combo keys are prefix-encoded (c:/s:/v:) so any subset of dimensions combines safely
-  const getComboEntries = useCallback((colors: string[], sizes: string[], versions: string[]): string[] => {
-    const dimensions = [
-      colors.map((value) => `c:${value}`),
-      sizes.map((value) => `s:${value}`),
-      versions.map((value) => `v:${value}`),
-    ].filter((dimension) => dimension.length > 0);
+  // Combo keys are prefix-encoded (c:/s:/v:/m:) so any subset of dimensions combines safely
+  const getComboEntries = useCallback(
+    (colors: string[], sizes: string[], versions: string[], materials: string[]): string[] => {
+      const dimensions = [
+        colors.map((value) => `c:${value}`),
+        sizes.map((value) => `s:${value}`),
+        versions.map((value) => `v:${value}`),
+        materials.map((value) => `m:${value}`),
+      ].filter((dimension) => dimension.length > 0);
 
-    if (dimensions.length === 0) return [];
+      if (dimensions.length === 0) return [];
 
-    return dimensions.reduce<string[]>(
-      (combos, dimension) => combos.flatMap((combo) => dimension.map((value) => (combo ? `${combo}|${value}` : value))),
-      [''],
-    );
-  }, []);
+      return dimensions.reduce<string[]>(
+        (combos, dimension) =>
+          combos.flatMap((combo) => dimension.map((value) => (combo ? `${combo}|${value}` : value))),
+        [''],
+      );
+    },
+    [],
+  );
 
   // Update comboValues when selections change
   useEffect(() => {
     if (!isEditing && isMultiMode) {
-      const combos = getComboEntries(selectedColors, selectedSizes, selectedVersions);
+      const combos = getComboEntries(selectedColors, selectedSizes, selectedVersions, selectedMaterials);
       setComboValues((prev) => {
         const updated: Record<string, { quantity: number; price: number; cost: number }> = {};
         for (const key of combos) {
@@ -892,9 +916,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
     selectedColors.length,
     selectedSizes.length,
     selectedVersions.length,
+    selectedMaterials.length,
     isMultiMode,
     selectedSizes,
     selectedVersions,
+    selectedMaterials,
     cost,
     price,
     selectedColors,
@@ -1126,7 +1152,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
         }
       });
     } else if (!isEditing && isMultiMode) {
-      const keys = getComboEntries(selectedColors, selectedSizes, selectedVersions);
+      const keys = getComboEntries(selectedColors, selectedSizes, selectedVersions, selectedMaterials);
       if (keys.length === 0) {
         newErrors.variants = 'Selecciona al menos un color, medida o versión.';
       }
@@ -1195,13 +1221,14 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
 
     // Multi-mode: new product with multiple colors/measures/versions
     if (!isEditing && isMultiMode) {
-      const keys = getComboEntries(selectedColors, selectedSizes, selectedVersions);
+      const keys = getComboEntries(selectedColors, selectedSizes, selectedVersions, selectedMaterials);
       const variants = keys.map((key) => {
         const attributes: Record<string, string> = {};
         for (const part of key.split('|')) {
           if (part.startsWith('c:')) attributes.Color = part.slice(2);
           else if (part.startsWith('s:')) attributes.Medida = part.slice(2);
           else if (part.startsWith('v:')) attributes.Versión = part.slice(2);
+          else if (part.startsWith('m:')) attributes.Material = part.slice(2);
         }
         const val = comboValues[key] || { quantity: 0, price: 0, cost: 0 };
         return {
@@ -1219,6 +1246,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
         ...(selectedColors.length > 0 ? ['Color'] : []),
         ...(selectedSizes.length > 0 ? ['Medida'] : []),
         ...(selectedVersions.length > 0 ? ['Versión'] : []),
+        ...(selectedMaterials.length > 0 ? ['Material'] : []),
       ];
 
       onSave({
@@ -1227,6 +1255,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
         ...configuredFields,
         colors: selectedColors,
         sizes: selectedSizes,
+        materials: selectedMaterials,
         supplierId: supplierId || undefined,
         quantity: totalQty,
         price: Number(price) || 0,
@@ -1750,6 +1779,93 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     </div>
                   )}
                 </div>
+
+                <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
+                  <label className="block text-xs text-[#F5F5DC]/60">Materiales (Selecciona o escribe varios)</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {inventoryConfig.materialOptions.map((suggestion) => {
+                      const selected = selectedMaterials.includes(suggestion);
+                      return (
+                        <button
+                          key={`mm-${suggestion}`}
+                          type="button"
+                          data-testid={`mc-material-${suggestion}`}
+                          onClick={() => {
+                            setSelectedMaterials((prev) =>
+                              selected ? prev.filter((s) => s !== suggestion) : [...prev, suggestion],
+                            );
+                          }}
+                          className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
+                            selected
+                              ? 'border-[#22C55E]/60 bg-[#22C55E]/15 text-[#22C55E]'
+                              : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
+                          }`}
+                        >
+                          {suggestion}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      type="text"
+                      placeholder="Material personalizado (ej. Fibra de vidrio)"
+                      value={customMaterialValue}
+                      onChange={(e) => setCustomMaterialValue(e.target.value)}
+                      className="flex-1 p-1.5 text-xs bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = customMaterialValue.trim();
+                          if (val && !selectedMaterials.includes(val)) {
+                            setSelectedMaterials((prev) => [...prev, val]);
+                            setCustomMaterialValue('');
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 rounded transition-colors text-[#F5F5DC]"
+                      onClick={() => {
+                        const val = customMaterialValue.trim();
+                        if (val && !selectedMaterials.includes(val)) {
+                          setSelectedMaterials((prev) => [...prev, val]);
+                          setCustomMaterialValue('');
+                        }
+                      }}
+                    >
+                      Añadir
+                    </button>
+                  </div>
+                  {selectedMaterials.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-[#0f0f0f] rounded border border-[#F5F5DC]/5">
+                      <span className="text-xs text-[#F5F5DC]/50 mr-1">Seleccionados:</span>
+                      {selectedMaterials.map((m) => (
+                        <div
+                          key={`selm-${m}`}
+                          className="flex items-center gap-1 bg-[#1e1e1e] border border-[#22C55E]/30 rounded-full pl-2 pr-1 py-1"
+                        >
+                          <span className="text-xs text-[#22C55E] font-medium">{m}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedMaterials((prev) => prev.filter((x) => x !== m))}
+                            className="w-4 h-4 rounded-full hover:bg-red-500/20 text-[#F5F5DC]/50 hover:text-red-300 flex items-center justify-center transition-colors"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMaterials([])}
+                        className="text-xs text-red-300 hover:text-red-200 ml-auto px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1859,6 +1975,30 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                       className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
                                         selected
                                           ? 'border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308]'
+                                          : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
+                                      }`}
+                                    >
+                                      {suggestion}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {isMaterialAttribute(label, inventoryConfig) && (
+                              <div className="flex flex-wrap gap-1.5 mb-2 max-w-full">
+                                {inventoryConfig.materialOptions.map((suggestion) => {
+                                  const selected =
+                                    (row.attributes?.[label] || '').toLowerCase() === suggestion.toLowerCase();
+                                  return (
+                                    <button
+                                      key={`${row.id}-${label}-${suggestion}`}
+                                      type="button"
+                                      onClick={() =>
+                                        updateVariantAttributeValue(rowIndex, label, selected ? '' : suggestion)
+                                      }
+                                      className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
+                                        selected
+                                          ? 'border-[#22C55E]/60 bg-[#22C55E]/15 text-[#22C55E]'
                                           : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
                                       }`}
                                     >
@@ -2084,19 +2224,27 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-[#F5F5DC]">
-                      {`Variantes (${getComboEntries(selectedColors, selectedSizes, selectedVersions).length})`}
+                      {`Variantes (${getComboEntries(selectedColors, selectedSizes, selectedVersions, selectedMaterials).length})`}
                     </h3>
                   </div>
 
-                  {(selectedColors.length > 0 || selectedSizes.length > 0 || selectedVersions.length > 0) && (
+                  {(selectedColors.length > 0 ||
+                    selectedSizes.length > 0 ||
+                    selectedVersions.length > 0 ||
+                    selectedMaterials.length > 0) && (
                     <div className="space-y-2">
                       {(() => {
-                        const keys = getComboEntries(selectedColors, selectedSizes, selectedVersions);
+                        const keys = getComboEntries(
+                          selectedColors,
+                          selectedSizes,
+                          selectedVersions,
+                          selectedMaterials,
+                        );
 
                         return keys.map((key, i) => {
                           const label = key
                             .split('|')
-                            .map((part) => part.replace(/^[csv]:/, ''))
+                            .map((part) => part.replace(/^[csvm]:/, ''))
                             .join(' / ');
                           const val = comboValues[key] || {
                             quantity: 0,
@@ -2181,7 +2329,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     ]
                       .filter(Boolean)
                       .join(' x ')}
-                    {` = ${getComboEntries(selectedColors, selectedSizes, selectedVersions).length} combinaciones`}
+                    {` = ${getComboEntries(selectedColors, selectedSizes, selectedVersions, selectedMaterials).length} combinaciones`}
                   </span>
                 </div>
               </>

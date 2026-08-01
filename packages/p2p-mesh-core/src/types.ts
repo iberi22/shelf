@@ -49,6 +49,8 @@ export interface Product extends BaseEntity {
   sizes?: string[];
   capacity?: string;
   material?: string;
+  /** @deprecated Use materials[] for multiple materials */
+  materials?: string[];
   customFields?: Record<string, string>;
   supplierId?: string;
   variantAttributes?: string[];
@@ -276,7 +278,14 @@ export interface ArqueoSession extends BaseEntity {
   status: 'open' | 'closed';
 }
 
-export type InventoryFieldType = 'text' | 'color' | 'measure' | 'multiColor' | 'multiMeasure';
+export type InventoryFieldType =
+  | 'text'
+  | 'color'
+  | 'measure'
+  | 'material'
+  | 'multiColor'
+  | 'multiMeasure'
+  | 'multiMaterial';
 
 export interface InventoryFieldDefinition {
   id: string;
@@ -295,6 +304,7 @@ export interface InventoryConfig {
   fields: InventoryFieldDefinition[];
   measureOptions: string[];
   colorOptions: InventoryColorOption[];
+  materialOptions: string[];
   autoApplyProductUpdates: boolean;
   productHistoryLimit: number;
   useEdgeMeshSync: boolean;
