@@ -299,26 +299,69 @@ type ShelfPeersFixtures = {
   viewerContext: BrowserContext;
 };
 
+/**
+ * Ensure PeerJS is fully disconnected from the server before closing a context.
+ * This prevents stale connections from accumulating on the PeerJS server across
+ * sequential tests, which would cause new tests to fail with connection errors.
+ */
+async function ensurePeerJsDisconnected(page: Page): Promise<void> {
+  try {
+    await page.evaluate(() => {
+      const p2p = (window as any)._p2pManagerForTest;
+      if (p2p) {
+        if (typeof p2p.disconnect === 'function') p2p.disconnect();
+        else if (typeof p2p.destroy === 'function') p2p.destroy();
+      }
+    });
+  } catch {
+    // Page may already be closing — ignore
+  }
+}
+
+/**
+ * Wait for the PeerJS WebSocket connections to drain on the server side.
+ * A brief pause after closing each context gives the server time to clean up
+ * before the next test's peers connect.
+ */
+const PEERJS_DRAIN_DELAY_MS = 1500;
+
 export const test = base.extend<ShelfPeersFixtures>({
   adminContext: async ({ browser }, use) => {
     const ctx = await browser.newContext();
     addOverlayBlocker(ctx);
     await use(ctx);
+    // Disconnect PeerJS before closing context so the server can clean up
+    const pages = ctx.pages();
+    for (const p of pages) {
+      await ensurePeerJsDisconnected(p);
+    }
     await ctx.close();
+    // Allow PeerJS server to drain stale connections
+    await new Promise((r) => setTimeout(r, PEERJS_DRAIN_DELAY_MS));
   },
 
   collabContext: async ({ browser }, use) => {
     const ctx = await browser.newContext();
     addOverlayBlocker(ctx);
     await use(ctx);
+    const pages = ctx.pages();
+    for (const p of pages) {
+      await ensurePeerJsDisconnected(p);
+    }
     await ctx.close();
+    await new Promise((r) => setTimeout(r, PEERJS_DRAIN_DELAY_MS));
   },
 
   viewerContext: async ({ browser }, use) => {
     const ctx = await browser.newContext();
     addOverlayBlocker(ctx);
     await use(ctx);
+    const pages = ctx.pages();
+    for (const p of pages) {
+      await ensurePeerJsDisconnected(p);
+    }
     await ctx.close();
+    await new Promise((r) => setTimeout(r, PEERJS_DRAIN_DELAY_MS));
   },
 
   adminPage: async ({ adminContext }, use) => {
@@ -329,6 +372,8 @@ export const test = base.extend<ShelfPeersFixtures>({
     await dismissModals(page);
     await waitForPeerReady(page);
     await use(page);
+    // Disconnect P2P to free WebRTC resources before context close
+    await disconnectPeer(page).catch(() => {});
   },
 
   collabPage: async ({ collabContext }, use) => {
@@ -339,6 +384,8 @@ export const test = base.extend<ShelfPeersFixtures>({
     await dismissModals(page);
     await waitForPeerReady(page);
     await use(page);
+    // Disconnect P2P to free WebRTC resources before context close
+    await disconnectPeer(page).catch(() => {});
   },
 
   viewerPage: async ({ viewerContext }, use) => {
@@ -349,6 +396,8 @@ export const test = base.extend<ShelfPeersFixtures>({
     await dismissModals(page);
     await waitForPeerReady(page);
     await use(page);
+    // Disconnect P2P to free WebRTC resources before context close
+    await disconnectPeer(page).catch(() => {});
   },
 });
 

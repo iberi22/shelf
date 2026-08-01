@@ -3,6 +3,7 @@ import { addOverlayBlocker, dismissModals } from './helpers';
 import { connectPeers, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
 test.describe('P2P Advanced Synchronization', () => {
+  test.describe.configure({ mode: 'serial' });
   /**
    * Connect admin and collab pages using the programmatic P2P API.
    * This avoids fragile UI-based connection (filling inputs, clicking buttons,

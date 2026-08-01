@@ -19,6 +19,7 @@ const _collaboratorPermissions = {
 };
 
 test.describe('P2P Conflict Resolution', () => {
+  test.describe.configure({ mode: 'serial' });
   test.setTimeout(120000);
 
   test('Collaborator-Admin conflict is routed to pendingEdits and resolved via UI', async ({ browser }) => {

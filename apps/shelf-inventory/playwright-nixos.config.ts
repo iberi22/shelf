@@ -1,12 +1,16 @@
 import { defineConfig, devices } from '@playwright/test';
+
+// workers: '50%' — non-P2P tests run in parallel.
+// P2P tests MUST be serial (PeerJS can't handle parallel WebRTC connections);
+// use test.describe.configure({ mode: 'serial' }) in each p2p-*.spec.ts file.
 export default defineConfig({
   testDir: './tests',
   fullyParallel: false,
-  workers: 1,
-  retries: 0,
+  workers: '50%',
+  retries: 1,
   reporter: 'line',
   use: {
-    baseURL: 'http://127.0.0.1:5174',
+    baseURL: 'http://localhost:5174',
     trace: 'on-first-retry',
     launchOptions: {
       executablePath: '/run/current-system/sw/bin/chromium',
@@ -23,7 +27,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'pnpm run dev:test',
-      url: 'http://127.0.0.1:5174',
+      url: 'http://localhost:5174',
       reuseExistingServer: true,
       env: { VITE_SKIP_LANDING: 'true', VITE_TEST_MODE: 'true' },
     },

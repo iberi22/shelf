@@ -3,6 +3,7 @@ import { addOverlayBlocker, dismissModals, setupPage } from './helpers';
 import { connectPeers, getLocalPeerId } from './p2p-helpers';
 
 test.describe('P2P UI Sync Features', () => {
+  test.describe.configure({ mode: 'serial' });
   test.setTimeout(120000);
 
   test('should link two devices using programmatic API and sync a new branch', async ({ browser }) => {

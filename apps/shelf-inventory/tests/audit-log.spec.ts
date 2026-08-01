@@ -19,6 +19,7 @@ const collaboratorPermissions = {
 };
 
 test.describe('Audit Log Tracing', () => {
+  test.describe.configure({ mode: 'serial' });
   test.setTimeout(120000);
 
   const captureLogs = (page: Page, name: string) => {
@@ -33,6 +34,10 @@ test.describe('Audit Log Tracing', () => {
 
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();
+    const cleanup = async () => {
+      try { await adminContext.close(); } catch (_) {}
+      try { await collabContext.close(); } catch (_) {}
+    };
 
     captureLogs(adminPage, 'ADMIN');
     captureLogs(collabPage, 'COLLAB');
@@ -171,5 +176,7 @@ test.describe('Audit Log Tracing', () => {
     if (product?.updatedBy) {
       expect(product.updatedBy).toBe(collabId);
     }
+
+    await cleanup();
   });
 });

@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { dismissModals, setupPage } from './helpers';
+import { addOverlayBlocker, dismissModals, setupPage } from './helpers';
 import {
   applyRemoteEdgeMeshUpdate,
   expectAppStateEntity,
@@ -26,9 +26,13 @@ async function getPeerId(page: Page) {
 }
 
 test.describe('Edge Mesh workflow synchronization and data security', () => {
+  test.describe.configure({ mode: 'serial' });
+
   test('applies exported Edge Mesh CRDT updates in a second browser', async ({ browser }) => {
     const sourceContext = await browser.newContext();
     const targetContext = await browser.newContext();
+    addOverlayBlocker(sourceContext);
+    addOverlayBlocker(targetContext);
     const sourcePage = await sourceContext.newPage();
     const targetPage = await targetContext.newPage();
 
@@ -123,6 +127,9 @@ test.describe('Edge Mesh workflow synchronization and data security', () => {
       { data: update, srcId: sourcePeerId as string },
     );
 
+    // Allow time for the CRDT update to be processed
+    await targetPage.waitForTimeout(500);
+
     const probe = await targetPage.evaluate((clientId: string) => {
       const db = (window as any)._dbSyncForTest;
       const fromDb = db ? Array.from(db.doc.getMap('clients').values()) : [];
@@ -152,11 +159,13 @@ test.describe('Edge Mesh workflow synchronization and data security', () => {
 
   test('blocks unauthorized remote Edge Mesh mutations of restricted collections', async ({ browser }) => {
     const context = await browser.newContext();
+    addOverlayBlocker(context);
     const page = await context.newPage();
 
     await openSettingsWithEdgeMesh(page);
 
     const attackerContext = await browser.newContext();
+    addOverlayBlocker(attackerContext);
     const attackerPage = await attackerContext.newPage();
     await openSettingsWithEdgeMesh(attackerPage);
 

@@ -97,7 +97,13 @@ async function waitForProductAbsent(
 // ---------------------------------------------------------------------------
 
 test.describe('P2P Three Nodes — Critical Routes', () => {
+  test.describe.configure({ mode: 'serial' });
   test.setTimeout(120_000);
+
+  // Small delay between tests to let WebRTC ICE connections fully close
+  test.afterEach(async () => {
+    await new Promise((r) => setTimeout(r, 1000));
+  });
 
   // ── 1 ────────────────────────────────────────────────────────────────────
   test('1. Admin creates product -> Collaborator sees it synced', async ({

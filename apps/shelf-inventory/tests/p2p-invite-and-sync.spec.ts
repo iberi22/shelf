@@ -55,6 +55,7 @@ async function waitForPeerConnected(page: Page, peerId: string) {
 }
 
 test.describe('P2P Invite Link, Pairing, and Permission Enforcement', () => {
+  test.describe.configure({ mode: 'serial' });
   test.setTimeout(120000);
 
   test('Connects two nodes via invite link, synchronizes data, and enforces/updates permissions', async ({

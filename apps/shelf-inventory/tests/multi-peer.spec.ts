@@ -3,6 +3,7 @@ import { addOverlayBlocker, dismissModals, setupPage } from './helpers';
 import { expectProductPriceSync, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
 test.describe('Multi-Peer E2E Synchronization', () => {
+  test.describe.configure({ mode: 'serial' });
   test.setTimeout(120000);
 
   test('Peer A creates a product, Peer B syncs, Peer B edits, Peer A syncs', async ({ browser }) => {

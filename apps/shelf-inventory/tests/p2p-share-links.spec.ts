@@ -1,8 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { dismissModals, setupPage } from './helpers';
+import { addOverlayBlocker, dismissModals, setupPage } from './helpers';
 
 test.describe('P2P share links', () => {
+  test.describe.configure({ mode: 'serial' });
+
   test('Exposes a PWA install link and a node invite link with the current peer id', async ({ page }) => {
+    // Add overlay blocker to the page's context
+    addOverlayBlocker(page.context());
     await setupPage(page);
 
     await page.locator('[data-testid="nav-item-nav.settings"]').last().click();

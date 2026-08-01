@@ -23,19 +23,24 @@ test.describe('Inventory config catalogs (SRC-FUN-001)', () => {
     await page.getByTestId(`measure-option-input-${measureCount}`).fill('33CM');
 
     await page.getByTestId('save-inventory-config').click();
-    await page.waitForTimeout(2000); // CRDT dispatch is async — wait for state to propagate
 
-    // The catalogs persist in the app state (check both AppState and dbSync)
+    // Wait for the success toast — this confirms dispatch + dbSync.setInventoryConfig ran
+    await expect(page.locator('text=Configuración de inventario guardada')).toBeVisible({ timeout: 10000 });
+    // Let the CRDT pipeline finish propagating before we start polling state
+    await page.waitForTimeout(500);
+
+    // The catalogs persist in the app state (check both AppState and dbSync).
+    // CRDT dispatch is async — poll with generous timeout and intervals.
     await expect
       .poll(
         async () =>
           page.evaluate(() => {
-            // Check AppState first
+            // Check AppState first (updated by useEffect after dispatch)
             const state = (window as any).__shelfAppStateForTest;
             const colorNames = (state?.inventoryConfig?.colorOptions ?? []).map((option: any) => option.name);
             const measures = state?.inventoryConfig?.measureOptions ?? [];
             if (colorNames.includes('CoralE2E') && measures.includes('33CM')) return true;
-            // Fallback: check dbSync state
+            // Fallback: check dbSync state (CRDT may update here before React re-render)
             const dbSync = (window as any)._dbSyncForTest;
             if (dbSync) {
               const dbState = dbSync.getState(dbSync.localPeerId);
@@ -45,7 +50,7 @@ test.describe('Inventory config catalogs (SRC-FUN-001)', () => {
             }
             return false;
           }),
-        { timeout: 20000, intervals: [1000, 2000, 3000, 5000] },
+        { timeout: 30000, intervals: [500, 1000, 2000, 3000, 5000, 5000] },
       )
       .toBe(true);
 

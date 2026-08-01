@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { addOverlayBlocker, dismissModals } from './helpers';
 
 test.describe('P2P Multi-Branch Architecture', () => {
+  test.describe.configure({ mode: 'serial' });
   test('Host can configure branches, and peers can sync data specific to their assigned branch', async ({
     browser,
   }) => {

@@ -132,6 +132,7 @@ async function connectPeerFromHost(
 }
 
 test.describe('P2P Three Node Permissions', () => {
+  test.describe.configure({ mode: 'serial' });
   test.setTimeout(120000);
 
   test('three nodes sync products and permission changes across the network', async ({ browser }) => {

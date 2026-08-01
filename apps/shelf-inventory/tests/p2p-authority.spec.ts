@@ -34,6 +34,7 @@ const adminPermissions = {
 };
 
 test.describe('P2P host authority', () => {
+  test.describe.configure({ mode: 'serial' });
   test('Only the original host can grant peer config updates', async ({ page }) => {
     await setupPage(page);
     await dismissModals(page);

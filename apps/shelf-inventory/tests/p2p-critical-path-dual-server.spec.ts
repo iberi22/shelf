@@ -114,6 +114,7 @@ async function connectPeerFromHost(
 }
 
 test.describe('P2P Critical Path DB Synchronization across Dual Servers with and without Permissions', () => {
+  test.describe.configure({ mode: 'serial' });
   test.setTimeout(120000);
 
   test('two headless browsers on separate dev servers sync DB data with permissions and block unauthorized edits without permissions', async ({ browser }) => {

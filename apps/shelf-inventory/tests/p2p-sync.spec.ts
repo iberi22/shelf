@@ -19,6 +19,7 @@ const collaboratorPermissions = {
 };
 
 test.describe('P2P Synchronization and Conflict Resolution', () => {
+  test.describe.configure({ mode: 'serial' });
   test.setTimeout(120000);
 
   test('Two browsers can connect, assign roles, and simultaneously add products without conflicts', async ({
