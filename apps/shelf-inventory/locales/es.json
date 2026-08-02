@@ -239,6 +239,7 @@
     "aiHelpCloudBody": "Clave API o URL de proxy opcional en Ajustes. No es obligatorio para uso offline-first."
   },
   "settings": {
+    "languageDescription": "Cambia el idioma de la interfaz desde configuración.",
     "title": "Configuración",
     "general": {
       "title": "General"
@@ -662,7 +663,40 @@
       "quantityMerged": "Cantidad combinada: {{qty}}",
       "price": "Precio: {{val}}",
       "cost": "Costo: {{val}}",
-      "updatedAt": "Actualizado: {{val}}"
+      "updatedAt": "Actualizado: {{val}}",
+      "pendingEditTitle": "Edición Pendiente",
+      "pendingEditDesc": "Un colaborador (Peer: {{peerId}}) ha modificado este artículo. Por favor, selecciona qué datos deseas conservar.",
+      "noDiffs": "No hay diferencias detectables.",
+      "currentVersion": "Versión Actual (Admin)",
+      "newVersion": "Nueva Versión (Vendedor)",
+      "pendingCount": "Quedan {{count}} pendientes",
+      "rejectAll": "Rechazar Todo",
+      "mergeSave": "Fusionar y Guardar"
+    }
+  },
+  "onboarding": {
+    "title": "¡Bienvenido a Shelf!",
+    "subtitle": "Configura tu inventario en un paso. Selecciona el tipo de negocio que manejas y Shelf configurará automáticamente las opciones de variantes, colores, medidas y más.",
+    "customizationNote": "Puedes personalizar todo después desde Configuración.",
+    "setupBtn": "Configurar mi inventario",
+    "skipBtn": "Omitir — usar configuración predeterminada",
+    "businessTypeTitle": "¿Qué tipo de negocio manejas?",
+    "businessTypeSubtitle": "Selecciona la opción que mejor describa tu inventario",
+    "backBtn": "← Volver",
+    "previewTitle": "Shelf configurará tu inventario con estas opciones:",
+    "variantDimensions": "Dimensiones de variante",
+    "colors": "Colores ({{count}})",
+    "measurements": "Medidas ({{count}})",
+    "materials": "Materiales ({{count}})",
+    "suggestedUnits": "Unidades sugeridas",
+    "changeBtn": "← Cambiar",
+    "confirmBtn": "¡Configurar! ✓",
+    "categories": {
+      "retail": "Tienda / Retail",
+      "food": "Alimentos y Bebidas",
+      "manufacturing": "Manufactura / Construcción",
+      "services": "Servicios",
+      "general": "General"
     }
   }
 }

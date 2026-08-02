@@ -2,6 +2,7 @@ import { AlertCircle, Check, X } from 'lucide-react';
 import { dbSync } from 'p2p-mesh-core';
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useI18n } from '../context/I18nContext';
 import Modal from './Modal';
 
 interface MergeResolutionModalProps {
@@ -10,6 +11,7 @@ interface MergeResolutionModalProps {
 }
 
 export default function MergeResolutionModal({ isOpen, onClose }: MergeResolutionModalProps) {
+  const { t } = useI18n();
   const { state, dispatch } = useApp();
   const pendingEdits = state.pendingEdits || [];
   const isAdmin = state.role === 'admin' || dbSync.isLocalAuthority();
@@ -71,21 +73,20 @@ export default function MergeResolutionModal({ isOpen, onClose }: MergeResolutio
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Resolución de Conflictos">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('p2pSync.conflictResolver.title')}>
       <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl mb-4 flex items-start gap-3">
         <AlertCircle className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
         <div>
-          <h3 className="font-medium text-yellow-100">Edición Pendiente</h3>
+          <h3 className="font-medium text-yellow-100">{t('p2pSync.conflictResolver.pendingEditTitle')}</h3>
           <p className="text-sm text-yellow-200/70">
-            Un colaborador (Peer: {currentEdit.peerId.slice(0, 6)}...) ha modificado este artículo. Por favor,
-            selecciona qué datos deseas conservar.
+            {t('p2pSync.conflictResolver.pendingEditDesc', { peerId: currentEdit.peerId.slice(0, 6) })}
           </p>
         </div>
       </div>
 
       <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
         {diffFields.length === 0 ? (
-          <p className="text-zinc-400 text-center py-4">No hay diferencias detectables.</p>
+          <p className="text-zinc-400 text-center py-4">{t('p2pSync.conflictResolver.noDiffs')}</p>
         ) : (
           diffFields.map((field) => {
             const currentChoice = selectedFields[field] || 'proposed';
@@ -102,7 +103,7 @@ export default function MergeResolutionModal({ isOpen, onClose }: MergeResolutio
                         : 'bg-black/20 border-white/5 text-zinc-400 hover:border-white/20'
                     }`}
                   >
-                    <div className="text-xs text-zinc-500 mb-1">Versión Actual (Admin)</div>
+                    <div className="text-xs text-zinc-500 mb-1">{t('p2pSync.conflictResolver.currentVersion')}</div>
                     <div className="truncate">{JSON.stringify(original[field])}</div>
                   </button>
                   <button
@@ -114,7 +115,7 @@ export default function MergeResolutionModal({ isOpen, onClose }: MergeResolutio
                         : 'bg-black/20 border-white/5 text-zinc-400 hover:border-white/20'
                     }`}
                   >
-                    <div className="text-xs text-zinc-500 mb-1">Nueva Versión (Vendedor)</div>
+                    <div className="text-xs text-zinc-500 mb-1">{t('p2pSync.conflictResolver.newVersion')}</div>
                     <div className="truncate">{JSON.stringify(proposed[field])}</div>
                   </button>
                 </div>
@@ -125,21 +126,23 @@ export default function MergeResolutionModal({ isOpen, onClose }: MergeResolutio
       </div>
 
       <div className="mt-6 flex justify-between items-center pt-4 border-t border-white/10">
-        <div className="text-sm text-zinc-400">Quedan {pendingEdits.length} pendientes</div>
+        <div className="text-sm text-zinc-400">
+          {t('p2pSync.conflictResolver.pendingCount', { count: pendingEdits.length })}
+        </div>
         <div className="flex gap-2">
           <button
             onClick={() => handleResolve('reject')}
             className="px-4 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors flex items-center gap-2"
           >
             <X className="w-4 h-4" />
-            Rechazar Todo
+            {t('p2pSync.conflictResolver.rejectAll')}
           </button>
           <button
             onClick={() => handleResolve('approve')}
             className="px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition-colors flex items-center gap-2 font-medium"
           >
             <Check className="w-4 h-4" />
-            Fusionar y Guardar
+            {t('p2pSync.conflictResolver.mergeSave')}
           </button>
         </div>
       </div>

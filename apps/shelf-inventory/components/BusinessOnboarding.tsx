@@ -12,6 +12,7 @@
  */
 
 import { useState } from 'react';
+import { useI18n } from '../context/I18nContext';
 import { BUSINESS_PRESETS, type BusinessPreset, presetToInventoryConfig } from '../lib/businessPresets';
 import { normalizeInventoryConfig } from '../lib/inventoryConfig';
 
@@ -36,6 +37,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 export default function BusinessOnboarding({ onComplete }: BusinessOnboardingProps) {
+  const { t } = useI18n();
   const [step, setStep] = useState<'welcome' | 'select' | 'preview' | 'confirm'>('welcome');
   const [selectedPreset, setSelectedPreset] = useState<BusinessPreset | null>(null);
 
@@ -58,18 +60,15 @@ export default function BusinessOnboarding({ onComplete }: BusinessOnboardingPro
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
         <div className="max-w-lg w-full text-center space-y-6">
           <div className="text-6xl">📦</div>
-          <h1 className="text-2xl font-bold text-[#F5F5DC]">¡Bienvenido a Shelf!</h1>
-          <p className="text-[#F5F5DC]/60 text-sm leading-relaxed">
-            Configura tu inventario en un paso. Selecciona el tipo de negocio que manejas y Shelf configurará
-            automáticamente las opciones de variantes, colores, medidas y más.
-          </p>
-          <p className="text-[#F5F5DC]/40 text-xs">Puedes personalizar todo después desde Configuración.</p>
+          <h1 className="text-2xl font-bold text-[#F5F5DC]">{t('onboarding.title')}</h1>
+          <p className="text-[#F5F5DC]/60 text-sm leading-relaxed">{t('onboarding.subtitle')}</p>
+          <p className="text-[#F5F5DC]/40 text-xs">{t('onboarding.customizationNote')}</p>
           <button
             type="button"
             onClick={() => setStep('select')}
             className="w-full py-3 px-6 bg-[#EAB308] hover:bg-[#CA8A04] text-black font-bold rounded-lg transition-all active:scale-95"
           >
-            Configurar mi inventario
+            {t('onboarding.setupBtn')}
           </button>
           <button
             type="button"
@@ -80,7 +79,7 @@ export default function BusinessOnboarding({ onComplete }: BusinessOnboardingPro
             }}
             className="w-full py-2 px-6 text-[#F5F5DC]/40 hover:text-[#F5F5DC]/60 text-xs transition-colors"
           >
-            Omitir — usar configuración predeterminada
+            {t('onboarding.skipBtn')}
           </button>
         </div>
       </div>
@@ -93,15 +92,15 @@ export default function BusinessOnboarding({ onComplete }: BusinessOnboardingPro
       <div className="min-h-screen bg-[#0a0a0a] p-4">
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="text-center space-y-2">
-            <h2 className="text-xl font-bold text-[#F5F5DC]">¿Qué tipo de negocio manejas?</h2>
-            <p className="text-[#F5F5DC]/50 text-sm">Selecciona la opción que mejor describa tu inventario</p>
+            <h2 className="text-xl font-bold text-[#F5F5DC]">{t('onboarding.businessTypeTitle')}</h2>
+            <p className="text-[#F5F5DC]/50 text-sm">{t('onboarding.businessTypeSubtitle')}</p>
           </div>
 
           {categories.map((category) => (
             <div key={category} className="space-y-2">
               <h3 className="text-xs font-semibold text-[#F5F5DC]/40 uppercase tracking-wider flex items-center gap-2">
                 <span>{CATEGORY_ICONS[category]}</span>
-                {CATEGORY_LABELS[category]}
+                {t('onboarding.categories.' + category) || CATEGORY_LABELS[category]}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {BUSINESS_PRESETS.filter((p) => p.category === category).map((preset) => (
@@ -145,7 +144,7 @@ export default function BusinessOnboarding({ onComplete }: BusinessOnboardingPro
             onClick={() => setStep('welcome')}
             className="w-full py-2 text-[#F5F5DC]/30 hover:text-[#F5F5DC]/50 text-xs transition-colors"
           >
-            ← Volver
+            {t('onboarding.backBtn')}
           </button>
         </div>
       </div>
@@ -160,7 +159,7 @@ export default function BusinessOnboarding({ onComplete }: BusinessOnboardingPro
           <div className="text-center space-y-2">
             <span className="text-4xl">{selectedPreset.icon}</span>
             <h2 className="text-xl font-bold text-[#F5F5DC]">{selectedPreset.name}</h2>
-            <p className="text-[#F5F5DC]/50 text-sm">Shelf configurará tu inventario con estas opciones:</p>
+            <p className="text-[#F5F5DC]/50 text-sm">{t('onboarding.previewTitle')}</p>
           </div>
 
           <div className="space-y-3">
@@ -168,7 +167,7 @@ export default function BusinessOnboarding({ onComplete }: BusinessOnboardingPro
             {selectedPreset.variantAttributes.length > 0 && (
               <div className="rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-4 space-y-2">
                 <h3 className="text-xs font-semibold text-[#EAB308] uppercase tracking-wider">
-                  Dimensiones de variante
+                  {t('onboarding.variantDimensions')}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedPreset.variantAttributes.map((attr) => (
@@ -187,7 +186,7 @@ export default function BusinessOnboarding({ onComplete }: BusinessOnboardingPro
             {selectedPreset.colorOptions.length > 0 && (
               <div className="rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-4 space-y-2">
                 <h3 className="text-xs font-semibold text-[#F5F5DC]/60 uppercase tracking-wider">
-                  Colores ({selectedPreset.colorOptions.length})
+                  {t('onboarding.colors', { count: selectedPreset.colorOptions.length })}
                 </h3>
                 <div className="flex flex-wrap gap-1.5">
                   {selectedPreset.colorOptions.map((c) => (
@@ -207,7 +206,7 @@ export default function BusinessOnboarding({ onComplete }: BusinessOnboardingPro
             {selectedPreset.measureOptions.length > 0 && (
               <div className="rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-4 space-y-2">
                 <h3 className="text-xs font-semibold text-[#F5F5DC]/60 uppercase tracking-wider">
-                  Medidas ({selectedPreset.measureOptions.length})
+                  {t('onboarding.measurements', { count: selectedPreset.measureOptions.length })}
                 </h3>
                 <div className="flex flex-wrap gap-1.5">
                   {selectedPreset.measureOptions.map((m) => (
@@ -226,7 +225,7 @@ export default function BusinessOnboarding({ onComplete }: BusinessOnboardingPro
             {selectedPreset.materialOptions.length > 0 && (
               <div className="rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-4 space-y-2">
                 <h3 className="text-xs font-semibold text-[#22C55E] uppercase tracking-wider">
-                  Materiales ({selectedPreset.materialOptions.length})
+                  {t('onboarding.materials', { count: selectedPreset.materialOptions.length })}
                 </h3>
                 <div className="flex flex-wrap gap-1.5">
                   {selectedPreset.materialOptions.map((m) => (
@@ -243,7 +242,9 @@ export default function BusinessOnboarding({ onComplete }: BusinessOnboardingPro
 
             {/* Units */}
             <div className="rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-4 space-y-2">
-              <h3 className="text-xs font-semibold text-[#F5F5DC]/60 uppercase tracking-wider">Unidades sugeridas</h3>
+              <h3 className="text-xs font-semibold text-[#F5F5DC]/60 uppercase tracking-wider">
+                {t('onboarding.suggestedUnits')}
+              </h3>
               <div className="flex flex-wrap gap-1.5">
                 {selectedPreset.suggestedUnits.map((u) => (
                   <span
@@ -263,14 +264,14 @@ export default function BusinessOnboarding({ onComplete }: BusinessOnboardingPro
               onClick={() => setStep('select')}
               className="flex-1 py-2.5 px-4 border border-[#F5F5DC]/20 text-[#F5F5DC]/60 rounded-lg hover:bg-[#F5F5DC]/5 transition-colors text-sm"
             >
-              ← Cambiar
+              {t('onboarding.changeBtn')}
             </button>
             <button
               type="button"
               onClick={handleConfirm}
               className="flex-1 py-2.5 px-4 bg-[#EAB308] hover:bg-[#CA8A04] text-black font-bold rounded-lg transition-all active:scale-95 text-sm"
             >
-              ¡Configurar! ✓
+              {t('onboarding.confirmBtn')}
             </button>
           </div>
         </div>

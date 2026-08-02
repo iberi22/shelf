@@ -239,6 +239,7 @@
     "aiHelpCloudBody": "Optional API key or proxy URL in Settings. Not required for offline-first use."
   },
   "settings": {
+    "languageDescription": "Change the interface language.",
     "title": "Settings",
     "general": {
       "title": "General"
@@ -634,7 +635,40 @@
       "quantityMerged": "Combined Quantity: {{qty}}",
       "price": "Price: {{val}}",
       "cost": "Cost: {{val}}",
-      "updatedAt": "Updated: {{val}}"
+      "updatedAt": "Updated: {{val}}",
+      "pendingEditTitle": "Pending Edit",
+      "pendingEditDesc": "A collaborator (Peer: {{peerId}}) has modified this item. Please select which data you want to keep.",
+      "noDiffs": "No detectable differences.",
+      "currentVersion": "Current Version (Admin)",
+      "newVersion": "New Version (Seller)",
+      "pendingCount": "Remaining: {{count}} pending",
+      "rejectAll": "Reject All",
+      "mergeSave": "Merge & Save"
+    }
+  },
+  "onboarding": {
+    "title": "Welcome to Shelf!",
+    "subtitle": "Set up your inventory in one step. Select the type of business you manage and Shelf will configure variant options, colors, measurements and more automatically.",
+    "customizationNote": "You can customize everything later from Settings.",
+    "setupBtn": "Set up my inventory",
+    "skipBtn": "Skip — use default configuration",
+    "businessTypeTitle": "What type of business do you manage?",
+    "businessTypeSubtitle": "Select the option that best describes your inventory",
+    "backBtn": "← Back",
+    "previewTitle": "Shelf will configure your inventory with these options:",
+    "variantDimensions": "Variant dimensions",
+    "colors": "Colors ({{count}})",
+    "measurements": "Measurements ({{count}})",
+    "materials": "Materials ({{count}})",
+    "suggestedUnits": "Suggested units",
+    "changeBtn": "← Change",
+    "confirmBtn": "Configure! ✓",
+    "categories": {
+      "retail": "Retail / Shop",
+      "food": "Food & Beverage",
+      "manufacturing": "Manufacturing / Construction",
+      "services": "Services",
+      "general": "General"
     }
   }
 }

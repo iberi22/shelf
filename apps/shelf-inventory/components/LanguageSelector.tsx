@@ -63,6 +63,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ direction = 'up' })
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-foreground/10 transition-all active:scale-95"
         aria-label="Select language"
+        data-testid="language-selector-btn"
       >
         <span className="text-xl">{currentLanguage.flag}</span>
         <span className="hidden sm:inline text-sm font-medium">{currentLanguage.code.toUpperCase()}</span>
@@ -85,6 +86,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ direction = 'up' })
             <button
               key={lang.code}
               onClick={() => handleLanguageChange(lang.code)}
+              data-testid={`language-option-${lang.code}`}
               className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-foreground/10 transition-colors ${
                 locale === lang.code ? 'bg-foreground/5 font-semibold' : ''
               }`}
