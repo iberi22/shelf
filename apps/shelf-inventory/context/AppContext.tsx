@@ -33,6 +33,7 @@ import EdgeMeshWorkflowBridge from '../components/EdgeMeshWorkflowBridge';
 import usePersistedReducer from '../hooks/usePersistedReducer';
 import { DEFAULT_INVENTORY_CONFIG, normalizeInventoryConfig } from '../lib/inventoryConfig';
 import { getProductVariants, normalizeProduct } from '../lib/productVariants';
+import { scheduleXavierInventorySync } from '../lib/xavier';
 
 const initialState: AppState = {
   products: [],
@@ -601,6 +602,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Reactive incremental sync
     const unobserve = dbSync.onObserve((collection, items, deletedIds) => {
       rawDispatch({ type: 'SYNC_ENTITIES', payload: { collection, items, deletedIds } });
+      // Best-effort Xavier memory summary on product sync (DoD app/shelf/instance/{id})
+      if (collection === 'products') {
+        const s = stateRef.current;
+        scheduleXavierInventorySync({
+          products: items.length,
+          sales: s.sales?.length ?? 0,
+          clients: s.clients?.length ?? 0,
+          suppliers: s.suppliers?.length ?? 0,
+          purchaseOrders: s.purchaseOrders?.length ?? 0,
+          action: 'SYNC_ENTITIES',
+        });
+      }
     });
 
     // Listen for CRDT updates from other peers (metadata & expulsion)

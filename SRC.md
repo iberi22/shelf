@@ -62,9 +62,9 @@ shelf/
 
 | Variable | Purpose | Required |
 |----------|---------|----------|
-| *(from .env.example)* | | |
-| `XAVIER_URL` | Xavier HTTP (default http://127.0.0.1:8006) | for agentic memory |
-| `XAVIER_TOKEN` | Auth token | when server enforces auth |
+| *(from `apps/shelf-inventory/.env.example`)* | | |
+| `VITE_XAVIER_URL` | Xavier HTTP (default `http://localhost:8006`) | optional |
+| `VITE_XAVIER_TOKEN` | Auth token (Bearer / X-Xavier-Token) | optional |
 
 Never commit real secrets.
 
@@ -73,9 +73,10 @@ Never commit real secrets.
 | Concern | Approach |
 |---------|----------|
 | Pro features | Active SWAL node |
-| Multi-instance | `instance_id` isolation |
-| Memory | Xavier HTTP/MCP |
-| Mesh | edge-mesh namespaces `swal/{app}/{instance}` |
+| Multi-instance | `instanceId` in `localStorage` key `shelf_instance_id` |
+| Memory | Xavier HTTP — namespace `app/shelf/instance/{instanceId}` (`lib/xavier.ts`, `hooks/useXavierMemory.ts`) |
+| Sync events | `app/shelf/instance/{id}/sync/events` (best-effort on product CRDT sync) |
+| Mesh | edge-mesh namespaces `swal/shelf/{instanceId}` |
 | Payments Pro | **No Stripe** |
 
 ## 7. Cross-references
