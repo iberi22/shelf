@@ -16,8 +16,13 @@ import { type DataConnection, Peer } from 'peerjs';
 import { encryptData as encryptDataHelper } from './crypto';
 import { toHex as toHexHelper } from './crypto-pqc';
 import { dbSync } from './database-sync';
+import { canInvite as checkCanInvite } from './database-sync/authority-checks';
 import type { P2PRole, PeerInfo } from './types';
 import { logger, setLoggerPeerId } from './utils/logger';
+
+export type SignalingStatus = 'online' | 'offline' | 'connecting';
+
+export { canInvite } from './database-sync/authority-checks';
 
 // ─── Re-export all types (preserves public API) ────────────────────────────
 export type {
@@ -101,7 +106,9 @@ class P2PManager {
     envelope: import('./p2p-transport-adapter').EdgeMeshEnvelopeWire,
     fromPeerId: string,
   ) => void)[] = [];
+  private onSignalingStatusCallbacks: ((status: SignalingStatus) => void)[] = [];
   private healthEventsBound = false;
+  private signalingStatus: SignalingStatus = 'offline';
 
   public localPeerId: string | null = null;
   public role: P2PRole = 'collaborator';
@@ -292,12 +299,14 @@ class P2PManager {
         };
 
     this.peer = finalPeerId ? new Peer(finalPeerId, peerOptions) : new Peer(peerOptions);
+    this.setSignalingStatus('connecting');
 
     this.peer.on('open', (id) => {
       this.localPeerId = id;
       dbSync.localPeerId = id; // Sync local peer ID to dbSync for permissions and role resolution
       setLoggerPeerId(id);
       this.reconnectionAttempts = 0;
+      this.setSignalingStatus('online');
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('shelf_local_peer_id', id);
       }
@@ -364,6 +373,7 @@ class P2PManager {
     });
 
     this.peer.on('disconnected', () => {
+      this.setSignalingStatus('offline');
       if (this.reconnectionAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
         logger.error(`Max reconnection attempts (${this.MAX_RECONNECT_ATTEMPTS}) reached. Giving up.`);
         return;
@@ -377,6 +387,7 @@ class P2PManager {
       setTimeout(() => {
         if (!this.peer?.destroyed && this.peer?.disconnected) {
           this.reconnectionAttempts++;
+          this.setSignalingStatus('connecting');
           this.peer?.reconnect();
         }
       }, delay);
@@ -385,6 +396,14 @@ class P2PManager {
     this.peer.on('error', (err: unknown) => {
       logger.error('PeerJS error:', err);
       const typedErr = err as { type?: string };
+      if (
+        typedErr.type === 'network' ||
+        typedErr.type === 'server-error' ||
+        typedErr.type === 'socket-error' ||
+        typedErr.type === 'socket-closed'
+      ) {
+        this.setSignalingStatus('offline');
+      }
       if (typedErr.type === 'unavailable-id') {
         if (this.reconnectionAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
           logger.error(
@@ -430,6 +449,7 @@ class P2PManager {
         setTimeout(() => {
           if (!this.peer?.destroyed) {
             this.reconnectionAttempts++;
+            this.setSignalingStatus('connecting');
             if (this.peer?.disconnected) {
               this.peer.reconnect();
             } else {
@@ -686,6 +706,37 @@ class P2PManager {
 
   public onConnectionChange(cb: (peers: PeerInfo[]) => void) {
     this.onConnectionChangeCallbacks.push(cb);
+  }
+
+  private setSignalingStatus(status: SignalingStatus) {
+    if (this.signalingStatus === status) return;
+    this.signalingStatus = status;
+    for (const cb of this.onSignalingStatusCallbacks) {
+      cb(status);
+    }
+  }
+
+  /** PeerJS signaling broker status (offline-first: local ops continue when offline). */
+  public getSignalingStatus(): SignalingStatus {
+    return this.signalingStatus;
+  }
+
+  public isSignalingOnline(): boolean {
+    return this.signalingStatus === 'online' && !!this.peer?.open;
+  }
+
+  public onSignalingStatusChange(cb: (status: SignalingStatus) => void): () => void {
+    this.onSignalingStatusCallbacks.push(cb);
+    return () => {
+      this.onSignalingStatusCallbacks = this.onSignalingStatusCallbacks.filter((entry) => entry !== cb);
+    };
+  }
+
+  /**
+   * Invite authority: only admin (or role with canManageTeam) may invite teammates.
+   */
+  public canInvite(role: P2PRole | string | null | undefined = this.role): boolean {
+    return checkCanInvite(role);
   }
 
   // ─── Phase C: EdgeMesh transport host API ─────────────────────────────

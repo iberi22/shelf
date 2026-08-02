@@ -1,5 +1,5 @@
 import { BellRing, Check, Copy, Layers, Sparkles, Wifi, WifiOff } from 'lucide-react';
-import { dbSync } from 'p2p-mesh-core';
+import { dbSync, p2pManager, type SignalingStatus } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
@@ -16,6 +16,12 @@ const P2PSyncStatusHeader: React.FC = () => {
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'disconnected'>('disconnected');
   const [isExpanded, setIsExpanded] = useState(false);
+  const [browserOnline, setBrowserOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine);
+  const [signalingStatus, setSignalingStatus] = useState<SignalingStatus>(() =>
+    typeof p2pManager.getSignalingStatus === 'function' ? p2pManager.getSignalingStatus() : 'offline',
+  );
+
+  const isP2POfflineMode = !browserOnline || signalingStatus === 'offline';
 
   const verifiedPeers = useMemo(() => {
     return state.peers.filter((p) => p.status === 'verified');
@@ -27,9 +33,30 @@ const P2PSyncStatusHeader: React.FC = () => {
   // Compute product conflicts
   const conflicts = useMemo(() => detectProductConflicts(state.products), [state.products]);
 
+  // Browser online/offline + PeerJS signaling status (offline-first UX)
+  useEffect(() => {
+    const onOnline = () => {
+      setBrowserOnline(true);
+      try {
+        p2pManager.requestFullSync?.();
+      } catch {
+        /* ignore */
+      }
+    };
+    const onOffline = () => setBrowserOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    const unsub = p2pManager.onSignalingStatusChange?.((status) => setSignalingStatus(status));
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+      unsub?.();
+    };
+  }, []);
+
   // Determine sync status based on verified peers
   useEffect(() => {
-    if (verifiedPeers.length === 0) {
+    if (isP2POfflineMode || verifiedPeers.length === 0) {
       setSyncStatus('disconnected');
     } else {
       // Simulate brief syncing when state updates, then transition to synced
@@ -39,7 +66,7 @@ const P2PSyncStatusHeader: React.FC = () => {
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [verifiedPeers.length]);
+  }, [verifiedPeers.length, isP2POfflineMode]);
 
   const handleCopyPeerId = () => {
     if (!state.localPeerId) return;
@@ -81,6 +108,22 @@ const P2PSyncStatusHeader: React.FC = () => {
   return (
     <div className="w-full mb-6 flex flex-col items-end gap-3">
       <div className="flex w-full flex-wrap items-center justify-end gap-2">
+        {isP2POfflineMode && (
+          <div
+            data-testid="p2p-offline-badge"
+            className="flex min-h-[40px] max-w-full items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-bold text-amber-200"
+            title={
+              t('p2pSync.topBar.offlineModeHint') ||
+              'P2P signaling offline — cambios locales se sincronizan al reconectar'
+            }
+          >
+            <WifiOff size={14} aria-hidden="true" data-testid="offline-indicator" />
+            <span className="truncate">{t('p2pSync.topBar.offlineMode') || 'Modo offline P2P'}</span>
+            <span className="hidden sm:inline text-[10px] font-normal text-amber-100/80">
+              {t('common.offline') || 'Sin conexión'}
+            </span>
+          </div>
+        )}
         {canReviewPendingEdits && (
           <button
             type="button"
@@ -120,7 +163,7 @@ const P2PSyncStatusHeader: React.FC = () => {
           }`}
         >
           {syncStatus === 'disconnected' ? (
-            <WifiOff size={18} data-testid="offline-indicator" aria-label={t('common.offline') || 'Offline'} />
+            <WifiOff size={18} aria-label={t('common.offline') || 'Offline'} />
           ) : (
             <Wifi
               size={18}

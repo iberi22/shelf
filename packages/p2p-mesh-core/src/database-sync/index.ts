@@ -12,6 +12,9 @@
  *   database-sync-manager.ts — The DatabaseSyncManager class (public API)
  */
 
+export type { InviteAuthorityPermissions } from './authority-checks';
+
+export { canInvite, getDefaultPermissions, isAuthorityPeer, isLocalAuthority } from './authority-checks';
 // Re-export the main class and singleton — this is what consumers import
 export { DatabaseSyncManager, dbSync } from './database-sync-manager';
 
