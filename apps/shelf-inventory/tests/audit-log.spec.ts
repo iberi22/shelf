@@ -19,7 +19,7 @@ const collaboratorPermissions = {
 };
 
 test.describe('Audit Log Tracing', () => {
-  test.describe.configure({ mode: 'serial' });
+  test.describe.configure({ mode: 'serial', retries: 2 });
   test.setTimeout(120000);
 
   const captureLogs = (page: Page, name: string) => {

@@ -79,6 +79,10 @@ jobs:
         run: pnpm test:unit
         working-directory: apps/shelf-inventory
 
+      - name: Coverage gate
+        run: pnpm test:coverage
+        working-directory: apps/shelf-inventory
+
   # ── Type checking ──────────────────────────────────────────────────────────
   type-check:
     name: Type Check

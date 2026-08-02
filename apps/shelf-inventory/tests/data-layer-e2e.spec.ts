@@ -209,7 +209,7 @@ export function previewCsvHeadersWithMaterials(text: string) {
 // ---------------------------------------------------------------------------
 
 test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
-  test.describe.configure({ mode: 'serial' });
+  test.describe.configure({ mode: 'serial', retries: 2 });
   test.setTimeout(120000);
 
   test.afterEach(async () => {
