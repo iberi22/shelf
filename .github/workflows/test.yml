@@ -69,6 +69,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build workspace packages
+        run: pnpm --filter "./packages/**" run build
+
       - name: Run app unit tests
         run: pnpm test:unit
         working-directory: apps/shelf-inventory
@@ -95,6 +98,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build workspace packages
+        run: pnpm --filter "./packages/**" run build
+
       - name: TypeScript type check
         run: npx tsc --noEmit
         working-directory: apps/shelf-inventory
@@ -120,6 +126,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Build workspace packages
+        run: pnpm --filter "./packages/**" run build
 
       - name: Cache Playwright browsers
         id: playwright-cache
