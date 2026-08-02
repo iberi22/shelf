@@ -93,12 +93,12 @@ export async function handleMessage(ctx: MessageHandlerContext, conn: DataConnec
     return;
   }
 
-  if (message.type === 'PQC_HANDSHAKE_RESPONSE') {
+  if ((message as any).type === 'PQC_HANDSHAKE_RESPONSE') {
     handlePQCHandshakeResponse(ctx, conn, message as any);
     return;
   }
 
-  if (message.type === 'PQC_HANDSHAKE_ACK') {
+  if ((message as any).type === 'PQC_HANDSHAKE_ACK') {
     handlePQCHandshakeAck(ctx, conn, message as any);
     return;
   }
@@ -180,7 +180,7 @@ export async function handleMessage(ctx: MessageHandlerContext, conn: DataConnec
     return;
   }
 
-  if (message.type === 'PQC_HANDSHAKE_RESPONSE') {
+  if ((message as any).type === 'PQC_HANDSHAKE_RESPONSE') {
     for (const cb of ctx.onHandshakeResponseCallbacks) {
       cb((message as any).payload, conn.peer);
     }
@@ -212,7 +212,7 @@ function handlePQCHandshake(
   ctx.peerDsaKeys.set(conn.peer, message.payload.dsaPublicKey);
 
   const signature = toHex(ctx.signFn(fromHex(message.payload.challenge)));
-  const responderChallenge = toHex(crypto.getRandomValues(new Uint8Array(32)));
+  const responderChallenge = toHex(crypto.getRandomValues(new Uint8Array(32)) as any);
   const peerChallenges = ctx.pendingChallenges.get(conn.peer) || new Set<string>();
   peerChallenges.add(responderChallenge);
   ctx.pendingChallenges.set(conn.peer, peerChallenges);
@@ -250,7 +250,7 @@ function handlePQCHandshakeResponse(ctx: MessageHandlerContext, conn: DataConnec
     if (peerDsaHex && peerChallenges && peerChallenges.size > 0) {
       let verified = false;
       for (const challengeHex of peerChallenges) {
-        if (ctx.verifyFn(fromHex(challengeHex), fromHex(message.payload.signature), fromHex(peerDsaHex))) {
+        if (ctx.verifyFn(fromHex(challengeHex), fromHex(message.payload.signature), peerDsaHex || '')) {
           verified = true;
           peerChallenges.delete(challengeHex);
           break;
@@ -265,7 +265,7 @@ function handlePQCHandshakeResponse(ctx: MessageHandlerContext, conn: DataConnec
   }
 
   if (message.payload.responderChallenge) {
-    const ackSignature = toHex(ctx.signFn(fromHex(message.payload.responderChallenge)));
+    const ackSignature = toHex(ctx.signFn(fromHex(message.payload.responderChallenge)) as any);
     conn.send({
       type: 'PQC_HANDSHAKE_ACK',
       payload: {
@@ -281,7 +281,7 @@ function handlePQCHandshakeAck(ctx: MessageHandlerContext, conn: DataConnection,
   if (peerDsaHex && peerChallenges && peerChallenges.size > 0) {
     let verified = false;
     for (const challengeHex of peerChallenges) {
-      if (ctx.verifyFn(fromHex(challengeHex), fromHex(message.payload.signature), fromHex(peerDsaHex))) {
+      if (ctx.verifyFn(fromHex(challengeHex), fromHex(message.payload.signature), peerDsaHex || '')) {
         verified = true;
         peerChallenges.delete(challengeHex);
         break;

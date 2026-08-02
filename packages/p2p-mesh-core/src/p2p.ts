@@ -258,7 +258,7 @@ class P2PManager {
 
     let finalPeerId = peerId;
     if (!finalPeerId && typeof localStorage !== 'undefined') {
-      finalPeerId = localStorage.getItem('shelf_local_peer_id') || undefined;
+      finalPeerId = (localStorage.getItem('shelf_local_peer_id') || undefined) as string | undefined;
     }
 
     // Check if we are in development mode without depending on Node globals.
@@ -433,7 +433,7 @@ class P2PManager {
             if (this.peer?.disconnected) {
               this.peer.reconnect();
             } else {
-              this.init(this.localPeerId);
+              this.init(this.localPeerId || undefined);
             }
           }
         }, delay);
