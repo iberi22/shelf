@@ -1,4 +1,7 @@
+import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
+
+const chromePath = process.env.PLAYWRIGHT_CHROME_PATH || (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : '/run/current-system/sw/bin/chromium');
 
 export default defineConfig({
   testDir: './tests',
@@ -18,7 +21,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {
-          executablePath: process.env.PLAYWRIGHT_CHROME_PATH || '/run/current-system/sw/bin/chromium',
+          executablePath: chromePath,
           args: [
             '--allow-loopback-in-peer-connection',
             '--disable-features=WebRtcHideLocalIpsWithMdns',
@@ -26,12 +29,22 @@ export default defineConfig({
           ],
         },
       },
-      testIgnore: /.*(?:responsive-devices|mobile-touch-scroll|mobile-pagination|settings-mobile-layout)\.spec\.ts/,
+      testIgnore: /.*(?:responsive-devices|mobile-touch-scroll|mobile-pagination|settings-mobile-layout|mobile-landing-e2e)\.spec\.ts/,
     },
     {
       name: 'mobile-chrome',
-      use: { ...devices['Pixel 5'] },
-      testMatch: /.*(?:responsive-devices|mobile-touch-scroll|mobile-pagination|settings-mobile-layout)\.spec\.ts/,
+      use: {
+        ...devices['Pixel 5'],
+        launchOptions: {
+          executablePath: chromePath,
+          args: [
+            '--allow-loopback-in-peer-connection',
+            '--disable-features=WebRtcHideLocalIpsWithMdns',
+            '--no-sandbox',
+          ],
+        },
+      },
+      testMatch: /.*(?:responsive-devices|mobile-touch-scroll|mobile-pagination|settings-mobile-layout|mobile-landing-e2e)\.spec\.ts/,
     },
     {
       name: 'tablet',
@@ -42,7 +55,7 @@ export default defineConfig({
         isMobile: true,
         hasTouch: true,
       },
-      testMatch: /.*(?:responsive-devices|settings-mobile-layout)\.spec\.ts/,
+      testMatch: /.*(?:responsive-devices|settings-mobile-layout|mobile-landing-e2e)\.spec\.ts/,
     },
   ],
   webServer: [
@@ -62,6 +75,15 @@ export default defineConfig({
       env: {
         VITE_SKIP_LANDING: 'true',
         VITE_TEST_MODE: 'true',
+      },
+    },
+    {
+      command: 'pnpm exec vite --host 127.0.0.1 --port 5176 --strictPort',
+      url: 'http://127.0.0.1:5176',
+      reuseExistingServer: !process.env.CI,
+      env: {
+        VITE_SKIP_LANDING: 'false',
+        VITE_TEST_MODE: 'false',
       },
     },
     {
