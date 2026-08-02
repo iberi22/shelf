@@ -1,4 +1,4 @@
-import { Image as ImageIcon, X } from 'lucide-react';
+import { Image as ImageIcon, ScanBarcode, X } from 'lucide-react';
 import type { Product, Sale, SaleItem } from 'p2p-mesh-core';
 import type React from 'react';
 import { useMemo, useState } from 'react';
@@ -6,8 +6,11 @@ import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
+import { useUI } from '../context/UIContext';
+import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import { useSortableTable } from '../hooks/useSortableTable';
 import { getProductVariantDisplay, getProductVariants, normalizeProduct } from '../lib/productVariants';
+import BarcodeScanner from './BarcodeScanner';
 import { InfiniteTable } from './InfiniteTable';
 import Modal from './Modal';
 
@@ -339,7 +342,10 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
   const { t } = useI18n();
   const { state } = useAppContext();
   const { formatCurrency } = useCurrency();
+  const { showNotification } = useUI();
   const [previewImage, setPreviewImage] = useState<{ url: string; label: string } | null>(null);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [scanFeedback, setScanFeedback] = useState<string | null>(null);
   const [items, setItems] = useState<Omit<SaleItem, 'productName' | 'cost'>[]>(
     () =>
       editingSale?.items.map((item) => ({
@@ -356,6 +362,72 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
   const availableProducts = useMemo(() => {
     return state.products.filter((p) => p.quantity > 0 && p.isActive !== false);
   }, [state.products]);
+
+  const findProductByScanCode = (code: string): Product | null => {
+    const normalized = code.trim().toLowerCase();
+    if (!normalized) return null;
+    const match = state.products.find(
+      (p) =>
+        p.isActive !== false &&
+        p.quantity > 0 &&
+        ((p.sku || '').trim().toLowerCase() === normalized || p.id.trim().toLowerCase() === normalized),
+    );
+    return match ? normalizeProduct(match) : null;
+  };
+
+  const addScannedProductToCart = (code: string) => {
+    const product = findProductByScanCode(code);
+    if (!product) {
+      const translated = t('sales.scan.notFound');
+      const msg =
+        !translated || translated === 'sales.scan.notFound'
+          ? `Producto no encontrado: ${code}`
+          : `${translated}: ${code}`;
+      setScanFeedback(msg);
+      showNotification(msg, 'error');
+      return;
+    }
+
+    const variants = getProductVariants(product);
+    const selectedVariant = variants[0] || null;
+    const price = selectedVariant?.price ?? product.price ?? 0;
+
+    setItems((prev) => {
+      const existingIndex = prev.findIndex(
+        (item) =>
+          item.productId === product.id &&
+          (item.productVariantId || selectedVariant?.id) === (selectedVariant?.id || item.productVariantId),
+      );
+      if (existingIndex >= 0) {
+        const next = [...prev];
+        const current = { ...next[existingIndex] };
+        current.quantity = (current.quantity || 0) + 1;
+        next[existingIndex] = current;
+        return next;
+      }
+      const newItem: Omit<SaleItem, 'productName' | 'cost'> = {
+        productId: product.id,
+        productVariantId: selectedVariant?.id,
+        quantity: 1,
+        price,
+      };
+      if (selectedVariant) {
+        (newItem as { variantLabel?: string }).variantLabel = getProductVariantDisplay(product, selectedVariant);
+      }
+      return [...prev, newItem];
+    });
+
+    const translated = t('sales.scan.added');
+    const okMsg =
+      !translated || translated === 'sales.scan.added' ? `Agregado: ${product.name}` : `${translated}: ${product.name}`;
+    setScanFeedback(okMsg);
+    showNotification(okMsg, 'success');
+  };
+
+  useBarcodeScanner({
+    onScan: addScannedProductToCart,
+    enabled: !isScannerOpen,
+  });
 
   const getSelectedProduct = (productId: string): Product | null => {
     const product = state.products.find((p) => p.id === productId);
@@ -513,7 +585,50 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
 
   return (
     <form onSubmit={handleSubmit} data-testid="sale-form">
+      {isScannerOpen && (
+        <BarcodeScanner
+          onScan={(code) => {
+            setIsScannerOpen(false);
+            addScannedProductToCart(code);
+          }}
+          onClose={() => setIsScannerOpen(false)}
+        />
+      )}
       <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            type="button"
+            data-testid="sale-scan-button"
+            onClick={() => setIsScannerOpen(true)}
+            className="flex items-center justify-center gap-2 w-full sm:w-auto bg-transparent border border-yellow-500/50 text-yellow-400 font-bold py-2.5 px-4 rounded-lg hover:bg-yellow-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
+          >
+            <ScanBarcode size={18} aria-hidden="true" />
+            {t('sales.scan.button') || t('scanner.title') || 'Escanear'}
+          </button>
+          <input
+            type="text"
+            data-testid="sale-barcode-capture"
+            data-barcode-capture="true"
+            placeholder={t('sales.scan.placeholder') || 'Escanear código o SKU…'}
+            className="flex-1 min-w-0 p-2.5 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-sm min-h-[44px]"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const value = (e.target as HTMLInputElement).value.trim();
+                if (value) {
+                  addScannedProductToCart(value);
+                  (e.target as HTMLInputElement).value = '';
+                }
+              }
+            }}
+            aria-label={t('sales.scan.placeholder') || 'Barcode'}
+          />
+        </div>
+        {scanFeedback && (
+          <p className="text-xs text-[#F5F5DC]/70" data-testid="sale-scan-feedback">
+            {scanFeedback}
+          </p>
+        )}
         {items.map((item, index) => {
           const product = getSelectedProduct(item.productId);
           const variants = product ? getProductVariants(product) : [];

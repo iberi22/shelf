@@ -40,6 +40,14 @@ export interface CsvProductParseResult {
   mappedHeaders: CanonicalCsvHeader[];
 }
 
+export interface AtomicCsvImportResult {
+  ok: boolean;
+  products: Omit<Product, 'id'>[];
+  errors: CsvParseRowError[];
+  mappedHeaders: CanonicalCsvHeader[];
+  abortReason?: string;
+}
+
 function normalizeHeader(raw: string): string {
   return raw
     .replace(/^\uFEFF/, '')
@@ -216,4 +224,30 @@ function parseNumber(raw: string | undefined, fallback: number): number {
   if (raw === undefined || raw === '') return fallback;
   const n = Number(String(raw).replace(',', '.'));
   return Number.isFinite(n) ? n : fallback;
+}
+
+export function parseProductCsvAtomic(
+  text: string,
+  options?: { columnMapping?: (CanonicalCsvHeader | null)[] },
+): AtomicCsvImportResult {
+  const parsed = parseProductCsv(text, options);
+  if (parsed.errors.length > 0) {
+    return {
+      ok: false,
+      products: [],
+      errors: parsed.errors,
+      mappedHeaders: parsed.mappedHeaders,
+      abortReason: `CSV import aborted: ${parsed.errors.length} invalid row(s). Nothing was imported.`,
+    };
+  }
+  if (parsed.products.length === 0) {
+    return {
+      ok: false,
+      products: [],
+      errors: parsed.errors.length ? parsed.errors : [{ line: 1, message: 'No valid products found in CSV' }],
+      mappedHeaders: parsed.mappedHeaders,
+      abortReason: 'CSV import aborted: no valid products found. Nothing was imported.',
+    };
+  }
+  return { ok: true, products: parsed.products, errors: [], mappedHeaders: parsed.mappedHeaders };
 }

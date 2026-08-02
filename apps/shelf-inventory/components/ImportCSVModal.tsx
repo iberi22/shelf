@@ -7,7 +7,7 @@ import { useUI } from '../context/UIContext';
 import {
   CANONICAL_CSV_HEADERS,
   type CanonicalCsvHeader,
-  parseProductCsv,
+  parseProductCsvAtomic,
   previewCsvHeaders,
 } from '../lib/csvProductImport';
 import Modal from './Modal';
@@ -90,25 +90,26 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
     setRowErrors([]);
 
     try {
-      const { products, errors } = parseProductCsv(csvText, { columnMapping: userMapping });
+      const result = parseProductCsvAtomic(csvText, { columnMapping: userMapping });
 
-      if (products.length === 0) {
-        const msg = errors[0]?.message || t('settings.import.invalidHeaderError') || 'No valid products found in CSV';
-        throw new Error(msg);
+      if (!result.ok) {
+        setRowErrors(result.errors.slice(0, 8).map((e) => `L${e.line}: ${e.message}`));
+        const msg =
+          result.abortReason ||
+          result.errors[0]?.message ||
+          t('settings.import.invalidHeaderError') ||
+          'Import aborted — nothing was imported.';
+        showNotification(t('settings.import.rollback') || `Importación fallida, cambios revertidos: ${msg}`, 'error');
+        return;
       }
 
-      if (errors.length > 0) {
-        setRowErrors(errors.slice(0, 8).map((e) => `L${e.line}: ${e.message}`));
-      }
-
-      dispatch({ type: 'IMPORT_PRODUCTS', payload: { products, strategy } });
+      dispatch({ type: 'IMPORT_PRODUCTS', payload: { products: result.products, strategy } });
       showNotification(
-        t('settings.import.success', { count: products.length }) || `Imported ${products.length} products`,
-        errors.length > 0 ? 'info' : 'success',
+        t('settings.import.success', { count: result.products.length }) ||
+          `Imported ${result.products.length} products`,
+        'success',
       );
-      if (errors.length === 0) {
-        onClose();
-      }
+      onClose();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unknown error occurred.';
       showNotification(t('settings.import.error', { error: message }) || message, 'error');

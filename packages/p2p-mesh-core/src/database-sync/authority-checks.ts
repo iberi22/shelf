@@ -30,6 +30,27 @@ export const SECURED_COLLECTIONS = [
 /** Collections that contain privilege/role information (admin-only writes). */
 export const PRIVILEGE_COLLECTIONS = ['teamMembers', 'linkedNodes', 'pendingEdits', 'auditLogs'] as const;
 
+// ─── Invite Authority ───────────────────────────────────────────────────────
+
+export type InviteAuthorityPermissions = Partial<PeerPermissions> & {
+  /** Explicit team management permission (team:manage) */
+  canManageTeam?: boolean;
+};
+
+/**
+ * Who may invite teammates into the P2P mesh.
+ * Only ADMIN (or a role with explicit canManageTeam / team:manage) can invite.
+ */
+export function canInvite(
+  role: P2PRole | string | null | undefined,
+  permissions?: InviteAuthorityPermissions | null,
+): boolean {
+  if (!role) return false;
+  if (role === 'admin' || role === 'owner') return true;
+  if (permissions?.canManageTeam === true) return true;
+  return false;
+}
+
 // ─── Authority Peer Resolution ──────────────────────────────────────────────
 
 /** Resolve the authority peer ID from metadata. */

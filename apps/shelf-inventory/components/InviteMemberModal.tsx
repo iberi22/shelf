@@ -1,4 +1,5 @@
 import type { TeamMemberRole } from 'p2p-mesh-core';
+import { canInvite } from 'p2p-mesh-core';
 import type React from 'react';
 import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
@@ -33,6 +34,13 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!canInvite(state.role, state.permissions)) {
+      setError(t('settings.team.inviteForbidden') || 'Only admins can invite team members');
+      showNotification(t('settings.team.inviteForbidden') || 'Only admins can invite team members', 'error');
+      return;
+    }
+
     if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
       setError(t('validation.invalidEmail'));
       return;
@@ -62,7 +70,6 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
       `${t('settings.team.inviteBody') || 'You have been invited to join the Shelf team. Click the link below to accept:'}\n\n${inviteLink}`,
     );
 
-    // Prefer clipboard + optional mailto (mailto can fail in E2E / desktop without client)
     void navigator.clipboard?.writeText(inviteLink).then(
       () => {
         showNotification(t('settings.team.linkCopied') || 'Invite link copied to clipboard', 'success');
@@ -80,6 +87,28 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
 
     onInviteSent();
   };
+
+  if (!canInvite(state.role, state.permissions)) {
+    return (
+      <Modal isOpen={true} onClose={onClose} title={t('settings.team.inviteTitle')}>
+        <div data-testid="invite-forbidden" className="space-y-4">
+          <p className="text-sm text-red-400">
+            {t('settings.team.inviteForbidden') || 'Only admins can invite team members'}
+          </p>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              data-testid="invite-cancel"
+              onClick={onClose}
+              className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95"
+            >
+              {t('common.cancel')}
+            </button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal isOpen={true} onClose={onClose} title={t('settings.team.inviteTitle')}>

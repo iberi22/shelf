@@ -1,6 +1,6 @@
 import { Bot, Coins, Database, Fingerprint, Languages, Lock, MessageSquare, Users } from 'lucide-react';
 import type { RestoreStatePayload } from 'p2p-mesh-core';
-import { decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
+import { canInvite, decryptData, deriveKey, encryptData, getSessionKey } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
@@ -58,6 +58,7 @@ const NetworkConfig: React.FC = () => {
   );
 
   const isAdmin = state.role === 'admin' || team.find((m) => m.email === user?.email)?.role === 'owner';
+  const mayInvite = canInvite(state.role, state.permissions) || isAdmin;
 
   useEffect(() => {
     isBiometricsSupported()
@@ -284,13 +285,16 @@ const NetworkConfig: React.FC = () => {
       >
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
           <span className="text-xs text-[#F5F5DC]/70">{t('settings.team.description')}</span>
-          <button
-            type="button"
-            onClick={() => setInviteModalOpen(true)}
-            className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-opacity-80 text-sm active:scale-95 cursor-pointer"
-          >
-            {t('settings.team.invite')}
-          </button>
+          {mayInvite && (
+            <button
+              type="button"
+              data-testid="invite-member-button"
+              onClick={() => setInviteModalOpen(true)}
+              className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-opacity-80 text-sm active:scale-95 cursor-pointer"
+            >
+              {t('settings.team.invite')}
+            </button>
+          )}
         </div>
         <div className="space-y-2">
           {team.length > 0 ? (
