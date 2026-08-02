@@ -433,7 +433,7 @@ class P2PManager {
             if (this.peer?.disconnected) {
               this.peer.reconnect();
             } else {
-              this.init(this.localPeerId);
+              this.init(this.localPeerId || undefined);
             }
           }
         }, delay);
