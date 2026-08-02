@@ -60,10 +60,8 @@ test.describe('Responsive E2E Suite: Teléfonos y Tablets', () => {
 
     await page.waitForTimeout(500);
 
-    // Verificar el buscador de inventario
-    const searchInput = page
-      .locator('input[type="text"], input[type="search"], input[placeholder*="Buscar"], input[placeholder*="Search"]')
-      .first();
+    // Verificar el buscador de inventario (testid is stable even if i18n placeholders fail to load)
+    const searchInput = page.getByTestId('inventory-search-input');
     await expect(searchInput).toBeVisible({ timeout: 10000 });
 
     // Confirmar que no hay desbordamiento en la tabla/lista de inventario

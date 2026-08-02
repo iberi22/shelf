@@ -1,7 +1,9 @@
 import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
 
-const chromePath = process.env.PLAYWRIGHT_CHROME_PATH || (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : '/run/current-system/sw/bin/chromium');
+const chromePath =
+  process.env.PLAYWRIGHT_CHROME_PATH ||
+  (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : '/run/current-system/sw/bin/chromium');
 
 export default defineConfig({
   testDir: './tests',
@@ -31,7 +33,8 @@ export default defineConfig({
           ],
         },
       },
-      testIgnore: /.*(?:responsive-devices|mobile-touch-scroll|mobile-pagination|settings-mobile-layout|mobile-landing-e2e)\.spec\.ts/,
+      testIgnore:
+        /.*(?:responsive-devices|mobile-touch-scroll|mobile-pagination|settings-mobile-layout|mobile-landing-e2e)\.spec\.ts/,
     },
     {
       name: 'mobile-chrome',
@@ -46,7 +49,8 @@ export default defineConfig({
           ],
         },
       },
-      testMatch: /.*(?:responsive-devices|mobile-touch-scroll|mobile-pagination|settings-mobile-layout|mobile-landing-e2e)\.spec\.ts/,
+      testMatch:
+        /.*(?:responsive-devices|mobile-touch-scroll|mobile-pagination|settings-mobile-layout|mobile-landing-e2e)\.spec\.ts/,
     },
     {
       name: 'tablet',
@@ -56,6 +60,15 @@ export default defineConfig({
           'Mozilla/5.0 (iPad; CPU OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
         isMobile: true,
         hasTouch: true,
+        // Use system Chromium on NixOS (bundled headless_shell lacks libnspr4)
+        launchOptions: {
+          executablePath: chromePath,
+          args: [
+            '--allow-loopback-in-peer-connection',
+            '--disable-features=WebRtcHideLocalIpsWithMdns',
+            '--no-sandbox',
+          ],
+        },
       },
       testMatch: /.*(?:responsive-devices|settings-mobile-layout|mobile-landing-e2e)\.spec\.ts/,
     },
