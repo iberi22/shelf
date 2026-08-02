@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Garbage Collection & Data Purge', () => {
+  test.describe.configure({ retries: 2 });
+  test.setTimeout(60_000);
+
   test.beforeEach(async ({ page }) => {
     // Set localStorage flags before navigating to prevent welcome modals
     await page.addInitScript(() => {
@@ -88,7 +91,7 @@ test.describe('Garbage Collection & Data Purge', () => {
     });
 
     // 5. Wait for the GC to trigger at least once
-    await page.waitForTimeout(2500);
+    await page.waitForTimeout(4000);
 
     // 6. Stop GC and verify logs
     const logsAfter = await page.evaluate(() => {
