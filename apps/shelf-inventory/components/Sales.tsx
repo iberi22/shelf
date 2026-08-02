@@ -378,7 +378,11 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
   const addScannedProductToCart = (code: string) => {
     const product = findProductByScanCode(code);
     if (!product) {
-      const msg = t('sales.scan.notFound') || `Producto no encontrado: ${code}`;
+      const translated = t('sales.scan.notFound');
+      const msg =
+        !translated || translated === 'sales.scan.notFound'
+          ? `Producto no encontrado: ${code}`
+          : `${translated}: ${code}`;
       setScanFeedback(msg);
       showNotification(msg, 'error');
       return;
@@ -413,7 +417,9 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
       return [...prev, newItem];
     });
 
-    const okMsg = t('sales.scan.added') || `Agregado: ${product.name}`;
+    const translated = t('sales.scan.added');
+    const okMsg =
+      !translated || translated === 'sales.scan.added' ? `Agregado: ${product.name}` : `${translated}: ${product.name}`;
     setScanFeedback(okMsg);
     showNotification(okMsg, 'success');
   };
