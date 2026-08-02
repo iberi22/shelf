@@ -493,7 +493,9 @@ const Catalog: React.FC = () => {
 
   const handleExportPDFViaPrint = () => {
     const html = buildPrintableDocument('pdf');
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=1280,height=1600');
+    // Do not pass noopener/noreferrer in windowFeatures: both make window.open()
+    // return null in Chromium, so the opener cannot inject the printable iframe.
+    const printWindow = window.open('', '_blank', 'width=1280,height=1600');
     if (!printWindow) {
       return;
     }
@@ -506,6 +508,12 @@ const Catalog: React.FC = () => {
     iframe.style.border = 'none';
     printWindow.document.body.style.margin = '0';
     printWindow.document.body.appendChild(iframe);
+    // Drop opener reference after we finish writing (noopener semantics post-inject)
+    try {
+      printWindow.opener = null;
+    } catch {
+      // ignore cross-origin / browser restrictions
+    }
   };
 
   return (

@@ -1,21 +1,21 @@
 import { expect } from '@playwright/test';
-import { dismissModals } from './helpers';
 import {
-  test,
-  fullProductPermissions,
-  readOnlyProductPermissions,
   connectAllPeers,
-  setupAsRole,
-  getPeerId,
-  waitForPeerConnected,
   createProductViaDb,
   deleteProductViaDb,
-  editProductPriceViaDb,
-  getProductCount,
   disconnectPeer,
+  editProductPriceViaDb,
+  fullProductPermissions,
+  getPeerId,
+  getProductCount,
+  readOnlyProductPermissions,
   reconnectPeer,
+  setupAsRole,
+  test,
+  waitForPeerConnected,
 } from './fixtures/shelf-peers';
-import { expectProductSync, expectProductPriceSync } from './p2p-helpers';
+import { dismissModals } from './helpers';
+import { expectProductPriceSync, expectProductSync } from './p2p-helpers';
 
 // ---------------------------------------------------------------------------
 // Helpers local to this file
@@ -40,11 +40,7 @@ async function createProductViaUI(
   await expect(page.getByTestId('product-form')).toBeHidden({ timeout: 10_000 });
 }
 
-async function waitForProductInState(
-  page: import('@playwright/test').Page,
-  productName: string,
-  timeout = 30_000,
-) {
+async function waitForProductInState(page: import('@playwright/test').Page, productName: string, timeout = 30_000) {
   await expect
     .poll(
       async () =>
@@ -53,9 +49,7 @@ async function waitForProductInState(
             const dbSync = (window as any)._dbSyncForTest;
             if (!dbSync) return false;
             const state = dbSync.getState(dbSync.localPeerId);
-            return (state?.products as any[])?.some(
-              (p: any) => p.name === name,
-            ) ?? false;
+            return (state?.products as any[])?.some((p: any) => p.name === name) ?? false;
           } catch {
             return false;
           }
@@ -65,11 +59,7 @@ async function waitForProductInState(
     .toBe(true);
 }
 
-async function waitForProductAbsent(
-  page: import('@playwright/test').Page,
-  productName: string,
-  timeout = 30_000,
-) {
+async function waitForProductAbsent(page: import('@playwright/test').Page, productName: string, timeout = 30_000) {
   // Give time for sync propagation before asserting absence
   await page.waitForTimeout(2000);
   await expect
@@ -80,9 +70,7 @@ async function waitForProductAbsent(
             const dbSync = (window as any)._dbSyncForTest;
             if (!dbSync) return true;
             const state = dbSync.getState(dbSync.localPeerId);
-            return (state?.products as any[])?.some(
-              (p: any) => p.name === name,
-            ) ?? false;
+            return (state?.products as any[])?.some((p: any) => p.name === name) ?? false;
           } catch {
             return false;
           }
@@ -106,10 +94,7 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
   });
 
   // ── 1 ────────────────────────────────────────────────────────────────────
-  test('1. Admin creates product -> Collaborator sees it synced', async ({
-    adminPage,
-    collabPage,
-  }) => {
+  test('1. Admin creates product -> Collaborator sees it synced', async ({ adminPage, collabPage }) => {
     const adminId = await getPeerId(adminPage);
     const collabId = await getPeerId(collabPage);
 
@@ -121,7 +106,7 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     await waitForPeerConnected(collabPage, adminId);
 
     // Assign collaborator role
-    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions);
+    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions, collabPage);
 
     // Create product via UI
     await createProductViaUI(adminPage, {
@@ -138,18 +123,13 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     const collabHasProduct = await collabPage.evaluate(() => {
       const dbSync = (window as any)._dbSyncForTest;
       const state = dbSync?.getState(dbSync.localPeerId);
-      return (state?.products as any[])?.some(
-        (p: any) => p.name === 'Synced Product Alpha',
-      );
+      return (state?.products as any[])?.some((p: any) => p.name === 'Synced Product Alpha');
     });
     expect(collabHasProduct).toBe(true);
   });
 
   // ── 2 ────────────────────────────────────────────────────────────────────
-  test('2. Admin creates product -> Viewer sees it (read-only)', async ({
-    adminPage,
-    viewerPage,
-  }) => {
+  test('2. Admin creates product -> Viewer sees it (read-only)', async ({ adminPage, viewerPage }) => {
     const adminId = await getPeerId(adminPage);
     const viewerId = await getPeerId(viewerPage);
 
@@ -161,7 +141,7 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     await waitForPeerConnected(viewerPage, adminId);
 
     // Assign viewer role
-    await setupAsRole(adminPage, viewerId, 'viewer', readOnlyProductPermissions);
+    await setupAsRole(adminPage, viewerId, 'viewer', readOnlyProductPermissions, viewerPage);
 
     // Create product via UI
     await createProductViaUI(adminPage, {
@@ -185,10 +165,7 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
   });
 
   // ── 3 ────────────────────────────────────────────────────────────────────
-  test('3. Collaborator edits product -> Admin sees the change', async ({
-    adminPage,
-    collabPage,
-  }) => {
+  test('3. Collaborator edits product -> Admin sees the change', async ({ adminPage, collabPage }) => {
     const adminId = await getPeerId(adminPage);
     const collabId = await getPeerId(collabPage);
 
@@ -200,7 +177,7 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     await waitForPeerConnected(collabPage, adminId);
 
     // Setup collaborator
-    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions);
+    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions, collabPage);
 
     // Admin creates product
     await createProductViaDb(adminPage, {
@@ -221,20 +198,14 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
   });
 
   // ── 4 ────────────────────────────────────────────────────────────────────
-  test('4. Viewer cannot edit - permission block', async ({
-    adminPage,
-    collabPage,
-    viewerPage,
-  }) => {
-    const adminId = await getPeerId(adminPage);
-    const collabId = await getPeerId(collabPage);
+  test('4. Viewer cannot edit - permission block', async ({ adminPage, collabPage, viewerPage }) => {
     const viewerId = await getPeerId(viewerPage);
 
     // Connect all three
     await connectAllPeers(adminPage, collabPage, viewerPage);
 
     // Setup viewer as read-only
-    await setupAsRole(adminPage, viewerId, 'viewer', readOnlyProductPermissions);
+    await setupAsRole(adminPage, viewerId, 'viewer', readOnlyProductPermissions, viewerPage);
 
     // Admin creates a product
     await createProductViaDb(adminPage, {
@@ -251,9 +222,7 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
         const dbSync = (window as any)._dbSyncForTest;
         if (!dbSync?.upsertEntity || !dbSync?.localPeerId) return;
         const state = dbSync.getState(dbSync.localPeerId);
-        const product = (state?.products as any[])?.find(
-          (p: any) => p.name === 'Should Not Be Edited',
-        );
+        const product = (state?.products as any[])?.find((p: any) => p.name === 'Should Not Be Edited');
         if (!product) return;
         // Viewer tries to edit — should be blocked by security guard
         dbSync.upsertEntity('products', {
@@ -274,17 +243,12 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
       const state = dbSync?.getState(dbSync.localPeerId);
       return state?.products as any[];
     });
-    const adminProduct = adminState?.find(
-      (p: any) => p.name === 'Should Not Be Edited',
-    );
+    const adminProduct = adminState?.find((p: any) => p.name === 'Should Not Be Edited');
     expect(adminProduct?.price).toBe(200);
   });
 
   // ── 5 ────────────────────────────────────────────────────────────────────
-  test('5. Admin changes Collaborator to read-only -> Collaborator blocked', async ({
-    adminPage,
-    collabPage,
-  }) => {
+  test('5. Admin changes Collaborator to read-only -> Collaborator blocked', async ({ adminPage, collabPage }) => {
     const adminId = await getPeerId(adminPage);
     const collabId = await getPeerId(collabPage);
 
@@ -296,7 +260,7 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     await waitForPeerConnected(collabPage, adminId);
 
     // Give collab full permissions
-    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions);
+    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions, collabPage);
     await collabPage.waitForTimeout(1500);
 
     // Collab creates a product successfully
@@ -309,7 +273,7 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     await expectProductSync(adminPage, collabPage, 'Collab Product Before Demotion');
 
     // Admin changes collab to read-only
-    await setupAsRole(adminPage, collabId, 'collaborator', readOnlyProductPermissions);
+    await setupAsRole(adminPage, collabId, 'collaborator', readOnlyProductPermissions, collabPage);
     await collabPage.waitForTimeout(2000);
 
     // Collab tries to create another product
@@ -337,20 +301,13 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     const hasSecond = await adminPage.evaluate(() => {
       const dbSync = (window as any)._dbSyncForTest;
       const state = dbSync?.getState(dbSync.localPeerId);
-      return (state?.products as any[])?.some(
-        (p: any) => p.name === 'Collab Product After Demotion',
-      );
+      return (state?.products as any[])?.some((p: any) => p.name === 'Collab Product After Demotion');
     });
     expect(hasSecond).toBe(false);
   });
 
   // ── 6 ────────────────────────────────────────────────────────────────────
-  test('6. Concurrent edits - CRDT merge resolves conflict', async ({
-    adminPage,
-    collabPage,
-    viewerPage,
-  }) => {
-    const adminId = await getPeerId(adminPage);
+  test('6. Concurrent edits - CRDT merge resolves conflict', async ({ adminPage, collabPage, viewerPage }) => {
     const collabId = await getPeerId(collabPage);
     const viewerId = await getPeerId(viewerPage);
 
@@ -358,8 +315,8 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     await connectAllPeers(adminPage, collabPage, viewerPage);
 
     // Setup collaborator
-    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions);
-    await setupAsRole(adminPage, viewerId, 'viewer', readOnlyProductPermissions);
+    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions, collabPage);
+    await setupAsRole(adminPage, viewerId, 'viewer', readOnlyProductPermissions, viewerPage);
 
     // Admin creates shared product
     await createProductViaDb(adminPage, {
@@ -386,16 +343,12 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     const finalAdminPrice = await adminPage.evaluate(() => {
       const dbSync = (window as any)._dbSyncForTest;
       const state = dbSync?.getState(dbSync.localPeerId);
-      return (state?.products as any[])?.find(
-        (p: any) => p.name === 'Conflict Product',
-      )?.price;
+      return (state?.products as any[])?.find((p: any) => p.name === 'Conflict Product')?.price;
     });
     const finalCollabPrice = await collabPage.evaluate(() => {
       const dbSync = (window as any)._dbSyncForTest;
       const state = dbSync?.getState(dbSync.localPeerId);
-      return (state?.products as any[])?.find(
-        (p: any) => p.name === 'Conflict Product',
-      )?.price;
+      return (state?.products as any[])?.find((p: any) => p.name === 'Conflict Product')?.price;
     });
 
     // Both should converge to the same value
@@ -407,18 +360,13 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     const viewerPrice = await viewerPage.evaluate(() => {
       const dbSync = (window as any)._dbSyncForTest;
       const state = dbSync?.getState(dbSync.localPeerId);
-      return (state?.products as any[])?.find(
-        (p: any) => p.name === 'Conflict Product',
-      )?.price;
+      return (state?.products as any[])?.find((p: any) => p.name === 'Conflict Product')?.price;
     });
     expect(viewerPrice).toBe(finalAdminPrice);
   });
 
   // ── 7 ────────────────────────────────────────────────────────────────────
-  test('7. Disconnect and reconnect - delta sync works', async ({
-    adminPage,
-    collabPage,
-  }) => {
+  test('7. Disconnect and reconnect - delta sync works', async ({ adminPage, collabPage }) => {
     const adminId = await getPeerId(adminPage);
     const collabId = await getPeerId(collabPage);
 
@@ -454,9 +402,7 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     const hasBBeforeReconnect = await collabPage.evaluate(() => {
       const dbSync = (window as any)._dbSyncForTest;
       const state = dbSync?.getState(dbSync.localPeerId);
-      return (state?.products as any[])?.some(
-        (p: any) => p.name === 'Delta Sync Product B',
-      );
+      return (state?.products as any[])?.some((p: any) => p.name === 'Delta Sync Product B');
     });
     expect(hasBBeforeReconnect).toBe(false);
 
@@ -470,12 +416,7 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
   });
 
   // ── 8 ────────────────────────────────────────────────────────────────────
-  test('8. Three products sync across all 3 nodes', async ({
-    adminPage,
-    collabPage,
-    viewerPage,
-  }) => {
-    const adminId = await getPeerId(adminPage);
+  test('8. Three products sync across all 3 nodes', async ({ adminPage, collabPage, viewerPage }) => {
     const collabId = await getPeerId(collabPage);
     const viewerId = await getPeerId(viewerPage);
 
@@ -483,14 +424,10 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     await connectAllPeers(adminPage, collabPage, viewerPage);
 
     // Setup roles
-    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions);
-    await setupAsRole(adminPage, viewerId, 'viewer', readOnlyProductPermissions);
+    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions, collabPage);
+    await setupAsRole(adminPage, viewerId, 'viewer', readOnlyProductPermissions, viewerPage);
 
-    const productNames = [
-      'Multi Sync Product 1',
-      'Multi Sync Product 2',
-      'Multi Sync Product 3',
-    ];
+    const productNames = ['Multi Sync Product 1', 'Multi Sync Product 2', 'Multi Sync Product 3'];
 
     // Create 3 products sequentially
     for (const [i, name] of productNames.entries()) {
@@ -519,12 +456,7 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
   });
 
   // ── 9 ────────────────────────────────────────────────────────────────────
-  test('9. Admin deletes product -> disappears on other nodes', async ({
-    adminPage,
-    collabPage,
-    viewerPage,
-  }) => {
-    const adminId = await getPeerId(adminPage);
+  test('9. Admin deletes product -> disappears on other nodes', async ({ adminPage, collabPage, viewerPage }) => {
     const collabId = await getPeerId(collabPage);
     const viewerId = await getPeerId(viewerPage);
 
@@ -532,8 +464,8 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     await connectAllPeers(adminPage, collabPage, viewerPage);
 
     // Setup roles
-    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions);
-    await setupAsRole(adminPage, viewerId, 'viewer', readOnlyProductPermissions);
+    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions, collabPage);
+    await setupAsRole(adminPage, viewerId, 'viewer', readOnlyProductPermissions, viewerPage);
 
     // Create product
     await createProductViaDb(adminPage, {
@@ -563,20 +495,13 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     const adminStillHas = await adminPage.evaluate(() => {
       const dbSync = (window as any)._dbSyncForTest;
       const state = dbSync?.getState(dbSync.localPeerId);
-      return (state?.products as any[])?.some(
-        (p: any) => p.name === 'Product To Delete',
-      );
+      return (state?.products as any[])?.some((p: any) => p.name === 'Product To Delete');
     });
     expect(adminStillHas).toBe(false);
   });
 
   // ── 10 ───────────────────────────────────────────────────────────────────
-  test('10. Seed mock data syncs between all 3 nodes', async ({
-    adminPage,
-    collabPage,
-    viewerPage,
-  }) => {
-    const adminId = await getPeerId(adminPage);
+  test('10. Seed mock data syncs between all 3 nodes', async ({ adminPage, collabPage, viewerPage }) => {
     const collabId = await getPeerId(collabPage);
     const viewerId = await getPeerId(viewerPage);
 
@@ -584,8 +509,8 @@ test.describe('P2P Three Nodes — Critical Routes', () => {
     await connectAllPeers(adminPage, collabPage, viewerPage);
 
     // Setup roles
-    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions);
-    await setupAsRole(adminPage, viewerId, 'viewer', readOnlyProductPermissions);
+    await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions, collabPage);
+    await setupAsRole(adminPage, viewerId, 'viewer', readOnlyProductPermissions, viewerPage);
 
     // Create seed data: 5 products programmatically
     const seedProducts = [

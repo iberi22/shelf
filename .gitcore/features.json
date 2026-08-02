@@ -5,7 +5,7 @@
     "project_display": "Shelf Inventory Management",
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
-    "updated": "2026-08-01",
+    "updated": "2026-08-02",
     "version": "2.0.5",
     "sdlc_phase": "ola-i-edge-authz",
     "total_features": 21,
@@ -137,6 +137,7 @@
         "Cantidad se actualiza automáticamente al vender"
       ],
       "implementation_percentage": 97,
+      "progress_pct": 97,
       "maturity": "hardened",
       "evidence": [
         "apps/shelf-inventory/components/Inventory.tsx",
@@ -172,6 +173,7 @@
         "Cálculo automático de revenue y profit por venta"
       ],
       "implementation_percentage": 97,
+      "progress_pct": 97,
       "maturity": "hardened",
       "evidence": [
         "apps/shelf-inventory/components/Sales.tsx",
@@ -200,6 +202,7 @@
         "Top productos más vendidos"
       ],
       "implementation_percentage": 92,
+      "progress_pct": 92,
       "maturity": "integrated",
       "evidence": [
         "apps/shelf-inventory/components/Dashboard.tsx",
@@ -227,6 +230,7 @@
         "Refactorizado: ahorro de 300+ líneas de código duplicado"
       ],
       "implementation_percentage": 98,
+      "progress_pct": 98,
       "maturity": "hardened",
       "evidence": [
         "ContactManagementPage.tsx",
@@ -255,6 +259,7 @@
         "Estado de orden: pendiente, recibida, cancelada"
       ],
       "implementation_percentage": 94,
+      "progress_pct": 94,
       "maturity": "integrated",
       "evidence": [
         "PurchaseOrders.tsx",
@@ -282,6 +287,7 @@
         "Feedback visual de escaneo exitoso"
       ],
       "implementation_percentage": 90,
+      "progress_pct": 90,
       "maturity": "integrated",
       "evidence": ["BarcodeScanner.tsx", "Inventory handleScanSuccess → setSku", "tests/scanner-lifecycle.spec.ts"],
       "gaps": []
@@ -305,6 +311,7 @@
         "Contexto de inventario/ventas inyectado al prompt"
       ],
       "implementation_percentage": 86,
+      "progress_pct": 86,
       "maturity": "integrated",
       "evidence": [
         "AIChat.tsx en Reports.tsx",
@@ -334,6 +341,7 @@
         "Multi-dispositivo de datos vía P2P o backup JSON (no cloud login)"
       ],
       "implementation_percentage": 88,
+      "progress_pct": 88,
       "maturity": "integrated",
       "evidence": [
         "AuthContext.tsx → localAuthManager only",
@@ -362,6 +370,7 @@
         "UI simplificada sin tiers"
       ],
       "implementation_percentage": 90,
+      "progress_pct": 90,
       "maturity": "integrated",
       "evidence": [
         "SubscriptionContext simplified (isPro=true always)",
@@ -389,6 +398,7 @@
         "Sistema de traducción vía archivos de locales"
       ],
       "implementation_percentage": 90,
+      "progress_pct": 90,
       "maturity": "integrated",
       "evidence": ["apps/shelf-inventory/locales/*.json (20 files)", "I18nContext.tsx", "LanguageSelector.tsx"],
       "gaps": ["Secondary locales may lag EN/ES/PT"]
@@ -413,6 +423,7 @@
         "Persistencia de todas las configuraciones"
       ],
       "implementation_percentage": 93,
+      "progress_pct": 93,
       "maturity": "integrated",
       "evidence": [
         "NetworkConfig.tsx (backup encrypted, restore, reset)",
@@ -442,6 +453,7 @@
         "Valor total de inventario"
       ],
       "implementation_percentage": 92,
+      "progress_pct": 92,
       "maturity": "integrated",
       "evidence": [
         "Reports.tsx (Line chart, topProducts, filters, PDF valuation)",
@@ -470,6 +482,7 @@
         "Shared mesh state (mismo org de datos vía CRDT, no multi-tenant cloud)"
       ],
       "implementation_percentage": 90,
+      "progress_pct": 90,
       "maturity": "integrated",
       "evidence": [
         "TeamMemberRole + teamRoleToP2PRole in p2p-mesh-core types",
@@ -498,6 +511,7 @@
         "Feedback visual del proceso de importación"
       ],
       "implementation_percentage": 94,
+      "progress_pct": 94,
       "maturity": "hardened",
       "evidence": [
         "lib/csvProductImport.ts previewCsvHeaders + columnMapping",
@@ -526,6 +540,7 @@
         "Integración con p2p-mesh-core para handshake seguro"
       ],
       "implementation_percentage": 90,
+      "progress_pct": 90,
       "maturity": "hardened",
       "evidence": [
         "crypto-pqc.ts ML-KEM-768 + ML-DSA-65",
@@ -557,6 +572,7 @@
         "Empaquetado como p2p-mesh-core (package reutilizable)"
       ],
       "implementation_percentage": 90,
+      "progress_pct": 90,
       "maturity": "hardened",
       "evidence": [
         "packages/p2p-mesh-core/src/p2p.ts",
@@ -585,6 +601,7 @@
         "Funciona 100% offline → sync cuando hay conexión"
       ],
       "implementation_percentage": 95,
+      "progress_pct": 95,
       "maturity": "hardened",
       "evidence": [
         "database-sync.ts Y.Maps + encodeStateAsUpdate",
@@ -614,6 +631,7 @@
         "React bindings via edge-mesh-react"
       ],
       "implementation_percentage": 88,
+      "progress_pct": 88,
       "maturity": "integrated",
       "evidence": [
         "packages/edge-mesh (214 unit tests)",
@@ -649,6 +667,7 @@
         "Unit tests for CPU path"
       ],
       "implementation_percentage": 88,
+      "progress_pct": 88,
       "maturity": "integrated",
       "evidence": [
         "packages/gpu-agent/src/gpu-agent.ts",
@@ -677,6 +696,7 @@
         "CI/CD con GitHub Actions (.github/workflows/ci.yml)"
       ],
       "implementation_percentage": 87,
+      "progress_pct": 87,
       "maturity": "integrated",
       "evidence": [
         "~35 Playwright specs",
@@ -706,6 +726,7 @@
         "Actualización automática cuando hay nueva versión"
       ],
       "implementation_percentage": 90,
+      "progress_pct": 90,
       "maturity": "integrated",
       "evidence": [
         "vite.config.ts VitePWA",

@@ -35,8 +35,12 @@ test.describe('Audit Log Tracing', () => {
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();
     const cleanup = async () => {
-      try { await adminContext.close(); } catch (_) {}
-      try { await collabContext.close(); } catch (_) {}
+      try {
+        await adminContext.close();
+      } catch (_) {}
+      try {
+        await collabContext.close();
+      } catch (_) {}
     };
 
     captureLogs(adminPage, 'ADMIN');
@@ -63,12 +67,28 @@ test.describe('Audit Log Tracing', () => {
     // We use the internal _p2pManagerForTest API the same way p2p-sync.spec.ts does.
     await connectPeers(adminPage, collabId, 20000);
 
+    // Establish admin as mesh master on BOTH sides so CHANGE_ROLE is authorized
+    await adminPage.evaluate((authorityPeerId) => {
+      const dbSync = (window as any)._dbSyncForTest;
+      const p2p = (window as any)._p2pManagerForTest;
+      dbSync?.setMasterPeerId(authorityPeerId);
+      dbSync?.updateLinkedNode?.(authorityPeerId, { role: 'admin', isMaster: true }, authorityPeerId);
+      if (p2p) p2p.role = 'admin';
+    }, adminId);
+    await collabPage.evaluate((authorityPeerId) => {
+      const dbSync = (window as any)._dbSyncForTest;
+      dbSync?.setMasterPeerId(authorityPeerId);
+      dbSync?.updateLinkedNode?.(authorityPeerId, { role: 'admin', isMaster: true }, authorityPeerId);
+    }, adminId);
+
     // Assign collaborator role programmatically
     await adminPage.evaluate(
       ({ targetPeerId, nextPermissions }) => {
         const p2p = (window as any)._p2pManagerForTest;
         const dbSync = (window as any)._dbSyncForTest;
-        dbSync?.updatePeerConfig(targetPeerId, 'collaborator', nextPermissions);
+        const localPeerId = dbSync?.localPeerId;
+        dbSync?.updatePeerConfig(targetPeerId, 'collaborator', nextPermissions, localPeerId);
+        dbSync?.updateLinkedNode?.(targetPeerId, { role: 'collaborator', permissions: nextPermissions }, localPeerId);
         p2p?.sendTo(targetPeerId, {
           type: 'CHANGE_ROLE',
           payload: { targetPeerId, role: 'collaborator', permissions: nextPermissions },
@@ -81,9 +101,12 @@ test.describe('Audit Log Tracing', () => {
       { targetPeerId: collabId, nextPermissions: collaboratorPermissions },
     );
 
-    // Allow time for role change messages to propagate
-    await adminPage.waitForTimeout(3000);
-    await collabPage.waitForTimeout(3000);
+    // Wait until collaborator AppState reflects the assigned role (drives audit peerRole)
+    await expect
+      .poll(async () => collabPage.evaluate(() => (window as any).__shelfAppStateForTest?.role ?? null), {
+        timeout: 15000,
+      })
+      .toBe('collaborator');
 
     // Debug: Log collab state details
     const collabStateDetails = await collabPage.evaluate(() => {

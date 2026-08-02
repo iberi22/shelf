@@ -1,4 +1,4 @@
-import { test as base, expect, type Page, type BrowserContext } from '@playwright/test';
+import { type BrowserContext, test as base, expect, type Page } from '@playwright/test';
 import { addOverlayBlocker, dismissModals } from '../helpers';
 import { getLocalPeerId } from '../p2p-helpers';
 
@@ -67,11 +67,7 @@ export const readOnlyProductPermissions: PeerPermissions = {
  */
 export async function waitForPeerReady(page: Page, timeout = 30_000): Promise<void> {
   await expect
-    .poll(
-      async () =>
-        page.evaluate(() => Boolean((window as any)._p2pManagerForTest)),
-      { timeout },
-    )
+    .poll(async () => page.evaluate(() => Boolean((window as any)._p2pManagerForTest)), { timeout })
     .toBe(true);
 }
 
@@ -89,11 +85,7 @@ export async function getPeerId(page: Page): Promise<string> {
  * The adminPage is the authority — it initiates outgoing connections
  * to both collabPage and viewerPage.
  */
-export async function connectAllPeers(
-  adminPage: Page,
-  collabPage: Page,
-  viewerPage: Page,
-): Promise<void> {
+export async function connectAllPeers(adminPage: Page, collabPage: Page, viewerPage: Page): Promise<void> {
   const adminId = await getPeerId(adminPage);
   const collabId = await getPeerId(collabPage);
   const viewerId = await getPeerId(viewerPage);
@@ -125,9 +117,7 @@ async function connectOneWay(sourcePage: Page, targetPeerId: string): Promise<vo
   await expect
     .poll(
       async () =>
-        sourcePage.evaluate((id) =>
-          Boolean((window as any)._p2pManagerForTest?.isPeerConnected(id)),
-        targetPeerId),
+        sourcePage.evaluate((id) => Boolean((window as any)._p2pManagerForTest?.isPeerConnected(id)), targetPeerId),
       { timeout: 30_000 },
     )
     .toBe(true);
@@ -138,26 +128,48 @@ async function connectOneWay(sourcePage: Page, targetPeerId: string): Promise<vo
  */
 export async function waitForPeerConnected(page: Page, peerId: string, timeout = 30_000): Promise<void> {
   await expect
-    .poll(
-      async () =>
-        page.evaluate((id) =>
-          Boolean((window as any)._p2pManagerForTest?.isPeerConnected(id)),
-        peerId),
-      { timeout },
-    )
+    .poll(async () => page.evaluate((id) => Boolean((window as any)._p2pManagerForTest?.isPeerConnected(id)), peerId), {
+      timeout,
+    })
     .toBe(true);
+}
+
+/**
+ * Make `targetPage` accept `authorityPeerId` as mesh master so CHANGE_ROLE
+ * messages from the admin are authorized by P2PSyncManager.
+ */
+export async function acceptAuthority(targetPage: Page, authorityPeerId: string): Promise<void> {
+  await targetPage.evaluate((adminId) => {
+    const dbSync = (window as any)._dbSyncForTest;
+    if (!dbSync?.setMasterPeerId) {
+      throw new Error('P2P test hooks are unavailable');
+    }
+    dbSync.setMasterPeerId(adminId);
+    dbSync.updateLinkedNode?.(adminId, { role: 'admin', isMaster: true }, adminId);
+  }, authorityPeerId);
 }
 
 /**
  * Set a peer's role and permissions from the admin page.
  * The adminPage must be the master peer.
+ * Pass `targetPage` so the remote peer accepts admin authority before role sync.
  */
 export async function setupAsRole(
   adminPage: Page,
   targetPeerId: string,
   role: 'collaborator' | 'viewer' | 'custom',
   permissions: PeerPermissions,
+  targetPage?: Page,
 ): Promise<void> {
+  const adminId = await adminPage.evaluate(() => (window as any)._dbSyncForTest?.localPeerId as string | null);
+  if (!adminId) {
+    throw new Error('Admin local peer id is not ready');
+  }
+
+  if (targetPage) {
+    await acceptAuthority(targetPage, adminId);
+  }
+
   await adminPage.evaluate(
     ({ targetPeerId, role, permissions }) => {
       const p2p = (window as any)._p2pManagerForTest;
@@ -184,6 +196,19 @@ export async function setupAsRole(
     },
     { targetPeerId, role, permissions },
   );
+
+  if (targetPage) {
+    await expect
+      .poll(
+        async () =>
+          targetPage.evaluate(() => {
+            const appState = (window as any).__shelfAppStateForTest;
+            return appState?.role ?? null;
+          }),
+        { timeout: 15_000 },
+      )
+      .toBe(role === 'custom' ? 'custom' : role);
+  }
 }
 
 /**
@@ -228,26 +253,25 @@ export async function deleteProductViaDb(page: Page, productName: string): Promi
 /**
  * Edit a product's price via dbSync on the given page.
  */
-export async function editProductPriceViaDb(
-  page: Page,
-  productName: string,
-  newPrice: number,
-): Promise<void> {
-  await page.evaluate(({ name, price }) => {
-    const dbSync = (window as any)._dbSyncForTest;
-    if (!dbSync?.upsertEntity || !dbSync?.localPeerId) {
-      throw new Error('P2P test hooks are unavailable');
-    }
-    const state = dbSync.getState(dbSync.localPeerId);
-    const product = (state?.products as any[])?.find((p: any) => p.name === name);
-    if (!product) throw new Error(`Product "${name}" not found in local state`);
-    dbSync.upsertEntity('products', {
-      ...product,
-      price,
-      updatedAt: new Date().toISOString(),
-      updatedBy: dbSync.localPeerId,
-    });
-  }, { name: productName, price: newPrice });
+export async function editProductPriceViaDb(page: Page, productName: string, newPrice: number): Promise<void> {
+  await page.evaluate(
+    ({ name, price }) => {
+      const dbSync = (window as any)._dbSyncForTest;
+      if (!dbSync?.upsertEntity || !dbSync?.localPeerId) {
+        throw new Error('P2P test hooks are unavailable');
+      }
+      const state = dbSync.getState(dbSync.localPeerId);
+      const product = (state?.products as any[])?.find((p: any) => p.name === name);
+      if (!product) throw new Error(`Product "${name}" not found in local state`);
+      dbSync.upsertEntity('products', {
+        ...product,
+        price,
+        updatedAt: new Date().toISOString(),
+        updatedBy: dbSync.localPeerId,
+      });
+    },
+    { name: productName, price: newPrice },
+  );
 }
 
 /**
