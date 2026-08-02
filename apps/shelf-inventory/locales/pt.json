@@ -197,6 +197,7 @@
     "noDataForPeriod": "Não há dados de vendas disponíveis para o período selecionado."
   },
   "settings": {
+    "languageDescription": "Altere o idioma da interface nas configurações.",
     "title": "Configurações",
     "general": {
       "title": "Geral"
@@ -518,7 +519,40 @@
       "quantityMerged": "Combined Quantity: {{qty}}",
       "price": "Price: {{val}}",
       "cost": "Cost: {{val}}",
-      "updatedAt": "Updated: {{val}}"
+      "updatedAt": "Updated: {{val}}",
+      "pendingEditTitle": "Edição Pendente",
+      "pendingEditDesc": "Um colaborador (Peer: {{peerId}}) modificou este item. Por favor, selecione quais dados deseja manter.",
+      "noDiffs": "Nenhuma diferença detectável.",
+      "currentVersion": "Versão Atual (Admin)",
+      "newVersion": "Nova Versão (Vendedor)",
+      "pendingCount": "Restam {{count}} pendentes",
+      "rejectAll": "Rejeitar Tudo",
+      "mergeSave": "Mesclar e Salvar"
+    }
+  },
+  "onboarding": {
+    "title": "Bem-vindo ao Shelf!",
+    "subtitle": "Configure seu estoque em um passo. Selecione o tipo de negócio que você gerencia e o Shelf configurará automaticamente as opções de variante, cores, medidas e mais.",
+    "customizationNote": "Você pode personalizar tudo depois em Configurações.",
+    "setupBtn": "Configurar meu estoque",
+    "skipBtn": "Ignorar — usar configuração padrão",
+    "businessTypeTitle": "Que tipo de negócio você gerencia?",
+    "businessTypeSubtitle": "Selecione a opção que melhor descreve seu estoque",
+    "backBtn": "← Voltar",
+    "previewTitle": "O Shelf configurará seu estoque com estas opções:",
+    "variantDimensions": "Dimensões da variante",
+    "colors": "Cores ({{count}})",
+    "measurements": "Medidas ({{count}})",
+    "materials": "Materiais ({{count}})",
+    "suggestedUnits": "Unidades sugeridas",
+    "changeBtn": "← Alterar",
+    "confirmBtn": "Configurar! ✓",
+    "categories": {
+      "retail": "Varejo / Loja",
+      "food": "Alimentos e Bebidas",
+      "manufacturing": "Manufatura / Construção",
+      "services": "Serviços",
+      "general": "Geral"
     }
   }
 }

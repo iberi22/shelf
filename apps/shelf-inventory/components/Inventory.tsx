@@ -1385,7 +1385,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
               onChange={(e) => setName(e.target.value)}
               className={`w-full p-2 bg-[#121212] border rounded-md ${errors.name ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
             />
-            {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
+            {errors.name && (
+              <p data-testid="product-name-error" className="text-red-400 text-xs mt-1">
+                {errors.name}
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

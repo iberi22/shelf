@@ -189,7 +189,7 @@ const NetworkConfig: React.FC = () => {
               <Languages className="h-4 w-4 text-[#4ADE80]" aria-hidden="true" />
               {t('settings.language') || t('common.language') || 'Language'}
             </div>
-            <p className="mt-1 text-xs text-[#F5F5DC]/60">Cambia el idioma de la interfaz desde configuracion.</p>
+            <p className="mt-1 text-xs text-[#F5F5DC]/60">{t('settings.languageDescription')}</p>
           </div>
           <div className="self-start sm:self-center" data-testid="settings-language-selector">
             <LanguageSelector direction="down" />
