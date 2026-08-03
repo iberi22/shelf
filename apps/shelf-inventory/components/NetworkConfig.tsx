@@ -9,6 +9,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
 import useLocalStorage from '../hooks/useLocalStorage';
+import useXavierMemory from '../hooks/useXavierMemory';
 import { isBiometricsSupported } from '../lib/webauthn';
 import CollapsibleCard from './CollapsibleCard';
 import ImportCSVModal from './ImportCSVModal';
@@ -44,6 +45,20 @@ const NetworkConfig: React.FC = () => {
   const [aiEngine, setAiEngine] = useLocalStorage<'auto' | 'cloud' | 'local' | 'gemini' | 'nano'>('aiEngine', 'auto');
   const [localAiModel, setLocalAiModel] = useLocalStorage('localAiModel', 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC');
   const { currencyCode, setCurrencyCode, numberFormat, setNumberFormat } = useCurrency();
+
+  const { add: xavierAddMem } = useXavierMemory();
+
+  useEffect(() => {
+    const prefs = {
+      lowStockThreshold,
+      tablePageSize,
+      useLocalOcr,
+      currencyCode,
+      numberFormat,
+      updatedAt: new Date().toISOString(),
+    };
+    void xavierAddMem('user/preferences', JSON.stringify(prefs));
+  }, [lowStockThreshold, tablePageSize, useLocalOcr, currencyCode, numberFormat, xavierAddMem]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isInviteModalOpen, setInviteModalOpen] = useState(false);
   const [feedback, setFeedback] = useState('');

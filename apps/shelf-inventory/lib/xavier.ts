@@ -25,6 +25,32 @@ export type XavierSyncCounts = {
 export type XavierAddResult = { ok: true; id?: string } | { ok: false; reason: string };
 export type XavierSearchResult = { ok: true; results: unknown[] } | { ok: false; reason: string; results: unknown[] };
 
+export class InMemoryStorage {
+  private memories: Map<string, string> = new Map();
+
+  add(path: string, content: string): void {
+    const fullPath = resolveXavierPath(path);
+    this.memories.set(fullPath, content);
+  }
+
+  search(query: string): Array<{ path: string; content: string }> {
+    const q = query.toLowerCase();
+    const results: Array<{ path: string; content: string }> = [];
+    for (const [path, content] of this.memories.entries()) {
+      if (path.toLowerCase().includes(q) || content.toLowerCase().includes(q)) {
+        results.push({ path, content });
+      }
+    }
+    return results;
+  }
+
+  clear(): void {
+    this.memories.clear();
+  }
+}
+
+export const localFallbackStorage = new InMemoryStorage();
+
 const SYNC_DEBOUNCE_MS = 2_000;
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingSyncCounts: XavierSyncCounts | null = null;
@@ -131,10 +157,12 @@ export async function xavierAdd(path: string, content: string): Promise<XavierAd
     body: JSON.stringify({ path: fullPath, content }),
   });
   if (!res) {
+    localFallbackStorage.add(path, content);
     return { ok: false, reason: 'unreachable' };
   }
   if (!res.ok) {
     console.warn(`[Xavier] add failed: ${res.status} ${res.statusText}`);
+    localFallbackStorage.add(path, content);
     return { ok: false, reason: `http_${res.status}` };
   }
   try {
@@ -155,11 +183,13 @@ export async function xavierSearch(query: string): Promise<XavierSearchResult> {
     body: JSON.stringify({ query }),
   });
   if (!res) {
-    return { ok: false, reason: 'unreachable', results: [] };
+    const localResults = localFallbackStorage.search(query);
+    return { ok: false, reason: 'unreachable', results: localResults };
   }
   if (!res.ok) {
     console.warn(`[Xavier] search failed: ${res.status} ${res.statusText}`);
-    return { ok: false, reason: `http_${res.status}`, results: [] };
+    const localResults = localFallbackStorage.search(query);
+    return { ok: false, reason: `http_${res.status}`, results: localResults };
   }
   try {
     const data = (await res.json()) as { results?: unknown[]; memories?: unknown[] } | unknown[];
