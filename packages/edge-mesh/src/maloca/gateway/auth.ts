@@ -34,7 +34,18 @@ async function hmacSha256(secret: Uint8Array, data: Uint8Array): Promise<Uint8Ar
 }
 
 // Secreto para JWT
-const JWT_SECRET = new TextEncoder().encode('maloca-gateway-default-secret-change-me');
+const getJwtSecret = (): Uint8Array => {
+  if (typeof (globalThis as any).process !== 'undefined' && (globalThis as any).process?.env?.MALOCA_JWT_SECRET) {
+    return new TextEncoder().encode((globalThis as any).process.env.MALOCA_JWT_SECRET);
+  }
+  console.warn(
+    'MALOCA_JWT_SECRET is not set. Falling back to an ephemeral random secret. Tokens will invalidate on restart.',
+  );
+  const secret = new Uint8Array(32);
+  crypto.getRandomValues(secret);
+  return secret;
+};
+const JWT_SECRET = getJwtSecret();
 
 export const authRateLimiter = new TokenBucketRateLimiter({
   tokensPerInterval: 3,
