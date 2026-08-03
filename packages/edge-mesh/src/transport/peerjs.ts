@@ -27,7 +27,7 @@ export class PeerJSTransport implements ITransport {
   private readonly peer: Peer;
   private readonly conexiones: Map<string, DataConnection>;
   private readonly deduplicator: MessageDeduplicator;
-  private conectado = false;
+  private conectado: boolean = false;
 
   constructor(nodoId: NodoId, options: PeerJSTransportOptions) {
     this.nodoId = nodoId;

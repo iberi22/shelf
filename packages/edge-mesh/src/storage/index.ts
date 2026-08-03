@@ -16,7 +16,7 @@ export interface IStorage {
 
 export class StorageError extends Error {
   readonly codigo: string;
-  constructor(mensaje: string, codigo = 'STORAGE_ERROR') {
+  constructor(mensaje: string, codigo: string = 'STORAGE_ERROR') {
     super(mensaje);
     this.name = 'StorageError';
     this.codigo = codigo;

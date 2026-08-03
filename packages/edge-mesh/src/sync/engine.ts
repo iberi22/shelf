@@ -56,8 +56,8 @@ export class SyncEngine {
   private readonly batchSize: number;
   private readonly timeoutMs: number;
   private readonly _direction: SyncDirection;
-  private sincronizando = false;
-  private clockLocal = 0;
+  private sincronizando: boolean = false;
+  private clockLocal: number = 0;
   private readonly clocksRemotos: Map<NodoId, number>;
 
   constructor(config: SyncEngineConfig) {

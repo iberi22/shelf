@@ -1,4 +1,5 @@
 import { ml_dsa65 } from '@noble/post-quantum/ml-dsa.js';
+import { TokenBucketRateLimiter } from '../../security/rate-limiter.js';
 import type { ParPublico } from '../../types/index.js';
 
 /**
@@ -33,19 +34,13 @@ async function hmacSha256(secret: Uint8Array, data: Uint8Array): Promise<Uint8Ar
 }
 
 // Secreto para JWT
-const getJWTSecret = (): Uint8Array => {
-  if (typeof (globalThis as any).process !== 'undefined' && (globalThis as any).process?.env?.MALOCA_JWT_SECRET) {
-    return new TextEncoder().encode((globalThis as any).process.env.MALOCA_JWT_SECRET);
-  }
+const JWT_SECRET = new TextEncoder().encode('maloca-gateway-default-secret-change-me');
 
-  console.warn(
-    'MALOCA_JWT_SECRET environment variable is not set. Using an ephemeral random secret for JWT generation.',
-  );
-  const secret = new Uint8Array(32);
-  crypto.getRandomValues(secret);
-  return secret;
-};
-const JWT_SECRET = getJWTSecret();
+export const authRateLimiter = new TokenBucketRateLimiter({
+  tokensPerInterval: 3,
+  intervalMs: 1000,
+  maxTokens: 5,
+});
 
 /** Deriva un profileId corto desde una clave pública PQC */
 function deriveProfileId(publicKey: ParPublico): string {
@@ -59,7 +54,12 @@ export async function loginWithPQC(
   firma: Uint8Array,
   publicKey: ParPublico,
   challenge: Uint8Array = new TextEncoder().encode('maloca-login-challenge'),
+  clientIp = '127.0.0.1',
 ): Promise<string | null> {
+  if (!authRateLimiter.consume(clientIp)) {
+    console.warn(`Rate limit exceeded for IP: ${clientIp} on Auth login`);
+    throw new Error('Rate limit exceeded: 429');
+  }
   try {
     const isValid = ml_dsa65.verify(firma, challenge, publicKey);
     if (isValid) {
