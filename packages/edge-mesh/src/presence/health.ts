@@ -41,7 +41,7 @@ export class HealthChecker {
   private readonly tiemposEnvio: Map<NodoId, number>;
   private readonly config: HealthCheckerConfig;
   private intervalo: ReturnType<typeof setInterval> | null = null;
-  private secuencia = 0;
+  private secuencia: number = 0;
 
   constructor(config: Partial<HealthCheckerConfig> = {}) {
     this.eventTarget = new EventTarget();

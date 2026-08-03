@@ -42,8 +42,8 @@ export class SnapshotManager {
   private readonly interval: number;
   private readonly storage: IStorage;
   private readonly maxSnapshots: number;
-  private contadorOperaciones = 0;
-  private versionActual = 0;
+  private contadorOperaciones: number = 0;
+  private versionActual: number = 0;
   private datosActuales: Uint8Array | null = null;
   private readonly nodosConfirmados: Set<NodoId>;
 

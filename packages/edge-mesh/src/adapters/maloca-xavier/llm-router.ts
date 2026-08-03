@@ -22,7 +22,7 @@ export class LLMRouterAdapter {
   async routePrompt(prompt: string, requiredModel: string): Promise<PromptRouteResponse | null> {
     const profilesMap = this.edgeMesh.yjsAdapter.getMap(this.PROFILES_MAP_NAME);
     let bestProvider: NodoId | null = null;
-    let minLatency = Number.POSITIVE_INFINITY;
+    let minLatency = Infinity;
 
     for (const [nodeId, profile] of profilesMap.entries()) {
       const p = profile as AgentProfile;

@@ -105,7 +105,7 @@ export class KarmaManager {
    * Aplica decay (olvido) al score de un nodo.
    * - factor: 0.95 reduce 5%, 0.90 reduce 10%, etc.
    */
-  async applyDecay(nodeId: NodoId, factor = 0.95): Promise<void> {
+  async applyDecay(nodeId: NodoId, factor: number = 0.95): Promise<void> {
     this.applyDecayToCache(nodeId, factor);
     await this.oplog.append('karma:decay', { sujeto: nodeId, factor }, nodeId as any);
   }
@@ -120,6 +120,22 @@ export class KarmaManager {
   }
 
   // ─── INTERNOS ───────────────────────────────────────────────────────
+
+  /**
+   * Devuelve el peer con mejor karma en la mesh (para asignación de trabajo).
+   * Si no hay peers con karma registrado, devuelve null.
+   */
+  getBestPeer(): NodoId | null {
+    let best: NodoId | null = null;
+    let bestScore = Number.NEGATIVE_INFINITY;
+    for (const [nodeId, karma] of this.cache.entries()) {
+      if (karma.total > bestScore) {
+        best = nodeId as NodoId;
+        bestScore = karma.total;
+      }
+    }
+    return best;
+  }
 
   private applyTransaction(tx: TransaccionKarma): void {
     const target = tx.sujeto;

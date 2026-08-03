@@ -34,8 +34,8 @@ export class OpLog {
   private readonly storage: IStorage;
   private readonly cache: Map<string, Operacion>;
   private readonly maxEnMemoria: number;
-  private ultimaSecuencia = 0;
-  private totalOperaciones = 0;
+  private ultimaSecuencia: number = 0;
+  private totalOperaciones: number = 0;
 
   constructor(config: OpLogConfig) {
     this.eventTarget = new EventTarget();
@@ -151,7 +151,7 @@ export class OpLog {
 
   // ─── COMPRESION ─────────────────────────────────────────────────────
 
-  async comprimir(keepLast = 100): Promise<void> {
+  async comprimir(keepLast: number = 100): Promise<void> {
     const todas = await this.obtenerTodas();
     if (todas.length <= keepLast) return;
 

@@ -170,6 +170,33 @@ export class GovernanceManager {
     return this.propuestas.get(id) ?? null;
   }
 
+  importarPropuestas(propuestas: readonly Propuesta[]): void {
+    for (const prop of propuestas) {
+      this.propuestas.set(prop.id, { ...prop });
+      if (prop.estado === ESTADO_PROPUESTA.ABIERTA) {
+        const expiracionRestante = prop.expiracion - Date.now();
+        const timerExistente = this.timers.get(prop.id);
+        if (timerExistente) {
+          clearTimeout(timerExistente);
+        }
+        if (expiracionRestante > 0) {
+          const timer = setTimeout(() => {
+            this.cerrarPropuesta(prop.id);
+          }, expiracionRestante);
+          this.timers.set(prop.id, timer);
+        } else {
+          this.cerrarPropuesta(prop.id);
+        }
+      } else {
+        const timerExistente = this.timers.get(prop.id);
+        if (timerExistente) {
+          clearTimeout(timerExistente);
+          this.timers.delete(prop.id);
+        }
+      }
+    }
+  }
+
   // ─── EVENTOS ──────────────────────────────────────────────────────────
 
   on<K extends keyof GovernanceEventMap>(tipo: K, handler: (ev: GovernanceEventMap[K]) => void): void {
@@ -210,3 +237,5 @@ export class GovernanceManager {
 export function createGovernanceManager(politica?: GovernancePolicy): GovernanceManager {
   return new GovernanceManager(politica);
 }
+
+export * from './merge.js';

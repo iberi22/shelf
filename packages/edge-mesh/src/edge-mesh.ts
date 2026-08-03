@@ -19,6 +19,7 @@ import {
   verifyEnvelopeSignature,
 } from './protocol/index.js';
 import { createSnapshotManager, type SnapshotManager } from './snapshot/index.js';
+import { PersistentOfflineQueue } from './chat/offline-queue.js';
 import { InMemoryStorage, StorageManager } from './storage/index.js';
 import { SyncEngine } from './sync/engine.js';
 import { MemoryTransport } from './transport/memory.js';
@@ -111,6 +112,7 @@ export class EdgeMesh {
   readonly authorizer: NamespaceAuthorizer;
   readonly namespaces: NamespaceManager;
   readonly yjsAdapter: YjsAdapter;
+  readonly offlineQueue: PersistentOfflineQueue;
 
   private transport: ITransport | null = null;
   private readonly logsDoc: Map<string, OpLog>;
@@ -174,12 +176,19 @@ export class EdgeMesh {
       heartbeatIntervalMs: config.heartbeatIntervalMs ?? 5_000,
       timeoutMs: config.heartbeatTimeoutMs ?? 15_000,
     });
+    this.presence.registrarClavePublica(config.nodoId, this.identity.exportarPublico());
 
     // Authz
     this.authorizer = createNamespaceAuthorizer();
 
     // Namespaces
     this.namespaces = new NamespaceManager();
+
+    // Offline Queue
+    this.offlineQueue = new PersistentOfflineQueue(this.storage);
+    this.presence.addOnlineListener((peerId) => {
+      void this.offlineQueue.handlePeerReconnect(peerId);
+    });
 
     // Re-encolar eventos del nodo (forward to mesh EventTarget without looping)
     this.nodo.on('nodoConectado', (ev) => {
@@ -201,6 +210,9 @@ export class EdgeMesh {
 
   registrarClavePublica(nodoId: NodoId, parPublico: ParPublico): void {
     this.peerPublicKeys.set(nodoId, new Uint8Array(parPublico));
+    if (this.presence) {
+      this.presence.registrarClavePublica(nodoId, new Uint8Array(parPublico));
+    }
   }
 
   obtenerClavePublica(nodoId: NodoId): ParPublico | undefined {
@@ -277,9 +289,13 @@ export class EdgeMesh {
     this.ensureYjsRelay();
 
     // Iniciar presencia
-    await this.presence.iniciar(this.config.nodoId, async (payload) => {
-      await this.transmitir(payload, TIPO_MENSAJE.HEARTBEAT);
-    });
+    await this.presence.iniciar(
+      this.config.nodoId,
+      async (payload) => {
+        await this.transmitir(payload, TIPO_MENSAJE.HEARTBEAT);
+      },
+      this.identity,
+    );
 
     // Conectar nodo
     await this.nodo.conectar();
@@ -388,7 +404,7 @@ export class EdgeMesh {
 
     switch (envolvente.tipo) {
       case TIPO_MENSAJE.HEARTBEAT:
-        this.presence.procesarHeartbeat(envolvente.payload);
+        await this.presence.procesarHeartbeat(envolvente.payload);
         break;
 
       case TIPO_MENSAJE.SYNC:

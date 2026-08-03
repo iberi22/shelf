@@ -102,7 +102,13 @@ export class SalonVirtual extends EventTarget {
     this.salonContenido = this.salonDoc.getMap(`salon:${this.id}:contenido`);
 
     // Crear canal de chat propio del salón
-    this.chatChannel = new ChatChannel(config.creatorId, `salon:${this.id}`, this.yjsAdapter, TIPO_CANAL.SALON_VIRTUAL);
+    this.chatChannel = new ChatChannel(
+      config.creatorId,
+      `salon:${this.id}`,
+      this.yjsAdapter,
+      TIPO_CANAL.SALON_VIRTUAL,
+      config.edgeMesh.offlineQueue,
+    );
 
     // Inicializar metadata del salón
     Y.transact(this.salonDoc, () => {
