@@ -28,6 +28,7 @@ describe('Xavier local fallback (InMemoryStorage)', () => {
 
     // Should return unreachable but save locally
     expect(addResult.ok).toBe(false);
+    if (addResult.ok) throw new Error('expected unreachable failure');
     expect(addResult.reason).toBe('unreachable');
 
     // Search for the memory
@@ -35,6 +36,7 @@ describe('Xavier local fallback (InMemoryStorage)', () => {
 
     // Should return the local fallback results despite server being down
     expect(searchResult.ok).toBe(false);
+    if (searchResult.ok) throw new Error('expected unreachable failure');
     expect(searchResult.reason).toBe('unreachable');
     expect(searchResult.results).toHaveLength(1);
 
