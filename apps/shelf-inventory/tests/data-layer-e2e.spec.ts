@@ -43,24 +43,23 @@ async function createProductWithMaterials(
   }, product);
 }
 
-async function updateProductWithMaterials(
-  page: Page,
-  productName: string,
-  updatedFields: any,
-): Promise<void> {
-  await page.evaluate(({ name, fields }) => {
-    const dbSync = (window as any)._dbSyncForTest;
-    if (!dbSync) throw new Error('dbSync not ready');
-    const state = dbSync.getState(dbSync.localPeerId);
-    const existing = state?.products?.find((p: any) => p.name === name);
-    if (!existing) throw new Error(`Product "${name}" not found`);
-    dbSync.upsertEntity('products', {
-      ...existing,
-      ...fields,
-      updatedAt: new Date().toISOString(),
-      updatedBy: dbSync.localPeerId,
-    });
-  }, { name: productName, fields: updatedFields });
+async function updateProductWithMaterials(page: Page, productName: string, updatedFields: any): Promise<void> {
+  await page.evaluate(
+    ({ name, fields }) => {
+      const dbSync = (window as any)._dbSyncForTest;
+      if (!dbSync) throw new Error('dbSync not ready');
+      const state = dbSync.getState(dbSync.localPeerId);
+      const existing = state?.products?.find((p: any) => p.name === name);
+      if (!existing) throw new Error(`Product "${name}" not found`);
+      dbSync.upsertEntity('products', {
+        ...existing,
+        ...fields,
+        updatedAt: new Date().toISOString(),
+        updatedBy: dbSync.localPeerId,
+      });
+    },
+    { name: productName, fields: updatedFields },
+  );
 }
 
 async function forceSync(page1: Page, page2: Page) {
@@ -113,10 +112,7 @@ async function disconnectPeerConnection(page: Page, targetPeerId: string) {
 // Custom Material CSV Parser & Preview Helpers
 // ---------------------------------------------------------------------------
 
-export function parseProductCsvWithMaterials(
-  text: string,
-  options?: { columnMapping?: (string | null)[] },
-) {
+export function parseProductCsvWithMaterials(text: string, options?: { columnMapping?: (string | null)[] }) {
   const lines = text
     .split(/\r?\n/)
     .map((l) => l.trim())
@@ -156,7 +152,7 @@ export function parseProductCsvWithMaterials(
       materialVal = cells[materialColIdx].trim();
     }
 
-    const hasMaterialVariantAttr = options?.columnMapping?.some(m => m === 'material-variant');
+    const hasMaterialVariantAttr = options?.columnMapping?.some((m) => m === 'material-variant');
 
     const result: any = {
       ...p,
@@ -176,7 +172,7 @@ export function parseProductCsvWithMaterials(
           attributes: {
             Material: materialVal,
           },
-        }
+        },
       ];
     }
 
@@ -239,10 +235,9 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
       collabPage,
       adminPage,
       nameS1,
-      (prod) => prod.material === 'Titanium' && prod.materials?.includes('Carbon Fiber')
+      (prod) => prod.material === 'Titanium' && prod.materials?.includes('Carbon Fiber'),
     );
     expect(synced.materials).toEqual(['Titanium', 'Carbon Fiber']);
-
 
     // ---- Scenario 2: Edit material variant ----
     const nameS2 = 'Variant Material Product';
@@ -265,22 +260,17 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
           attributes: {
             Material: 'Bronze',
           },
-        }
-      ]
+        },
+      ],
     };
 
     await createProductWithMaterials(adminPage, productS2);
 
     // Wait for initial sync
-    await waitForProductWithMaterials(
-      collabPage,
-      adminPage,
-      nameS2,
-      (prod) => {
-        console.log('--- S2 CHECK prod ---', JSON.stringify(prod));
-        return prod && prod.variants?.length > 0;
-      }
-    );
+    await waitForProductWithMaterials(collabPage, adminPage, nameS2, (prod) => {
+      console.log('--- S2 CHECK prod ---', JSON.stringify(prod));
+      return prod && prod.variants?.length > 0;
+    });
 
     // Edit material variant attributes on Admin
     const updatedVariantsS2 = [
@@ -293,7 +283,7 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
         attributes: {
           Material: 'Gold',
         },
-      }
+      },
     ];
 
     await updateProductWithMaterials(adminPage, nameS2, {
@@ -307,10 +297,9 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
       collabPage,
       adminPage,
       nameS2,
-      (prod) => prod.materials?.includes('Gold') && prod.variants?.[0]?.attributes?.Material === 'Gold'
+      (prod) => prod.materials?.includes('Gold') && prod.variants?.[0]?.attributes?.Material === 'Gold',
     );
     expect(synced.variants[0].attributes.Material).toBe('Gold');
-
 
     // ---- Scenario 3: Material array preserved through sync cycle ----
     const nameS3 = 'Preserved Materials Product';
@@ -327,41 +316,25 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
     await createProductWithMaterials(adminPage, productS3);
 
     // Wait for sync
-    await waitForProductWithMaterials(
-      collabPage,
-      adminPage,
-      nameS3,
-      (prod) => prod.materials?.length === 3
-    );
+    await waitForProductWithMaterials(collabPage, adminPage, nameS3, (prod) => prod.materials?.length === 3);
 
     // Update price on Node A
     await updateProductWithMaterials(adminPage, nameS3, { price: 45 });
 
     // Wait for sync of price
-    await waitForProductWithMaterials(
-      collabPage,
-      adminPage,
-      nameS3,
-      (prod) => prod.price === 45
-    );
+    await waitForProductWithMaterials(collabPage, adminPage, nameS3, (prod) => prod.price === 45);
 
     // Update quantity on Node B
     await updateProductWithMaterials(collabPage, nameS3, { quantity: 15 });
 
     // Wait for sync back to Node A
-    await waitForProductWithMaterials(
-      adminPage,
-      collabPage,
-      nameS3,
-      (prod) => prod.quantity === 15
-    );
+    await waitForProductWithMaterials(adminPage, collabPage, nameS3, (prod) => prod.quantity === 15);
 
     // Ensure material array survived unmodified
     const finalS3A = await getProductFromPage(adminPage, nameS3);
     const finalS3B = await getProductFromPage(collabPage, nameS3);
     expect(finalS3A.materials).toEqual(['Copper', 'Brass', 'Zinc']);
     expect(finalS3B.materials).toEqual(['Copper', 'Brass', 'Zinc']);
-
 
     // ---- Scenario 4: Disconnect → edit materials → reconnect → merge succeeds ----
     const nameS4 = 'Disconnect Merge Product';
@@ -378,12 +351,7 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
     await createProductWithMaterials(adminPage, productS4);
 
     // Wait for sync
-    await waitForProductWithMaterials(
-      collabPage,
-      adminPage,
-      nameS4,
-      (prod) => prod.material === 'Original'
-    );
+    await waitForProductWithMaterials(collabPage, adminPage, nameS4, (prod) => prod.material === 'Original');
 
     // Disconnect Collab cleanly
     const adminId = await getPeerId(adminPage);
@@ -415,7 +383,7 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
       collabPage,
       adminPage,
       nameS4,
-      (prod) => prod.material === 'Material-A' || prod.material === 'Material-B'
+      (prod) => prod.material === 'Material-A' || prod.material === 'Material-B',
     );
 
     const finalA = await getProductFromPage(adminPage, nameS4);
@@ -448,7 +416,7 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
   });
 
   // 7. CSV without material column → material defaults to empty
-  test("7. CSV without material column → material defaults to empty", async () => {
+  test('7. CSV without material column → material defaults to empty', async () => {
     const csvContent = 'name,sku,quantity,price,cost\n"Plastic Cup","CUP-01",20,5,2';
     const result = parseProductCsvWithMaterials(csvContent);
     expect(result.errors).toHaveLength(0);
@@ -459,10 +427,10 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
   });
 
   // 8. CSV with material as variant attribute → variants created
-  test("8. CSV with material as variant attribute → variants created", async () => {
+  test('8. CSV with material as variant attribute → variants created', async () => {
     const csvContent = 'name,sku,quantity,price,cost,material\n"Acrylic Lamp","LAMP-01",15,120,60,"Acrylic"';
     const result = parseProductCsvWithMaterials(csvContent, {
-      columnMapping: ['name', 'sku', 'quantity', 'price', 'cost', 'material-variant']
+      columnMapping: ['name', 'sku', 'quantity', 'price', 'cost', 'material-variant'],
     });
     expect(result.errors).toHaveLength(0);
     expect(result.products).toHaveLength(1);
@@ -474,7 +442,7 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
   });
 
   // 9. Import preview shows material values
-  test("9. Import preview shows material values", async () => {
+  test('9. Import preview shows material values', async () => {
     const csvContent = 'name,sku,quantity,price,cost,Material\n"Wooden Table","TABLE-01",5,100,50,"Wood"';
     const preview = previewCsvHeadersWithMaterials(csvContent);
     expect(preview.rawHeaders).toContain('Material');
@@ -482,7 +450,7 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
   });
 
   // 10. Import errors handled gracefully (missing name)
-  test("10. Import errors handled gracefully (missing name)", async () => {
+  test('10. Import errors handled gracefully (missing name)', async () => {
     const csvContent = 'sku,quantity,price,cost\n"LAMP-01",15,120,60';
     const result = parseProductCsvWithMaterials(csvContent);
     expect(result.products).toHaveLength(0);
@@ -491,7 +459,7 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
   });
 
   // 11. Import errors handled gracefully (malformed fields)
-  test("11. Import errors handled gracefully (malformed fields)", async () => {
+  test('11. Import errors handled gracefully (malformed fields)', async () => {
     const csvContent = 'name,sku,quantity,price,cost\n"Plastic Cup","CUP-01","not-a-number",5,2';
     const result = parseProductCsvWithMaterials(csvContent);
     expect(result.products).toHaveLength(0);

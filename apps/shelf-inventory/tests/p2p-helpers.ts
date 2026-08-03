@@ -60,11 +60,10 @@ export function createMockPeer(overrides: MockPeer): PeerInfo {
 export async function getLocalPeerId(page: Page, timeout = 45000): Promise<string> {
   // 1. First wait for _p2pManagerForTest to exist (app mounted P2P)
   await expect
-    .poll(
-      async () =>
-        page.evaluate(() => Boolean((window as any)._p2pManagerForTest)),
-      { timeout: 30000, intervals: [500, 1000, 2000, 3000, 5000] },
-    )
+    .poll(async () => page.evaluate(() => Boolean((window as any)._p2pManagerForTest)), {
+      timeout: 30000,
+      intervals: [500, 1000, 2000, 3000, 5000],
+    })
     .toBe(true);
 
   // 2. Then wait for localPeerId to be assigned by PeerJS

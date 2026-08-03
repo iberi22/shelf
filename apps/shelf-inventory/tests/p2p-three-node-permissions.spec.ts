@@ -45,7 +45,9 @@ async function setupNode(page: Page) {
 async function getPeerId(page: Page) {
   const locator = page.locator('span.font-mono.text-yellow-400, code.font-mono.text-yellow-400').first();
   await locator.waitFor({ state: 'visible' });
-  await expect.poll(async () => page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId || null), { timeout: 30000 }).toBeTruthy();
+  await expect
+    .poll(async () => page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId || null), { timeout: 30000 })
+    .toBeTruthy();
   return (await locator.innerText()).split('\n')[0].trim();
 }
 

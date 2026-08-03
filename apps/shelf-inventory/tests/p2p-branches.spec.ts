@@ -55,12 +55,16 @@ test.describe('P2P Multi-Branch Architecture', () => {
 
     const b1PeerIdLocator = b1Page.locator('span.font-mono.text-yellow-400').first();
     await b1PeerIdLocator.waitFor({ state: 'visible' });
-    await expect.poll(async () => b1Page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId || null), { timeout: 30000 }).toBeTruthy();
+    await expect
+      .poll(async () => b1Page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId || null), { timeout: 30000 })
+      .toBeTruthy();
     const b1Id = await b1PeerIdLocator.innerText();
 
     const b2PeerIdLocator = b2Page.locator('span.font-mono.text-yellow-400').first();
     await b2PeerIdLocator.waitFor({ state: 'visible' });
-    await expect.poll(async () => b2Page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId || null), { timeout: 30000 }).toBeTruthy();
+    await expect
+      .poll(async () => b2Page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId || null), { timeout: 30000 })
+      .toBeTruthy();
     const b2Id = await b2PeerIdLocator.innerText();
 
     // 5. Host connects to Branch 1 and assigns it to 'Sucursal Norte'

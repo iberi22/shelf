@@ -25,8 +25,12 @@ test.describe('Multi-Peer E2E Synchronization', () => {
     await dismissModals(collabPage);
 
     // Wait for P2P to be ready on both pages
-    await expect.poll(async () => adminPage.evaluate(() => Boolean((window as any)._p2pManagerForTest)), { timeout: 30000 }).toBe(true);
-    await expect.poll(async () => collabPage.evaluate(() => Boolean((window as any)._p2pManagerForTest)), { timeout: 30000 }).toBe(true);
+    await expect
+      .poll(async () => adminPage.evaluate(() => Boolean((window as any)._p2pManagerForTest)), { timeout: 30000 })
+      .toBe(true);
+    await expect
+      .poll(async () => collabPage.evaluate(() => Boolean((window as any)._p2pManagerForTest)), { timeout: 30000 })
+      .toBe(true);
 
     // Get Peer IDs
     const collabId = await getLocalPeerId(collabPage);

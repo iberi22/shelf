@@ -55,9 +55,9 @@ test.describe('P2P UI Sync Features', () => {
       .poll(
         async () =>
           page2.evaluate(() => {
-            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected(
-              (window as any)._dbSyncForTest?.localPeerId,
-            ));
+            return Boolean(
+              (window as any)._p2pManagerForTest?.isPeerConnected((window as any)._dbSyncForTest?.localPeerId),
+            );
           }),
         { timeout: 30000 },
       )

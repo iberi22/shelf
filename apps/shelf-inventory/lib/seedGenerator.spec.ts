@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  generateSeed,
-  getWordList,
-  seedToString,
-  stringToSeed,
-  validateSeed,
-} from './seedGenerator';
+import { generateSeed, getWordList, seedToString, stringToSeed, validateSeed } from './seedGenerator';
 
 // ─── generateSeed ─────────────────────────────────────────────
 

@@ -76,15 +76,7 @@ async function connectPeerFromHost(
   await waitForPeerConnected(hostPage, peerId);
 
   await hostPage.evaluate(
-    ({
-      targetPeerId,
-      role,
-      permissions,
-    }: {
-      targetPeerId: string;
-      role: string;
-      permissions: PeerPermissions;
-    }) => {
+    ({ targetPeerId, role, permissions }: { targetPeerId: string; role: string; permissions: PeerPermissions }) => {
       const p2p = (window as any)._p2pManagerForTest;
       const dbSync = (window as any)._dbSyncForTest;
       if (!p2p || !dbSync) {
@@ -117,7 +109,9 @@ test.describe('P2P Critical Path DB Synchronization across Dual Servers with and
   test.describe.configure({ mode: 'serial' });
   test.setTimeout(120000);
 
-  test('two headless browsers on separate dev servers sync DB data with permissions and block unauthorized edits without permissions', async ({ browser }) => {
+  test('two headless browsers on separate dev servers sync DB data with permissions and block unauthorized edits without permissions', async ({
+    browser,
+  }) => {
     // 1. Create two contexts from a single browser instance
     const contextA = await browser.newContext();
     const contextB = await browser.newContext();
@@ -185,13 +179,7 @@ test.describe('P2P Critical Path DB Synchronization across Dual Servers with and
 
     // 5. Test WITHOUT permissions: change Collab role to read-only and verify mutations are rejected
     await pageA.evaluate(
-      ({
-        targetPeerId,
-        permissions,
-      }: {
-        targetPeerId: string;
-        permissions: PeerPermissions;
-      }) => {
+      ({ targetPeerId, permissions }: { targetPeerId: string; permissions: PeerPermissions }) => {
         const p2p = (window as any)._p2pManagerForTest;
         const dbSync = (window as any)._dbSyncForTest;
         const localPeerId = dbSync?.localPeerId;

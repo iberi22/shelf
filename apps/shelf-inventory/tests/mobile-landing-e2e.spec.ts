@@ -62,21 +62,21 @@ test.describe('Mobile Responsive Layout & Interactions', () => {
     await expect(chip).toBeVisible();
 
     // It should start unselected (checking its text color/class)
-    let className = await chip.getAttribute('class') || '';
+    let className = (await chip.getAttribute('class')) || '';
     expect(className).not.toContain('text-[#22C55E]');
 
     // Click to select
     await chip.click();
-    className = await chip.getAttribute('class') || '';
+    className = (await chip.getAttribute('class')) || '';
     expect(className).toContain('text-[#22C55E]');
 
     // Click again to deselect
     await chip.click();
-    className = await chip.getAttribute('class') || '';
+    className = (await chip.getAttribute('class')) || '';
     expect(className).not.toContain('text-[#22C55E]');
   });
 
-  test('3. Custom material input → keyboard doesn\'t overlap chips', async ({ page }) => {
+  test("3. Custom material input → keyboard doesn't overlap chips", async ({ page }) => {
     // Navigate to Inventory page
     try {
       const bottomNavItem = page.locator('[data-testid="mobile-nav-item-nav.inventory"]');
@@ -209,7 +209,9 @@ test.describe('Landing -> Onboarding -> App Flow', () => {
     await page.reload();
 
     // Click "Empieza Gratis" button (using bulletproof fallback selector for translated, untranslated or CSS classes)
-    const ctaButton = page.locator('button.bg-gradient-to-r, button:has-text("Empieza Gratis"), button:has-text("landing.cta")').first();
+    const ctaButton = page
+      .locator('button.bg-gradient-to-r, button:has-text("Empieza Gratis"), button:has-text("landing.cta")')
+      .first();
     await expect(ctaButton).toBeVisible({ timeout: 10000 });
     await ctaButton.click();
 
@@ -236,7 +238,9 @@ test.describe('Landing -> Onboarding -> App Flow', () => {
     await page.reload();
 
     // Navigate through Landing
-    const ctaButton = page.locator('button.bg-gradient-to-r, button:has-text("Empieza Gratis"), button:has-text("landing.cta")').first();
+    const ctaButton = page
+      .locator('button.bg-gradient-to-r, button:has-text("Empieza Gratis"), button:has-text("landing.cta")')
+      .first();
     await expect(ctaButton).toBeVisible({ timeout: 10000 });
     await ctaButton.click();
 
