@@ -162,29 +162,35 @@
     },
     {
       "id": "SRC-FUN-009",
-      "name": "Monetization (Ads + Subscriptions)",
+      "name": "Monetization — Colaborador SWAL",
       "status": "implemented",
-      "implementation_percentage": 90,
-      "maturity": "integrated",
+      "sdlc": "hardening",
       "priority": "P0",
       "category": "FUN",
-      "description": "Tiers free/pro/pyme locales controlan ads y Pro features; Stripe checkout opcional.",
+      "description": "Modelo Colaborador SWAL: todas las features gratis localmente, revenue via profit share (25/15/10%). Sin suscripciones ni ads.",
+      "user_story": "Como usuario, quiero usar todas las features sin restricciones de tier",
+      "actor": "Todos los usuarios",
+      "dependencies": [
+        "SRC-FUN-008"
+      ],
+      "technologies": [
+        "React"
+      ],
       "acceptance_criteria": [
-        "Anuncios para usuarios free (DesktopAdColumn, MobileAdBars)",
-        "Anuncios ocultos para pro/pyme",
-        "UI de plan local free/pro/pyme en settings",
-        "Modal de suscripción Pro/Pyme",
-        "AdSense IDs via environment variables",
-        "Stripe checkout opcional si backend configurado"
+        "Todas las features accesibles sin restricción",
+        "Sin anuncios (AdSense eliminado)",
+        "Sin modal de suscripción",
+        "UI simplificada sin tiers"
       ],
-      "gaps": [
-        "Live Stripe backend still optional; offline local plans are primary path"
-      ],
+      "implementation_percentage": 90,
+      "progress_pct": 90,
+      "maturity": "integrated",
       "evidence": [
-        "SubscriptionContext from user.subscriptionTier",
-        "settings-plan-card",
-        "Ads.tsx"
-      ]
+        "SubscriptionContext simplified (isPro=true always)",
+        "No ProChartsTeaserCard, no AdSenseUnit, no Ads components",
+        "Dashboard clean without upgrade sections"
+      ],
+      "gaps": []
     },
     {
       "id": "SRC-FUN-010",

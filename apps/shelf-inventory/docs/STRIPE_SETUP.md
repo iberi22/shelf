@@ -1,74 +1,81 @@
-# Shelf. Stripe Integration Setup Guide
+# Shelf — Stripe Integration & SWAL Collaborator Guide
 
-This guide details the steps required to configure Stripe for handling Pro and PYME plan subscriptions in the Shelf. application.
+> **Ecosystem Rule:** **Pro = active SWAL node only — no Stripe as Pro unlock.**
+> For local plans, all core features are free and offline-first. Advanced multi-instance P2P syncing or AI capabilities are gated by running an **active SWAL node** (via identity verification, heartbeat mesh, and staking/holding $SWAL).
+
+Stripe is **NOT** used to purchase or unlock premium/Pro features directly. Instead, Stripe is optionally configured for specific token/revenue-sharing actions in the **SWAL Network**:
+1. **Collaborator Profit-Sharing (Colaborador SWAL):** Processing and settling peer/collaborator transaction fee splits (25/15/10% profit-sharing model) under the decentralized consensus.
+2. **Auxiliary Cloud Persistence Backend:** Optional payments for managing cloud synchronization backends if store operators require off-grid backup hosting (completely decoupled from the local-first mesh core).
+3. **Fiat Token Staking Gateways:** Facilitating fiat-to-$SWAL token purchase/staking pipelines for node backing.
+
+---
 
 ## Overview
 
-The application uses Stripe Checkout for a secure, hosted payment page. When a user subscribes:
-1.  The app sends a request to a Firebase Cloud Function (`createCheckoutSession`).
-2.  The function creates a Stripe Checkout session and returns a URL.
-3.  The user is redirected to Stripe to complete the payment.
-4.  After a successful payment, Stripe sends a webhook event to another Cloud Function (`stripeWebhook`).
-5.  This webhook function securely verifies the event and updates the user's subscription tier in Firestore.
+When a collaborator payment, revenue share settlement, or optional cloud persistence subscription is initiated:
+1. The app requests a checkout session from the configured backend (`createCheckoutSession`).
+2. The function generates a Stripe Checkout session and returns a redirection URL.
+3. The collaborator or operator is securely redirected to Stripe to complete the transaction.
+4. After payment completion, Stripe sends a webhook event to another backend endpoint (`stripeWebhook`).
+5. This webhook verifies the event signature and updates the collaborator's transaction status or backing record.
 
-To make this work, you need to provide three secret values to your Firebase environment.
+---
 
-## Step 1: Create Products and Prices in Stripe
+## Step 1: Configure Products & Payout Plans in Stripe
 
-First, you need to create the "Pro" and "PYME" subscription products in your Stripe Dashboard.
+To support collaborator payments or profit-share backing:
+1. Log in to your [Stripe Dashboard](https://dashboard.stripe.com/).
+2. Go to the **Products** tab and click **+ Add product**.
+3. Create the **Collaborator/Backup Billing** product:
+   - **Name:** `SWAL Collaborator Hub` or `Store Backup Persistence`
+   - Set the desired transaction pricing models (either flat or recurring).
+4. After saving, copy the **Price ID** (e.g., `price_1P...`) from the product details. This ID can be passed to client-side configurations or cloud functions.
 
-1.  Log in to your [Stripe Dashboard](https://dashboard.stripe.com/).
-2.  Go to the **Products** tab and click **+ Add product**.
-3.  Create the **Pro** plan:
-    -   **Name:** `Pro`
-    -   Under **Pricing**, set the price (e.g., $5.00), select **Recurring**, and choose a billing period (e.g., Monthly).
-    -   Click **Save product**.
-4.  After saving, you'll be on the product details page. In the **Pricing** section, you will see a **Price ID**. It will look like `price_1P...`. **Copy this ID.**
-5.  Repeat the process to create the **PYME** plan (e.g., with a price of $15.00/month) and **copy its Price ID**.
+---
 
-You will now have two Price IDs. These are not secret and will be placed in the function's code.
+## Step 2: Retrieve Your Stripe API Keys
 
-## Step 2: Get Your Stripe API Keys
+1. From the Stripe Dashboard, navigate to the **Developers** tab.
+2. Under **API keys**, locate the **Secret key** (e.g., `sk_test_...` or `sk_live_...`).
+3. **Copy this key.** This key is highly sensitive and should never be committed to git.
 
-1.  In the Stripe Dashboard, go to the **Developers** tab.
-2.  Navigate to **API keys**.
-3.  You will see your **Secret key**. It will look like `sk_test_...` or `sk_live_...`. **Copy this key.** This key is highly sensitive.
+---
 
-## Step 3: Create a Webhook Endpoint
+## Step 3: Set Up the Webhook Endpoint
 
-Stripe needs to know where to send events like `checkout.session.completed`.
+Stripe relies on webhooks to report events such as `checkout.session.completed` for billing and settlements.
 
-1.  First, deploy your Firebase Functions to get your function's URL.
-    ```bash
-    firebase deploy --only functions
-    ```
-2.  After deployment, go to your Firebase project console, navigate to the **Functions** tab, and find the `stripeWebhook` function. Copy its **Trigger URL**. It will look like `https://us-central1-your-project-id.cloudfunctions.net/stripeWebhook`.
-3.  Back in the Stripe Dashboard, go to **Developers > Webhooks**.
-4.  Click **+ Add an endpoint**.
-    -   **Endpoint URL:** Paste the URL you copied from Firebase.
-    -   **Listen to:** Click **Select events** and choose `checkout.session.completed`.
-    -   Click **Add endpoint**.
-5.  On the webhook details page, you will see a **Signing secret**. Click to reveal it. It will look like `whsec_...`. **Copy this secret.**
+1. Deploy your serverless functions (such as the Cloud Functions / Firebase backend):
+   ```bash
+   firebase deploy --only functions
+   ```
+2. Retrieve the **Trigger URL** of your `stripeWebhook` function from the backend console (e.g., `https://us-central1-your-project-id.cloudfunctions.net/stripeWebhook`).
+3. In the Stripe Dashboard, go to **Developers > Webhooks** and click **+ Add an endpoint**.
+   - **Endpoint URL:** Paste your deployed function's Trigger URL.
+   - **Listen to:** Select events like `checkout.session.completed` (or customer/payout events if handling collaborator payouts).
+   - Click **Add endpoint**.
+4. Reveal and copy the **Signing secret** (`whsec_...`).
 
-## Step 4: Set Secrets in Firebase
+---
 
-Now you have four critical pieces of information:
--   Your **Stripe Secret Key** (`sk_...`)
--   Your **Webhook Signing Secret** (`whsec_...`)
--   Your **Pro Plan Price ID** (`price_...`)
--   Your **PYME Plan Price ID** (`price_...`)
+## Step 4: Configure Environments & Secrets
 
-1.  **Set the secrets:** Open your terminal in the project directory and run these commands, pasting your keys when prompted:
-    ```bash
-    firebase functions:secrets:set STRIPE_SECRET_KEY
-    firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
-    firebase functions:secrets:set STRIPE_PRO_PRICE_ID
-    firebase functions:secrets:set STRIPE_PYME_PRICE_ID
-    ```
+To ensure your backend functions can process Stripe calls securely, define the secrets in your production environment:
 
-2.  **Deploy your functions:** The final step is to deploy your functions so they have access to the secrets.
-    ```bash
-    firebase deploy --only functions
-    ```
+1. **Set the secrets:**
+   ```bash
+   firebase functions:secrets:set STRIPE_SECRET_KEY
+   firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
+   firebase functions:secrets:set STRIPE_PRO_PRICE_ID
+   firebase functions:secrets:set STRIPE_PYME_PRICE_ID
+   ```
+2. **Redeploy backend functions:**
+   ```bash
+   firebase deploy --only functions
+   ```
 
-Your Stripe integration is now fully configured and ready for production!
+---
+
+## Legacy/Offline Fallback Note
+
+If Stripe is disabled or unconfigured (such as during offline operation or when `VITE_STRIPE_CHECKOUT_ENABLED` is not set), the application operates seamlessly under the local-only fallback. In this mode, collaborators can be added or authorized directly through post-quantum signed peer invitations, bypassing any external gateway payments.

@@ -1,9 +1,9 @@
-# SRC-FUN-009: Monetization (Ads + Subscriptions)
+# SRC-FUN-009: Monetization — Colaborador SWAL
 
 - **ID:** SRC-FUN-009
-- **Nombre:** Monetization (Ads + Subscriptions)
+- **Nombre:** Monetization — Colaborador SWAL
 - **Prioridad:** P0 (Core)
-- **Estado:** ⚠️ Partial
+- **Estado:** Implemented
 - **Implementation:** 90%
 - **Categoría:** FUN (Funcionalidades Core)
 - **SDLC:** Hardening
@@ -12,47 +12,45 @@
 > **Audit 2026-07-18:** 90% · implemented · maturity `integrated`. SSOT: `.gitcore/features.json`.
 
 ## Descripción
-Sistema de monetización con anuncios (DesktopAdColumn, MobileAdBars) para usuarios free y planes de suscripción (Basic, Pro, Pyme) procesados vía Stripe. **UI presente; billing y ads efectivamente stub por hardcode Pro.**
+La monetización de Shelf sigue el **Modelo Colaborador SWAL**: todas las funcionalidades del core de la aplicación son gratuitas y locales. Se eliminan los anuncios tradicionales y las suscripciones SaaS para desbloquear funciones. Las características Pro se habilitan mediante un **nodo SWAL activo**. El procesamiento con Stripe queda relegado de forma exclusiva a flujos de soporte opcionales: reparto de ingresos de colaboradores (profit-share 25/15/10%), soporte voluntario a la infraestructura cloud o pasarela fiat para la adquisición de tokens $SWAL para staking.
 
 ## Actor Principal
-Usuario Free / Usuario Pro
+Todos los usuarios (Free, Pro con nodo, Colaboradores)
 
 ## Dependencias
-- **SRC-FUN-008** (Auth & Cloud Sync) — detectar plan del usuario
+- **SRC-FUN-008** (Auth (Local) & Device Security) — detección de la identidad local
 
 ## User Story
-> Como negocio, quiero que la app genere ingresos vía anuncios y suscripciones Pro.
+> Como usuario, quiero usar todas las características locales del inventario de forma gratuita y sin anuncios intrusivos, participando activamente del ecosistema SWAL mediante un nodo si requiero capacidades multi-instancia avanzadas.
 
 ## Acceptance Criteria
-1. Anuncios para usuarios free (DesktopAdColumn, MobileAdBars)
-2. Modal de suscripción con planes Basic/Pro/Pyme
-3. Stripe integrado con webhooks en producción
-4. Anuncios ocultos automáticamente para usuarios con suscripción activa
-5. AdSense IDs configurados vía environment variables
+1. **Acceso Sin Restricciones Locales:** Todas las características principales se pueden utilizar localmente sin limitaciones de planes de suscripción.
+2. **Sin Anuncios Intrusivos:** No se muestran unidades de AdSense o bloques publicitarios en la interfaz del usuario.
+3. **Estado Pro mediante Nodo SWAL:** Las funciones avanzadas (como IA, sincronización avanzada multidevice y analíticas pro) se activan únicamente cuando se detecta un **nodo SWAL activo** (sin depender de un pago por Stripe).
+4. **Stripe Opcional / Auxiliar:** Integración con Stripe (checkout y webhooks) configurada únicamente para pagos voluntarios de persistencia en la nube, payouts de colaboradores bajo el modelo profit-share, o staking.
+5. **Seguridad y Webhooks de Stripe (Legacy/Auxiliar):** Verificación segura de firmas para webhooks configurada en el backend para procesar las transacciones opcionales.
 
 ## Stack Tecnológico
 | Tecnología | Uso |
 |------------|-----|
-| Stripe | Procesamiento de pagos |
-| Firebase | Webhooks + validación |
-| AdSense | Anuncios para free users |
-| React 19 | UI de anuncios/suscripciones |
+| React 19 / Context | UI simplificada sin barreras de pago locales |
+| Stripe SDK | (Opcional) Procesamiento de pagos auxiliares, donaciones o profit-sharing |
+| Firebase | Webhooks y validación segura para la sincronización opcional con la nube |
+| PeerJS / Yjs | Sincronización descentralizada p2p de datos |
 
-## Planes
-| Plan | Precio | Features |
-|------|--------|----------|
-| Free | $0 | Core features, ads |
-| Basic | TBD | No ads, cloud sync |
-| Pro | TBD | AI assistant, reports avanzados |
-| Pyme | TBD | Multi-user, roles |
+## Planes de Monetización
+| Nivel (Tier) | Requisito | Capacidades |
+|--------------|-----------|-------------|
+| **Free** | Sin nodo activo | Core de inventario, punto de venta local, 1 instancia local |
+| **Pro (SWAL)** | `swalNode.status === "active"` | IA de negocio (Xavier), sincronización multi-sucursal vinculada, analíticas Pro |
 
 ## Detalles Técnicos
-- **Anuncios:** Responsive (DesktopAdColumn lateral, MobileAdBars inferior)
-- **Webhooks:** Stripe eventos verificados con firma en producción
-- **Gating:** Feature flags por plan de suscripción
-- **Environment:** AdSense IDs y Stripe keys via .env
+- **Gating de Funciones:** Controlado por el estado de activación del nodo SWAL en lugar de un indicador booleano de suscripción Stripe.
+- **Webhooks:** Gestión robusta de eventos de Stripe en el backend para sincronizar el estado de persistencia opcional en la nube de forma segura.
+- **Cero Anuncios:** Se han retirado los componentes heredados de `Ads.tsx` o `AdSenseUnit.tsx` de la pantalla principal para priorizar la experiencia offline limpia.
 
 ## Commits Relacionados
 ```
 feat(monetization): implement SRC-FUN-009 - ads & subscriptions
+feat(monetization): align monetization to Colaborador SWAL model & node active status
 ```
