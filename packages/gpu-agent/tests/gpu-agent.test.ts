@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GpuAgent } from '../src/gpu-agent';
 
-function installWebGpuMock() {
+function installWebGpuMock(options?: { simulateOOM?: boolean; lostPromise?: Promise<any> }) {
   type BufRec = {
     usage: number;
     size: number;
@@ -12,11 +12,15 @@ function installWebGpuMock() {
   const buffers = new WeakMap<object, BufRec>();
 
   const device = {
+    lost: options?.lostPromise || new Promise(() => {}),
     createShaderModule: () => ({}),
     createComputePipeline: () => ({
       getBindGroupLayout: () => ({}),
     }),
     createBuffer: ({ size, usage }: { size: number; usage: number }) => {
+      if (options?.simulateOOM) {
+        throw new Error('WebGPU Out of Memory (OOM)');
+      }
       const buf = {
         destroy() {
           buffers.delete(buf);
@@ -89,7 +93,11 @@ function installWebGpuMock() {
               const outRec = buffers.get(pendingMul.out);
               const paramsRec = buffers.get(pendingMul.params);
               if (aRec && bRec && outRec && paramsRec) {
-                const len = Math.min(aRec.data.length, bRec.data.length, Math.floor(paramsRec.data[0] || aRec.data.length));
+                const len = Math.min(
+                  aRec.data.length,
+                  bRec.data.length,
+                  Math.floor(paramsRec.data[0] || aRec.data.length),
+                );
                 for (let i = 0; i < len; i++) outRec.data[i] = aRec.data[i] * bRec.data[i];
               }
               pendingMul = null;
@@ -196,7 +204,11 @@ describe('GpuAgent', () => {
     const bad = await agent.submitTask({ id: 'r1', type: 'echo', input: { message: 'x' }, peerId: 'remote-peer' });
     expect(bad.error).toMatch(/verification/i);
     const good = await agent.submitTask({
-      id: 'r2', type: 'echo', input: { message: 'ok' }, peerId: 'remote-peer', signature: 'a'.repeat(16),
+      id: 'r2',
+      type: 'echo',
+      input: { message: 'ok' },
+      peerId: 'remote-peer',
+      signature: 'a'.repeat(16),
     });
     expect(good.error).toBeUndefined();
   });
@@ -205,7 +217,13 @@ describe('GpuAgent', () => {
     const agent = new GpuAgent({ preferWebGpu: false, verifyTask: (t) => t.signature === 'secret' });
     const denied = await agent.submitTask({ id: '1', type: 'echo', input: {}, peerId: 'p', signature: 'nope' });
     expect(denied.error).toBeTruthy();
-    const allowed = await agent.submitTask({ id: '2', type: 'echo', input: { message: 'y' }, peerId: 'p', signature: 'secret' });
+    const allowed = await agent.submitTask({
+      id: '2',
+      type: 'echo',
+      input: { message: 'y' },
+      peerId: 'p',
+      signature: 'secret',
+    });
     expect(allowed.error).toBeUndefined();
   });
 
@@ -229,9 +247,54 @@ describe('GpuAgent', () => {
 
   it('coerces non-array vector-sum input to empty sum on CPU', async () => {
     const agent = new GpuAgent({ preferWebGpu: false });
-    const result = await agent.runLocalTask({ type: 'vector-sum', input: { values: 'not-an-array' as unknown as number[] } });
+    const result = await agent.runLocalTask({
+      type: 'vector-sum',
+      input: { values: 'not-an-array' as unknown as number[] },
+    });
     expect(result.backend).toBe('cpu');
     expect(result.output).toEqual({ sum: 0 });
+  });
+
+  it('falls back to CPU when WebGPU device is lost (dispositivo desconectado)', async () => {
+    let resolveLostPromise: (value: any) => void = () => {};
+    const lostPromise = new Promise((resolve) => {
+      resolveLostPromise = resolve;
+    });
+    installWebGpuMock({ lostPromise });
+
+    const agent = new GpuAgent({ preferWebGpu: true });
+    // First run should succeed on webgpu
+    const result1 = await agent.runLocalTask({ type: 'vector-sum', input: { values: [5, 10] } });
+    expect(result1.backend).toBe('webgpu');
+    expect(result1.output).toEqual({ sum: 15 });
+
+    // Now trigger device lost
+    resolveLostPromise({ message: 'GPU disconnected or device lost context' });
+
+    // Wait a brief moment for microtask queue to resolve lost promise
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    // Also simulate that subsequent adapter requests fail because the device is permanently disconnected
+    Object.defineProperty(globalThis, 'navigator', {
+      value: { gpu: { requestAdapter: async () => null } },
+      configurable: true,
+      writable: true,
+    });
+
+    // Next run should gracefully fall back to CPU
+    const result2 = await agent.runLocalTask({ type: 'vector-sum', input: { values: [5, 10] } });
+    expect(result2.backend).toBe('cpu');
+    expect(result2.output).toEqual({ sum: 15 });
+  });
+
+  it('falls back to CPU when GPU memory is insufficient (memoria GPU insuficiente / OOM)', async () => {
+    installWebGpuMock({ simulateOOM: true });
+
+    const agent = new GpuAgent({ preferWebGpu: true });
+    // Run should catch OOM error during buffer creation and fallback to CPU
+    const result = await agent.runLocalTask({ type: 'vector-sum', input: { values: [2, 3, 5] } });
+    expect(result.backend).toBe('cpu');
+    expect(result.output).toEqual({ sum: 10 });
   });
 });
 
@@ -279,7 +342,13 @@ describe('GpuAgent WebGPU kernels (mocked navigator.gpu)', () => {
 
   it('falls back to CPU when WebGPU adapter request fails', async () => {
     Object.defineProperty(globalThis, 'navigator', {
-      value: { gpu: { requestAdapter: async () => { throw new Error('adapter unavailable'); } } },
+      value: {
+        gpu: {
+          requestAdapter: async () => {
+            throw new Error('adapter unavailable');
+          },
+        },
+      },
       configurable: true,
       writable: true,
     });

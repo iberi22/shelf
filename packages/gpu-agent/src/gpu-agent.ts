@@ -6,12 +6,7 @@
 
 import type { EdgeMesh } from 'edge-mesh';
 
-export type TaskType =
-  | 'vector-sum'
-  | 'dot-product'
-  | 'matrix-scale'
-  | 'echo'
-  | string;
+export type TaskType = 'vector-sum' | 'dot-product' | 'matrix-scale' | 'echo' | string;
 
 export interface Task {
   id: string;
@@ -103,9 +98,7 @@ export class GpuAgent {
     return Array.from(this.capabilities);
   }
 
-  public async runLocalTask(
-    task: Omit<Task, 'peerId' | 'id'> & { id?: string },
-  ): Promise<TaskResult> {
+  public async runLocalTask(task: Omit<Task, 'peerId' | 'id'> & { id?: string }): Promise<TaskResult> {
     const fullTask: Task = {
       ...task,
       id: task.id ?? `task_${Math.random().toString(36).slice(2, 11)}`,
@@ -137,10 +130,7 @@ export class GpuAgent {
   /**
    * Announce worker capacity on the mesh (best-effort transmit).
    */
-  public async offerWorkerCapacity(capacity: {
-    maxConcurrentTasks: number;
-    capabilities?: string[];
-  }): Promise<void> {
+  public async offerWorkerCapacity(capacity: { maxConcurrentTasks: number; capabilities?: string[] }): Promise<void> {
     this.maxConcurrentTasks = capacity.maxConcurrentTasks;
     if (capacity.capabilities) {
       this.capabilities = new Set(capacity.capabilities);
@@ -212,19 +202,14 @@ export class GpuAgent {
   }
 
   private processQueue() {
-    while (
-      this.taskQueue.length > 0 &&
-      this.runningTasks < this.maxConcurrentTasks
-    ) {
+    while (this.taskQueue.length > 0 && this.runningTasks < this.maxConcurrentTasks) {
       const next = this.taskQueue.shift();
       if (!next) break;
       void this.runTaskNow(next.task).then(next.resolve, next.reject);
     }
   }
 
-  private async executeTask(
-    task: Task,
-  ): Promise<{ output: unknown; backend: 'webgpu' | 'cpu' }> {
+  private async executeTask(task: Task): Promise<{ output: unknown; backend: 'webgpu' | 'cpu' }> {
     switch (task.type) {
       case 'vector-sum': {
         const input = task.input as VectorSumInput;
@@ -294,7 +279,19 @@ export class GpuAgent {
         const nav = globalThis.navigator as { gpu?: { requestAdapter: () => Promise<any> } };
         const adapter = await nav.gpu?.requestAdapter();
         if (!adapter) return null;
-        this.device = await adapter.requestDevice();
+        const dev = await adapter.requestDevice();
+        if (dev?.lost) {
+          dev.lost
+            .then((info: any) => {
+              console.warn(`WebGPU device lost: ${info?.message || 'unknown reason'}`);
+              if (this.device === dev) {
+                this.device = null;
+                this.deviceInit = null;
+              }
+            })
+            .catch(() => {});
+        }
+        this.device = dev;
         return this.device;
       } catch {
         return null;
@@ -340,11 +337,7 @@ export class GpuAgent {
   }
 
   /** WebGPU usage flags as numbers to avoid DOM lib type conflicts. */
-  private async webGpuMapScale(
-    device: any,
-    data: Float32Array,
-    scale: number,
-  ): Promise<Float32Array | null> {
+  private async webGpuMapScale(device: any, data: Float32Array, scale: number): Promise<Float32Array | null> {
     const STORAGE = 0x80;
     const COPY_DST = 0x8;
     const COPY_SRC = 0x4;
@@ -411,11 +404,7 @@ export class GpuAgent {
     return copy.subarray(0, data.length);
   }
 
-  private async webGpuElementMul(
-    device: any,
-    a: Float32Array,
-    b: Float32Array,
-  ): Promise<Float32Array | null> {
+  private async webGpuElementMul(device: any, a: Float32Array, b: Float32Array): Promise<Float32Array | null> {
     const STORAGE = 0x80;
     const COPY_DST = 0x8;
     const COPY_SRC = 0x4;

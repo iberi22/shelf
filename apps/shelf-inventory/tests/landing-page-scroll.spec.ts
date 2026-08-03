@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Landing Page PC Scroll Verification', () => {
-  test.skip(true, 'Landing page is bypassed in test mode (VITE_SKIP_LANDING=true) — heading "Tu Inventario." never renders');
+  test.skip(
+    true,
+    'Landing page is bypassed in test mode (VITE_SKIP_LANDING=true) — heading "Tu Inventario." never renders',
+  );
   test.use({
     viewport: { width: 1280, height: 720 },
   });

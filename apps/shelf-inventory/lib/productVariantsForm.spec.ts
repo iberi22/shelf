@@ -95,9 +95,7 @@ describe('getProductVariantAttributes', () => {
 
   it('infers attributes from existing variants when variantAttributes is empty', () => {
     const product = buildProduct({
-      variants: [
-        buildVariant({ attributes: { Color: 'Rojo', Material: 'Seda' } }),
-      ],
+      variants: [buildVariant({ attributes: { Color: 'Rojo', Material: 'Seda' } })],
     });
     const labels = getProductVariantAttributes(product);
     expect(labels).toContain('Color');
@@ -230,9 +228,7 @@ describe('generateVariantsFromSelections - extended', () => {
       Material: ['X', 'Y', 'Z'],
     });
 
-    const combinations = drafts.map(
-      (d) => `${d.attributes.Color}/${d.attributes.Material}`,
-    );
+    const combinations = drafts.map((d) => `${d.attributes.Color}/${d.attributes.Material}`);
     expect(combinations).toContain('A/X');
     expect(combinations).toContain('A/Y');
     expect(combinations).toContain('A/Z');
@@ -269,26 +265,20 @@ describe('generateVariantsFromSelections - extended', () => {
 
 describe('normalizeVariant - extended', () => {
   it('creates a "Default" label when all attributes are empty', () => {
-    const variant = normalizeVariant(
-      { id: 'draft-1', attributes: { Color: '', Medida: '' } },
-      ['Color', 'Medida'],
-    );
+    const variant = normalizeVariant({ id: 'draft-1', attributes: { Color: '', Medida: '' } }, ['Color', 'Medida']);
     expect(variant.label).toBe('Default');
   });
 
   it('preserves a pre-set label over auto-generated one', () => {
-    const variant = normalizeVariant(
-      { id: 'd1', label: 'Custom Label', attributes: { Color: 'Rojo' } },
-      ['Color'],
-    );
+    const variant = normalizeVariant({ id: 'd1', label: 'Custom Label', attributes: { Color: 'Rojo' } }, ['Color']);
     expect(variant.label).toBe('Custom Label');
   });
 
   it('trims extra whitespace in attribute values', () => {
-    const variant = normalizeVariant(
-      { id: 'd1', attributes: { Color: '   Rojo   ', Medida: '  20CM  ' } },
-      ['Color', 'Medida'],
-    );
+    const variant = normalizeVariant({ id: 'd1', attributes: { Color: '   Rojo   ', Medida: '  20CM  ' } }, [
+      'Color',
+      'Medida',
+    ]);
     expect(variant.attributes.Color).toBe('Rojo');
     expect(variant.attributes.Medida).toBe('20CM');
   });
@@ -354,9 +344,7 @@ describe('normalizeProduct - extended', () => {
     const product = buildProduct({
       price: NaN,
       cost: NaN,
-      variants: [
-        buildVariant({ attributes: { Color: 'Rojo' }, price: 25, cost: 10 }),
-      ],
+      variants: [buildVariant({ attributes: { Color: 'Rojo' }, price: 25, cost: 10 })],
     });
 
     const normalized = normalizeProduct(product);
@@ -367,9 +355,7 @@ describe('normalizeProduct - extended', () => {
   it('derives color from the first variant when product.color is missing', () => {
     const product = buildProduct({
       color: undefined,
-      variants: [
-        buildVariant({ attributes: { Color: 'Azul' }, quantity: 1 }),
-      ],
+      variants: [buildVariant({ attributes: { Color: 'Azul' }, quantity: 1 })],
     });
 
     const normalized = normalizeProduct(product);
@@ -379,9 +365,7 @@ describe('normalizeProduct - extended', () => {
   it('derives dimensions from Medida variant attribute', () => {
     const product = buildProduct({
       dimensions: undefined,
-      variants: [
-        buildVariant({ attributes: { Medida: '30CM' }, quantity: 1 }),
-      ],
+      variants: [buildVariant({ attributes: { Medida: '30CM' }, quantity: 1 })],
     });
 
     const normalized = normalizeProduct(product);

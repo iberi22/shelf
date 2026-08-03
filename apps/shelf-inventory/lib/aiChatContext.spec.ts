@@ -62,9 +62,7 @@ describe('AIChat context serialization - product limits', () => {
     }));
 
   it('slices products to the given limit', () => {
-    const products = Array.from({ length: 500 }, (_, i) =>
-      buildProduct({ name: `Product ${i}`, quantity: i + 1 }),
-    );
+    const products = Array.from({ length: 500 }, (_, i) => buildProduct({ name: `Product ${i}`, quantity: i + 1 }));
 
     expect(serializeProducts(products, 50)).toHaveLength(50);
     expect(serializeProducts(products, 300)).toHaveLength(300);

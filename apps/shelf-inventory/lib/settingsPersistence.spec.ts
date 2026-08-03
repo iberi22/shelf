@@ -110,9 +110,7 @@ describe('normalizeInventoryConfig - extended', () => {
 
   it('validates field type, defaulting invalid to "text"', () => {
     const config = normalizeInventoryConfig({
-      fields: [
-        { id: 'f1', key: 'field1', label: 'Test', type: 'invalid' as any },
-      ],
+      fields: [{ id: 'f1', key: 'field1', label: 'Test', type: 'invalid' as any }],
     });
     expect(config.fields[0].type).toBe('text');
   });
@@ -163,15 +161,21 @@ describe('getInventoryFieldValue', () => {
   });
 
   it('reads from legacy dimensions field', () => {
-    expect(getInventoryFieldValue(product, { id: '1', key: 'dimensions', label: 'Medida', type: 'measure' })).toBe('20CM');
+    expect(getInventoryFieldValue(product, { id: '1', key: 'dimensions', label: 'Medida', type: 'measure' })).toBe(
+      '20CM',
+    );
   });
 
   it('reads from legacy capacity field', () => {
-    expect(getInventoryFieldValue(product, { id: '1', key: 'capacity', label: 'Capacidad', type: 'text' })).toBe('500ml');
+    expect(getInventoryFieldValue(product, { id: '1', key: 'capacity', label: 'Capacidad', type: 'text' })).toBe(
+      '500ml',
+    );
   });
 
   it('reads from legacy material field', () => {
-    expect(getInventoryFieldValue(product, { id: '1', key: 'material', label: 'Material', type: 'text' })).toBe('Algodón');
+    expect(getInventoryFieldValue(product, { id: '1', key: 'material', label: 'Material', type: 'text' })).toBe(
+      'Algodón',
+    );
   });
 
   it('reads from customFields for unknown keys', () => {

@@ -127,11 +127,14 @@ describe('Materials, Onboarding, and Photos Smoke Tests', () => {
       cy.contains('span', 'Plástico')
         .parent()
         .find('input[type="file"]')
-        .selectFile({
-          contents: Cypress.Buffer.from(base64Png, 'base64'),
-          fileName: 'test.png',
-          mimeType: 'image/png',
-        }, { force: true });
+        .selectFile(
+          {
+            contents: Cypress.Buffer.from(base64Png, 'base64'),
+            fileName: 'test.png',
+            mimeType: 'image/png',
+          },
+          { force: true },
+        );
 
       // Check image alt="Plástico" is displayed
       cy.get('img[alt="Plástico"]').should('exist');

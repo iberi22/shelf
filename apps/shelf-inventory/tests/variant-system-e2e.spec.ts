@@ -198,7 +198,7 @@ test.describe('Variant System — Full E2E Coverage', () => {
     const logInfo = await page.evaluate(() => {
       const cards = document.querySelectorAll('[data-testid="product-form"] div');
       return Array.from(cards)
-        .filter(c => c.className && c.className.includes('bg-[#121212]'))
+        .filter((c) => c.className && c.className.includes('bg-[#121212]'))
         .map((card, idx) => `CARD ${idx}: class="${card.className}" text="${card.textContent?.slice(0, 100)}"`)
         .join('\n');
     });

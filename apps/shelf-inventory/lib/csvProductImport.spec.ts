@@ -100,9 +100,7 @@ describe('previewCsvHeaders', () => {
     const result = previewCsvHeaders('');
     expect(result.rawHeaders).toEqual([]);
     expect(result.suggestedMapping).toEqual([]);
-    expect(result.missingRequired).toEqual(
-      CANONICAL_CSV_HEADERS.filter((h) => h !== 'imageUrl'),
-    );
+    expect(result.missingRequired).toEqual(CANONICAL_CSV_HEADERS.filter((h) => h !== 'imageUrl'));
   });
 
   it('returns correct mapping for a well-formed header', () => {
@@ -337,7 +335,10 @@ describe('parseProductCsv', () => {
   });
 
   it('handles a large CSV with many rows', () => {
-    const rows = Array.from({ length: 100 }, (_, i) => `Product ${i},SKU-${i},${i + 1},${(i + 1) * 10},${(i + 1) * 5},`).join('\n');
+    const rows = Array.from(
+      { length: 100 },
+      (_, i) => `Product ${i},SKU-${i},${i + 1},${(i + 1) * 10},${(i + 1) * 5},`,
+    ).join('\n');
     const csv = `${VALID_HEADER}\n${rows}`;
     const result = parseProductCsv(csv);
 

@@ -128,21 +128,19 @@ describe('localAuthManager', () => {
     it('throws if an account already exists', async () => {
       await localAuthManager.createAccount('test@example.com', 'password123');
 
-      await expect(
-        localAuthManager.createAccount('other@example.com', 'password456'),
-      ).rejects.toThrow('An account already exists');
+      await expect(localAuthManager.createAccount('other@example.com', 'password456')).rejects.toThrow(
+        'An account already exists',
+      );
     });
 
     it('throws if email is empty', async () => {
-      await expect(
-        localAuthManager.createAccount('', 'password123'),
-      ).rejects.toThrow('Email is required');
+      await expect(localAuthManager.createAccount('', 'password123')).rejects.toThrow('Email is required');
     });
 
     it('throws if password is too short', async () => {
-      await expect(
-        localAuthManager.createAccount('test@example.com', '12345'),
-      ).rejects.toThrow('at least 6 characters');
+      await expect(localAuthManager.createAccount('test@example.com', '12345')).rejects.toThrow(
+        'at least 6 characters',
+      );
     });
 
     it('sets createdAt to a valid ISO timestamp', async () => {
@@ -170,21 +168,19 @@ describe('localAuthManager', () => {
     it('throws for non-existent account', async () => {
       localStorage.clear();
 
-      await expect(
-        localAuthManager.login('nobody@example.com', 'password123'),
-      ).rejects.toThrow('No account found');
+      await expect(localAuthManager.login('nobody@example.com', 'password123')).rejects.toThrow('No account found');
     });
 
     it('throws for wrong email', async () => {
-      await expect(
-        localAuthManager.login('wrong@example.com', 'password123'),
-      ).rejects.toThrow('Invalid email or password');
+      await expect(localAuthManager.login('wrong@example.com', 'password123')).rejects.toThrow(
+        'Invalid email or password',
+      );
     });
 
     it('throws for wrong password', async () => {
-      await expect(
-        localAuthManager.login('test@example.com', 'wrongpassword'),
-      ).rejects.toThrow('Invalid email or password');
+      await expect(localAuthManager.login('test@example.com', 'wrongpassword')).rejects.toThrow(
+        'Invalid email or password',
+      );
     });
 
     it('updates lastSeen on the current device', async () => {
@@ -364,17 +360,13 @@ describe('localAuthManager', () => {
     });
 
     it('throws when no account exists', async () => {
-      await expect(
-        localAuthManager.getRecoverySeed('password123'),
-      ).rejects.toThrow('No account found');
+      await expect(localAuthManager.getRecoverySeed('password123')).rejects.toThrow('No account found');
     });
 
     it('throws when wrong password is provided', async () => {
       await localAuthManager.createAccount('test@example.com', 'password123');
 
-      await expect(
-        localAuthManager.getRecoverySeed('wrongpassword'),
-      ).rejects.toThrow('Invalid password');
+      await expect(localAuthManager.getRecoverySeed('wrongpassword')).rejects.toThrow('Invalid password');
     });
   });
 
@@ -394,9 +386,9 @@ describe('localAuthManager', () => {
       await localAuthManager.createAccount('existing@example.com', 'password123');
       const seedWords = Array.from({ length: 12 }, (_, i) => `word${i + 1}`);
 
-      await expect(
-        localAuthManager.recoverFromSeed(seedWords, 'newpassword', 'recovered@example.com'),
-      ).rejects.toThrow('An account already exists');
+      await expect(localAuthManager.recoverFromSeed(seedWords, 'newpassword', 'recovered@example.com')).rejects.toThrow(
+        'An account already exists',
+      );
     });
 
     it('throws for an invalid seed', async () => {
@@ -408,9 +400,9 @@ describe('localAuthManager', () => {
     it('throws for a short password', async () => {
       const seedWords = Array.from({ length: 12 }, (_, i) => `word${i + 1}`);
 
-      await expect(
-        localAuthManager.recoverFromSeed(seedWords, 'short', 'test@example.com'),
-      ).rejects.toThrow('at least 6 characters');
+      await expect(localAuthManager.recoverFromSeed(seedWords, 'short', 'test@example.com')).rejects.toThrow(
+        'at least 6 characters',
+      );
     });
 
     it('normalizes the email to lowercase', async () => {
@@ -430,9 +422,9 @@ describe('localAuthManager', () => {
       await localAuthManager.changePassword('password123', 'newpassword456');
 
       // Old password should no longer work
-      await expect(
-        localAuthManager.login('test@example.com', 'password123'),
-      ).rejects.toThrow('Invalid email or password');
+      await expect(localAuthManager.login('test@example.com', 'password123')).rejects.toThrow(
+        'Invalid email or password',
+      );
 
       // New password should work
       const user = await localAuthManager.login('test@example.com', 'newpassword456');
@@ -440,25 +432,21 @@ describe('localAuthManager', () => {
     });
 
     it('throws when no account exists', async () => {
-      await expect(
-        localAuthManager.changePassword('old', 'newpassword'),
-      ).rejects.toThrow('No account found');
+      await expect(localAuthManager.changePassword('old', 'newpassword')).rejects.toThrow('No account found');
     });
 
     it('throws for incorrect current password', async () => {
       await localAuthManager.createAccount('test@example.com', 'password123');
 
-      await expect(
-        localAuthManager.changePassword('wrongpassword', 'newpassword456'),
-      ).rejects.toThrow('Current password is incorrect');
+      await expect(localAuthManager.changePassword('wrongpassword', 'newpassword456')).rejects.toThrow(
+        'Current password is incorrect',
+      );
     });
 
     it('throws for a short new password', async () => {
       await localAuthManager.createAccount('test@example.com', 'password123');
 
-      await expect(
-        localAuthManager.changePassword('password123', 'short'),
-      ).rejects.toThrow('at least 6 characters');
+      await expect(localAuthManager.changePassword('password123', 'short')).rejects.toThrow('at least 6 characters');
     });
 
     it('preserves the recovery seed after password change', async () => {

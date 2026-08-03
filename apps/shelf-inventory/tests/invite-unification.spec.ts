@@ -160,12 +160,7 @@ test.describe('Unify team invite roles with mesh P2PRole (SRC-FUN-013)', () => {
     expect(memberObjCollab).toBeDefined();
     expect(memberObjCollab.role).toBe('collaborator');
 
-    await assertInviteAcceptedInNewPage(
-      context,
-      collabMailto.inviteUrl,
-      'collab@example.com',
-      'collaborator',
-    );
+    await assertInviteAcceptedInNewPage(context, collabMailto.inviteUrl, 'collab@example.com', 'collaborator');
 
     // vendedor — mailto payload
     const vendedorMailto = await inviteMember(page, {

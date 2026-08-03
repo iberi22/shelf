@@ -4,8 +4,7 @@ import { dismissModals, setupPage } from './helpers';
 const PIXEL_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
-const ROJO_PNG_BASE64 =
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X6n0AAAAASUVORK5CYII=';
+const ROJO_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X6n0AAAAASUVORK5CYII=';
 
 // Helper to prepare a product with variants 'Rojo' and 'Plástico'
 async function createProductWithVariants(page: any, productName: string) {
@@ -141,10 +140,11 @@ test.describe('Photo-to-Variants + AI Assistant E2E Coverage', () => {
       const p = state?.products?.find((item: any) => item.name === name && item.isActive !== false);
       return {
         productImageUrl: p?.imageUrl,
-        variants: p?.variants?.map((v: any) => ({
-          label: v.label,
-          imageUrl: v.imageUrl,
-        })) || []
+        variants:
+          p?.variants?.map((v: any) => ({
+            label: v.label,
+            imageUrl: v.imageUrl,
+          })) || [],
       };
     }, productName);
 
@@ -210,10 +210,11 @@ test.describe('Photo-to-Variants + AI Assistant E2E Coverage', () => {
       const p = state?.products?.find((item: any) => item.name === name && item.isActive !== false);
       return {
         productImageUrl: p?.imageUrl,
-        variants: p?.variants?.map((v: any) => ({
-          label: v.label,
-          imageUrl: v.imageUrl,
-        })) || []
+        variants:
+          p?.variants?.map((v: any) => ({
+            label: v.label,
+            imageUrl: v.imageUrl,
+          })) || [],
       };
     }, productName);
 

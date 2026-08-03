@@ -14,7 +14,9 @@ test.describe('P2P share links', () => {
 
     const peerIdLocator = page.locator('span.font-mono.text-yellow-400, code.font-mono.text-yellow-400').first();
     await peerIdLocator.waitFor({ state: 'visible' });
-    await expect.poll(async () => page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId || null), { timeout: 30000 }).toBeTruthy();
+    await expect
+      .poll(async () => page.evaluate(() => (window as any)._dbSyncForTest?.localPeerId || null), { timeout: 30000 })
+      .toBeTruthy();
     const peerId = (await peerIdLocator.innerText()).split('\n')[0].trim();
     expect(peerId.length).toBeGreaterThan(0);
 
