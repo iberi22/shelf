@@ -17,7 +17,7 @@
 | SRC-FUN-006 | Barcode/QR Scanner | P1 | Implemented | 90% |
 | SRC-FUN-007 | AI Assistant | P2 | Implemented | 86% |
 | SRC-FUN-008 | Authentication (Local) & Device Security | P0 | Implemented | 88% |
-| SRC-FUN-009 | Monetization (Ads + Subscriptions) | P0 | Implemented | 90% |
+| SRC-FUN-009 | Monetization — Colaborador SWAL | P0 | Implemented | 90% |
 | SRC-FUN-010 | Multi-language Support | P1 | Implemented | 90% |
 | SRC-FUN-011 | Settings & Data Management | P1 | Implemented | 93% |
 | SRC-FUN-012 | Reports & Analytics | P1 | Implemented | 92% |
@@ -135,23 +135,23 @@
 
 **Open Work:** Align ACs to localAuth; optional future cloud = ROADMAP-003. Guest tier must not hardcode pyme.
 
-## SRC-FUN-009: Monetization (Ads + Subscriptions)
+## SRC-FUN-009: Monetization — Colaborador SWAL
 
 **Priority:** P0 | **Status:** Implemented | **Implementation:** 90%
 
-**User Story:** Como negocio, quiero que la app genere ingresos via anuncios y suscripciones.
+**User Story:** Como usuario, quiero usar todas las features locales de forma gratuita y sin anuncios, participando activamente del ecosistema SWAL mediante un nodo si requiero capacidades multi-instancia avanzadas.
 
-**Runtime reality (Audit 2026-07-17):** `SubscriptionContext` hardcodes `isPro`/`isPyme` true — ads never show; checkout always looks like current plan.
+**Runtime reality (Audit 2026-07-17):** Se eliminaron los anuncios y las suscripciones obligatorias locales. Todas las features del core de la aplicación son gratuitas y offline-first. Las características premium/Pro se desbloquean mediante un nodo SWAL activo (not Stripe).
 
 **Acceptance Criteria:**
 
-1. Anuncios para usuarios free.
-2. Modal de suscripcion con planes.
-3. Stripe integrado con webhooks en produccion.
-4. Anuncios ocultos para usuarios con suscripcion activa.
-5. AdSense IDs configurados via environment variables.
+1. Todas las features accesibles sin restricciones de planes locales.
+2. Sin anuncios intrusivos en la UI (anuncios eliminados).
+3. Estado Pro habilitado a través de un nodo SWAL activo (not Stripe).
+4. Stripe configurado únicamente para transacciones opcionales: payouts de colaboradores bajo el modelo de reparto de ingresos (25/15/10% profit sharing), soporte voluntario de infraestructura en la nube o staking.
+5. Verificación segura de firmas para webhooks de Stripe en backend para procesar estas transacciones auxiliares.
 
-**Open Work:** Wire real tier from localAuth; Stripe backend + webhooks; Basic plan; ads gating.
+**Open Work:** Desacoplamiento final de componentes legacy de ads/checkout y migración al modelo 100% libre localmente.
 
 ## SRC-FUN-010: Multi-language Support
 
