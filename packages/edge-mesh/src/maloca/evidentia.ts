@@ -1,5 +1,3 @@
-/// <reference types="node" />
-import { createHash } from 'node:crypto';
 import type { PostQuantumIdentity } from '../identity/index.js';
 import type { MeshManager } from '../mesh/index.js';
 import { bytesAHex } from '../protocol/utils.js';
@@ -96,6 +94,18 @@ export class EvidentiaManager extends EventTarget {
   }
 }
 
+// ─── SHA-256 UNIVERSAL (Web Crypto API) ────────────────────────────────────
+// Reemplaza `node:crypto.createHash` para que edge-mesh sea universal
+// (browser + node). Determinista: mismo SHA-256 sobre los mismos bytes.
+
+const sha256Encoder = new TextEncoder();
+
+async function sha256Hex(data: string | Uint8Array<ArrayBuffer>): Promise<string> {
+  const bytes = typeof data === 'string' ? sha256Encoder.encode(data) : data;
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return bytesAHex(new Uint8Array(digest));
+}
+
 // ─── MERKLE TREE & SPLIT-BRAIN MERGE ───────────────────────────────────────
 
 export interface Leaf {
@@ -108,34 +118,47 @@ export interface Leaf {
 export class MerkleTree {
   private leaves: Leaf[];
   private root: string;
+  private buildPromise: Promise<void>;
+  private buildGeneration: number = 0;
   public signature?: string;
 
   constructor(leaves: Leaf[] = []) {
     this.leaves = [...leaves];
     this.root = '';
-    this.rebuild();
+    // rebuild() es async (Web Crypto); se dispara y se espera vía buildPromise.
+    this.buildPromise = this.rebuild();
   }
 
   getLeaves(): Leaf[] {
     return [...this.leaves];
   }
 
-  add(leaf: Leaf): void {
+  async add(leaf: Leaf): Promise<void> {
     this.leaves.push(leaf);
-    this.rebuild();
+    this.buildPromise = this.rebuild();
+    await this.buildPromise;
   }
 
-  getRoot(): string {
+  async getRoot(): Promise<string> {
+    await this.buildPromise;
     return this.root;
   }
 
-  private rebuild(): void {
-    if (this.leaves.length === 0) {
+  private async rebuild(): Promise<void> {
+    // Generación anti-race: si un rebuild previo termina después que uno nuevo,
+    // su resultado se descarta (snapshot + guard de generación).
+    const generation = ++this.buildGeneration;
+    const snapshot = [...this.leaves];
+
+    if (snapshot.length === 0) {
       this.root = '';
       return;
     }
 
-    let level = this.leaves.map((l) => hashLeaf(l));
+    let level: string[] = [];
+    for (const leaf of snapshot) {
+      level.push(await hashLeaf(leaf));
+    }
 
     while (level.length > 1) {
       const nextLevel: string[] = [];
@@ -144,34 +167,39 @@ export class MerkleTree {
           const left = level[i];
           const right = level[i + 1];
           const combined = left < right ? left + right : right + left;
-          nextLevel.push(createHash('sha256').update(combined).digest('hex'));
+          nextLevel.push(await sha256Hex(combined));
         } else {
           const left = level[i];
           const combined = left + left;
-          nextLevel.push(createHash('sha256').update(combined).digest('hex'));
+          nextLevel.push(await sha256Hex(combined));
         }
       }
       level = nextLevel;
     }
 
-    this.root = level[0] || '';
+    if (generation === this.buildGeneration) {
+      this.root = level[0] || '';
+    }
   }
 
-  verify(leaf: Leaf, proof: string[]): boolean {
-    let currentHash = hashLeaf(leaf);
+  async verify(leaf: Leaf, proof: string[]): Promise<boolean> {
+    let currentHash = await hashLeaf(leaf);
     for (const sibling of proof) {
       const combined = currentHash < sibling ? currentHash + sibling : sibling + currentHash;
-      currentHash = createHash('sha256').update(combined).digest('hex');
+      currentHash = await sha256Hex(combined);
     }
-    return currentHash === this.getRoot();
+    return currentHash === (await this.getRoot());
   }
 
-  getProof(leaf: Leaf): string[] {
+  async getProof(leaf: Leaf): Promise<string[]> {
     let index = this.leaves.findIndex((l) => l.id === leaf.id);
     if (index === -1) return [];
 
     const proof: string[] = [];
-    let level = this.leaves.map((l) => hashLeaf(l));
+    let level: string[] = [];
+    for (const l of this.leaves) {
+      level.push(await hashLeaf(l));
+    }
 
     while (level.length > 1) {
       const nextLevel: string[] = [];
@@ -180,7 +208,7 @@ export class MerkleTree {
           const left = level[i];
           const right = level[i + 1];
           const combined = left < right ? left + right : right + left;
-          nextLevel.push(createHash('sha256').update(combined).digest('hex'));
+          nextLevel.push(await sha256Hex(combined));
 
           if (i === index) {
             proof.push(right);
@@ -190,7 +218,7 @@ export class MerkleTree {
         } else {
           const left = level[i];
           const combined = left + left;
-          nextLevel.push(createHash('sha256').update(combined).digest('hex'));
+          nextLevel.push(await sha256Hex(combined));
 
           if (i === index) {
             proof.push(left);
@@ -204,9 +232,9 @@ export class MerkleTree {
   }
 }
 
-export function hashLeaf(leaf: Leaf): string {
+export async function hashLeaf(leaf: Leaf): Promise<string> {
   const dataToHash = `${leaf.id}:${leaf.hash}:${leaf.timestamp}`;
-  return createHash('sha256').update(dataToHash).digest('hex');
+  return sha256Hex(dataToHash);
 }
 
 export interface MerkleMergeResult {
@@ -225,79 +253,76 @@ export async function mergeMerkleTrees(
   const originalLeavesA = treeA.getLeaves();
   const originalLeavesB = treeB.getLeaves();
 
-  try {
-    const leavesMap = new Map<string, { a?: Leaf; b?: Leaf }>();
+  // Atomicidad: se trabaja sobre snapshots de leaves (originalLeavesA/B),
+  // nunca se mutan treeA ni treeB. Cualquier error aborta sin efectos.
+  const leavesMap = new Map<string, { a?: Leaf; b?: Leaf }>();
 
-    for (const leaf of originalLeavesA) {
-      leavesMap.set(leaf.id, { a: leaf });
-    }
+  for (const leaf of originalLeavesA) {
+    leavesMap.set(leaf.id, { a: leaf });
+  }
 
-    for (const leaf of originalLeavesB) {
-      const entry = leavesMap.get(leaf.id) || {};
-      entry.b = leaf;
-      leavesMap.set(leaf.id, entry);
-    }
+  for (const leaf of originalLeavesB) {
+    const entry = leavesMap.get(leaf.id) || {};
+    entry.b = leaf;
+    leavesMap.set(leaf.id, entry);
+  }
 
-    const mergedLeaves: Leaf[] = [];
-    const resolvedLeaves: Leaf[] = [];
-    const pendingLeaves: Leaf[] = [];
-    let conflictCount = 0;
+  const mergedLeaves: Leaf[] = [];
+  const resolvedLeaves: Leaf[] = [];
+  const pendingLeaves: Leaf[] = [];
+  let conflictCount = 0;
 
-    for (const [_, entry] of leavesMap.entries()) {
-      if (entry.a && !entry.b) {
-        mergedLeaves.push(entry.a);
-      } else if (!entry.a && entry.b) {
-        mergedLeaves.push(entry.b);
-      } else if (entry.a && entry.b) {
-        const leafA = entry.a;
-        const leafB = entry.b;
+  for (const [_, entry] of leavesMap.entries()) {
+    if (entry.a && !entry.b) {
+      mergedLeaves.push(entry.a);
+    } else if (!entry.a && entry.b) {
+      mergedLeaves.push(entry.b);
+    } else if (entry.a && entry.b) {
+      const leafA = entry.a;
+      const leafB = entry.b;
 
-        if (leafA.hash === leafB.hash) {
-          // No conflict, they are identical
-          mergedLeaves.push(leafA);
+      if (leafA.hash === leafB.hash) {
+        // No conflict, they are identical
+        mergedLeaves.push(leafA);
+      } else {
+        // Conflict!
+        conflictCount++;
+        const diff = Math.abs(leafA.timestamp - leafB.timestamp);
+        const fiveMinutesMs = 5 * 60 * 1000;
+
+        if (diff > fiveMinutesMs) {
+          // Resolve by LWW (Last-Writer-Wins)
+          const winner = leafA.timestamp > leafB.timestamp ? leafA : leafB;
+          resolvedLeaves.push(winner);
+          mergedLeaves.push(winner);
         } else {
-          // Conflict!
-          conflictCount++;
-          const diff = Math.abs(leafA.timestamp - leafB.timestamp);
-          const fiveMinutesMs = 5 * 60 * 1000;
-
-          if (diff > fiveMinutesMs) {
-            // Resolve by LWW (Last-Writer-Wins)
-            const winner = leafA.timestamp > leafB.timestamp ? leafA : leafB;
-            resolvedLeaves.push(winner);
-            mergedLeaves.push(winner);
-          } else {
-            // Irresoluble conflict, requires governance vote
-            pendingLeaves.push(leafA);
-            pendingLeaves.push(leafB);
-          }
+          // Irresoluble conflict, requires governance vote
+          pendingLeaves.push(leafA);
+          pendingLeaves.push(leafB);
         }
       }
     }
-
-    // Create merged tree
-    const mergedTree = new MerkleTree(mergedLeaves);
-
-    // El nuevo root se firma con ML-DSA-65
-    if (identity) {
-      const root = mergedTree.getRoot();
-      if (root) {
-        const encoder = new TextEncoder();
-        const rootBytes = encoder.encode(root);
-        const digest = await crypto.subtle.digest('SHA-256', rootBytes);
-        const signatureBytes = await identity.firmar(new Uint8Array(digest));
-        mergedTree.signature = bytesAHex(signatureBytes);
-      }
-    }
-
-    return {
-      mergedTree,
-      conflictCount,
-      resolvedLeaves,
-      pendingLeaves,
-    };
-  } catch (error) {
-    // If anything fails during the merge, we throw the error, leaving treeA and treeB completely unaffected.
-    throw error;
   }
+
+  // Create merged tree
+  const mergedTree = new MerkleTree(mergedLeaves);
+
+  // El nuevo root se firma con ML-DSA-65
+  if (identity) {
+    const root = await mergedTree.getRoot();
+    if (root) {
+      const encoder = new TextEncoder();
+      const rootBytes = encoder.encode(root);
+      const digest = await crypto.subtle.digest('SHA-256', rootBytes);
+      const signatureBytes = await identity.firmar(new Uint8Array(digest));
+      mergedTree.signature = bytesAHex(signatureBytes);
+    }
+  }
+
+  return {
+    mergedTree,
+    conflictCount,
+    resolvedLeaves,
+    pendingLeaves,
+  };
 }
