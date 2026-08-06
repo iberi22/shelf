@@ -2,6 +2,22 @@ import { expect, test } from '@playwright/test';
 import { addOverlayBlocker, dismissModals, setupPage } from './helpers';
 import { expectProductPriceSync, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
+const collaboratorPermissions = {
+  canViewProducts: true,
+  canEditProducts: true,
+  canViewSales: true,
+  canEditSales: true,
+  canViewClients: true,
+  canEditClients: true,
+  canViewSuppliers: false,
+  canEditSuppliers: false,
+  canViewPurchaseOrders: false,
+  canEditPurchaseOrders: false,
+  canViewReports: false,
+  canViewArqueo: false,
+  canViewDashboard: false,
+};
+
 test.describe('Multi-Peer E2E Synchronization', () => {
   test.describe.configure({ mode: 'serial' });
   test.setTimeout(120000);
@@ -53,6 +69,40 @@ test.describe('Multi-Peer E2E Synchronization', () => {
       )
       .toBeGreaterThanOrEqual(1);
 
+    // Wait for the transport to be fully connected (both directions)
+    await expect
+      .poll(
+        async () => {
+          return adminPage.evaluate((targetPeerId: string) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected(targetPeerId));
+          }, collabId);
+        },
+        { timeout: 20000 },
+      )
+      .toBe(true);
+
+    // Assign collab role + permissions explicitly so the authz state is deterministic
+    await adminPage.evaluate(
+      ({ targetPeerId, nextPermissions }) => {
+        const p2p = (window as any)._p2pManagerForTest;
+        const dbSync = (window as any)._dbSyncForTest;
+        dbSync?.updatePeerConfig(targetPeerId, 'collaborator', nextPermissions);
+        p2p?.sendTo(targetPeerId, {
+          type: 'CHANGE_ROLE',
+          payload: { targetPeerId, role: 'collaborator', permissions: nextPermissions },
+        });
+        p2p?.sendTo(targetPeerId, {
+          type: 'UPDATE_PEER_PERMISSIONS',
+          payload: { targetPeerId, role: 'collaborator', permissions: nextPermissions },
+        });
+      },
+      { targetPeerId: collabId, nextPermissions: collaboratorPermissions },
+    );
+
+    // Let role assignment settle on both peers
+    await adminPage.waitForTimeout(2000);
+    await collabPage.waitForTimeout(2000);
+
     // Step 2: Peer A creates a product
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
     await dismissModals(adminPage);
@@ -73,16 +123,13 @@ test.describe('Multi-Peer E2E Synchronization', () => {
     await expectProductSync(collabPage, adminPage, 'Multi-Peer Sync Product');
 
     // Step 4: Peer B edits the product (enable auto-apply so collab write hits products map, not pendingEdits)
-    await collabPage.evaluate(() => {
-      const db = (window as any)._dbSyncForTest;
-      const cfg = db?.getInventoryConfig?.() || {};
-      db?.updateInventoryConfig?.({ ...cfg, autoApplyProductUpdates: true });
-    });
-    await adminPage.evaluate(() => {
-      const db = (window as any)._dbSyncForTest;
-      const cfg = db?.getInventoryConfig?.() || {};
-      db?.updateInventoryConfig?.({ ...cfg, autoApplyProductUpdates: true });
-    });
+    for (const page of [collabPage, adminPage]) {
+      await page.evaluate(() => {
+        const db = (window as any)._dbSyncForTest;
+        const cfg = db?.getInventoryConfig?.() || {};
+        db?.setInventoryConfig?.({ ...cfg, autoApplyProductUpdates: true });
+      });
+    }
 
     const productId = await collabPage.evaluate(() => {
       const dbSync = (window as any)._dbSyncForTest;
