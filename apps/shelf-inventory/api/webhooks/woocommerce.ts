@@ -11,12 +11,10 @@ async function verifyWooCommerceSignature(req: Request, secret: string): Promise
   const keyData = encoder.encode(secret);
   const bodyData = encoder.encode(body);
 
-  const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
 
-  const signed = await crypto.subtle.sign('HMAC', key, bodyData);
-  const signedBase64 = btoa(String.fromCharCode(...new Uint8Array(signed)));
-
-  return signedBase64 === signature;
+  const signatureBytes = Uint8Array.from(atob(signature), c => c.charCodeAt(0));
+  return crypto.subtle.verify('HMAC', key, signatureBytes, bodyData);
 }
 
 export default async function handler(req: Request) {

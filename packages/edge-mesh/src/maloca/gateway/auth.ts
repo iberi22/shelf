@@ -33,6 +33,12 @@ async function hmacSha256(secret: Uint8Array, data: Uint8Array): Promise<Uint8Ar
   return new Uint8Array(sig);
 }
 
+async function hmacVerify(secret: Uint8Array, signature: Uint8Array, data: Uint8Array): Promise<boolean> {
+  const subtle = crypto.subtle as any;
+  const key = await subtle.importKey('raw', secret, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+  return subtle.verify('HMAC', key, signature, data);
+}
+
 // Secreto para JWT
 const getJwtSecret = (): Uint8Array => {
   if (typeof (globalThis as any).process !== 'undefined' && (globalThis as any).process?.env?.MALOCA_JWT_SECRET) {
@@ -113,10 +119,10 @@ export async function verifyToken(token: string): Promise<boolean> {
     if (parts.length !== 3) return false;
     const [header, payload, signature] = parts;
 
-    const hmacResult = await hmacSha256(JWT_SECRET, new TextEncoder().encode(`${header}.${payload}`));
-    const expectedSignature = base64url(hmacResult);
+    const signatureBytes = base64urlDecode(signature);
+    const isValid = await hmacVerify(JWT_SECRET, signatureBytes, new TextEncoder().encode(`${header}.${payload}`));
 
-    if (signature !== expectedSignature) return false;
+    if (!isValid) return false;
 
     // Verificar expiración
     const decodedPayload = JSON.parse(new TextDecoder().decode(base64urlDecode(payload)));
