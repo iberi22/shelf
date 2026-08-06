@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-### [2.0.5](https://github.com/iberi22/shelf/compare/v2.0.4...v2.0.5) (2026-07-30)
+### [0.5.0](https://github.com/iberi22/shelf/compare/v0.4.0...v0.5.0) (2026-07-30)
 
 ### Features
 * **ai:** implement proxy backend (/api/ai/chat, /api/chat) for DeepSeek v4 Flash via OpenRouter
@@ -11,14 +11,14 @@ All notable changes to this project will be documented in this file. See [standa
 * **ci:** harden `.husky/pre-push` with build, package unit tests, and responsive mobile/tablet E2E checks
 * **deploy:** align root `vercel.json` headers and SPA rewrites with `/api` symlink for reliable Vercel Serverless Function deployments
 
-### [2.0.4](https://github.com/iberi22/shelf/compare/v2.0.3...v2.0.4) (2026-07-14)
+### [0.4.0](https://github.com/iberi22/shelf/compare/v0.3.0...v0.4.0) (2026-07-14)
 
 
 ### Bug Fixes
 
 * **ui:** remove pull-to-refresh hard reload, bump workspace version ([ccc49e7](https://github.com/iberi22/shelf/commit/ccc49e709ce2e9990c51735d9b0b3facdaf367a6))
 
-### [2.0.3](https://github.com/iberi22/shelf/compare/v2.0.2...v2.0.3) (2026-07-14)
+### [0.3.0](https://github.com/iberi22/shelf/compare/v0.2.0...v0.3.0) (2026-07-14)
 
 
 ### Bug Fixes
@@ -26,21 +26,21 @@ All notable changes to this project will be documented in this file. See [standa
 * **pwa:** prevent update notification freeze due to hanging dynamic import ([ec76f6c](https://github.com/iberi22/shelf/commit/ec76f6c80bdd6886c9f482e71e9f391e84a1e13d))
 * **ui:** robust pull to refresh with internal scroll support and flex layout fix ([3abb7e3](https://github.com/iberi22/shelf/commit/3abb7e3d4f7c130a4f87acbf9daef90636074b8a))
 
-### [2.0.2](https://github.com/iberi22/shelf/compare/v2.0.1...v2.0.2) (2026-07-14)
+### [0.2.0](https://github.com/iberi22/shelf/compare/v0.1.0...v0.2.0) (2026-07-14)
 
 
 ### Bug Fixes
 
 * **ui:** prevent pull to refresh from shifting fixed bottom nav ([e68d174](https://github.com/iberi22/shelf/commit/e68d17431fd957a06addb249508f2c3b9f33dd66))
 
-### [2.0.1](https://github.com/iberi22/shelf/compare/v2.0.0...v2.0.1) (2026-07-14)
+### [0.1.0](https://github.com/iberi22/shelf/compare/v0.0.0...v0.1.0) (2026-07-14)
 
 
 ### Bug Fixes
 
 * **ui:** mobile scroll blocked by pull to refresh component ([4af6fd0](https://github.com/iberi22/shelf/commit/4af6fd05af9c09d5be0efb898679dd1b285a283e))
 
-## 2.0.0 (2026-07-14)
+## 0.0.0 (2026-07-14)
 
 
 ### Features

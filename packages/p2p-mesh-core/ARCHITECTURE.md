@@ -2,7 +2,7 @@
 
 **Package:** `@shelf/p2p-mesh-core`  
 **Location:** `packages/p2p-mesh-core/`  
-**Version:** 2.0.5  
+**Version:** 0.5.0  
 **Last Updated:** 2026-07-31
 
 ---
