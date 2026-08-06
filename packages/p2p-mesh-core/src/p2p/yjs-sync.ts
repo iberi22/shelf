@@ -25,6 +25,10 @@ export interface YjsSyncContext {
   areAllConnectedPeersDualReady: () => boolean;
   /** Active connections map (peerId → DataConnection). */
   connections: Map<string, { open: boolean }>;
+  /** Cache of last sent state vectors per peer to make sync idempotent. */
+  lastSentStateVectors?: Map<string, string>;
+  /** Set of peers with dual ready encryption setup. */
+  dualReadyEncryption?: Set<string>;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -36,10 +40,22 @@ export interface YjsSyncContext {
 export function requestYjsSync(ctx: YjsSyncContext, peerId: string, branchId?: string): void {
   if (!dbSync.isReady) return;
   const targetBranchId = branchId || dbSync.activeBranchId || undefined;
+  const stateVectorHex = toHex(dbSync.getStateVector());
+  const isDualReady = ctx.dualReadyEncryption?.has(peerId) ?? false;
+  const cacheKey = `${targetBranchId || ''}:${stateVectorHex}:${isDualReady ? 'enc' : 'clear'}`;
+
+  if (ctx.lastSentStateVectors) {
+    if (ctx.lastSentStateVectors.get(peerId) === cacheKey) {
+      // Already sent the exact same state vector request to this peer
+      return;
+    }
+    ctx.lastSentStateVectors.set(peerId, cacheKey);
+  }
+
   ctx.sendTo(peerId, {
     type: 'YJS_SYNC_REQUEST',
     payload: {
-      stateVector: toHex(dbSync.getStateVector()),
+      stateVector: stateVectorHex,
       branchId: targetBranchId,
       respondWithRequest: true,
     },

@@ -188,7 +188,7 @@ importers:
         specifier: ^1.61.0
         version: 1.61.1
       postcss:
-        specifier: ^8.5.18
+        specifier: ^8.5.23
         version: 8.5.25
       rollup:
         specifier: ^4.62.0
