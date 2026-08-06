@@ -11,6 +11,14 @@ All notable changes to this project will be documented in this file. See [standa
 * **ci:** harden `.husky/pre-push` with build, package unit tests, and responsive mobile/tablet E2E checks
 * **deploy:** align root `vercel.json` headers and SPA rewrites with `/api` symlink for reliable Vercel Serverless Function deployments
 
+### Bug Fixes
+* **edge-mesh:** replace `node:crypto` with Web Crypto API in evidentia.ts — browser-universal Merkle hashing (`crypto.subtle.digest`, async API, golden tests) ([#442](https://github.com/iberi22/shelf/pull/442))
+* **security:** HMAC signature verification in constant time (timing attack) — webhooks + JWT ([#435](https://github.com/iberi22/shelf/pull/435))
+* **security:** fix XSS vulnerability in Catalog image rendering ([#434](https://github.com/iberi22/shelf/pull/434))
+* **e2e:** set es-ES locale in Playwright config — fixes ~10 consistent i18n test failures (mobile-landing, onboarding-settings, crud, variant)
+* **e2e:** stabilize P2P sync specs (multi-peer, integrity-conflict) with explicit roles + `requestFullSync` catch-up
+* **e2e:** bilingual selectors (settings-mobile-layout, invite-unification)
+
 ### [0.4.0](https://github.com/iberi22/shelf/compare/v0.3.0...v0.4.0) (2026-07-14)
 
 
