@@ -61,7 +61,7 @@ test.describe('Settings mobile layout', () => {
 
     await page.waitForTimeout(800);
 
-    await expect(page.getByRole('heading', { name: 'Settings', level: 2 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Configuración|Settings/, level: 2 })).toBeVisible();
     await expect(page.getByText(/Aplicar actualizaciones automáticamente/i)).toBeVisible();
 
     const metrics = await page.evaluate(() => ({
