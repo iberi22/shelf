@@ -748,7 +748,7 @@
       "sdlc": "hardening",
       "priority": "P0",
       "category": "EDGE",
-      "description": "Runtime P2P reutilizable con namespaces, authz, Y.Doc compartido, transport late-bind y ACL remota por colección en path primario",
+      "description": "Runtime P2P reutilizable con namespaces, authz, Y.Doc compartido, transport late-bind, ACL remota por colección en path primario, crypto universal (Web Crypto API) y rate limiter",
       "user_story": "Como desarrollador, quiero un runtime P2P reutilizable que encapsule la logica mesh en un package independiente",
       "actor": "Desarrollador",
       "dependencies": [
@@ -770,8 +770,8 @@
         "Revoca cambios CRDT no autorizados via security origin",
         "React bindings via edge-mesh-react"
       ],
-      "implementation_percentage": 88,
-      "progress_pct": 88,
+      "implementation_percentage": 95,
+      "progress_pct": 95,
       "maturity": "integrated",
       "evidence": [
         "packages/edge-mesh (214 unit tests)",

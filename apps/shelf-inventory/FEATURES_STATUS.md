@@ -38,7 +38,7 @@
 | SRC-PQC-001 | Post-Quantum Cryptography | implemented | 90 | hardened |
 | SRC-P2P-001 | P2P Mesh Network | implemented | 90 | hardened |
 | SRC-CRDT-001 | CRDT Sync (Yjs) | implemented | 95 | hardened |
-| SRC-EDGE-001 | Edge Mesh Runtime | implemented | 88 | integrated |
+| SRC-EDGE-001 | Edge Mesh Runtime | implemented | 95 | integrated |
 | SRC-GPU-001 | GPU Agent (WebGPU edge compute) | implemented | 88 | integrated |
 | SRC-QA-001 | Testing Infrastructure | implemented | 87 | integrated |
 | SRC-PWA-001 | PWA & Offline Support | implemented | 90 | integrated |
