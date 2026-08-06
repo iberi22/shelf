@@ -49,6 +49,10 @@ easyinventary-d8dbd-firebase-adminsdk-fbsvc-4decb3d051.json
 cypress/downloads/
 playwright-report/
 test-results/
+apps/shelf-inventory/test-results/
+apps/shelf-inventory/playwright-report/
+apps/shelf-inventory/cypress/screenshots/
+apps/shelf-inventory/cypress/videos/
 
 # Turborepo
 .turbo
