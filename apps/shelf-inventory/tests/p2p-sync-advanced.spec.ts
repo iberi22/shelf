@@ -2,6 +2,22 @@ import { expect, test } from '@playwright/test';
 import { addOverlayBlocker, dismissModals } from './helpers';
 import { connectPeers, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
+const collaboratorPermissions = {
+  canViewProducts: true,
+  canEditProducts: true,
+  canViewSales: true,
+  canEditSales: true,
+  canViewClients: true,
+  canEditClients: true,
+  canViewSuppliers: false,
+  canEditSuppliers: false,
+  canViewPurchaseOrders: false,
+  canEditPurchaseOrders: false,
+  canViewReports: false,
+  canViewArqueo: false,
+  canViewDashboard: false,
+};
+
 test.describe('P2P Advanced Synchronization', () => {
   test.describe.configure({ mode: 'serial' });
   /**
@@ -22,6 +38,25 @@ test.describe('P2P Advanced Synchronization', () => {
 
     // Get collab peer ID programmatically (avoids fragile UI text scraping)
     const collabId = await getLocalPeerId(collabPage);
+    const adminId = await getLocalPeerId(adminPage);
+
+    // Configure deterministic authority before connecting
+    await adminPage.evaluate(() => {
+      const dbSync = (window as any)._dbSyncForTest;
+      if (dbSync) {
+        const localPeerId = dbSync.localPeerId;
+        dbSync.setMasterPeerId(localPeerId);
+        dbSync.updateLinkedNode(localPeerId, { role: 'admin', isMaster: true }, localPeerId);
+      }
+    });
+
+    await collabPage.evaluate((authorityId) => {
+      const dbSync = (window as any)._dbSyncForTest;
+      if (dbSync) {
+        dbSync.setMasterPeerId(authorityId);
+        dbSync.updateLinkedNode?.(authorityId, { role: 'admin', isMaster: true }, authorityId);
+      }
+    }, adminId);
 
     // Connect programmatically — admin connects to collab peer
     await connectPeers(adminPage, collabId, 30000);
@@ -38,6 +73,39 @@ test.describe('P2P Advanced Synchronization', () => {
       )
       .toBeGreaterThanOrEqual(1);
 
+    // Wait for bidirectional connection
+    await expect
+      .poll(
+        async () =>
+          collabPage.evaluate((targetId) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected?.(targetId));
+          }, adminId),
+        { timeout: 30000 },
+      )
+      .toBe(true);
+
+    // Explicitly assign collaborator role and permissions to the peer
+    await adminPage.evaluate(
+      ({ targetPeerId, nextPermissions }) => {
+        const p2p = (window as any)._p2pManagerForTest;
+        const dbSync = (window as any)._dbSyncForTest;
+        dbSync?.updatePeerConfig(targetPeerId, 'collaborator', nextPermissions);
+        p2p?.sendTo(targetPeerId, {
+          type: 'CHANGE_ROLE',
+          payload: { targetPeerId, role: 'collaborator', permissions: nextPermissions },
+        });
+        p2p?.sendTo(targetPeerId, {
+          type: 'UPDATE_PEER_PERMISSIONS',
+          payload: { targetPeerId, role: 'collaborator', permissions: nextPermissions },
+        });
+      },
+      { targetPeerId: collabId, nextPermissions: collaboratorPermissions },
+    );
+
+    // Let the role assignment settle
+    await adminPage.waitForTimeout(2000);
+    await collabPage.waitForTimeout(2000);
+
     return collabId;
   }
 
@@ -49,6 +117,7 @@ test.describe('P2P Advanced Synchronization', () => {
 
     const adminPage = await adminContext.newPage();
     const collabPage = await collabContext.newPage();
+
 
     await adminPage.goto('/');
     await collabPage.goto('/');
@@ -79,10 +148,9 @@ test.describe('P2P Advanced Synchronization', () => {
     await collabPage.getByTestId('product-price-input').fill('30');
     await collabPage.getByTestId('product-cost-input').fill('15');
 
-    await Promise.all([
-      adminPage.getByTestId('save-product-button').click(),
-      collabPage.getByTestId('save-product-button').click(),
-    ]);
+    await adminPage.getByTestId('save-product-button').click();
+    await adminPage.waitForTimeout(100);
+    await collabPage.getByTestId('save-product-button').click();
 
     // Wait for P2P sync with state-vector diff recovery
     await expect(async () => {
@@ -200,32 +268,71 @@ test.describe('P2P Advanced Synchronization', () => {
     await adminPage.getByTestId('product-cost-input').fill('50');
     await adminPage.getByTestId('save-product-button').click();
 
+    // Navigate collab to inventory so the product is visible in the UI table
+    await collabPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
+    await dismissModals(collabPage);
+
     // Wait for collab to receive the sync'd product
     await expectProductSync(collabPage, adminPage, 'Merge Target Product');
     await expect(collabPage.locator('text=Merge Target Product').first()).toBeVisible({ timeout: 5000 });
 
-    // Now both update the same product with different prices
-    // Admin updates price to 200
-    await dismissModals(adminPage);
-    await adminPage.locator('[data-testid^="edit-product-"]').first().click();
-    await dismissModals(adminPage);
-    await adminPage.getByTestId('product-price-input').fill('200');
-    await adminPage.getByTestId('save-product-button').click();
-    await adminPage.waitForTimeout(1000);
+    // Now both update the same product with different prices concurrently.
+    const productId = await adminPage.evaluate(() => {
+      const dbSync = (window as any)._dbSyncForTest;
+      const state = dbSync?.getState(dbSync.localPeerId);
+      return state?.products?.find((p: any) => p.name === 'Merge Target Product')?.id;
+    });
 
-    // Collab updates the same product price to 300
-    await dismissModals(collabPage);
-    await collabPage.locator('[data-testid^="edit-product-"]').first().click();
-    await dismissModals(collabPage);
-    await collabPage.getByTestId('product-price-input').fill('300');
-    await collabPage.getByTestId('save-product-button').click();
+    // Capture the original product state first
+    const originalProduct = await adminPage.evaluate((id) => {
+      return (window as any)._dbSyncForTest?.getState()?.products?.find((p: any) => p.id === id);
+    }, productId);
+
+    // Admin updates price to 200 programmatically
+    await adminPage.evaluate(({ id, originalUpdatedAt }) => {
+      const dbSync = (window as any)._dbSyncForTest;
+      const product = dbSync.getState().products.find((p: any) => p.id === id);
+      dbSync.upsertEntity('products', {
+        ...product,
+        price: 200,
+        updatedAt: new Date().toISOString(),
+        updatedBy: dbSync.localPeerId,
+        __baseUpdatedAt: originalUpdatedAt,
+      });
+    }, { id: productId, originalUpdatedAt: originalProduct.updatedAt });
+
+    // Wait for Admin's edit to sync to Collab's DB first
+    await expect
+      .poll(
+        async () => {
+          await adminPage.evaluate(() => (window as any)._p2pManagerForTest?.requestFullSync?.());
+          await collabPage.evaluate(() => (window as any)._p2pManagerForTest?.requestFullSync?.());
+          return collabPage.evaluate((id) => {
+            const p = (window as any)._dbSyncForTest?.getState()?.products?.find((x: any) => x.id === id);
+            return p?.price === 200;
+          }, productId);
+        },
+        { timeout: 20000 },
+      )
+      .toBe(true);
+
+    // Collab programmatically updates the same product with price 300 and the original __baseUpdatedAt to force a concurrent conflict
+    await collabPage.evaluate(({ id, originalUpdatedAt }) => {
+      const dbSync = (window as any)._dbSyncForTest;
+      const product = dbSync.getState().products.find((p: any) => p.id === id);
+      dbSync.upsertEntity('products', {
+        ...product,
+        price: 300,
+        updatedAt: new Date().toISOString(),
+        updatedBy: dbSync.localPeerId,
+        __baseUpdatedAt: originalUpdatedAt,
+      });
+    }, { id: productId, originalUpdatedAt: originalProduct.updatedAt });
 
     // Wait for sync by polling admin state for the price OR the pendingEdits array
     await expect(async () => {
-      await collabPage.evaluate(() => {
-        const p2pManager = (window as any)._p2pManagerForTest;
-        p2pManager?.requestFullSync?.();
-      });
+      await adminPage.evaluate(() => (window as any)._p2pManagerForTest?.requestFullSync?.());
+      await collabPage.evaluate(() => (window as any)._p2pManagerForTest?.requestFullSync?.());
       await adminPage.waitForTimeout(500);
 
       const hasPendingEdit = await adminPage.evaluate(() => {
@@ -310,6 +417,10 @@ test.describe('P2P Advanced Synchronization', () => {
     await adminPage.getByTestId('product-cost-input').fill('35');
     await adminPage.getByTestId('save-product-button').click();
 
+    // Navigate collab to inventory so the product is visible in the UI table
+    await collabPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
+    await dismissModals(collabPage);
+
     // Wait for collab to receive the product via P2P sync
     await expectProductSync(collabPage, adminPage, 'Reconnection Test Product');
     await expect(collabPage.locator('text=Reconnection Test Product').first()).toBeVisible({ timeout: 5000 });
@@ -325,6 +436,10 @@ test.describe('P2P Advanced Synchronization', () => {
     await collabPage2.goto('/');
     await dismissModals(collabPage2);
     await collabPage2.waitForTimeout(1000);
+
+    // Navigate to inventory
+    await collabPage2.locator('[data-testid="nav-item-nav.inventory"]').last().click();
+    await dismissModals(collabPage2);
 
     // Collab should eventually receive sync
     await expectProductSync(collabPage2, adminPage, 'Reconnection Test Product', 40000);

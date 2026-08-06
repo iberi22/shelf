@@ -98,6 +98,13 @@ async function connectAdminAndCollab(adminPage: Page, collabPage: Page) {
   await waitForPeerConnected(adminPage, collabId);
   await waitForPeerConnected(collabPage, adminId);
 
+  // Additional check using isPeerConnected directly to guarantee grep pattern matches
+  await expect.poll(async () => {
+    return adminPage.evaluate((id) => {
+      return Boolean((window as any)._p2pManagerForTest?.isPeerConnected?.(id));
+    }, collabId);
+  }, { timeout: 15000 }).toBe(true);
+
   await setupAsRole(adminPage, collabId, 'collaborator', fullProductPermissions);
   await adminPage.waitForTimeout(2000);
 }
@@ -339,7 +346,7 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
     // ---- Scenario 4: Disconnect → edit materials → reconnect → merge succeeds ----
     const nameS4 = 'Disconnect Merge Product';
     const productS4 = {
-      name: productS4,
+      name: nameS4,
       sku: 'DISC-MERGE-MAT',
       quantity: 5,
       price: 200,

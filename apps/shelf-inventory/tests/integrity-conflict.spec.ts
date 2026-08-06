@@ -2,6 +2,22 @@ import { expect, test } from '@playwright/test';
 import { addOverlayBlocker, dismissModals, setupPage } from './helpers';
 import { connectPeers, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
+const collaboratorPermissions = {
+  canViewProducts: true,
+  canEditProducts: true,
+  canViewSales: true,
+  canEditSales: true,
+  canViewClients: true,
+  canEditClients: true,
+  canViewSuppliers: false,
+  canEditSuppliers: false,
+  canViewPurchaseOrders: false,
+  canEditPurchaseOrders: false,
+  canViewReports: false,
+  canViewArqueo: false,
+  canViewDashboard: false,
+};
+
 async function requestCrdtSync(page: import('@playwright/test').Page) {
   await page.evaluate(() => {
     try {
@@ -65,12 +81,60 @@ test.describe('Data Integrity and Conflict Resolution', () => {
     const _adminId = await getLocalPeerId(adminPage);
     const collabId = await getLocalPeerId(collabPage);
 
+    // Configure deterministic authority before connecting
+    await adminPage.evaluate(() => {
+      const dbSync = (window as any)._dbSyncForTest;
+      if (dbSync) {
+        const localPeerId = dbSync.localPeerId;
+        dbSync.setMasterPeerId(localPeerId);
+        dbSync.updateLinkedNode(localPeerId, { role: 'admin', isMaster: true }, localPeerId);
+      }
+    });
+
+    await collabPage.evaluate((adminId) => {
+      const dbSync = (window as any)._dbSyncForTest;
+      if (dbSync) {
+        dbSync.setMasterPeerId(adminId);
+        dbSync.updateLinkedNode?.(adminId, { role: 'admin', isMaster: true }, adminId);
+      }
+    }, _adminId);
+
     // Connect peers
     await connectPeers(adminPage, collabId);
 
+    // Wait for bidirectional isPeerConnected
+    await expect
+      .poll(
+        async () => {
+          return collabPage.evaluate((targetId) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected?.(targetId));
+          }, _adminId);
+        },
+        { timeout: 20000 },
+      )
+      .toBe(true);
+
+    // Assign collab role + permissions explicitly so the authz state is deterministic
+    await adminPage.evaluate(
+      ({ targetPeerId, nextPermissions }) => {
+        const p2p = (window as any)._p2pManagerForTest;
+        const dbSync = (window as any)._dbSyncForTest;
+        dbSync?.updatePeerConfig(targetPeerId, 'collaborator', nextPermissions);
+        p2p?.sendTo(targetPeerId, {
+          type: 'CHANGE_ROLE',
+          payload: { targetPeerId, role: 'collaborator', permissions: nextPermissions },
+        });
+        p2p?.sendTo(targetPeerId, {
+          type: 'UPDATE_PEER_PERMISSIONS',
+          payload: { targetPeerId, role: 'collaborator', permissions: nextPermissions },
+        });
+      },
+      { targetPeerId: collabId, nextPermissions: collaboratorPermissions },
+    );
+
     // Let the connection + P2P state settle before mutating
-    await adminPage.waitForTimeout(1500);
-    await collabPage.waitForTimeout(1500);
+    await adminPage.waitForTimeout(2000);
+    await collabPage.waitForTimeout(2000);
 
     // Step 1: Admin creates a product
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
@@ -132,6 +196,7 @@ test.describe('Data Integrity and Conflict Resolution', () => {
       .poll(
         async () => {
           await requestCrdtSync(collabPage);
+          await requestCrdtSync(adminPage);
           const p = await collabPage.evaluate(
             (id) => (window as any)._dbSyncForTest?.getState()?.products?.find((p: any) => p.id === id),
             productId,
@@ -223,8 +288,41 @@ test.describe('Data Integrity and Conflict Resolution', () => {
     const idB = await getLocalPeerId(pageB);
     const _idC = await getLocalPeerId(pageC);
 
+    // Set pageA as master/authority, and let pageB & pageC accept its authority
+    await pageA.evaluate(() => {
+      const dbSync = (window as any)._dbSyncForTest;
+      if (dbSync) {
+        const localPeerId = dbSync.localPeerId;
+        dbSync.setMasterPeerId(localPeerId);
+        dbSync.updateLinkedNode(localPeerId, { role: 'admin', isMaster: true }, localPeerId);
+      }
+    });
+
+    for (const page of [pageB, pageC]) {
+      await page.evaluate((adminId) => {
+        const dbSync = (window as any)._dbSyncForTest;
+        if (dbSync) {
+          dbSync.setMasterPeerId(adminId);
+          dbSync.updateLinkedNode?.(adminId, { role: 'admin', isMaster: true }, adminId);
+        }
+      }, idA);
+    }
+
     // Connect A and B, leave C isolated
     await connectPeers(pageA, idB);
+
+    // Wait for bidirectional isPeerConnected
+    await expect
+      .poll(
+        async () => {
+          return pageB.evaluate((targetId) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected?.(targetId));
+          }, idA);
+        },
+        { timeout: 20000 },
+      )
+      .toBe(true);
+
     await pageA.waitForTimeout(1500);
     await pageB.waitForTimeout(1500);
 
@@ -267,6 +365,19 @@ test.describe('Data Integrity and Conflict Resolution', () => {
 
     // Now connect C to A
     await connectPeers(pageC, idA);
+
+    // Wait for bidirectional isPeerConnected
+    await expect
+      .poll(
+        async () => {
+          return pageA.evaluate((targetId) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected?.(targetId));
+          }, _idC);
+        },
+        { timeout: 20000 },
+      )
+      .toBe(true);
+
     await pageA.waitForTimeout(1500);
     await pageC.waitForTimeout(1500);
 

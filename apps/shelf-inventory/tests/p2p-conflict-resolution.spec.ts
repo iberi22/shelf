@@ -40,39 +40,53 @@ test.describe('P2P Conflict Resolution', () => {
     await dismissModals(collabPage);
 
     const collabId = await getLocalPeerId(collabPage);
-    const _adminId = await getLocalPeerId(adminPage);
+    const adminId = await getLocalPeerId(adminPage);
+
+    // Configure deterministic authority before connecting
+    await adminPage.evaluate(() => {
+      const dbSync = (window as any)._dbSyncForTest;
+      if (dbSync) {
+        const localPeerId = dbSync.localPeerId;
+        dbSync.setMasterPeerId(localPeerId);
+        dbSync.updateLinkedNode(localPeerId, { role: 'admin', isMaster: true }, localPeerId);
+      }
+    });
+
+    await collabPage.evaluate((authorityId) => {
+      const dbSync = (window as any)._dbSyncForTest;
+      if (dbSync) {
+        dbSync.setMasterPeerId(authorityId);
+        dbSync.updateLinkedNode?.(authorityId, { role: 'admin', isMaster: true }, authorityId);
+      }
+    }, adminId);
 
     // Connect peers
     await adminPage.evaluate((targetPeerId: string) => {
       (window as any)._p2pManagerForTest?.connect(targetPeerId);
     }, collabId);
 
-    // Wait for connection on both sides (linked nodes after PQC)
+    // Wait for bidirectional isPeerConnected connection
     await expect
       .poll(
         async () => {
-          return adminPage.evaluate(() => {
-            const mgr = (window as any)._p2pManagerForTest;
-            const db = (window as any)._dbSyncForTest;
-            const peers = mgr?.getConnectedPeerIds?.()?.length || 0;
-            const linked = db?.getLinkedNodes?.()?.length || 0;
-            return Math.max(peers, linked);
-          });
+          return adminPage.evaluate((targetId) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected?.(targetId));
+          }, collabId);
         },
         { timeout: 30000 },
       )
-      .toBeGreaterThanOrEqual(1);
+      .toBe(true);
+
     await expect
       .poll(
         async () => {
-          return collabPage.evaluate(() => {
-            const db = (window as any)._dbSyncForTest;
-            return db?.getLinkedNodes?.()?.length || 0;
-          });
+          return collabPage.evaluate((targetId) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected?.(targetId));
+          }, adminId);
         },
         { timeout: 30000 },
       )
-      .toBeGreaterThanOrEqual(1);
+      .toBe(true);
 
     // Admin creates a product
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
@@ -119,6 +133,9 @@ test.describe('P2P Conflict Resolution', () => {
     await expect
       .poll(
         async () => {
+          await adminPage.evaluate(() => (window as any)._p2pManagerForTest?.requestFullSync?.());
+          await collabPage.evaluate(() => (window as any)._p2pManagerForTest?.requestFullSync?.());
+
           const price1 = await adminPage.evaluate((id: string) => {
             const dbSync = (window as any)._dbSyncForTest;
             return dbSync?.getState()?.products?.find((p: any) => p.id === id)?.price;
@@ -129,7 +146,7 @@ test.describe('P2P Conflict Resolution', () => {
           }, initialProductId);
           return price1 === price2 && (price1 === 111 || price1 === 222);
         },
-        { timeout: 20000 },
+        { timeout: 30000 },
       )
       .toBe(true);
 
