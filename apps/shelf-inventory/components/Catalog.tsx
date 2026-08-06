@@ -162,7 +162,7 @@ const Catalog: React.FC = () => {
             <div class="product-media">
               ${
                 product.imageUrl
-                  ? `<img src="${product.imageUrl}" alt="${escapeHtml(product.name)}" />`
+                  ? `<img src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.name)}" />`
                   : `<div class="product-placeholder">🪴</div>`
               }
             </div>
