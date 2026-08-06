@@ -58,7 +58,7 @@ async function inviteMember(
   options: { email: string; role?: 'collaborator' | 'admin' | 'vendedor' },
 ): Promise<CapturedMailto> {
   const modal = page.locator('[data-testid="invite-member-modal"]');
-  const inviteButton = page.getByRole('button', { name: 'Invite Member' });
+  const inviteButton = page.getByRole('button', { name: /Invite Member|Invitar/i });
 
   await inviteButton.click();
   await expect(modal).toBeVisible();
@@ -126,7 +126,7 @@ test.describe('Unify team invite roles with mesh P2PRole (SRC-FUN-013)', () => {
     await dismissModals(page);
 
     await page.locator('[data-testid="settings-team-card"]').waitFor({ state: 'visible' });
-    const inviteButton = page.getByRole('button', { name: 'Invite Member' });
+    const inviteButton = page.getByRole('button', { name: /Invite Member|Invitar/i });
     await expect(inviteButton).toBeVisible();
 
     // Role dropdown defaults + options

@@ -1,7 +1,7 @@
 {
   "name": "shelf-inventory",
   "private": true,
-  "version": "2.0.5",
+  "version": "0.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

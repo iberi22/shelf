@@ -2,7 +2,7 @@
 
 **Protocol Version:** 3.8.0
 **Updated:** 2026-08-01
-**App Version:** 2.0.5
+**App Version:** 0.5.0
 
 ## Stack
 - **Monorepo:** pnpm workspaces + Turborepo 2

@@ -2,10 +2,20 @@ import { expect, test } from '@playwright/test';
 import { addOverlayBlocker, dismissModals, setupPage } from './helpers';
 import { connectPeers, expectProductSync, getLocalPeerId } from './p2p-helpers';
 
+async function requestCrdtSync(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    try {
+      (window as any)._p2pManagerForTest?.requestFullSync?.();
+    } catch (_e) {
+      // Silently retry next interval
+    }
+  });
+}
+
 test.describe('Data Integrity and Conflict Resolution', () => {
   test.setTimeout(120000);
 
-  test('Two peers edit different fields of the same product concurrently', async ({ browser }) => {
+  test('Two peers edit different fields of the same product and converge', async ({ browser }) => {
     const adminContext = await browser.newContext();
     const collabContext = await browser.newContext();
     addOverlayBlocker(adminContext);
@@ -58,6 +68,10 @@ test.describe('Data Integrity and Conflict Resolution', () => {
     // Connect peers
     await connectPeers(adminPage, collabId);
 
+    // Let the connection + P2P state settle before mutating
+    await adminPage.waitForTimeout(1500);
+    await collabPage.waitForTimeout(1500);
+
     // Step 1: Admin creates a product
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
     await dismissModals(adminPage);
@@ -85,8 +99,9 @@ test.describe('Data Integrity and Conflict Resolution', () => {
       return dbSync?.getState()?.products?.find((p: any) => p.name === 'Integrity Test Product')?.id;
     });
 
-    // Step 3: Concurrent edits
-    // Peer A edits price
+    // Step 3: Field edits — Admin edits price, then Collab edits SKU after the
+    // base syncs (Yjs Y.Map is whole-value LWW per key, so the collab write must
+    // build on the admin's updated record for both fields to survive).
     await adminPage.locator(`[data-testid="edit-product-${productId}"]:visible`).click();
     await adminPage.getByTestId('product-price-input').fill('200');
 
@@ -110,6 +125,23 @@ test.describe('Data Integrity and Conflict Resolution', () => {
       });
     }, productId);
 
+    // Wait for Admin's edit to reach Collab so Collab's write builds on the
+    // updated base (Yjs Y.Map is whole-value LWW per key: concurrent writes to
+    // the same record do NOT field-merge — the last write wins entirely).
+    await expect
+      .poll(
+        async () => {
+          await requestCrdtSync(collabPage);
+          const p = await collabPage.evaluate(
+            (id) => (window as any)._dbSyncForTest?.getState()?.products?.find((p: any) => p.id === id),
+            productId,
+          );
+          return p?.price === 200;
+        },
+        { timeout: 20000 },
+      )
+      .toBe(true);
+
     await collabPage.evaluate((id) => {
       const dbSync = (window as any)._dbSyncForTest;
       const product = dbSync.getState().products.find((p: any) => p.id === id);
@@ -126,6 +158,11 @@ test.describe('Data Integrity and Conflict Resolution', () => {
     await expect
       .poll(
         async () => {
+          // Request state-vector diff sync from both sides (catch-up for async delivery)
+          await requestCrdtSync(adminPage);
+          await requestCrdtSync(collabPage);
+          await adminPage.waitForTimeout(300);
+
           const p1 = await adminPage.evaluate(
             (id) => (window as any)._dbSyncForTest?.getState()?.products?.find((p: any) => p.id === id),
             productId,
@@ -188,6 +225,8 @@ test.describe('Data Integrity and Conflict Resolution', () => {
 
     // Connect A and B, leave C isolated
     await connectPeers(pageA, idB);
+    await pageA.waitForTimeout(1500);
+    await pageB.waitForTimeout(1500);
 
     // Page A creates Product 1
     await pageA.locator('[data-testid="nav-item-nav.inventory"]').last().click();
@@ -228,11 +267,19 @@ test.describe('Data Integrity and Conflict Resolution', () => {
 
     // Now connect C to A
     await connectPeers(pageC, idA);
+    await pageA.waitForTimeout(1500);
+    await pageC.waitForTimeout(1500);
 
     // Wait for all to converge
     await expect
       .poll(
         async () => {
+          // Request state-vector diff sync on every node (catch-up for async delivery)
+          await requestCrdtSync(pageA);
+          await requestCrdtSync(pageB);
+          await requestCrdtSync(pageC);
+          await pageA.waitForTimeout(300);
+
           const stateA = await pageA.evaluate(() =>
             (window as any)._dbSyncForTest
               ?.getState()

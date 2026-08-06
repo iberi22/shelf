@@ -6,7 +6,7 @@
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
     "updated": "2026-08-02",
-    "version": "2.0.5",
+    "version": "0.5.0",
     "sdlc_phase": "ola-i-edge-authz",
     "total_features": 21,
     "features_implemented": 21,
