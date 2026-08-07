@@ -182,10 +182,10 @@ if [ "$DO_CHECK" -eq 1 ]; then
   echo "── build ($STACK) ───────────────────────────────────"
   case "$STACK" in
     rust)
-      if (cd "$ROOT" && CARGO_TARGET_DIR=/tmp/verify-target cargo check --workspace 2>&1 | tail -3); then BUILD_STATUS="ok"; else BUILD_STATUS="FAILED"; fi ;;
+      if (cd "$ROOT" && CARGO_TARGET_DIR=/build/rust-target/verify cargo check --workspace 2>&1 | tail -3); then BUILD_STATUS="ok"; else BUILD_STATUS="FAILED"; fi ;;
     anchor)
       # Anchor monorepo (gara-g): check Rust programs in programs/, fallback to root npm build
-      if (cd "$ROOT/programs" && CARGO_TARGET_DIR=/tmp/verify-target cargo check --workspace 2>&1 | tail -3); then BUILD_STATUS="ok (cargo)"
+      if (cd "$ROOT/programs" && CARGO_TARGET_DIR=/build/rust-target/verify cargo check --workspace 2>&1 | tail -3); then BUILD_STATUS="ok (cargo)"
       elif (cd "$ROOT" && npm run build 2>&1 | tail -3); then BUILD_STATUS="ok (npm)"
       else BUILD_STATUS="FAILED"; fi ;;
     pnpm)
@@ -207,10 +207,10 @@ if [ "$DO_TEST" -eq 1 ]; then
   echo "── tests ($STACK) ───────────────────────────────────"
   case "$STACK" in
     rust)
-      if (cd "$ROOT" && CARGO_TARGET_DIR=/tmp/verify-target cargo test --workspace 2>&1 | tail -5); then TEST_STATUS="ok"; else TEST_STATUS="FAILED"; fi ;;
+      if (cd "$ROOT" && CARGO_TARGET_DIR=/build/rust-target/verify cargo test --workspace 2>&1 | tail -5); then TEST_STATUS="ok"; else TEST_STATUS="FAILED"; fi ;;
     anchor)
       # Anchor: cargo test programs + root mocha suite
-      if (cd "$ROOT/programs" && CARGO_TARGET_DIR=/tmp/verify-target cargo test --workspace 2>&1 | tail -5) && (cd "$ROOT" && npm test 2>&1 | tail -3); then TEST_STATUS="ok"
+      if (cd "$ROOT/programs" && CARGO_TARGET_DIR=/build/rust-target/verify cargo test --workspace 2>&1 | tail -5) && (cd "$ROOT" && npm test 2>&1 | tail -3); then TEST_STATUS="ok"
       else TEST_STATUS="FAILED"; fi ;;
     pnpm)
       if (cd "$ROOT" && pnpm test 2>&1 | tail -5); then TEST_STATUS="ok"; else TEST_STATUS="FAILED"; fi ;;
