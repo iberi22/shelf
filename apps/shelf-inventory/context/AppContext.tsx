@@ -677,8 +677,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     }, 500);
 
-    // Expose for Playwright testing
-    if (typeof window !== 'undefined') {
+    // Expose for Playwright testing — SOLO en builds de test (nunca en producción)
+    if (import.meta.env.VITE_TEST_MODE === 'true' && typeof window !== 'undefined') {
       window._p2pManagerForTest = p2pManager;
       window._dbSyncForTest = dbSync;
     }
