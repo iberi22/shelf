@@ -71,11 +71,14 @@ if phase_enabled 0 || phase_enabled 1 || phase_enabled 2; then
   VERIFY_ARGS="--check --test"
   [ "$DO_QUICK" = "1" ] && VERIFY_ARGS=""
   VERIFY_OUT="$(bash "$VERIFY" $VERIFY_ARGS --json 2>/dev/null || echo '{"error":true}')"
-  V_PASS="$(echo "$VERIFY_OUT" | jq -r '.pass // "0"')"
-  V_FAIL="$(echo "$VERIFY_OUT" | jq -r '.fail // "0"')"
-  V_TOTAL="$(echo "$VERIFY_OUT" | jq -r '.total // "0"')"
-  V_BUILD="$(echo "$VERIFY_OUT" | jq -r '.build // "unknown"')"
-  V_TEST="$(echo "$VERIFY_OUT" | jq -r '.test // "unknown"')"
+  # El verify imprime logs + JSON pretty al final — extraer el bloque JSON
+  VERIFY_JSON="$(echo "$VERIFY_OUT" | sed -n '/^{/,$p')"
+  [ -z "$VERIFY_JSON" ] && VERIFY_JSON='{"error":true,"pass":0,"fail":0,"total":0}'
+  V_PASS="$(echo "$VERIFY_JSON" | jq -r '.pass // "0"')"
+  V_FAIL="$(echo "$VERIFY_JSON" | jq -r '.fail // "0"')"
+  V_TOTAL="$(echo "$VERIFY_JSON" | jq -r '.total // "0"')"
+  V_BUILD="$(echo "$VERIFY_JSON" | jq -r '.build // "unknown"')"
+  V_TEST="$(echo "$VERIFY_JSON" | jq -r '.test // "unknown"')"
   if [ "$V_TOTAL" -gt 0 ] 2>/dev/null; then
     RESULTS[f0]="ok ($V_PASS/$V_TOTAL features)"
     case "$V_BUILD" in
