@@ -74,3 +74,4 @@ apps/docs/.vitepress/cache
 *.sqlite3-wal
 .xavier/
 data/
+apps/shelf-inventory/tests/screenshots/
