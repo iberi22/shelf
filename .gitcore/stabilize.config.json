@@ -1,0 +1,33 @@
+{
+  "repo": "shelf",
+  "stack": "pnpm",
+  "build_cmd": "pnpm build",
+  "unit_cmd": "pnpm --dir packages/edge-mesh test && pnpm --dir packages/p2p-mesh-core test && pnpm --dir apps/shelf-inventory test:unit",
+  "e2e_cmd": "pnpm --dir apps/shelf-inventory exec playwright test --project=chromium",
+  "e2e_core_specs": [
+    "tests/edge-mesh-sync.spec.ts",
+    "tests/security-sync.spec.ts",
+    "tests/p2p-sync.spec.ts",
+    "tests/multi-peer.spec.ts",
+    "tests/offline-sync.spec.ts",
+    "tests/integrity-conflict.spec.ts",
+    "tests/p2p-authority.spec.ts",
+    "tests/p2p-invite-and-sync.spec.ts"
+  ],
+  "audit_cmd": "pnpm audit --prod",
+  "security_thresholds": { "high": 0, "critical": 0 },
+  "secret_patterns": [
+    "AKIA[0-9A-Z]{16}",
+    "sk-[a-zA-Z0-9]{20,}",
+    "BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY",
+    "XAVIER_TOKEN ?= ?['\"][a-zA-Z0-9-]{6,}['\"]"
+  ],
+  "thresholds": {
+    "stable": { "stability": 95, "functionality": 100, "security": 100 },
+    "beta": { "stability": 80, "functionality": 70, "security": 90 }
+  },
+  "xavier": {
+    "url": "http://localhost:8006",
+    "enabled": true
+  }
+}
