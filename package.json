@@ -13,6 +13,7 @@
     "release": "standard-version"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.2",
     "@firebase/rules-unit-testing": "^5.0.1",
     "esbuild": "^0.25.4",
     "firebase-tools": "^15.22.4",
