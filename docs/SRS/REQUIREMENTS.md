@@ -393,7 +393,7 @@ Sincronización CRDT Yjs con doc compartido (Phase B); ACL remota de entidades r
 - **US:** Como desarrollador, quiero un runtime P2P reutilizable que encapsule la logica mesh en un package independiente
 
 ### Description
-Runtime P2P reutilizable con namespaces, authz, Y.Doc compartido, transport late-bind y ACL remota por colección en path primario
+Runtime P2P reutilizable con namespaces, authz, Y.Doc compartido, transport late-bind, ACL remota por colección en path primario, crypto universal (Web Crypto API) y rate limiter
 
 *Feature: `SRC-EDGE-001` · status: implemented*
 

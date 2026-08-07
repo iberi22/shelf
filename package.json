@@ -8,6 +8,7 @@
     "lint": "turbo run lint",
     "format": "turbo run format",
     "test:packages": "pnpm --dir packages/edge-mesh test && pnpm --dir packages/p2p-mesh-core test && pnpm --dir packages/gpu-agent test",
+    "test": "pnpm test:packages",
     "peer-server": "peerjs --port 9000 --path / --allow_discovery --expire_timeout 60000 --alive_timeout 60000",
     "prepare": "husky",
     "release": "standard-version"
