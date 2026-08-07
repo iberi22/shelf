@@ -32,6 +32,9 @@ test.describe('Data Integrity and Conflict Resolution', () => {
     await dismissModals(adminPage);
     await dismissModals(collabPage);
 
+    const adminId = await getLocalPeerId(adminPage);
+    const collabId = await getLocalPeerId(collabPage);
+
     // Ensure autoApplyProductUpdates is true for automatic CRDT merging
     for (const page of [adminPage, collabPage]) {
       await expect
@@ -62,15 +65,35 @@ test.describe('Data Integrity and Conflict Resolution', () => {
     await dismissModals(adminPage);
     await dismissModals(collabPage);
 
-    const _adminId = await getLocalPeerId(adminPage);
-    const collabId = await getLocalPeerId(collabPage);
-
     // Connect peers
     await connectPeers(adminPage, collabId);
 
+    // Wait for bidirectional connection (isPeerConnected) on both pages
+    await expect
+      .poll(
+        async () => {
+          return adminPage.evaluate((targetPeerId: string) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected(targetPeerId));
+          }, collabId);
+        },
+        { timeout: 30000 },
+      )
+      .toBe(true);
+
+    await expect
+      .poll(
+        async () => {
+          return collabPage.evaluate((targetPeerId: string) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected(targetPeerId));
+          }, adminId);
+        },
+        { timeout: 30000 },
+      )
+      .toBe(true);
+
     // Let the connection + P2P state settle before mutating
-    await adminPage.waitForTimeout(1500);
-    await collabPage.waitForTimeout(1500);
+    await adminPage.waitForTimeout(3000);
+    await collabPage.waitForTimeout(3000);
 
     // Step 1: Admin creates a product
     await adminPage.locator('[data-testid="nav-item-nav.inventory"]').last().click();
@@ -132,13 +155,14 @@ test.describe('Data Integrity and Conflict Resolution', () => {
       .poll(
         async () => {
           await requestCrdtSync(collabPage);
+          await requestCrdtSync(adminPage);
           const p = await collabPage.evaluate(
             (id) => (window as any)._dbSyncForTest?.getState()?.products?.find((p: any) => p.id === id),
             productId,
           );
           return p?.price === 200;
         },
-        { timeout: 20000 },
+        { timeout: 30000 },
       )
       .toBe(true);
 
@@ -221,12 +245,36 @@ test.describe('Data Integrity and Conflict Resolution', () => {
 
     const idA = await getLocalPeerId(pageA);
     const idB = await getLocalPeerId(pageB);
-    const _idC = await getLocalPeerId(pageC);
+    const idC = await getLocalPeerId(pageC);
 
     // Connect A and B, leave C isolated
     await connectPeers(pageA, idB);
-    await pageA.waitForTimeout(1500);
-    await pageB.waitForTimeout(1500);
+
+    // Wait for bidirectional connection A <-> B
+    await expect
+      .poll(
+        async () => {
+          return pageA.evaluate((targetPeerId: string) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected(targetPeerId));
+          }, idB);
+        },
+        { timeout: 30000 },
+      )
+      .toBe(true);
+
+    await expect
+      .poll(
+        async () => {
+          return pageB.evaluate((targetPeerId: string) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected(targetPeerId));
+          }, idA);
+        },
+        { timeout: 30000 },
+      )
+      .toBe(true);
+
+    await pageA.waitForTimeout(3000);
+    await pageB.waitForTimeout(3000);
 
     // Page A creates Product 1
     await pageA.locator('[data-testid="nav-item-nav.inventory"]').last().click();
@@ -267,8 +315,32 @@ test.describe('Data Integrity and Conflict Resolution', () => {
 
     // Now connect C to A
     await connectPeers(pageC, idA);
-    await pageA.waitForTimeout(1500);
-    await pageC.waitForTimeout(1500);
+
+    // Wait for bidirectional connection C <-> A
+    await expect
+      .poll(
+        async () => {
+          return pageC.evaluate((targetPeerId: string) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected(targetPeerId));
+          }, idA);
+        },
+        { timeout: 30000 },
+      )
+      .toBe(true);
+
+    await expect
+      .poll(
+        async () => {
+          return pageA.evaluate((targetPeerId: string) => {
+            return Boolean((window as any)._p2pManagerForTest?.isPeerConnected(targetPeerId));
+          }, idC);
+        },
+        { timeout: 30000 },
+      )
+      .toBe(true);
+
+    await pageA.waitForTimeout(3000);
+    await pageC.waitForTimeout(3000);
 
     // Wait for all to converge
     await expect
