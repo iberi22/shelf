@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.5.3.07082026](https://github.com/iberi22/shelf/compare/v0.5.0...v0.5.3.07082026) (2026-08-07)
+
+### Features
+* **ci:** add Cypress Component Testing job to GitHub Actions ([#446](https://github.com/iberi22/shelf/pull/446))
+* **test:** add production smoke spec (post-deploy verification, `PLAYWRIGHT_BASE_URL`) ([#449](https://github.com/iberi22/shelf/pull/449))
+
+### Bug Fixes
+* **p2p-core:** trigger Yjs catch-up sync on connection open — root fix for async delivery race, with idempotent state-vector cache ([#448](https://github.com/iberi22/shelf/pull/448))
+* **e2e:** stabilize P2P specs with bidirectional connection waits (`isPeerConnected` polls + `requestCrdtSync` + settle) ([#453](https://github.com/iberi22/shelf/pull/453))
+* **edge-mesh:** remove dead `node:crypto` dependency (encrypted-plugin) + add Biome/lint-staged to root — pre-commit hook functional ([#447](https://github.com/iberi22/shelf/pull/447))
+* **security:** gate test hooks (`_dbSyncForTest`/`_p2pManagerForTest`) behind `VITE_TEST_MODE` — no test hooks in production builds
+* **gitcore:** reconcile `features.json` with reality — verify-pipeline gate green (21/21) ([#450](https://github.com/iberi22/shelf/pull/450))
+
+### Chores
+* **ci:** bump actions (checkout@v7, pnpm/action-setup@v6, actions/cache@v6) ([#443](https://github.com/iberi22/shelf/pull/443), [#444](https://github.com/iberi22/shelf/pull/444), [#445](https://github.com/iberi22/shelf/pull/445))
+* **ci:** use `/build` ramdisk for cargo verify + local paths in pipeline scripts
+* **gitignore:** stop tracking generated test screenshots
+* **release:** bump to 0.5.3.07082026 (DDMMYYYY)
+
 ### [0.5.0](https://github.com/iberi22/shelf/compare/v0.4.0...v0.5.0) (2026-07-30)
 
 ### Features

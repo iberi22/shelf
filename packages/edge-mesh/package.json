@@ -1,6 +1,6 @@
 {
   "name": "edge-mesh",
-  "version": "0.5.0",
+  "version": "0.5.3.07082026",
   "type": "module",
   "private": true,
   "main": "./dist/index.js",
