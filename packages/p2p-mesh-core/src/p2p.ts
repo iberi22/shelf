@@ -51,11 +51,12 @@ import { initYjsSync, requestYjsSync, sendYjsDiff } from './p2p/yjs-sync';
 class P2PManager {
   private peer: Peer | null = null;
   private connections: Map<string, DataConnection> = new Map();
+  private lastSentStateVectors: Map<string, string> = new Map();
   private connectingPeers: Set<string> = new Set();
   private sharedSecrets: Map<string, Uint8Array> = new Map();
   private encryptionKeys: Map<string, CryptoKey> = new Map();
   /** Peers for which we hold AES key AND received ENCRYPTION_READY (mutual). */
-  private dualReadyEncryption: Set<string> = new Set();
+  public dualReadyEncryption: Set<string> = new Set();
   /** ENCRYPTION_READY arrived before our setupEncryption finished. */
   private pendingEncryptionReady: Set<string> = new Set();
   /**
@@ -214,6 +215,8 @@ class P2PManager {
       edgeYjsRelay: this.edgeYjsRelay,
       areAllConnectedPeersDualReady: () => this.areAllConnectedPeersDualReady(),
       connections: this.connections as any,
+      lastSentStateVectors: this.lastSentStateVectors,
+      dualReadyEncryption: this.dualReadyEncryption,
     };
   }
 
@@ -698,6 +701,7 @@ class P2PManager {
     this.sharedSecrets.delete(peerId);
     this.dualReadyEncryption.delete(peerId);
     this.pendingEncryptionReady.delete(peerId);
+    this.lastSentStateVectors.delete(peerId);
   }
 
   public onMessage(cb: (message: SyncMessage, fromPeerId: string) => void) {

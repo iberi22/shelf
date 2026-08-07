@@ -372,6 +372,9 @@ export function onConnectionOpen(ctx: MessageHandlerContext, conn: DataConnectio
   // Broadcast updated peer list to the mesh
   ctx.broadcastPeerList();
 
+  // Trigger Yjs catch-up sync on connection open
+  requestYjsSync(ctx, conn.peer);
+
   // Inform peer of our active branch if we have one
   if (dbSync.activeBranchId) {
     conn.send({
