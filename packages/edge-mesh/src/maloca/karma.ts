@@ -1,5 +1,6 @@
 import type { PostQuantumIdentity } from '../identity/index.js';
 import type { OpLog } from '../op-log/index.js';
+import { secureRandomString } from '../protocol/utils.js';
 import type { NodoId, ParPublico } from '../types/index.js';
 import type { Karma, TransaccionKarma } from './types.js';
 
@@ -19,7 +20,7 @@ function canonicalStringify(obj: unknown): string {
     return JSON.stringify(obj);
   }
   if (Array.isArray(obj)) {
-    return '[' + obj.map(canonicalStringify).join(',') + ']';
+    return `[${obj.map(canonicalStringify).join(',')}]`;
   }
   const keys = Object.keys(obj as Record<string, unknown>).sort();
   return (
@@ -62,7 +63,7 @@ export class KarmaManager {
    */
   async emit(txData: Omit<TransaccionKarma, 'id' | 'timestamp' | 'firma'>): Promise<TransaccionKarma> {
     const timestamp = Date.now();
-    const id = `${txData.emisor}:${timestamp}:${Math.random().toString(36).substring(2, 9)}`;
+    const id = `${txData.emisor}:${timestamp}:${secureRandomString(7)}`;
 
     const payloadData = { ...txData, id, timestamp };
     const payload = canonicalStringify(payloadData);
