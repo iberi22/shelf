@@ -515,6 +515,12 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
       return false;
     }
 
+    const isOffline = !state.peers.some(
+      (p) => p.id !== state.localPeerId && (p.status === 'connected' || p.status === 'verified'),
+    );
+    const numPeers = state.peers.length || 1;
+    const isMultiTerminalOffline = isOffline && numPeers > 1;
+
     items.forEach((item, index) => {
       const product = getSelectedProduct(item.productId);
       const variant = getSelectedVariant(product, item.productVariantId);
@@ -530,6 +536,15 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
         if (!newErrors.items) newErrors.items = {};
         newErrors.items[index] = t('validation.insufficientStock', { stock: product.quantity });
         isValid = false;
+      } else if (isMultiTerminalOffline) {
+        const availableStock = variant ? variant.quantity : product.quantity;
+        const cap = Math.max(1, Math.floor(availableStock / numPeers));
+        if (item.quantity > cap) {
+          if (!newErrors.items) newErrors.items = {};
+          newErrors.items[index] =
+            t('validation.offlineCapExceeded', { cap }) || `Límite de reserva offline excedido. Cap autorizado: ${cap}`;
+          isValid = false;
+        }
       }
       if (item.quantity <= 0) {
         if (!newErrors.items) newErrors.items = {};

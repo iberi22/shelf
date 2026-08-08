@@ -1,11 +1,13 @@
-import { BellRing, Check, Copy, Layers, Sparkles, Wifi, WifiOff } from 'lucide-react';
+import { AlertTriangle, BellRing, Check, Copy, Layers, Sparkles, Wifi, WifiOff } from 'lucide-react';
 import { dbSync, p2pManager, type SignalingStatus } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
+import { detectBusinessConflicts } from '../utils/businessConflicts';
 import MergeResolutionModal from './MergeResolutionModal';
 import ProductConflictResolver, { detectProductConflicts } from './ProductConflictResolver';
+import StockConflictResolver from './StockConflictResolver';
 
 const P2PSyncStatusHeader: React.FC = () => {
   const { state, dispatch } = useAppContext();
@@ -13,6 +15,7 @@ const P2PSyncStatusHeader: React.FC = () => {
 
   const [copied, setCopied] = useState(false);
   const [isResolverOpen, setIsResolverOpen] = useState(false);
+  const [isStockResolverOpen, setIsStockResolverOpen] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'disconnected'>('disconnected');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -32,6 +35,12 @@ const P2PSyncStatusHeader: React.FC = () => {
 
   // Compute product conflicts
   const conflicts = useMemo(() => detectProductConflicts(state.products), [state.products]);
+
+  // Compute business conflicts (offline double sales / negative stock)
+  const businessConflicts = useMemo(
+    () => detectBusinessConflicts(state.products, state.sales),
+    [state.products, state.sales],
+  );
 
   // Browser online/offline + PeerJS signaling status (offline-first UX)
   useEffect(() => {
@@ -336,12 +345,38 @@ const P2PSyncStatusHeader: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Admin stock conflict alert */}
+          {state.role === 'admin' && businessConflicts.length > 0 && (
+            <div
+              className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 bg-red-500/10 border border-red-500/35 rounded-xl text-red-400 shadow-md mt-2"
+              data-testid="negative-stock-alert"
+            >
+              <div className="flex items-center gap-2.5 text-center sm:text-left">
+                <AlertTriangle className="animate-pulse shrink-0 text-red-500" size={18} />
+                <span className="text-xs sm:text-sm font-semibold">
+                  {t('p2pSync.topBar.businessConflictsFound', { count: businessConflicts.length }) ||
+                    `⚠️ ¡Stock negativo detectado! ${businessConflicts.length} producto(s) en conflicto por ventas offline.`}
+                </span>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto shrink-0">
+                <button
+                  onClick={() => setIsStockResolverOpen(true)}
+                  className="flex-1 sm:flex-initial px-3.5 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-bold transition-colors active:scale-95"
+                  data-testid="resolve-stock-conflicts-btn"
+                >
+                  {t('p2pSync.topBar.resolve') || 'Resolver'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Manual Conflict Resolver Modal */}
       <ProductConflictResolver isOpen={isResolverOpen} onClose={() => setIsResolverOpen(false)} />
       <MergeResolutionModal isOpen={isMergeModalOpen} onClose={() => setIsMergeModalOpen(false)} />
+      <StockConflictResolver isOpen={isStockResolverOpen} onClose={() => setIsStockResolverOpen(false)} />
     </div>
   );
 };

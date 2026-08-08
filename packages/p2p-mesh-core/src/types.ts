@@ -42,6 +42,7 @@ export interface Product extends BaseEntity {
   price: number;
   cost: number;
   imageUrl?: string;
+  reservations?: Record<string, number>;
   /** @deprecated Use colors[] for multiple colors */
   color?: string;
   colors?: string[];
@@ -65,6 +66,7 @@ export interface ProductVariant extends BaseEntity {
   cost: number;
   imageUrl?: string;
   attributes: Record<string, string>;
+  reservations?: Record<string, number>;
 }
 
 export interface ProductChangeHistoryEntry extends BaseEntity {
