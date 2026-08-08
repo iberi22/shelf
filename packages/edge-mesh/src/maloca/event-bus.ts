@@ -1,5 +1,6 @@
 import type { GossipMessage, MeshManager } from '../mesh/index.js';
 import type { OpLog } from '../op-log/index.js';
+import { secureRandomString } from '../protocol/utils.js';
 import { InMemoryStorage, type IStorage } from '../storage/index.js';
 import type { NodoId } from '../types/index.js';
 
@@ -50,7 +51,7 @@ export class PersistentEventQueueImpl implements PersistentEventQueue {
   }
 
   async enqueue(event: MeshEvent): Promise<void> {
-    const key = `events:bus:${this.namespace}:${event.timestamp}:${Math.random().toString(36).substring(2, 9)}`;
+    const key = `events:bus:${this.namespace}:${event.timestamp}:${secureRandomString(7)}`;
     await this.storage.set(key, event);
   }
 

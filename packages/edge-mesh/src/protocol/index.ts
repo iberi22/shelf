@@ -1,6 +1,7 @@
 import type { PostQuantumIdentity } from '../identity/index.js';
 import type { Envolvente, NodoId, ParPublico, TipoMensaje } from '../types/index.js';
 import { TIPO_MENSAJE } from '../types/index.js';
+import { secureRandomString } from './utils.js';
 
 // ─── ENVELOPE CREATION ─────────────────────────────────────────────────────
 
@@ -8,7 +9,7 @@ let contadorGlobal = 0;
 
 function generarId(): string {
   const ts = Date.now().toString(36);
-  const rand = Math.random().toString(36).slice(2, 8);
+  const rand = secureRandomString(6);
   const seq = (contadorGlobal++).toString(36);
   return `${ts}-${rand}-${seq}`;
 }

@@ -10,8 +10,22 @@ export function generarNonce(): string {
 
 export function generarId(): string {
   const ts = Date.now().toString(36);
-  const rand = Math.random().toString(36).slice(2, 8);
+  const buf = new Uint8Array(4);
+  crypto.getRandomValues(buf);
+  const rand = Array.from(buf)
+    .map((b) => b.toString(36).padStart(2, '0'))
+    .join('')
+    .substring(0, 6);
   return `${ts}-${rand}`;
+}
+
+export function secureRandomString(length = 7): string {
+  const buf = new Uint8Array(Math.ceil(length / 2));
+  crypto.getRandomValues(buf);
+  return Array.from(buf)
+    .map((b) => b.toString(36).padStart(2, '0'))
+    .join('')
+    .substring(0, length);
 }
 
 export function bytesAHex(bytes: Uint8Array): string {

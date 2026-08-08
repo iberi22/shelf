@@ -1,4 +1,5 @@
 import type { EdgeMesh } from '../../edge-mesh.js';
+import { secureRandomString } from '../../protocol/utils.js';
 import { TokenBucketRateLimiter } from '../../security/rate-limiter.js';
 
 /**
@@ -104,7 +105,7 @@ export class MalocaGatewayAPI {
     karmaLogs.push([tx]);
 
     return {
-      txId: Math.random().toString(36).substring(7),
+      txId: secureRandomString(6),
       ...tx,
     };
   }

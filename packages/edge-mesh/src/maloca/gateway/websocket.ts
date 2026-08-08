@@ -1,4 +1,5 @@
 import type { EdgeMesh } from '../../edge-mesh.js';
+import { secureRandomString } from '../../protocol/utils.js';
 import { TokenBucketRateLimiter } from '../../security/rate-limiter.js';
 import type { Envolvente } from '../../types/index.js';
 
@@ -40,7 +41,7 @@ export class MalocaWSGateway extends EventTarget {
     });
 
     return {
-      connectionId: Math.random().toString(36).substring(7),
+      connectionId: secureRandomString(6),
       profileId,
     };
   }
