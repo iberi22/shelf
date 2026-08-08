@@ -145,9 +145,9 @@ describe('getPresetById', () => {
   it('returns the correct preset for a known id', () => {
     const preset = getPresetById('ropa-calzado');
     expect(preset).toBeDefined();
-    expect(preset!.id).toBe('ropa-calzado');
-    expect(preset!.name).toBe('Ropa y Calzado');
-    expect(preset!.category).toBe('retail');
+    expect(preset?.id).toBe('ropa-calzado');
+    expect(preset?.name).toBe('Ropa y Calzado');
+    expect(preset?.category).toBe('retail');
   });
 
   it('returns undefined for an unknown id', () => {
@@ -158,7 +158,7 @@ describe('getPresetById', () => {
     for (const preset of BUSINESS_PRESETS) {
       const found = getPresetById(preset.id);
       expect(found).toBeDefined();
-      expect(found!.id).toBe(preset.id);
+      expect(found?.id).toBe(preset.id);
     }
   });
 });

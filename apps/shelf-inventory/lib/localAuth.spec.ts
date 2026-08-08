@@ -209,7 +209,7 @@ describe('localAuthManager', () => {
       const account = localAuthManager.getAccount();
 
       expect(account).not.toBeNull();
-      expect(account!.email).toBe('test@example.com');
+      expect(account?.email).toBe('test@example.com');
     });
   });
 
@@ -223,8 +223,8 @@ describe('localAuthManager', () => {
       const user = localAuthManager.getCurrentUser();
 
       expect(user).not.toBeNull();
-      expect(user!.email).toBe('test@example.com');
-      expect(user!.subscriptionTier).toBe('free');
+      expect(user?.email).toBe('test@example.com');
+      expect(user?.subscriptionTier).toBe('free');
     });
   });
 
@@ -338,7 +338,7 @@ describe('localAuthManager', () => {
       localAuthManager.updateSubscriptionTier('pro');
 
       const user = localAuthManager.getCurrentUser();
-      expect(user!.subscriptionTier).toBe('pro');
+      expect(user?.subscriptionTier).toBe('pro');
     });
 
     it('does nothing if no account exists', () => {

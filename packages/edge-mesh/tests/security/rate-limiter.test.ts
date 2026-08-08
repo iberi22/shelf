@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TokenBucketRateLimiter } from '../../src/security/rate-limiter.js';
 import { ChatChannel } from '../../src/chat/index.js';
-import { YjsAdapter, EdgeMesh } from '../../src/edge-mesh.js';
+import { EdgeMesh, YjsAdapter } from '../../src/edge-mesh.js';
 import { MalocaGatewayAPI } from '../../src/maloca/gateway/api.js';
+import { authRateLimiter, loginWithPQC } from '../../src/maloca/gateway/auth.js';
 import { MalocaWSGateway } from '../../src/maloca/gateway/websocket.js';
-import { loginWithPQC, authRateLimiter } from '../../src/maloca/gateway/auth.js';
-import { MeshManager } from '../../src/mesh/index.js';
 import type { GossipMessage } from '../../src/mesh/index.js';
+import { MeshManager } from '../../src/mesh/index.js';
+import { TokenBucketRateLimiter } from '../../src/security/rate-limiter.js';
 import type { NodoId } from '../../src/types/index.js';
 
 describe('TokenBucketRateLimiter and Security Rate Limiting', () => {
