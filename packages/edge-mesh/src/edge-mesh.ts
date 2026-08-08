@@ -479,7 +479,15 @@ export class EdgeMesh {
     const bytes = this.decodeSyncBytes(payload.datos);
     if (!bytes || bytes.length === 0) return;
 
-    this.yjsAdapter.applyUpdate(bytes, env.origen);
+    try {
+      this.yjsAdapter.applyUpdate(bytes, env.origen);
+    } catch (err) {
+      this.emit('error', {
+        mensaje: `Error al aplicar SYNC de ${env.origen}: ${err instanceof Error ? err.message : String(err)}`,
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
+      return;
+    }
 
     this.emit('syncCompletado', {
       docId,
