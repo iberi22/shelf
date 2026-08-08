@@ -141,10 +141,10 @@ describe('AIChat context serialization - sale limits', () => {
   });
 
   it('uses limit=20 for local models and 100 for cloud', () => {
-    const isLocal = true;
-    expect(isLocal ? 20 : 100).toBe(20); // local
-    const isCloud = false;
-    expect(isCloud ? 20 : 100).toBe(100); // cloud
+    // biome-ignore lint/correctness/noConstantCondition: intentional test pattern
+    expect(true ? 20 : 100).toBe(20); // local
+    // biome-ignore lint/correctness/noConstantCondition: intentional test pattern
+    expect(false ? 20 : 100).toBe(100); // cloud
   });
 
   it('serializes sale items with product name and variant label', () => {
@@ -192,10 +192,10 @@ describe('AIChat context serialization - audit log limits', () => {
   });
 
   it('uses limit=10 for local models and 50 for cloud', () => {
-    const isLocal = true;
-    expect(isLocal ? 10 : 50).toBe(10); // local
-    const isCloud = false;
-    expect(isCloud ? 10 : 50).toBe(50); // cloud
+    // biome-ignore lint/correctness/noConstantCondition: intentional test pattern
+    expect(true ? 10 : 50).toBe(10); // local
+    // biome-ignore lint/correctness/noConstantCondition: intentional test pattern
+    expect(false ? 10 : 50).toBe(50); // cloud
   });
 });
 
