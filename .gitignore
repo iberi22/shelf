@@ -75,3 +75,13 @@ apps/docs/.vitepress/cache
 .xavier/
 data/
 apps/shelf-inventory/tests/screenshots/
+
+# Cobertura de tests
+coverage/
+
+# Hermes agent (local)
+.hermes/
+
+# Python cache
+__pycache__/
+*.pyc
