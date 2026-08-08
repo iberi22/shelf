@@ -1,5 +1,6 @@
 import * as Y from 'yjs';
 import { CAPACIDAD_ESTANDAR, createNamespaceAuthorizer, type NamespaceAuthorizer } from './authz/index.js';
+import { PersistentOfflineQueue } from './chat/offline-queue.js';
 import { createEdgeMeshNode, type EdgeMeshNode } from './core/node.js';
 import { createGovernanceManager, type GovernanceManager } from './governance/index.js';
 import {
@@ -19,7 +20,6 @@ import {
   verifyEnvelopeSignature,
 } from './protocol/index.js';
 import { createSnapshotManager, type SnapshotManager } from './snapshot/index.js';
-import { PersistentOfflineQueue } from './chat/offline-queue.js';
 import { InMemoryStorage, StorageManager } from './storage/index.js';
 import { SyncEngine } from './sync/engine.js';
 import { MemoryTransport } from './transport/memory.js';

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PresenceManager } from '../../src/presence/index.js';
-import { ESTADO_SALUD, type NodoId } from '../../src/types/index.js';
+import type { NodoId } from '../../src/types/index.js';
 
 describe('PresenceManager', () => {
   let presenceManager: PresenceManager;

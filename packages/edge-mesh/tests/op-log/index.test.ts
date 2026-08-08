@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OpLog } from '../../src/op-log/index.js';
-import { InMemoryStorage } from '../../src/storage/index.js';
 import type { NodoId } from '../../src/types/index.js';
 
 describe('OpLog Module', () => {

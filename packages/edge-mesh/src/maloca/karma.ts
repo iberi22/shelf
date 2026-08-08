@@ -19,7 +19,7 @@ function canonicalStringify(obj: unknown): string {
     return JSON.stringify(obj);
   }
   if (Array.isArray(obj)) {
-    return '[' + obj.map(canonicalStringify).join(',') + ']';
+    return `[${obj.map(canonicalStringify).join(',')}]`;
   }
   const keys = Object.keys(obj as Record<string, unknown>).sort();
   return (

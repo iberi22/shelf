@@ -54,7 +54,7 @@ export class AgentProfileAdapter {
 
     for (const profile of profilesMap.values()) {
       const p = profile as AgentProfile;
-      if (p.capacidades && p.capacidades.includes(capacidad)) {
+      if (p.capacidades?.includes(capacidad)) {
         agents.push(p);
       }
     }

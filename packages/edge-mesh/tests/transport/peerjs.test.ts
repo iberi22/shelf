@@ -1,4 +1,3 @@
-import Peer from 'peerjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PeerJSTransport } from '../../src/transport/peerjs.js';
 import type { NodoId } from '../../src/types/index.js';
@@ -10,7 +9,6 @@ vi.mock('peerjs', () => {
     connect = vi.fn();
     destroy = vi.fn();
     disconnect = vi.fn();
-    constructor(id: string, options: any) {}
   }
   return {
     default: MockPeer,

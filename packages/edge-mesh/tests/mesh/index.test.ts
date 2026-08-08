@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { EdgeMesh } from '../../src/edge-mesh.js';
-import { ESTRATEGIA_FAN_OUT, MeshManager } from '../../src/mesh/index.js';
+import { MeshManager } from '../../src/mesh/index.js';
 import type { NodoId } from '../../src/types/index.js';
 
 describe('MeshManager', () => {

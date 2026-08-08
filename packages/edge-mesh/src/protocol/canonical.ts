@@ -15,7 +15,7 @@ export function canonicalStringify(val: any): string {
     return JSON.stringify(val);
   }
   if (Array.isArray(val)) {
-    return '[' + val.map((v) => canonicalStringify(v)).join(',') + ']';
+    return `[${val.map((v) => canonicalStringify(v)).join(',')}]`;
   }
   const keys = Object.keys(val).sort();
   return (

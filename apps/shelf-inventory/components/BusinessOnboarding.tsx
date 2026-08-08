@@ -100,7 +100,7 @@ export default function BusinessOnboarding({ onComplete }: BusinessOnboardingPro
             <div key={category} className="space-y-2">
               <h3 className="text-xs font-semibold text-[#F5F5DC]/40 uppercase tracking-wider flex items-center gap-2">
                 <span>{CATEGORY_ICONS[category]}</span>
-                {t('onboarding.categories.' + category) || CATEGORY_LABELS[category]}
+                {t(`onboarding.categories.${category}`) || CATEGORY_LABELS[category]}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {BUSINESS_PRESETS.filter((p) => p.category === category).map((preset) => (

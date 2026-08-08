@@ -140,7 +140,7 @@ export class SalonVirtual extends EventTarget {
   }
 
   private async notificarParticipantes(): Promise<void> {
-    const participantes = this.salonParticipantes.toArray();
+    const _participantes = this.salonParticipantes.toArray();
     // El ChatChannel ya maneja los eventos usuarioConectado/usuarioDesconectado
   }
 

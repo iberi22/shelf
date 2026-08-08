@@ -38,7 +38,7 @@ describe('GovernanceManager', () => {
     governanceManager.crearPropuesta(id, 'test', proponente, {});
 
     const voter1 = 'node2' as NodoId;
-    const voter2 = 'node3' as NodoId;
+    const _voter2 = 'node3' as NodoId;
 
     const resultSpy = vi.fn();
     governanceManager.on('propuestaResultado', resultSpy);

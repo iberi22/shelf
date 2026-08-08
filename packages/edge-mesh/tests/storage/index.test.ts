@@ -75,11 +75,11 @@ describe('Storage Module', () => {
     });
 
     it('should list entries with time range filter', async () => {
-      const now = Date.now();
+      const _now = Date.now();
       // We can't easily control timestamp in InMemoryStorage as it uses Date.now()
       // But we can test it roughly
       await storage.set('k1', 'v1');
-      const mid = Date.now();
+      const _mid = Date.now();
       await new Promise((r) => setTimeout(r, 10)); // Ensure different timestamp
       await storage.set('k2', 'v2');
 

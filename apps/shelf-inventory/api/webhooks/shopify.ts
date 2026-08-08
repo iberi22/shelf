@@ -13,7 +13,7 @@ async function verifyShopifySignature(req: Request, secret: string): Promise<boo
 
   const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
 
-  const hmacHeaderBytes = Uint8Array.from(atob(hmacHeader), c => c.charCodeAt(0));
+  const hmacHeaderBytes = Uint8Array.from(atob(hmacHeader), (c) => c.charCodeAt(0));
   return crypto.subtle.verify('HMAC', key, hmacHeaderBytes, bodyData);
 }
 

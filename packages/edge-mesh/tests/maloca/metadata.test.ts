@@ -33,6 +33,6 @@ describe('MetadataManager', () => {
     });
     const profile = kernel.getProfile('test-node' as NodoId);
     expect(profile).toBeDefined();
-    expect(profile!.alias).toBe('Alice');
+    expect(profile?.alias).toBe('Alice');
   });
 });

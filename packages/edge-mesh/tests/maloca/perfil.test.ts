@@ -20,7 +20,7 @@ describe('ProfileManager', () => {
 
     const retrieved = kernel.getProfile('node-alice' as NodoId);
     expect(retrieved).toBeDefined();
-    expect(retrieved!.alias).toBe('Alice');
+    expect(retrieved?.alias).toBe('Alice');
   });
 
   it('should update a profile', async () => {
@@ -42,7 +42,7 @@ describe('ProfileManager', () => {
 
     const retrieved = kernel.getProfile('node-alice' as NodoId);
     expect(retrieved).toBeDefined();
-    expect(retrieved!.alias).toBe('Alice Updated');
+    expect(retrieved?.alias).toBe('Alice Updated');
   });
 
   it('should search for profiles', async () => {
@@ -86,6 +86,6 @@ describe('ProfileManager', () => {
     kernel.profiles.linkToProject('node-alice' as NodoId, 'proj-2');
 
     const retrieved = kernel.getProfile('node-alice' as NodoId);
-    expect(retrieved!.proyectos).toContain('proj-2');
+    expect(retrieved?.proyectos).toContain('proj-2');
   });
 });

@@ -1,12 +1,12 @@
-import type { EstadoSalud, HealthStatus, NodoId } from '../types/index.js';
-import { HealthChecker, type HealthCheckerConfig } from './health.js';
-import { canonicalStringify } from '../protocol/canonical.js';
 import {
-  type PostQuantumIdentity,
-  type IdentityProvider,
   createPostQuantumIdentity,
   generateKeypair,
+  type IdentityProvider,
+  type PostQuantumIdentity,
 } from '../identity/index.js';
+import { canonicalStringify } from '../protocol/canonical.js';
+import type { EstadoSalud, HealthStatus, NodoId } from '../types/index.js';
+import { HealthChecker, type HealthCheckerConfig } from './health.js';
 
 // ─── CONSTANTS ─────────────────────────────────────────────────────────────
 
@@ -91,7 +91,7 @@ export class PresenceManager {
   private defaultIdentityValue?: PostQuantumIdentity;
 
   private readonly mesh = {
-    broadcast: async (topic: string, payload: unknown) => {
+    broadcast: async (_topic: string, payload: unknown) => {
       if (this.transmitirHandler) {
         await this.transmitirHandler(payload);
       }

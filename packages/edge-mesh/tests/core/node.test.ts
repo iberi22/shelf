@@ -69,7 +69,7 @@ describe('core node', () => {
     });
 
     it('should throw error on invalid transition', async () => {
-      const node = createEdgeMeshNode(mockNodoId);
+      const _node = createEdgeMeshNode(mockNodoId);
       // Directly call private method via casting or just use public methods that trigger it
       // node is offline, trying to go online directly (if possible via internal logic)
       // DefaultEdgeMeshNode uses transicionar internally.
