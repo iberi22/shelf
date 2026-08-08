@@ -41,7 +41,7 @@ async function hmacVerify(secret: Uint8Array, signature: Uint8Array, data: Uint8
 
 // Secreto para JWT
 const getJwtSecret = (): Uint8Array => {
-  if (typeof (globalThis as any).process !== 'undefined' && (globalThis as any).process?.env?.MALOCA_JWT_SECRET) {
+  if ((globalThis as any).process?.env?.MALOCA_JWT_SECRET) {
     return new TextEncoder().encode((globalThis as any).process.env.MALOCA_JWT_SECRET);
   }
   console.warn(

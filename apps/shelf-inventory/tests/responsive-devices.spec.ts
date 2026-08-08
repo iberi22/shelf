@@ -21,7 +21,7 @@ test.describe('Responsive E2E Suite: Teléfonos y Tablets', () => {
     await expect(mainContainers).toBeVisible();
   });
 
-  test('2. Navegación adaptativa funcional en Móvil y Tablet', async ({ page, isMobile }) => {
+  test('2. Navegación adaptativa funcional en Móvil y Tablet', async ({ page }) => {
     const viewportSize = page.viewportSize();
     const width = viewportSize?.width || 1024;
 
@@ -36,7 +36,7 @@ test.describe('Responsive E2E Suite: Teléfonos y Tablets', () => {
     }
   });
 
-  test('3. Vista de Inventario responsiva y filtros accesibles', async ({ page, isMobile }) => {
+  test('3. Vista de Inventario responsiva y filtros accesibles', async ({ page }) => {
     const viewportSize = page.viewportSize();
     const width = viewportSize?.width || 1024;
 
@@ -71,7 +71,7 @@ test.describe('Responsive E2E Suite: Teléfonos y Tablets', () => {
     expect(hasHorizontalOverflow, 'El inventario excede el ancho de la ventana').toBe(false);
   });
 
-  test('4. Apertura y renderizado de Modales dentro del viewport táctil', async ({ page, isMobile }) => {
+  test('4. Apertura y renderizado de Modales dentro del viewport táctil', async ({ page }) => {
     const viewportSize = page.viewportSize();
     const width = viewportSize?.width || 1024;
 

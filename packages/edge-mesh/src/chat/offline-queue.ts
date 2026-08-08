@@ -89,7 +89,7 @@ export class PersistentOfflineQueue implements OfflineMessageQueue {
   async flush(channelId: string): Promise<number> {
     const key = this.obtenerKey(channelId);
     const entry = await this.storage.get<ChatMessage[]>(key);
-    if (!entry || !entry.valor || entry.valor.length === 0) return 0;
+    if (!entry?.valor || entry.valor.length === 0) return 0;
 
     const queue = entry.valor;
     const count = queue.length;

@@ -1,5 +1,4 @@
 import type { EdgeMesh } from '../../edge-mesh.js';
-import type { NodoId } from '../../types/index.js';
 
 export interface CodeGraphEntry {
   readonly id: string;

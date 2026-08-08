@@ -1,5 +1,6 @@
 import type { Product, ProductVariant } from 'p2p-mesh-core';
 import { describe, expect, it } from 'vitest';
+import type { VariantDraft } from './productVariants';
 import {
   cloneVariantDrafts,
   createDefaultVariant,
@@ -13,7 +14,6 @@ import {
   normalizeVariant,
   productVariantCount,
 } from './productVariants';
-import type { VariantDraft } from './productVariants';
 
 // ─── Test data builders ───────────────────────────────────────
 

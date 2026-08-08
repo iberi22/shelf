@@ -26,7 +26,7 @@ export class LLMRouterAdapter {
 
     for (const [nodeId, profile] of profilesMap.entries()) {
       const p = profile as AgentProfile;
-      if (p.capacidades && p.capacidades.includes(requiredModel)) {
+      if (p.capacidades?.includes(requiredModel)) {
         const health = this.edgeMesh.presence.obtenerSalud(nodeId as NodoId);
         if (health && health.estado === 'saludable') {
           if (health.latenciaMs < minLatency) {

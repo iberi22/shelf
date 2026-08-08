@@ -13,7 +13,7 @@ async function verifyWooCommerceSignature(req: Request, secret: string): Promise
 
   const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
 
-  const signatureBytes = Uint8Array.from(atob(signature), c => c.charCodeAt(0));
+  const signatureBytes = Uint8Array.from(atob(signature), (c) => c.charCodeAt(0));
   return crypto.subtle.verify('HMAC', key, signatureBytes, bodyData);
 }
 

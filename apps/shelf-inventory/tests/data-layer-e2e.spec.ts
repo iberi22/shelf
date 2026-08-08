@@ -1,7 +1,14 @@
-import { test, expect, setupAsRole, fullProductPermissions, waitForPeerConnected } from './fixtures/shelf-peers';
-import { getPeerId, connectAllPeers, disconnectPeer, reconnectPeer } from './fixtures/shelf-peers';
-import { parseProductCsv, previewCsvHeaders, splitCsvLine } from '../lib/csvProductImport';
 import type { Page } from '@playwright/test';
+import { parseProductCsv, previewCsvHeaders, splitCsvLine } from '../lib/csvProductImport';
+import {
+  expect,
+  fullProductPermissions,
+  getPeerId,
+  reconnectPeer,
+  setupAsRole,
+  test,
+  waitForPeerConnected,
+} from './fixtures/shelf-peers';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -112,7 +119,7 @@ async function disconnectPeerConnection(page: Page, targetPeerId: string) {
 // Custom Material CSV Parser & Preview Helpers
 // ---------------------------------------------------------------------------
 
-export function parseProductCsvWithMaterials(text: string, options?: { columnMapping?: (string | null)[] }) {
+function parseProductCsvWithMaterials(text: string, options?: { columnMapping?: (string | null)[] }) {
   const lines = text
     .split(/\r?\n/)
     .map((l) => l.trim())
@@ -185,7 +192,7 @@ export function parseProductCsvWithMaterials(text: string, options?: { columnMap
   };
 }
 
-export function previewCsvHeadersWithMaterials(text: string) {
+function previewCsvHeadersWithMaterials(text: string) {
   const preview = previewCsvHeaders(text);
   const rawHeaders = preview.rawHeaders;
   const suggestedMapping = preview.suggestedMapping.map((m, idx) => {
@@ -339,7 +346,7 @@ test.describe('Data Layer E2E - P2P Sync & CSV Import with Materials', () => {
     // ---- Scenario 4: Disconnect → edit materials → reconnect → merge succeeds ----
     const nameS4 = 'Disconnect Merge Product';
     const productS4 = {
-      name: productS4,
+      name: nameS4,
       sku: 'DISC-MERGE-MAT',
       quantity: 5,
       price: 200,

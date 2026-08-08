@@ -90,7 +90,7 @@ export type {
   PresenceEventMap,
   PresenceManagerConfig,
 } from './presence/index.js';
-export { PresenceManager, MeshPresence } from './presence/index.js';
+export { MeshPresence, PresenceManager } from './presence/index.js';
 export type {
   PeerHealthMonitor,
   PeerHealthMonitorOptions,
@@ -102,9 +102,9 @@ export {
   createPeerHealthMonitor,
   getReconnectDelay,
 } from './presence/peer-health.js';
-export type { DeduplicatorConfig } from './protocol/index.js';
 // ─── PROTOCOL ─────────────────────────────────────────────────────────────
 export { canonicalStringify } from './protocol/canonical.js';
+export type { DeduplicatorConfig } from './protocol/index.js';
 export {
   canonicalEnvelopeBytes,
   createEnvelope,

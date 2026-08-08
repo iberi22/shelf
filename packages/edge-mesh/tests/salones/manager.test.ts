@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EdgeMesh, YjsAdapter } from '../../src/edge-mesh.js';
+import { EdgeMesh } from '../../src/edge-mesh.js';
 import { ESTADO_SALON, type SalonConfig, SalonesManager, SalonVirtual, TIPO_SALON } from '../../src/salones/manager.js';
 import type { NodoId } from '../../src/types/index.js';
 

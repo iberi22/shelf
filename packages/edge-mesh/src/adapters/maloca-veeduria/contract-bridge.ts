@@ -1,5 +1,4 @@
 import type { EdgeMesh } from '../../edge-mesh.js';
-import type { NodoId } from '../../types/index.js';
 import type { Contrato, LicitacionChileCompra, PerfilLicitante } from './types.js';
 
 export class ContractBridge {

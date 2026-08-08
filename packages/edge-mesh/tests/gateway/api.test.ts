@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { EdgeMesh } from '../../src/edge-mesh.js';
 import { MalocaGatewayAPI } from '../../src/maloca/gateway/api.js';
 import type { NodoId } from '../../src/types/index.js';

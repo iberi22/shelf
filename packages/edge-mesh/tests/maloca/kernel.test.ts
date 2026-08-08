@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EdgeMesh } from '../../src/edge-mesh.js';
 import { MalocaKernel } from '../../src/maloca/kernel.js';
 import type { NodoId } from '../../src/types/index.js';
 
@@ -21,7 +20,7 @@ describe('MalocaKernel', () => {
 
     const profile = kernel.getProfile('node1' as NodoId);
     expect(profile).toBeDefined();
-    expect(profile!.alias).toBe('Jules');
+    expect(profile?.alias).toBe('Jules');
   });
 
   it('should get network status', async () => {

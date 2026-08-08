@@ -30,7 +30,7 @@ describe('NamespaceManager', () => {
     const global = manager.obtenerEspacioPorNombre(NAMESPACE_POR_DEFECTO);
     expect(global).not.toBeNull();
 
-    const eliminado = manager.eliminarEspacio(global!.id);
+    const eliminado = manager.eliminarEspacio(global?.id);
     expect(eliminado).toBe(false);
     expect(manager.obtenerEspacioPorNombre(NAMESPACE_POR_DEFECTO)).not.toBeNull();
   });

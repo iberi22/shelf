@@ -12,7 +12,7 @@ import type { EdgeMesh } from '../edge-mesh.js';
 import { createEnvelope } from '../protocol/index.js';
 import { generarNonce } from '../protocol/utils.js';
 import { TokenBucketRateLimiter } from '../security/rate-limiter.js';
-import type { Envolvente, NodoId } from '../types/index.js';
+import type { NodoId } from '../types/index.js';
 import { TIPO_MENSAJE } from '../types/index.js';
 
 // ─── CONST OBJECT PATTERNS ────────────────────────────────────────────────
