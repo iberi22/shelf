@@ -134,9 +134,23 @@ export const hashPassword = async (password: string, salt: string): Promise<stri
     .join('');
 };
 
+/**
+ * Constant-time string comparison to prevent timing attacks
+ */
+const secureCompare = (a: string, b: string): boolean => {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+};
+
 export const verifyPassword = async (password: string, salt: string, hash: string): Promise<boolean> => {
   const attemptHash = await hashPassword(password, salt);
-  return attemptHash === hash;
+  return secureCompare(attemptHash, hash);
 };
 
 // Legacy wrapper for localAuth.ts that passed 3 arguments (data, password, email)
