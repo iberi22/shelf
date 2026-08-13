@@ -26,3 +26,8 @@
 **Vulnerability:** Weak PRNG (`Math.random()`) was used in fallbacks for candidate proposal IDs, task IDs, and variant draft IDs in shelf components. Additionally, frontend UI elements utilized `window.open` targeting `_blank` without passing `noopener,noreferrer`, exposing users to reverse tabnabbing attacks.
 **Learning:** Standardizing ID generation across the core/app layers using cryptographically secure PRNG fallbacks (`crypto.getRandomValues()`) prevents predictable sequence exploitation. Securing target UI redirect links with `'noopener,noreferrer'` features prevents parent window reference hijacking from open tabs.
 **Prevention:** Always verify that core consensus and model builders employ secure random buffers (`crypto.getRandomValues`) for sequential fallbacks instead of `Math.random()`. Secure all client-side page redirects / web links opening in new tabs by specifying `'noopener,noreferrer'`.
+
+## 2026-08-13 - [Fix timing attack in PBKDF2 hash verification]
+**Vulnerability:** In `packages/p2p-mesh-core/src/crypto.ts`, `verifyPassword` used a strict equality operator (`===`) to compare the derived password hash with the stored hash, which makes it vulnerable to timing attacks as string comparisons exit early on mismatches.
+**Learning:** Checking hashes and passwords using standard string equality leaks information about the length of matching characters.
+**Prevention:** Use a constant-time secure comparison algorithm that iterates over the full length of the shortest string (or handles length checks in constant time) to verify password hashes.
