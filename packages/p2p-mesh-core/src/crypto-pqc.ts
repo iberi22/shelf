@@ -103,3 +103,32 @@ export const decryptWithPQC = async (base64: string, key: CryptoKey): Promise<st
   const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
   return new TextDecoder().decode(decrypted);
 };
+
+/**
+ * Derives ML-DSA-65 and ML-KEM-768 key pairs deterministically from a seed phrase.
+ * Uses SHA-512 to hash the seed phrase, using the first 32 bytes as seed for ML-DSA-65,
+ * and the entire 64 bytes as seed for ML-KEM-768.
+ */
+export const derivePQCKeysFromSeed = async (
+  seedPhrase: string,
+): Promise<{
+  kem: PQCKeyPair;
+  dsa: PQCKeyPair;
+}> => {
+  const normalized = seedPhrase.trim().toLowerCase().replace(/\s+/g, ' ');
+  const encoder = new TextEncoder();
+  const data = encoder.encode(normalized);
+  const hashBuffer = await crypto.subtle.digest('SHA-512', data);
+  const hashBytes = new Uint8Array(hashBuffer);
+
+  const dsaSeed = hashBytes.subarray(0, 32);
+  const kemSeed = hashBytes; // 64 bytes
+
+  const dsaKeys = ml_dsa65.keygen(dsaSeed);
+  const kemKeys = ml_kem768.keygen(kemSeed);
+
+  return {
+    kem: { publicKey: kemKeys.publicKey, secretKey: kemKeys.secretKey },
+    dsa: { publicKey: dsaKeys.publicKey, secretKey: dsaKeys.secretKey },
+  };
+};

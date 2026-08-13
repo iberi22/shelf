@@ -14,7 +14,7 @@
 import { createPeerHealthMonitor, getReconnectDelay, type PeerHealthState } from 'edge-mesh';
 import { type DataConnection, Peer } from 'peerjs';
 import { encryptData as encryptDataHelper } from './crypto';
-import { toHex as toHexHelper } from './crypto-pqc';
+import { toHex as toHexHelper, derivePQCKeysFromSeed } from './crypto-pqc';
 import { dbSync } from './database-sync';
 import { canInvite as checkCanInvite } from './database-sync/authority-checks';
 import type { P2PRole, PeerInfo } from './types';
@@ -879,6 +879,60 @@ class P2PManager {
     this.sendTo(toPeerId, {
       type: 'RECOVERY_DENIED',
       payload: { requestId, reason },
+    });
+  }
+
+  public async setKeysFromSeedPhrase(seedPhrase: string): Promise<void> {
+    const keys = await derivePQCKeysFromSeed(seedPhrase);
+    this.kemKeyPair = keys.kem;
+    this.dsaKeyPair = keys.dsa;
+
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('shelf_kem_public_key', toHexHelper(keys.kem.publicKey));
+      localStorage.setItem('shelf_kem_secret_key', toHexHelper(keys.kem.secretKey));
+      localStorage.setItem('shelf_dsa_public_key', toHexHelper(keys.dsa.publicKey));
+      localStorage.setItem('shelf_dsa_secret_key', toHexHelper(keys.dsa.secretKey));
+      localStorage.setItem('shelf_pqc_seed_phrase', seedPhrase);
+    }
+
+    logger.log('[PQC] Rotated/Restored PQC keys deterministically from seed phrase.');
+
+    // If local node exists in the CRDT (Yjs) linkedNodes, update its dsaPublicKey
+    if (this.localPeerId) {
+      dbSync.updateLinkedNode(
+        this.localPeerId,
+        {
+          dsaPublicKey: toHexHelper(keys.dsa.publicKey),
+        },
+        this.localPeerId,
+      );
+    }
+
+    // Dynamic handshakes rotation
+    this.rotateHandshakeWithAllPeers();
+  }
+
+  public rotateHandshakeWithAllPeers(): void {
+    logger.log(`[PQC] Rotating handshake session keys with all connected peers (total: ${this.connections.size})`);
+    this.connections.forEach((conn, peerId) => {
+      if (conn.open) {
+        this.clearPeerCrypto(peerId);
+
+        // Re-initiate PQC Handshake to establish new shared AES keys
+        const challenge = toHexHelper(crypto.getRandomValues(new Uint8Array(32)));
+        const peerChallenges = this.pendingChallenges.get(peerId) || new Set<string>();
+        peerChallenges.add(challenge);
+        this.pendingChallenges.set(peerId, peerChallenges);
+
+        conn.send({
+          type: 'PQC_HANDSHAKE',
+          payload: {
+            kemPublicKey: toHexHelper(this.kemKeyPair.publicKey),
+            dsaPublicKey: toHexHelper(this.dsaKeyPair.publicKey),
+            challenge,
+          },
+        });
+      }
     });
   }
 
