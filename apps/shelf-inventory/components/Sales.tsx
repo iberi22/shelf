@@ -89,7 +89,7 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
 
     const encodedText = encodeURIComponent(text);
     const url = `https://wa.me/?text=${encodedText}`;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleOpenModal = (sale?: Sale) => {

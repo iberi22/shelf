@@ -99,9 +99,25 @@ export class GpuAgent {
   }
 
   public async runLocalTask(task: Omit<Task, 'peerId' | 'id'> & { id?: string }): Promise<TaskResult> {
+    let randId = '';
+    if (typeof crypto !== 'undefined') {
+      if (typeof crypto.randomUUID === 'function') {
+        randId = crypto.randomUUID();
+      } else if (typeof crypto.getRandomValues === 'function') {
+        const buf = new Uint8Array(5);
+        crypto.getRandomValues(buf);
+        randId = Array.from(buf)
+          .map((b) => b.toString(36).padStart(2, '0'))
+          .join('')
+          .substring(0, 9);
+      }
+    }
+    if (!randId) {
+      randId = Date.now().toString(36).substring(0, 9);
+    }
     const fullTask: Task = {
       ...task,
-      id: task.id ?? `task_${Math.random().toString(36).slice(2, 11)}`,
+      id: task.id ?? `task_${randId}`,
       peerId: 'local',
     };
     return this.enqueueTask(fullTask);
