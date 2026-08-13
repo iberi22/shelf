@@ -168,8 +168,50 @@ export class DatabaseSyncManager {
     return isBranchScoped(collectionName);
   }
 
+  private openYjsDB(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      if (typeof indexedDB === 'undefined') {
+        reject(new Error('IndexedDB not supported in this environment'));
+        return;
+      }
+      const req = indexedDB.open('YjsStorage', 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains('documents')) {
+          db.createObjectStore('documents');
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  private async saveToIndexedDB(): Promise<void> {
+    if (typeof indexedDB === 'undefined') return;
+    try {
+      const stateUpdate = Y.encodeStateAsUpdate(this.doc);
+      const db = await this.openYjsDB();
+      return new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('documents', 'readwrite');
+        const store = tx.objectStore('documents');
+        const req = store.put(stateUpdate, 'dbSyncDoc');
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    } catch (err) {
+      logger.warn('[YjsStorage] Failed to save Yjs update to IndexedDB:', err);
+    }
+  }
+
   constructor() {
     this.doc = new Y.Doc();
+    this.doc.on('update', (_update) => {
+      if (this.isReady) {
+        this.saveToIndexedDB().catch((err) => {
+          logger.warn('[YjsStorage] Failed to save update:', err);
+        });
+      }
+    });
     this._collections = buildCollectionMap(this.doc);
     this.products = this._collections.products;
     this.sales = this._collections.sales;
@@ -232,7 +274,26 @@ export class DatabaseSyncManager {
   /**
    * Syncs the local AppState into the Yjs Doc.
    */
-  public initWithState(state: AppState) {
+  public async initWithState(state: AppState) {
+    if (typeof indexedDB !== 'undefined') {
+      try {
+        const db = await this.openYjsDB();
+        const storedUpdate = await new Promise<Uint8Array | null>((resolve, reject) => {
+          const tx = db.transaction('documents', 'readonly');
+          const store = tx.objectStore('documents');
+          const req = store.get('dbSyncDoc');
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => reject(req.error);
+        });
+        if (storedUpdate) {
+          Y.applyUpdate(this.doc, storedUpdate, 'idb');
+          logger.log('[YjsStorage] Successfully restored Yjs document from IndexedDB.');
+        }
+      } catch (err) {
+        logger.warn('[YjsStorage] Failed to restore Yjs document from IndexedDB:', err);
+      }
+    }
+
     _initWithState(this._ctx(), state, this._collections);
 
     // Mark as ready AFTER the initial state has been fully loaded into Y.Doc.
