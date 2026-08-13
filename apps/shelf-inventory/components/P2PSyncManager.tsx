@@ -788,7 +788,11 @@ const P2PSyncManager: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  window.open(`https://wa.me/?text=${encodeURIComponent(inviteMessage)}`, '_blank');
+                  window.open(
+                    `https://wa.me/?text=${encodeURIComponent(inviteMessage)}`,
+                    '_blank',
+                    'noopener,noreferrer',
+                  );
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 text-xs transition-colors whitespace-nowrap"
               >

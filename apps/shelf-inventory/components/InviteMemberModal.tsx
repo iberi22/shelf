@@ -80,7 +80,7 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
     );
 
     try {
-      window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+      window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank', 'noopener,noreferrer');
     } catch {
       /* ignore */
     }

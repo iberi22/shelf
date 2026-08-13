@@ -30,10 +30,21 @@ const DEFAULT_VARIANT_ID = 'base';
 const normalizeLabel = (value: string): string => value.trim().replace(/\s+/g, ' ');
 
 const createId = (prefix: string) => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `${prefix}_${crypto.randomUUID()}`;
+  if (typeof crypto !== 'undefined') {
+    if (typeof crypto.randomUUID === 'function') {
+      return `${prefix}_${crypto.randomUUID()}`;
+    }
+    if (typeof crypto.getRandomValues === 'function') {
+      const buf = new Uint8Array(4);
+      crypto.getRandomValues(buf);
+      const rand = Array.from(buf)
+        .map((b) => b.toString(36).padStart(2, '0'))
+        .join('')
+        .substring(0, 8);
+      return `${prefix}_${Date.now()}_${rand}`;
+    }
   }
-  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}_${Date.now()}_${Date.now().toString(36).slice(-8)}`;
 };
 
 const getLegacyAttributeValue = (product: Partial<Product>, label: string): string => {

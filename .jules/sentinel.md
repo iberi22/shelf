@@ -21,3 +21,8 @@
 **Vulnerability:** Weak PRNG (`Math.random()`) was used for generating critical identifiers like transaction IDs, event keys, connection IDs, and envelope nonces/IDs throughout the `edge-mesh` package.
 **Learning:** `Math.random()` is not cryptographically secure, which means its sequence can potentially be predicted, leading to ID collisions, replay attacks, or spoofing in a P2P context.
 **Prevention:** In edge/browser environments, always use the Web Crypto API (`crypto.getRandomValues()`) or `crypto.randomUUID()` to generate unpredictable nonces and unique identifiers. A `secureRandomString()` utility function has been created to replace weak random sequences.
+
+## 2026-08-13 - [Fix Math.random ID generation and window.open tabnabbing vulnerabilities]
+**Vulnerability:** Weak PRNG (`Math.random()`) was used in fallbacks for candidate proposal IDs, task IDs, and variant draft IDs in shelf components. Additionally, frontend UI elements utilized `window.open` targeting `_blank` without passing `noopener,noreferrer`, exposing users to reverse tabnabbing attacks.
+**Learning:** Standardizing ID generation across the core/app layers using cryptographically secure PRNG fallbacks (`crypto.getRandomValues()`) prevents predictable sequence exploitation. Securing target UI redirect links with `'noopener,noreferrer'` features prevents parent window reference hijacking from open tabs.
+**Prevention:** Always verify that core consensus and model builders employ secure random buffers (`crypto.getRandomValues`) for sequential fallbacks instead of `Math.random()`. Secure all client-side page redirects / web links opening in new tabs by specifying `'noopener,noreferrer'`.
