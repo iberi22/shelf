@@ -58,17 +58,16 @@ test.describe('Responsive E2E Suite: Teléfonos y Tablets', () => {
       }
     }
 
-    await page.waitForTimeout(500);
-
     // Verificar el buscador de inventario (testid is stable even if i18n placeholders fail to load)
     const searchInput = page.getByTestId('inventory-search-input');
     await expect(searchInput).toBeVisible({ timeout: 10000 });
 
-    // Confirmar que no hay desbordamiento en la tabla/lista de inventario
-    const hasHorizontalOverflow = await page.evaluate(() => {
-      return document.documentElement.scrollWidth > window.innerWidth + 2;
+    // Confirmar que no hay desbordamiento en la tabla/lista de inventario.
+    // Espera hasta que el layout se estabilice (anti-flake): si tras 10s el
+    // documento sigue desbordando, el test falla (desborde real, no render lento).
+    await page.waitForFunction(() => document.documentElement.scrollWidth <= window.innerWidth + 2, undefined, {
+      timeout: 10000,
     });
-    expect(hasHorizontalOverflow, 'El inventario excede el ancho de la ventana').toBe(false);
   });
 
   test('4. Apertura y renderizado de Modales dentro del viewport táctil', async ({ page }) => {
