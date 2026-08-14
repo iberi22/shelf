@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const loginAsGuest = async () => {
     let existingPeerId = localStorage.getItem('shelf_local_peer_id');
     if (!existingPeerId) {
-      existingPeerId = `guest_${Math.random().toString(36).substring(2, 9)}`;
+      existingPeerId = `guest_${crypto.randomUUID()}`;
       localStorage.setItem('shelf_local_peer_id', existingPeerId);
     }
 
