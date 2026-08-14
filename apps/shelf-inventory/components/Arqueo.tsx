@@ -122,7 +122,7 @@ export default function Arqueo() {
         });
       } else {
         const newProduct: Product = {
-          id: `prod_${Date.now()}_${Math.random()}`,
+          id: `prod_${Date.now()}_${crypto.randomUUID()}`,
           name: data.name,
           quantity: data.quantity,
           price: data.unitPrice,

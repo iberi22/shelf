@@ -107,7 +107,7 @@ const createAuditEntry = (
   entityType?: AuditEntry['entityType'],
   details?: unknown,
 ): AuditEntry => ({
-  id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+  id: `${Date.now()}_${crypto.randomUUID()}`,
   timestamp: new Date().toISOString(),
   peerId: state.localPeerId || 'local',
   peerRole: state.role || 'collaborator',
@@ -837,7 +837,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               updatedAt: new Date().toISOString(),
               updatedBy: currentState.localPeerId || 'local',
               updatedByRole: currentState.role || 'collaborator',
-              id: `${new Date().toISOString()}_${Math.random()}`,
+              id: `${new Date().toISOString()}_${crypto.randomUUID()}`,
               ...newProductData,
             };
             dbSync.upsertEntity('products', upsertPayload as Parameters<typeof dbSync.upsertEntity>[1]);
