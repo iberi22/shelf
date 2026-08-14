@@ -12,6 +12,7 @@
 
 > No reclamar 100% project-wide mientras existan partial. Plan histórico de sesión: `.gitcore/planning/PLAN-SESSION-FEATURES-2026-07-17.md`.
 
+**Activo 2026-08-14:** auditoría SSOT vs scripts — producto **~91–93%**. No usar 97% (protocolo), 42% (verify ciego) ni 21/21 PASS (pipeline vacío). Plan: `.gitcore/planning/PLAN-FEATURE-VERIFY-SSOT-2026-08-14.md`. Issue: [#471](https://github.com/iberi22/shelf/issues/471).
 
 ---
 
