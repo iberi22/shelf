@@ -31,3 +31,8 @@
 **Vulnerability:** In `packages/p2p-mesh-core/src/crypto.ts`, `verifyPassword` used a strict equality operator (`===`) to compare the derived password hash with the stored hash, which makes it vulnerable to timing attacks as string comparisons exit early on mismatches.
 **Learning:** Checking hashes and passwords using standard string equality leaks information about the length of matching characters.
 **Prevention:** Use a constant-time secure comparison algorithm that iterates over the full length of the shortest string (or handles length checks in constant time) to verify password hashes.
+
+## 2026-08-13 - [Analyzed Math.random in P2P Mesh Gossip]
+**Vulnerability:** Found `Math.random()` usage in `packages/edge-mesh/src/mesh/index.ts`.
+**Learning:** Evaluated its usage (`fanOutIndex` generation and array sorting for peer selection). Because these only affect gossip routing (jitter and random subset selection) and are not used for security-sensitive operations like nonce/key generation, they do not introduce a security vulnerability.
+**Prevention:** Only replace `Math.random()` with `crypto.getRandomValues()` when the randomness is security-critical to avoid unnecessary performance overhead in standard shuffling/jitter functions.
