@@ -36,3 +36,8 @@
 **Vulnerability:** Found `Math.random()` usage in `packages/edge-mesh/src/mesh/index.ts`.
 **Learning:** Evaluated its usage (`fanOutIndex` generation and array sorting for peer selection). Because these only affect gossip routing (jitter and random subset selection) and are not used for security-sensitive operations like nonce/key generation, they do not introduce a security vulnerability.
 **Prevention:** Only replace `Math.random()` with `crypto.getRandomValues()` when the randomness is security-critical to avoid unnecessary performance overhead in standard shuffling/jitter functions.
+
+## 2026-08-16 - [Add rate limiting and validation to public AI API endpoint]
+**Vulnerability:** The `/api/ai/chat.ts` endpoint was exposed without any rate limiting, payload size constraints, or input validation. Because this endpoint proxies requests to a paid external API (OpenRouter) using a server-side secret key, an attacker could abuse it to cause resource exhaustion or run up significant billing costs.
+**Learning:** Public-facing API routes that proxy requests to paid services must have defensive constraints in place, even if they aren't fully authenticated.
+**Prevention:** Always implement rate limiting (e.g., using `TokenBucketRateLimiter` keyed by IP), payload size limits (e.g., 50KB), and strict input validation (checking required fields and maximum string lengths) on unauthenticated or lightly authenticated API endpoints.
