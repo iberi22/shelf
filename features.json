@@ -12,6 +12,7 @@
     "features_partial": 0,
     "features_skeleton": 0,
     "implementation_percentage": 91,
+    "overall_progress_pct": 91,
     "ssot": ".gitcore/features.json",
     "audit_note": "Post Ola I: avg 91% (21 implemented / 0 partial). SSOT=.gitcore/features.json",
     "implementation_notes": "Post Ola I: entity remote canEdit ACL on primary CRDT path. Project avg ~91%. Residual polish: maloca extract, signed envelopes optional."

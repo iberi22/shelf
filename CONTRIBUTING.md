@@ -1,138 +1,99 @@
-# CONTRIBUTING.md — Cómo Contribuir a Shelf
+# CONTRIBUTING.md — How to Contribute to Shelf
 
-**Última actualización:** 2026-07-09
-
----
-
-## 🌟 Bienvenido
-
-¡Gracias por tu interés en contribuir a Shelf! Este documento te guiará en el proceso.
-
-Shelf es un proyecto **open-source** (MIT) mantenido por BELA. Aceptamos contribuciones de la comunidad.
+**Last Updated:** 2026-08-16
 
 ---
 
-## 🧭 Tipos de Contribución
+## 🌟 Welcome
 
-| Tipo | Descripción | Proceso |
+Thank you for your interest in contributing to Shelf! This document provides guidelines for contributing to the repository.
+
+Shelf is an open-source project licensed under the GNU Affero General Public License v3.0 (`AGPL-3.0-only`). All contributors must agree to the Contributor License Agreement ([`CLA.md`](CLA.md)).
+
+---
+
+## 🧭 Contribution Types
+
+| Type | Description | Process |
 |------|-------------|---------|
-| 🐛 Bug Report | Reportar un error | Abrir GitHub Issue |
-| 💡 Feature Request | Sugerir nueva funcionalidad | Abrir GitHub Issue con label `enhancement` |
-| 🔧 Pull Request | Implementar código | Fork + PR con cambios |
-| 📖 Documentación | Mejorar docs | PR en `apps/docs/` o docs del package |
-| 🌐 Traducciones | Agregar/mejorar idioma | PR en `apps/shelf-inventory/locales/` |
+| 🐛 Bug Report | Report a bug | Open a GitHub Issue |
+| 💡 Feature Request | Propose new functionality | Open a GitHub Issue with label `enhancement` |
+| 🔧 Pull Request | Submit code changes | Fork + PR with changes |
+| 📖 Documentation | Improve docs | PR editing relevant doc files in `apps/docs/` or package READMEs |
+| 🌐 Translations | Add/improve translations | PR in `apps/shelf-inventory/locales/` |
 
 ---
 
-## 🚀 Proceso de Desarrollo
+## 🚀 Development Workflow
 
-### 1. Fork y Clone
+### 1. Fork & Clone
 ```bash
 git clone https://github.com/tu-usuario/shelf.git
 cd shelf
 pnpm install
 ```
 
-### 2. Crea una Branch
+### 2. Create a Feature Branch
 ```bash
-git checkout -b feat/nombre-descriptivo
+git checkout -b feat/descriptive-name
 ```
 
-### 3. Desarrollo
+### 3. Local Development
 ```bash
-# Desarrollo local
+# Start monorepo dev mode
 pnpm dev
 
-# Lint
+# Lint code with Biome
 pnpm lint
 
-# Build
+# Build all packages and apps
 pnpm build
 ```
 
-### 4. Tests
+### 4. Testing
 ```bash
-# Tests unitarios del package que modificaste
+# Unit tests for specific package
 pnpm --dir packages/edge-mesh test
 
-# PeerServer para tests E2E (nueva terminal)
-pnpm peer-server
-
-# Tests E2E
-pnpm --dir apps/shelf-inventory exec playwright test
+# Run Playwright E2E tests for main inventory app
+pnpm --dir apps/shelf-inventory test:e2e
 ```
 
-### 5. Commit
+### 5. Commit & CLA
 ```bash
 git add .
-git commit -m "feat(scope): descripción (closes #N)"
+git commit -m "feat(scope): descriptive message (closes #N)"
 ```
+Note: All PR submissions require accepting the terms in [`CLA.md`](CLA.md).
 
-### 6. Push y PR
+### 6. Push & PR
 ```bash
-git push origin feat/nombre-descriptivo
-# Abre Pull Request en GitHub
+git push origin feat/descriptive-name
+# Open a Pull Request on GitHub
 ```
 
 ---
 
-## 📋 Estándares de Código
+## 📋 Code Standards
 
-- **TypeScript strict mode** — no excepciones
-- **Biome** para linting y formato
-- **data-testid** en elementos interactivos
-- **Tests** para código nuevo
-- **Commits atómicos** con tipo y scope
-- **README** actualizado si cambias API pública
+- **TypeScript strict mode**: Enabled across all packages and apps.
+- **Biome**: Formatter and linter enforced via pre-commit hooks and CI.
+- **Accessibility & Security**: Include `aria-label` on icon-only buttons; enforce `noopener,noreferrer` on external links.
+- **GitCore Protocol**: Keep feature registry (`.gitcore/features.json`), `SRC.md`, and SRS documentation updated.
 
 ---
 
-## 🔍 Code Review
+## 🤝 Code of Conduct
 
-Todo PR pasa por:
-1. **CI checks** (GitHub Actions): lint + build + tests
-2. **Code review** por BELA o colaboradores
-3. **Auto-merge** si pasa con 70%+ threshold
-
----
-
-## 📝 Reportar Issues
-
-Usa GitHub Issues con estos templates:
-
-### Bug Report
-```
-**Descripción:**
-**Pasos para reproducir:**
-**Comportamiento esperado:**
-**Comportamiento actual:**
-**Ambiente:** (OS, browser, versión)
-**Screenshots:** (si aplica)
-```
-
-### Feature Request
-```
-**Feature:** (qué quieres)
-**Motivación:** (por qué es útil)
-**Alternativas consideradas:**
-**Contexto adicional:**
-```
+- **Be respectful**: Maintain a welcoming and professional environment.
+- **Constructive feedback**: Provide actionable feedback during code reviews.
+- **Security awareness**: Do not commit secrets, private keys, or API credentials.
 
 ---
 
-## 🤝 Código de Conducta
+## 📬 Contact & Resources
 
-- **Sé respetuoso** — todos estamos aprendiendo
-- **Crítica constructiva** — señala problemas, sugiere soluciones
-- **Colaboración** — pregúntanos si tienes dudas
-- **Diversidad** — welcome a contributors de cualquier background
-
----
-
-## 📬 Contacto
-
-- **GitHub**: https://github.com/iberi22/shelf
+- **GitHub Repository**: https://github.com/iberi22/shelf
 - **Issues**: https://github.com/iberi22/shelf/issues
-- **Discussions**: próximamente
-
-¡Gracias por contribuir a Shelf! 🚀
+- **CLA**: [`CLA.md`](CLA.md)
+- **License**: [`LICENSE`](LICENSE) (AGPL-3.0-only)
