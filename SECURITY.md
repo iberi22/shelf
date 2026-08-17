@@ -1,95 +1,74 @@
-# SECURITY.md — Política de Seguridad de Shelf
+# SECURITY.md — Security Policy — Shelf
 
-**Última actualización:** 2026-07-09
-
----
-
-## 🔒 Postura de Seguridad
-
-Shelf toma la seguridad **muy en serio**. Como plataforma que maneja datos de inventario, ventas y clientes de negocios reales, hemos implementado:
-
-- **Criptografía post-cuántica** (ML-KEM-768, ML-DSA-65, AES-GCM)
-- **Cifrado en reposo y tránsito**
-- **Offline-first** (los datos nunca dependen de un servidor central)
-- **Firebase Auth** para autenticación segura
-- **Stripe** para pagos (PCI compliant)
+**Last Updated:** 2026-08-16
 
 ---
 
-## 🐛 Reportar una Vulnerabilidad
+## 🔒 Security Posture
 
-Si encuentras una vulnerabilidad de seguridad en Shelf:
+Shelf is a decentralized, offline-first inventory and point-of-sale platform. Security is integral to our architecture:
 
-### 1. NO abras un Issue público
-Las vulnerabilidades de seguridad **no** deben reportarse en GitHub Issues públicos.
-
-### 2. Contacta directamente
-**Email**: brahyan@iberi22.com (o el email de BELA en su perfil de GitHub)
-
-### 3. Proporciona detalles
-Incluye en tu reporte:
-- Tipo de vulnerabilidad
-- Pasos para reproducir
-- Impacto potencial
-- Versión afectada
-- Posible solución (si la tienes)
-
-### 4. Tiempo de respuesta
-- **Confirmación de recepción**: < 48 horas
-- **Evaluación inicial**: < 5 días hábiles
-- **Parche de seguridad**: Dependiendo de severidad
+- **Post-Quantum Cryptography**: ML-KEM-768 key encapsulation and ML-DSA-65 digital signatures.
+- **Encryption at Rest & Transit**: AES-GCM encryption for local storage and WebRTC peer-to-peer communication.
+- **Offline-First & Local Auth**: Authentication managed locally (`localAuth`) without depending on external centralized auth servers.
+- **Pro Security Model**: SWAL node heartbeat and identity verification (no external credit card paywalls or third-party payment processors).
 
 ---
 
-## 🛡️ Prácticas de Seguridad
+## 🐛 Reporting a Vulnerability
 
-### Para Desarrolladores
-1. **No commits de secrets** — .env está en .gitignore
-2. **2FA en GitHub** — obligatorio para maintainers
-3. **Code review** — todo PR requiere al menos una revisión
-4. **Dependabot** — actualizaciones automáticas de seguridad
-5. **Biome lint** — detecta patrones inseguros
+If you discover a security vulnerability in Shelf:
 
-### Para Usuarios
-1. **Cambia tu contraseña regularmente**
-2. **No compartas credenciales**
-3. **Usa contraseñas fuertes** (recomendamos gestor de contraseñas)
-4. **Mantén la app actualizada** (las PWA se actualizan automáticamente)
+### 1. Do NOT open a public issue
+Security vulnerabilities must **not** be reported in public GitHub Issues.
+
+### 2. Contact direct security maintainers
+**Email**: brahyan@iberi22.com (or BELA's email on GitHub profile)
+
+### 3. Provide Details
+Include in your report:
+- Vulnerability type
+- Steps to reproduce
+- Potential impact
+- Affected component / workspace
+- Suggested fix (if available)
+
+### 4. Response Time
+- **Receipt Confirmation**: < 48 hours
+- **Initial Evaluation**: < 5 business days
+- **Security Patch**: Severity dependent
 
 ---
 
-## 🔐 Stack de Seguridad
+## 🛡️ Security Practices
 
-| Capa | Tecnología | Propósito |
+### For Developers
+1. **No secrets in commits**: `.env` is strictly gitignored.
+2. **Code Review**: Every PR requires review before merging.
+3. **Automated Audits**: `pnpm audit --audit-level=high` enforced in CI.
+4. **Static Analysis & Linting**: Biome linter detects unsafe patterns and tabnabbing risks.
+
+### For Users
+1. **Use Strong Local Passwords / App PINs**.
+2. **Keep Backups Encrypted**: Use the built-in AES-encrypted backup feature in Settings.
+3. **Maintain Device Security**: Ensure device OS is updated.
+
+---
+
+## 🔐 Security Stack
+
+| Layer | Technology | Purpose |
 |------|-----------|-----------|
-| Autenticación | Firebase Auth | Login/registro seguro |
-| Cifrado en reposo | AES-GCM + ML-KEM-768 | Datos locales protegidos |
-| Cifrado en tránsito | AES-GCM sobre WebRTC | Comunicación P2P segura |
-| Firmas digitales | ML-DSA-65 | Verificación de integridad |
-| Pagos | Stripe | PCI-compliant |
-| Dependencias | Dependabot + pnpm audit | Vulnerabilidades conocidas |
+| Local Auth | localAuth (PBKDF2 / Argon2 + local hashes) | Offline-first local login & device lock |
+| At-Rest Encryption | AES-GCM + PIN / Seed derivation | Local data protection |
+| In-Transit Encryption | WebRTC AES-GCM over PeerJS | Secure P2P communication |
+| Post-Quantum Signatures | ML-DSA-65 & ML-KEM-768 | High-assurance signature & key exchange |
+| Pro Verification | SWAL Node Mesh Heartbeat | Node identity and stake verification |
+| Dependency Governance | `pnpm.overrides` + audit-gate | Vulnerability mitigation |
 
 ---
 
-## 📋 Política de Divulgación
+## 📬 Contact
 
-- Reportamos vulnerabilidades críticas en **< 7 días** después del parche
-- Las vulnerabilidades se documentan en CHANGELOG (sin detalles explotables)
-- Creditamos a quien reporta (si así lo desea)
-
----
-
-## 🚫 Scope Fuera de Seguridad
-
-Lo siguiente **no** está cubierto por esta política:
-- Spam o phishing a usuarios
-- Ataques de denegación de servicio (DoS)
-- Versiones anteriores desactualizadas
-- Issues de usabilidad sin implicaciones de seguridad
-
----
-
-## 📬 Contacto
-
-**Security contact**: brahyan@iberi22.com
+**Security Contact**: brahyan@iberi22.com
 **GitHub Security**: https://github.com/iberi22/shelf/security

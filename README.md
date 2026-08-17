@@ -15,7 +15,7 @@ Shelf is a decentralized, offline-first inventory and point-of-sale platform. Th
 
 ## Edge Mesh Runtime
 
-> **SWAL:** Pro features require an **active SWAL node** (not Stripe). Multi-store instances are **mesh-isolated** by default (`instance_id`). See [`docs/SWAL/README.md`](../docs/SWAL/README.md) and [`docs/SWAL_NODE_AND_PLANS.md`](docs/SWAL_NODE_AND_PLANS.md).
+> **SWAL:** Pro features require an **active SWAL node** (without traditional payment gateways). Multi-store instances are **mesh-isolated** by default (`instance_id`). See [`docs/SWAL_NODE_AND_PLANS.md`](docs/SWAL_NODE_AND_PLANS.md).
 
 `@shelf/edge-mesh` (prefer monorepo canonical `edge-mesh/`) powers browser-to-browser interaction in Shelf.
 

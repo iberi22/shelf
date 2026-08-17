@@ -55,7 +55,7 @@ shelf/
 │   └── gpu-agent/           # Integración WebGPU
 ├── skills/                  # Skills de Harness Engineering
 ├── tests/                   # Tests de ejemplo del monorepo
-├── .gitcore/                # GitCore protocol (v3.6.0)
+├── .gitcore/                # GitCore protocol (v3.8.0)
 └── .github/workflows/       # CI/CD pipelines
 ```
 
@@ -122,7 +122,7 @@ Peer remoto recibe → Auth check → Apply o Revert
 
 ---
 
-## 📍 Protocolo GitCore (v3.6.0)
+## 📍 Protocolo GitCore (v3.8.0)
 
 Shelf usa el protocolo GitCore. Archivos importantes:
 
