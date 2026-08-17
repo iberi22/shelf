@@ -8,6 +8,33 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
+// Simple token bucket rate limiter for the edge runtime
+const rateLimitCache = new Map<string, { tokens: number; lastRefill: number }>();
+const RATE_LIMIT_MAX_TOKENS = 10;
+const RATE_LIMIT_REFILL_RATE = 10000; // 1 token every 10 seconds
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  let bucket = rateLimitCache.get(ip);
+  if (!bucket) {
+    bucket = { tokens: RATE_LIMIT_MAX_TOKENS, lastRefill: now };
+    rateLimitCache.set(ip, bucket);
+  } else {
+    const elapsed = now - bucket.lastRefill;
+    if (elapsed > 0) {
+      const tokensToAdd = elapsed / RATE_LIMIT_REFILL_RATE;
+      bucket.tokens = Math.min(RATE_LIMIT_MAX_TOKENS, bucket.tokens + tokensToAdd);
+      bucket.lastRefill = now;
+    }
+  }
+
+  if (bucket.tokens >= 1) {
+    bucket.tokens -= 1;
+    return true;
+  }
+  return false;
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: CORS_HEADERS });
@@ -16,6 +43,24 @@ export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
       status: 405,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // 1. Rate Limiting
+  const ip = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || 'unknown';
+  if (!checkRateLimit(ip)) {
+    return new Response(JSON.stringify({ error: 'Too Many Requests' }), {
+      status: 429,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // 2. Payload size cap (e.g., 50KB)
+  const contentLength = req.headers.get('content-length');
+  if (contentLength && parseInt(contentLength, 10) > 50000) {
+    return new Response(JSON.stringify({ error: 'Payload Too Large' }), {
+      status: 413,
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     });
   }
@@ -34,7 +79,39 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const body = await req.json();
+    const bodyText = await req.text();
+    if (bodyText.length > 50000) {
+      return new Response(JSON.stringify({ error: 'Payload Too Large' }), {
+        status: 413,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const body = JSON.parse(bodyText);
+
+    if (!body || typeof body !== 'object') {
+      return new Response(JSON.stringify({ error: 'Bad Request: Invalid JSON body' }), {
+        status: 400,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 3. Input Validation
+    if (!body.messages && !body.prompt) {
+      return new Response(JSON.stringify({ error: 'Bad Request: Missing messages or prompt' }), {
+        status: 400,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check reasonable lengths
+    if (body.prompt && typeof body.prompt === 'string' && body.prompt.length > 20000) {
+      return new Response(JSON.stringify({ error: 'Bad Request: Prompt too long' }), {
+        status: 400,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
+    }
+
     const model = body.model || process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat';
 
     const messages = body.messages || [
