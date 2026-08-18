@@ -60,9 +60,7 @@
       "maturity": "hardened",
       "priority": "P0",
       "category": "FUN",
-      "gaps": [
-        "Optional multi-facet filters UI"
-      ]
+      "gaps": ["Optional multi-facet filters UI"]
     },
     {
       "id": "SRC-FUN-002",
@@ -72,9 +70,7 @@
       "maturity": "hardened",
       "priority": "P0",
       "category": "FUN",
-      "gaps": [
-        "Optional scan-to-cart in Sales"
-      ]
+      "gaps": ["Optional scan-to-cart in Sales"]
     },
     {
       "id": "SRC-FUN-003",
@@ -130,9 +126,7 @@
         "Gated para usuarios Pro (tier real)",
         "Contexto de inventario/ventas inyectado al prompt"
       ],
-      "gaps": [
-        "Model quality depends on engine; CF proxy optional"
-      ]
+      "gaps": ["Model quality depends on engine; CF proxy optional"]
     },
     {
       "id": "SRC-FUN-008",
@@ -151,15 +145,8 @@
         "Seed recovery / restore cuenta local",
         "Multi-dispositivo de datos vía P2P o backup JSON (no cloud login)"
       ],
-      "gaps": [
-        "Cloud Firestore sync = ROADMAP-003"
-      ],
-      "technologies": [
-        "localAuth",
-        "localStorage",
-        "WebAuthn",
-        "P2P restore"
-      ]
+      "gaps": ["Cloud Firestore sync = ROADMAP-003"],
+      "technologies": ["localAuth", "localStorage", "WebAuthn", "P2P restore"]
     },
     {
       "id": "SRC-FUN-009",
@@ -171,12 +158,8 @@
       "description": "Modelo Colaborador SWAL: todas las features gratis localmente, revenue via profit share (25/15/10%). Sin suscripciones ni ads.",
       "user_story": "Como usuario, quiero usar todas las features sin restricciones de tier",
       "actor": "Todos los usuarios",
-      "dependencies": [
-        "SRC-FUN-008"
-      ],
-      "technologies": [
-        "React"
-      ],
+      "dependencies": ["SRC-FUN-008"],
+      "technologies": ["React"],
       "acceptance_criteria": [
         "Todas las features accesibles sin restricción",
         "Sin anuncios (AdSense eliminado)",
@@ -201,9 +184,7 @@
       "maturity": "integrated",
       "priority": "P1",
       "category": "FUN",
-      "gaps": [
-        "Secondary locales may lag EN/ES/PT"
-      ]
+      "gaps": ["Secondary locales may lag EN/ES/PT"]
     },
     {
       "id": "SRC-FUN-011",
@@ -241,9 +222,7 @@
         "Enforcement canEdit* / canView* en UI y sync",
         "Shared mesh state (mismo org de datos vía CRDT, no multi-tenant cloud)"
       ],
-      "gaps": [
-        "No cloud multi-tenant org isolation (by design P2P mesh)"
-      ]
+      "gaps": ["No cloud multi-tenant org isolation (by design P2P mesh)"]
     },
     {
       "id": "SRC-FUN-014",
@@ -254,19 +233,9 @@
       "priority": "P2",
       "category": "FUN",
       "description": "Importación CSV con aliases de columnas, validación por fila, template y E2E.",
-      "gaps": [
-        "Optional all-or-nothing import rollback"
-      ],
-      "technologies": [
-        "React",
-        "File API",
-        "csvProductImport lib"
-      ],
-      "evidence": [
-        "lib/csvProductImport.ts",
-        "tests/csv-import.spec.ts",
-        "ImportCSVModal.tsx"
-      ]
+      "gaps": ["Optional all-or-nothing import rollback"],
+      "technologies": ["React", "File API", "csvProductImport lib"],
+      "evidence": ["lib/csvProductImport.ts", "tests/csv-import.spec.ts", "ImportCSVModal.tsx"]
     },
     {
       "id": "SRC-PQC-001",
@@ -289,9 +258,7 @@
       "maturity": "hardened",
       "priority": "P0",
       "category": "P2P",
-      "gaps": [
-        "PeerJS broker for signaling; thin core residual"
-      ]
+      "gaps": ["PeerJS broker for signaling; thin core residual"]
     },
     {
       "id": "SRC-CRDT-001",
@@ -301,9 +268,7 @@
       "maturity": "hardened",
       "priority": "P0",
       "category": "CRDT",
-      "gaps": [
-        "Optional further harden signed envelope requirement"
-      ]
+      "gaps": ["Optional further harden signed envelope requirement"]
     },
     {
       "id": "SRC-EDGE-001",
@@ -337,9 +302,7 @@
         "Optional mesh capacity announcement",
         "Unit tests for CPU path"
       ],
-      "gaps": [
-        "Mesh task marketplace residual"
-      ],
+      "gaps": ["Mesh task marketplace residual"],
       "evidence": [
         "packages/gpu-agent/src/gpu-agent.ts",
         "packages/gpu-agent/tests/gpu-agent.test.ts",
@@ -354,9 +317,7 @@
       "maturity": "integrated",
       "priority": "P1",
       "category": "QA",
-      "gaps": [
-        "GHA runner minutes may fail infra-side; local+pre-push green"
-      ]
+      "gaps": ["GHA runner minutes may fail infra-side; local+pre-push green"]
     },
     {
       "id": "SRC-PWA-001",
@@ -366,9 +327,7 @@
       "maturity": "integrated",
       "priority": "P0",
       "category": "PWA",
-      "gaps": [
-        "First P2P connect needs signaling online by design"
-      ]
+      "gaps": ["First P2P connect needs signaling online by design"]
     }
   ]
 }

@@ -1,10 +1,20 @@
-import json, sys
-sys.path.insert(0, "/home/belal/proyectosSWAL/shelf/.gitcore/scripts/lib")
+import json, os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from load_lenient import load_lenient
 d = load_lenient(sys.argv[1])
-for f in d.get("features", []):
-    reqs = ",".join(f.get("req_ids", []))
-    us = ",".join(f.get("user_stories", []))
+feats = d.get("features", [])
+# Tolerar dict {id: feature} o list [feature, ...]
+if isinstance(feats, dict):
+    feats = list(feats.values())
+for f in feats:
+    if not isinstance(f, dict):
+        continue
+    def to_csv(v):
+        if isinstance(v, list):
+            return ",".join(str(x) for x in v)
+        return str(v or "")
+    reqs = to_csv(f.get("req_ids"))
+    us = to_csv(f.get("user_stories"))
     impl = f.get("implemented_in", "") or ""
-    tests = ",".join(f.get("tests", [])) if isinstance(f.get("tests"), list) else str(f.get("tests", ""))
+    tests = to_csv(f.get("tests"))
     print(f'{f["id"]}|{f.get("progress_pct",0)}|{reqs}|{us}|{impl}|{tests}')
