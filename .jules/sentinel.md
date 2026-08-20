@@ -41,3 +41,8 @@
 **Vulnerability:** The `/api/ai/chat.ts` endpoint was exposed without any rate limiting, payload size constraints, or input validation. Because this endpoint proxies requests to a paid external API (OpenRouter) using a server-side secret key, an attacker could abuse it to cause resource exhaustion or run up significant billing costs.
 **Learning:** Public-facing API routes that proxy requests to paid services must have defensive constraints in place, even if they aren't fully authenticated.
 **Prevention:** Always implement rate limiting (e.g., using `TokenBucketRateLimiter` keyed by IP), payload size limits (e.g., 50KB), and strict input validation (checking required fields and maximum string lengths) on unauthenticated or lightly authenticated API endpoints.
+
+## 2026-08-20 - [Fix Reverse Tabnabbing via rel attribute in Anchor Tags]
+**Vulnerability:** In `apps/shelf-inventory/components/P2PSyncManager.tsx`, an anchor tag used `target="_blank"` and `rel="noreferrer"` without `noopener`. Although `noreferrer` implies `noopener` in modern browsers, explicitly specifying `noopener` provides stronger defense-in-depth and better cross-browser compatibility to prevent reverse tabnabbing attacks where the newly opened tab can manipulate the originating tab's `window.opener`.
+**Learning:** Using `target="_blank"` on an anchor tag exposes the originating window to cross-origin tampering via `window.opener` unless explicitly mitigated.
+**Prevention:** Always include `rel="noopener noreferrer"` when using `target="_blank"` in anchor tags, just as `'noopener,noreferrer'` should be used in `window.open` calls.
