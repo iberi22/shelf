@@ -521,8 +521,8 @@ const Catalog: React.FC = () => {
       <div className="no-print flex flex-col gap-4">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC]">📚 Generar Catálogo</h2>
-            <p className="text-sm text-[#F5F5DC]/60 mt-1">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">📚 Generar Catálogo</h2>
+            <p className="text-sm text-foreground/60 mt-1">
               Previsualiza el catálogo y exporta un PDF limpio, sin la interfaz de administración.
             </p>
           </div>
@@ -544,35 +544,35 @@ const Catalog: React.FC = () => {
           </div>
         </div>
 
-        <div className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-xl p-4">
+        <div className="w-full bg-surface-alt border border-foreground/20 rounded-xl p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm text-[#F5F5DC]/70 mb-1">Nombre del Catálogo</label>
+              <label className="block text-sm text-foreground/70 mb-1">Nombre del Catálogo</label>
               <input
                 data-testid="catalog-name-input"
                 type="text"
                 value={catalogName}
                 onChange={(e) => setCatalogName(e.target.value)}
-                className="w-full p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]/50"
+                className="w-full p-2.5 bg-surface border border-foreground/20 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-foreground/50"
               />
             </div>
             <div>
-              <label className="block text-sm text-[#F5F5DC]/70 mb-1">Subtítulo</label>
+              <label className="block text-sm text-foreground/70 mb-1">Subtítulo</label>
               <input
                 data-testid="catalog-subtitle-input"
                 type="text"
                 value={catalogSubtitle}
                 onChange={(e) => setCatalogSubtitle(e.target.value)}
-                className="w-full p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]/50"
+                className="w-full p-2.5 bg-surface border border-foreground/20 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-foreground/50"
               />
             </div>
             <div>
-              <label className="block text-sm text-[#F5F5DC]/70 mb-1">Columnas</label>
+              <label className="block text-sm text-foreground/70 mb-1">Columnas</label>
               <select
                 data-testid="catalog-columns-select"
                 value={columns}
                 onChange={(e) => setColumns(Number(e.target.value))}
-                className="w-full p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]/50"
+                className="w-full p-2.5 bg-surface border border-foreground/20 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-foreground/50"
               >
                 <option value={2}>2 columnas</option>
                 <option value={3}>3 columnas</option>
@@ -581,13 +581,13 @@ const Catalog: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-[#F5F5DC]/70 mb-1">Contacto</label>
+              <label className="block text-sm text-foreground/70 mb-1">Contacto</label>
               <input
                 data-testid="catalog-contact-input"
                 type="text"
                 value={contactInfo}
                 onChange={(e) => setContactInfo(e.target.value)}
-                className="w-full p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]/50"
+                className="w-full p-2.5 bg-surface border border-foreground/20 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-foreground/50"
               />
             </div>
           </div>
@@ -646,12 +646,12 @@ const Catalog: React.FC = () => {
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm text-[#F5F5DC]/70 mb-1">Logo / Emoji</label>
+            <label className="block text-sm text-foreground/70 mb-1">Logo / Emoji</label>
             <input
               type="text"
               value={brandLogo}
               onChange={(e) => setBrandLogo(e.target.value)}
-              className="w-24 p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-center text-lg focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]/50"
+              className="w-24 p-2.5 bg-surface border border-foreground/20 rounded-md text-center text-lg focus:outline-none focus:ring-1 focus:ring-foreground/50"
               maxLength={10}
             />
           </div>
@@ -659,20 +659,20 @@ const Catalog: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-sm text-[#F5F5DC]/70">
+            <span className="text-sm text-foreground/70">
               {selectedIds.size} de {activeProducts.length} productos
             </span>
             <button
               data-testid="catalog-select-all"
               onClick={selectAll}
-              className="text-xs bg-[#F5F5DC]/10 px-3 py-1.5 rounded hover:bg-[#F5F5DC]/20 transition min-h-[36px]"
+              className="text-xs bg-foreground/10 px-3 py-1.5 rounded hover:bg-foreground/20 transition min-h-[36px]"
             >
               Seleccionar todos
             </button>
             <button
               data-testid="catalog-deselect-all"
               onClick={deselectAll}
-              className="text-xs bg-[#F5F5DC]/10 px-3 py-1.5 rounded hover:bg-[#F5F5DC]/20 transition min-h-[36px]"
+              className="text-xs bg-foreground/10 px-3 py-1.5 rounded hover:bg-foreground/20 transition min-h-[36px]"
             >
               Deseleccionar todos
             </button>
@@ -681,7 +681,7 @@ const Catalog: React.FC = () => {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="p-2 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm focus:outline-none"
+            className="p-2 bg-surface border border-foreground/20 rounded-md text-sm focus:outline-none"
           >
             {categories.map((category) => (
               <option key={category} value={category}>
@@ -692,9 +692,9 @@ const Catalog: React.FC = () => {
         </div>
       </div>
 
-      <div className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-2xl p-4 md:p-5">
+      <div className="w-full bg-surface-alt border border-foreground/20 rounded-2xl p-4 md:p-5">
         {visibleProducts.length === 0 ? (
-          <div className="text-center py-14 text-[#F5F5DC]/55">
+          <div className="text-center py-14 text-foreground/55">
             <div className="text-4xl mb-3">📭</div>
             <p>No hay productos para mostrar en el catálogo.</p>
             <p className="text-sm mt-2">Agrega productos en Inventario primero.</p>
@@ -716,26 +716,26 @@ const Catalog: React.FC = () => {
                   data-testid="catalog-product-card"
                   onClick={() => toggleProduct(product.id)}
                   className={`group overflow-hidden rounded-2xl border-2 transition-all cursor-pointer ${
-                    selected ? 'border-[#4f9d69] bg-[#0f2518]' : 'border-transparent bg-[#121212] hover:border-white/10'
+                    selected ? 'border-[#4f9d69] bg-[#0f2518]' : 'border-transparent bg-surface hover:border-white/10'
                   }`}
                 >
                   {product.imageUrl ? (
                     <img src={product.imageUrl} alt={product.name} className="w-full aspect-square object-cover" />
                   ) : (
-                    <div className="w-full aspect-square bg-gradient-to-br from-[#0e1f16] to-[#07100b] flex items-center justify-center text-5xl text-[#F5F5DC]/25">
+                    <div className="w-full aspect-square bg-gradient-to-br from-[#0e1f16] to-[#07100b] flex items-center justify-center text-5xl text-foreground/25">
                       🪴
                     </div>
                   )}
                   <div className="p-3.5">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-semibold text-[#F5F5DC] leading-tight truncate">{product.name}</h3>
-                      <span className="text-[10px] px-2 py-1 rounded-full bg-[#F5F5DC]/10 text-[#F5F5DC]/75 whitespace-nowrap">
+                      <h3 className="text-sm font-semibold text-foreground leading-tight truncate">{product.name}</h3>
+                      <span className="text-[10px] px-2 py-1 rounded-full bg-foreground/10 text-foreground/75 whitespace-nowrap">
                         {product.quantity} stock
                       </span>
                     </div>
 
                     {showDescriptions && product.sku && (
-                      <p data-testid="catalog-product-sku" className="text-xs text-[#F5F5DC]/50 mt-1 font-mono">
+                      <p data-testid="catalog-product-sku" className="text-xs text-foreground/50 mt-1 font-mono">
                         SKU: {product.sku}
                       </p>
                     )}
@@ -745,7 +745,7 @@ const Catalog: React.FC = () => {
                       (() => {
                         const variantAttributes = product.variantAttributes ?? [];
                         return (
-                          <p className="text-xs text-[#F5F5DC]/50 mt-1">Atributos: {variantAttributes.join(', ')}</p>
+                          <p className="text-xs text-foreground/50 mt-1">Atributos: {variantAttributes.join(', ')}</p>
                         );
                       })()}
 
@@ -754,13 +754,13 @@ const Catalog: React.FC = () => {
                         {variants.slice(0, 3).map((variant) => (
                           <span
                             key={variant.id}
-                            className="text-[10px] px-2 py-1 rounded-full bg-white/5 border border-white/10 text-[#F5F5DC]/75"
+                            className="text-[10px] px-2 py-1 rounded-full bg-white/5 border border-white/10 text-foreground/75"
                           >
                             {getProductVariantDisplay(product, variant) || variant.label || 'Default'}
                           </span>
                         ))}
                         {variants.length > 3 && (
-                          <span className="text-[10px] px-2 py-1 rounded-full bg-white/5 border border-white/10 text-[#F5F5DC]/55">
+                          <span className="text-[10px] px-2 py-1 rounded-full bg-white/5 border border-white/10 text-foreground/55">
                             +{variants.length - 3}
                           </span>
                         )}
@@ -768,16 +768,16 @@ const Catalog: React.FC = () => {
                     )}
 
                     {showDescriptions && product.color && (
-                      <p className="text-xs text-[#F5F5DC]/50 mt-1">🎨 {product.color}</p>
+                      <p className="text-xs text-foreground/50 mt-1">🎨 {product.color}</p>
                     )}
                     {showDescriptions && product.dimensions && (
-                      <p className="text-xs text-[#F5F5DC]/50 mt-1">📏 {product.dimensions}</p>
+                      <p className="text-xs text-foreground/50 mt-1">📏 {product.dimensions}</p>
                     )}
                     {showDescriptions && product.capacity && (
-                      <p className="text-xs text-[#F5F5DC]/50 mt-1">🧴 {product.capacity}</p>
+                      <p className="text-xs text-foreground/50 mt-1">🧴 {product.capacity}</p>
                     )}
                     {showDescriptions && product.material && (
-                      <p className="text-xs text-[#F5F5DC]/50 mt-1">🧱 {product.material}</p>
+                      <p className="text-xs text-foreground/50 mt-1">🧱 {product.material}</p>
                     )}
 
                     {showPrices && (
@@ -786,7 +786,7 @@ const Catalog: React.FC = () => {
                       </p>
                     )}
 
-                    <div className={`mt-2 text-xs ${selected ? 'text-green-400' : 'text-[#F5F5DC]/30'}`}>
+                    <div className={`mt-2 text-xs ${selected ? 'text-green-400' : 'text-foreground/30'}`}>
                       {selected ? '✓ Seleccionado' : 'Click para seleccionar'}
                     </div>
                   </div>
