@@ -239,6 +239,12 @@
     "aiHelpCloudBody": "Clave API o URL de proxy opcional en Ajustes. No es obligatorio para uso offline-first."
   },
   "settings": {
+    "appearance": {
+      "title": "Apariencia / Tema",
+      "description": "Cambia entre el aspecto original de Shelf y el tema edge-hive del ecosistema SWAL.",
+      "themeClassic": "Clásico",
+      "themeSwal": "SWAL Hive"
+    },
     "languageDescription": "Cambia el idioma de la interfaz desde configuración.",
     "title": "Configuración",
     "general": {
