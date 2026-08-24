@@ -212,16 +212,16 @@ export default function InvoiceScannerModal({
     <Modal isOpen={isOpen} onClose={handleClose} title="Scan Invoice">
       <div className="w-full max-w-md mx-auto p-4">
         {/* OCR Type Selector */}
-        <div className="mb-6 p-1 bg-[#121212] rounded-lg border border-[#F5F5DC]/10 flex">
+        <div className="mb-6 p-1 bg-surface rounded-lg border border-foreground/10 flex">
           <button
             onClick={() => setUseLocalOcr(true)}
-            className={`flex-1 py-2 text-xs font-bold rounded-md transition-all ${useLocalOcr ? 'bg-[#F5F5DC] text-[#121212]' : 'text-[#F5F5DC]/60 hover:text-[#F5F5DC]'}`}
+            className={`flex-1 py-2 text-xs font-bold rounded-md transition-all ${useLocalOcr ? 'bg-foreground text-surface' : 'text-foreground/60 hover:text-foreground'}`}
           >
             Local OCR (Offline)
           </button>
           <button
             onClick={() => setUseLocalOcr(false)}
-            className={`flex-1 py-2 text-xs font-bold rounded-md transition-all ${!useLocalOcr ? 'bg-[#F5F5DC] text-[#121212]' : 'text-[#F5F5DC]/60 hover:text-[#F5F5DC]'}`}
+            className={`flex-1 py-2 text-xs font-bold rounded-md transition-all ${!useLocalOcr ? 'bg-foreground text-surface' : 'text-foreground/60 hover:text-foreground'}`}
           >
             Cloud OCR (Gemini)
           </button>
@@ -341,16 +341,16 @@ export default function InvoiceScannerModal({
 
         {/* Debug Panel */}
         {localRawText && (
-          <div className="mt-6 border-t border-[#F5F5DC]/10 pt-4">
+          <div className="mt-6 border-t border-foreground/10 pt-4">
             <button
               onClick={() => setShowRawText(!showRawText)}
-              className="flex items-center justify-between w-full text-xs text-[#F5F5DC]/60 hover:text-[#F5F5DC] transition-colors"
+              className="flex items-center justify-between w-full text-xs text-foreground/60 hover:text-foreground transition-colors"
             >
               <span>{showRawText ? 'Hide' : 'Show'} Raw OCR Text</span>
               {showRawText ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             {showRawText && (
-              <div className="mt-2 p-3 bg-black/40 rounded border border-[#F5F5DC]/5 max-h-40 overflow-y-auto text-[10px] font-mono text-[#F5F5DC]/80 whitespace-pre-wrap">
+              <div className="mt-2 p-3 bg-black/40 rounded border border-foreground/5 max-h-40 overflow-y-auto text-[10px] font-mono text-foreground/80 whitespace-pre-wrap">
                 {localRawText}
               </div>
             )}

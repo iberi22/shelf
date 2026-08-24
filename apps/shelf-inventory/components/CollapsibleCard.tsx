@@ -43,7 +43,7 @@ const CollapsibleCard: React.FC<CollapsibleCardProps> = ({
   return (
     <div
       data-testid={testId}
-      className={`w-full min-w-0 max-w-full rounded-lg border border-[#F5F5DC]/30 bg-[#1a1a1a] transition-all duration-200 ${className}`}
+      className={`w-full min-w-0 max-w-full rounded-lg border border-foreground/30 bg-surface-alt transition-all duration-200 ${className}`}
     >
       {/* biome-ignore lint/a11y/useSemanticElements: We intentionally use div to avoid nested button hydration errors */}
       <div
@@ -58,30 +58,30 @@ const CollapsibleCard: React.FC<CollapsibleCardProps> = ({
             setIsOpen(!isOpen);
           }
         }}
-        className="w-full flex items-center justify-between p-4 md:p-6 text-left hover:bg-white/5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F5F5DC]/50 focus-visible:ring-inset rounded-lg cursor-pointer"
+        className="w-full flex items-center justify-between p-4 md:p-6 text-left hover:bg-white/5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 focus-visible:ring-inset rounded-lg cursor-pointer"
         data-testid={testId ? `${testId}-toggle` : undefined}
       >
         <div className="flex items-center gap-3 min-w-0">
           {icon && (
-            <span className="text-[#4ADE80] shrink-0" aria-hidden="true">
+            <span className="text-accent-green shrink-0" aria-hidden="true">
               {icon}
             </span>
           )}
           <div className="min-w-0">
             {typeof title === 'string' ? (
-              <h3 className="text-base md:text-lg font-bold text-[#F5F5DC] truncate">{title}</h3>
+              <h3 className="text-base md:text-lg font-bold text-foreground truncate">{title}</h3>
             ) : (
               title
             )}
-            {description && <div className="text-xs text-[#F5F5DC]/50 mt-0.5 min-w-0">{description}</div>}
+            {description && <div className="text-xs text-foreground/50 mt-0.5 min-w-0">{description}</div>}
           </div>
         </div>
-        <span className="text-[#F5F5DC]/70 ml-4 shrink-0" aria-hidden="true">
+        <span className="text-foreground/70 ml-4 shrink-0" aria-hidden="true">
           {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
         </span>
       </div>
       {isOpen && (
-        <section id={contentId} className="p-4 md:p-6 border-t border-[#F5F5DC]/10 bg-[#121212]/20">
+        <section id={contentId} className="p-4 md:p-6 border-t border-foreground/10 bg-surface/20">
           {children}
         </section>
       )}

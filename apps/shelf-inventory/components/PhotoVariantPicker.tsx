@@ -36,12 +36,12 @@ const PhotoValueRow: React.FC<PhotoValueRowProps> = ({ value, photoUrl, onUpload
   };
 
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-[#F5F5DC]/15 bg-[#121212] p-2">
+    <div className="flex items-center gap-2 rounded-lg border border-foreground/15 bg-surface p-2">
       {photoUrl ? (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="w-10 h-10 rounded border border-[#F5F5DC]/20 overflow-hidden flex-shrink-0 bg-[#1e1e1e] p-0 appearance-none"
+          className="w-10 h-10 rounded border border-foreground/20 overflow-hidden flex-shrink-0 bg-panel p-0 appearance-none"
           title={`Cambiar foto de ${value}`}
         >
           <img src={photoUrl} alt={value} className="w-full h-full object-cover" />
@@ -50,10 +50,10 @@ const PhotoValueRow: React.FC<PhotoValueRowProps> = ({ value, photoUrl, onUpload
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="w-10 h-10 rounded border border-dashed border-[#F5F5DC]/25 bg-[#1e1e1e] flex items-center justify-center flex-shrink-0 hover:border-[#F5F5DC]/40 transition-colors appearance-none p-0"
+          className="w-10 h-10 rounded border border-dashed border-foreground/25 bg-panel flex items-center justify-center flex-shrink-0 hover:border-foreground/40 transition-colors appearance-none p-0"
           title={`Subir foto para ${value}`}
         >
-          <Camera className="h-4 w-4 text-[#F5F5DC]/40" />
+          <Camera className="h-4 w-4 text-foreground/40" />
         </button>
       )}
       <input
@@ -63,7 +63,7 @@ const PhotoValueRow: React.FC<PhotoValueRowProps> = ({ value, photoUrl, onUpload
         className="hidden"
         onChange={handleChange}
       />
-      <span className="text-xs text-[#F5F5DC]/70 truncate min-w-0">{value}</span>
+      <span className="text-xs text-foreground/70 truncate min-w-0">{value}</span>
       {photoUrl && (
         <button
           type="button"
@@ -83,7 +83,7 @@ const PhotoVariantPicker: React.FC<PhotoVariantPickerProps> = ({ attributeValues
 
   return (
     <div className="space-y-2">
-      <h4 className="text-xs font-semibold text-[#F5F5DC]/60 uppercase tracking-wide">Fotos por valor</h4>
+      <h4 className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">Fotos por valor</h4>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {attributeValues.map((value) => (
           <PhotoValueRow

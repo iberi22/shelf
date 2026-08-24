@@ -22,14 +22,14 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
       onClick={onClose}
     >
       <div
-        className={`animate-modal-enter flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full min-w-0 flex-col overflow-hidden rounded-t-2xl border border-[#F5F5DC]/30 bg-[#1e1e1e] shadow-xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg ${widthClass}`}
+        className={`animate-modal-enter flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full min-w-0 flex-col overflow-hidden rounded-t-2xl border border-foreground/30 bg-panel shadow-xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg ${widthClass}`}
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
       >
-        <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-6">
-          <h3 className="min-w-0 flex-1 text-lg font-bold text-[#F5F5DC] sm:text-xl">{title}</h3>
+        <div className="flex items-start justify-between gap-3 border-b border-foreground/10 p-4 sm:p-6">
+          <h3 className="min-w-0 flex-1 text-lg font-bold text-foreground sm:text-xl">{title}</h3>
           <button
             onClick={onClose}
-            className="shrink-0 text-2xl text-[#F5F5DC]/70 transition-all active:scale-95 hover:text-[#F5F5DC]"
+            className="shrink-0 text-2xl text-foreground/70 transition-all active:scale-95 hover:text-foreground"
             aria-label={t('modal.close')}
           >
             &times;

@@ -37,8 +37,8 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
             <div className="flex items-start gap-2 md:gap-3">
               <div className="text-2xl md:text-3xl">💾</div>
               <div>
-                <h3 className="font-bold text-base md:text-lg mb-1 text-[#F5F5DC]">{t('welcome.localMode')}</h3>
-                <p className="text-[#F5F5DC]/80 text-sm">{t('welcome.localModeDesc')}</p>
+                <h3 className="font-bold text-base md:text-lg mb-1 text-foreground">{t('welcome.localMode')}</h3>
+                <p className="text-foreground/80 text-sm">{t('welcome.localModeDesc')}</p>
               </div>
             </div>
           </div>
@@ -48,10 +48,10 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
             <div className="flex items-start gap-2 md:gap-3">
               <div className="text-2xl md:text-3xl">⚠️</div>
               <div>
-                <h3 className="font-bold text-base md:text-lg mb-1 text-[#F5F5DC]">
+                <h3 className="font-bold text-base md:text-lg mb-1 text-foreground">
                   {t('welcome.backupResponsibility')}
                 </h3>
-                <p className="text-[#F5F5DC]/80 text-sm">{t('welcome.backupResponsibilityDesc')}</p>
+                <p className="text-foreground/80 text-sm">{t('welcome.backupResponsibilityDesc')}</p>
               </div>
             </div>
           </div>
@@ -61,8 +61,8 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
             <div className="flex items-start gap-2 md:gap-3">
               <div className="text-2xl md:text-3xl">☁️</div>
               <div>
-                <h3 className="font-bold text-base md:text-lg mb-1 text-[#F5F5DC]">{t('welcome.upgradeOption')}</h3>
-                <p className="text-[#F5F5DC]/80 text-sm">{t('welcome.upgradeOptionDesc')}</p>
+                <h3 className="font-bold text-base md:text-lg mb-1 text-foreground">{t('welcome.upgradeOption')}</h3>
+                <p className="text-foreground/80 text-sm">{t('welcome.upgradeOptionDesc')}</p>
               </div>
             </div>
           </div>
@@ -77,7 +77,7 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
             onChange={(e) => setDontShowAgain(e.target.checked)}
             className="w-4 h-4 rounded border-foreground/30 bg-primary text-foreground focus:ring-2 focus:ring-foreground/50"
           />
-          <label htmlFor="dontShowAgain" className="text-sm text-[#F5F5DC]/80 cursor-pointer">
+          <label htmlFor="dontShowAgain" className="text-sm text-foreground/80 cursor-pointer">
             {t('welcome.dontShowAgain')}
           </label>
         </div>
@@ -86,14 +86,14 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
           <button
             onClick={handleGuestMode}
-            className="bg-[#F5F5DC]/10 border border-[#F5F5DC]/30 text-[#F5F5DC] font-bold py-3 px-8 rounded-lg hover:bg-[#F5F5DC]/20 transition-all active:scale-95"
+            className="bg-foreground/10 border border-foreground/30 text-foreground font-bold py-3 px-8 rounded-lg hover:bg-foreground/20 transition-all active:scale-95"
           >
             {t('auth.continueAsGuest')}
           </button>
           <button
             onClick={handleClose}
             data-testid="welcome-modal-get-started-button"
-            className="bg-[#F5F5DC] text-[#121212] font-bold py-3 px-8 rounded-lg hover:bg-opacity-80 transition-all transform hover:scale-105 active:scale-95"
+            className="bg-foreground text-surface font-bold py-3 px-8 rounded-lg hover:bg-opacity-80 transition-all transform hover:scale-105 active:scale-95"
           >
             {t('welcome.getStarted')}
           </button>

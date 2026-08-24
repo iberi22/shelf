@@ -154,7 +154,7 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
         style={{ transform: 'translateY(0px)', opacity: 0 }}
       >
         <div
-          className={`bg-[#1a1a1a] border border-yellow-400 p-2 rounded-full shadow-lg ${isRefreshing ? 'animate-spin' : ''}`}
+          className={`bg-surface-alt border border-yellow-400 p-2 rounded-full shadow-lg ${isRefreshing ? 'animate-spin' : ''}`}
         >
           <svg
             aria-hidden="true"

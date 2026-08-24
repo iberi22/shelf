@@ -57,7 +57,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, onSave, onCancel, na
             placeholder={namePlaceholder}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className={`w-full p-2.5 bg-[#121212] border rounded-md min-h-[44px] ${errors.name ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
+            className={`w-full p-2.5 bg-surface border rounded-md min-h-[44px] ${errors.name ? 'border-red-400/70' : 'border-foreground/30'}`}
           />
           {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
         </div>
@@ -68,7 +68,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, onSave, onCancel, na
             placeholder={t('common.phone')}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className={`w-full p-2.5 bg-[#121212] border rounded-md min-h-[44px] ${errors.phone ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
+            className={`w-full p-2.5 bg-surface border rounded-md min-h-[44px] ${errors.phone ? 'border-red-400/70' : 'border-foreground/30'}`}
           />
           {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
         </div>
@@ -79,7 +79,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, onSave, onCancel, na
             placeholder={emailPlaceholder}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className={`w-full p-2.5 bg-[#121212] border rounded-md min-h-[44px] ${errors.email ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
+            className={`w-full p-2.5 bg-surface border rounded-md min-h-[44px] ${errors.email ? 'border-red-400/70' : 'border-foreground/30'}`}
           />
           {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
         </div>
@@ -89,14 +89,14 @@ const ContactForm: React.FC<ContactFormProps> = ({ contact, onSave, onCancel, na
           data-testid="cancel-contact-button"
           type="button"
           onClick={onCancel}
-          className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2.5 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 min-h-[44px]"
+          className="w-full sm:w-auto bg-transparent border border-foreground/50 font-bold py-2.5 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95 min-h-[44px]"
         >
           {t('common.cancel')}
         </button>
         <button
           data-testid="save-contact-button"
           type="submit"
-          className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95 min-h-[44px]"
+          className="w-full sm:w-auto bg-foreground text-surface font-bold py-2.5 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95 min-h-[44px]"
         >
           {t('common.save')}
         </button>

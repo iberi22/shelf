@@ -321,7 +321,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
         >
           <div className="flex items-center justify-between p-4 border-b border-foreground/20">
             <div className="min-w-0">
-              <h1 className="text-xl font-bold tracking-widest text-[#F5F5DC]">[ Shelf. ]</h1>
+              <h1 className="text-xl font-bold tracking-widest text-foreground">[ Shelf. ]</h1>
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -371,7 +371,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
                       payload: e.target.value === 'global' ? null : e.target.value,
                     })
                   }
-                  className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl py-2.5 px-3 pl-10 text-sm text-[#F5F5DC] appearance-none focus:outline-none focus:ring-1 focus:ring-[#4ADE80]/50"
+                  className="w-full bg-surface-alt border border-white/10 rounded-xl py-2.5 px-3 pl-10 text-sm text-foreground appearance-none focus:outline-none focus:ring-1 focus:ring-accent-green/50"
                   data-testid="mobile-branch-selector"
                 >
                   <option value="global">🌍 Global / Principal</option>
@@ -395,7 +395,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
                     onClick={() => handleNavClick(item.nameKey)}
                     className={`w-full text-left flex items-center gap-3 px-4 py-3 my-1 rounded-xl transition-all duration-300 ease-in-out active:scale-95 transform min-h-[44px] ${
                       activeComponent === item.nameKey
-                        ? 'bg-[#1A251A] text-[#4ADE80] font-bold border border-[#4ADE80]/30 glow-text-green shadow-[0_0_15px_rgba(74,222,128,0.1)]'
+                        ? 'bg-[#1A251A] text-accent-green font-bold border border-accent-green/30 glow-text-green shadow-[0_0_15px_rgba(74,222,128,0.1)]'
                         : 'text-neutral-400 hover:bg-white/5 hover:text-white hover:translate-x-1'
                     }`}
                   >
@@ -420,7 +420,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
 
       {/* Desktop sidebar - solo se renderiza en desktop */}
       {isDesktop && (
-        <aside className="flex flex-col w-[260px] bg-[#0A0A0A] border-r border-white/5 relative z-10">
+        <aside className="flex flex-col w-[260px] bg-background border-r border-white/5 relative z-10">
           <div className="p-6 flex items-center justify-between mb-2">
             <div className="min-w-0">
               <h1 className="text-2xl font-bold tracking-widest text-white">[ Shelf. ]</h1>
@@ -464,7 +464,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
                       payload: e.target.value === 'global' ? null : e.target.value,
                     })
                   }
-                  className="w-full bg-[#141414] border border-white/10 rounded-xl py-2.5 px-4 pl-10 text-sm text-[#F5F5DC] appearance-none focus:outline-none focus:ring-1 focus:ring-[#4ADE80]/50 transition-all hover:bg-[#1A1A1A] cursor-pointer"
+                  className="w-full bg-[#141414] border border-white/10 rounded-xl py-2.5 px-4 pl-10 text-sm text-foreground appearance-none focus:outline-none focus:ring-1 focus:ring-accent-green/50 transition-all hover:bg-surface-alt cursor-pointer"
                   data-testid="host-branch-selector"
                 >
                   <option value="global">🌍 Global / Principal</option>
@@ -488,7 +488,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
                     onClick={() => setActiveComponent(item.nameKey)}
                     className={`w-full text-left flex items-center gap-3 px-4 py-3 my-1 rounded-xl transition-all duration-300 ease-in-out active:scale-95 transform min-h-[44px] ${
                       activeComponent === item.nameKey
-                        ? 'bg-[#1A251A] text-[#4ADE80] font-bold border border-[#4ADE80]/30 glow-text-green shadow-[0_0_15px_rgba(74,222,128,0.1)]'
+                        ? 'bg-[#1A251A] text-accent-green font-bold border border-accent-green/30 glow-text-green shadow-[0_0_15px_rgba(74,222,128,0.1)]'
                         : 'text-neutral-400 hover:bg-white/5 hover:text-white hover:translate-x-1'
                     }`}
                   >
@@ -563,7 +563,7 @@ export const MobileBottomNav: React.FC<{ activeComponent: string; setActiveCompo
           onClick={() => setActiveComponent(item.nameKey)}
           className={`flex flex-col items-center justify-center gap-1 px-1 py-1 rounded-md text-[10px] flex-1 min-h-[56px] transition-all duration-300 active:scale-95 ${
             activeComponent === item.nameKey
-              ? 'text-[#4ADE80] glow-text-green bg-[#1A251A] border-t-2 border-[#4ADE80]'
+              ? 'text-accent-green glow-text-green bg-[#1A251A] border-t-2 border-accent-green'
               : 'text-neutral-500 border-t-2 border-transparent'
           }`}
         >
