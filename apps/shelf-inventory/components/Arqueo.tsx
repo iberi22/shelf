@@ -161,14 +161,14 @@ export default function Arqueo() {
 
   return (
     <div className="px-0 max-w-6xl mx-auto">
-      <h1 className="text-2xl md:text-3xl font-bold text-[#F5F5DC] mb-6">Arqueo - Invoice Accounting</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6">Arqueo - Invoice Accounting</h1>
 
       {/* Active Session */}
       {currentSession ? (
-        <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg p-4 md:p-6 mb-6">
+        <div className="bg-surface-alt border border-foreground/30 rounded-lg p-4 md:p-6 mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 flex-wrap">
-            <h2 className="text-lg md:text-xl font-semibold text-[#F5F5DC] shrink-0">Current Session</h2>
-            <span className="self-start sm:self-auto px-3 py-1 bg-[#F5F5DC]/10 text-[#F5F5DC]/80 text-xs font-semibold rounded-full border border-[#F5F5DC]/20">
+            <h2 className="text-lg md:text-xl font-semibold text-foreground shrink-0">Current Session</h2>
+            <span className="self-start sm:self-auto px-3 py-1 bg-foreground/10 text-foreground/80 text-xs font-semibold rounded-full border border-foreground/20">
               {currentSession.invoices.length} invoice{currentSession.invoices.length !== 1 ? 's' : ''}
             </span>
           </div>
@@ -176,41 +176,43 @@ export default function Arqueo() {
           {/* Invoices in session — Desktop */}
           <div className="space-y-4 mb-6">
             {currentSession.invoices.map((invoice) => (
-              <div key={invoice.id} className="bg-[#121212] border border-[#F5F5DC]/20 rounded-lg p-4">
+              <div key={invoice.id} className="bg-surface border border-foreground/20 rounded-lg p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <p className="text-sm text-[#F5F5DC]/60">
+                    <p className="text-sm text-foreground/60">
                       Supplier:{' '}
-                      <span className="text-[#F5F5DC] font-medium">{invoice.confirmedData.supplierName || 'N/A'}</span>
+                      <span className="text-foreground font-medium">{invoice.confirmedData.supplierName || 'N/A'}</span>
                     </p>
-                    <p className="text-sm text-[#F5F5DC]/60">
+                    <p className="text-sm text-foreground/60">
                       Invoice #:{' '}
-                      <span className="text-[#F5F5DC] font-medium">{invoice.confirmedData.invoiceNumber || 'N/A'}</span>
+                      <span className="text-foreground font-medium">
+                        {invoice.confirmedData.invoiceNumber || 'N/A'}
+                      </span>
                     </p>
-                    <p className="text-sm text-[#F5F5DC]/60">
+                    <p className="text-sm text-foreground/60">
                       Date:{' '}
-                      <span className="text-[#F5F5DC] font-medium">{invoice.confirmedData.invoiceDate || 'N/A'}</span>
+                      <span className="text-foreground font-medium">{invoice.confirmedData.invoiceDate || 'N/A'}</span>
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-green-400">
                       ${(invoice.confirmedData.total || 0).toFixed(2)}
                     </p>
-                    <p className="text-xs text-[#F5F5DC]/50">{invoice.confirmedData.items.length} items</p>
+                    <p className="text-xs text-foreground/50">{invoice.confirmedData.items.length} items</p>
                   </div>
                 </div>
 
                 {/* Items preview */}
-                <div className="mt-2 text-xs text-[#F5F5DC]/50">
-                  <p className="font-semibold mb-1 text-[#F5F5DC]/70">Items:</p>
+                <div className="mt-2 text-xs text-foreground/50">
+                  <p className="font-semibold mb-1 text-foreground/70">Items:</p>
                   <ul className="space-y-1">
                     {invoice.confirmedData.items.slice(0, 3).map((item, idx) => (
-                      <li key={idx} className="text-[#F5F5DC]/80">
+                      <li key={idx} className="text-foreground/80">
                         • {item.description} - Qty: {item.quantity.toFixed(2)} @ ${item.unitPrice.toFixed(2)}
                       </li>
                     ))}
                     {invoice.confirmedData.items.length > 3 && (
-                      <li className="text-[#F5F5DC]/40 italic">
+                      <li className="text-foreground/40 italic">
                         ...and {invoice.confirmedData.items.length - 3} more items
                       </li>
                     )}
@@ -225,21 +227,21 @@ export default function Arqueo() {
             {currentSession.invoices.map((invoice) => (
               <div
                 key={invoice.id}
-                className="bg-[#121212] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
+                className="bg-surface border border-foreground/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
               >
                 {/* Card header */}
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#F5F5DC] line-clamp-1">
+                    <p className="text-sm font-semibold text-foreground line-clamp-1">
                       {invoice.confirmedData.supplierName || 'N/A'}
                     </p>
-                    <p className="text-[10px] text-[#F5F5DC]/50 font-mono mt-0.5">
+                    <p className="text-[10px] text-foreground/50 font-mono mt-0.5">
                       #{invoice.confirmedData.invoiceNumber || 'N/A'} · {invoice.confirmedData.invoiceDate || 'N/A'}
                     </p>
                   </div>
                   <div className="flex-shrink-0 text-right ml-2">
                     <p className="text-lg font-bold text-green-400">${(invoice.confirmedData.total || 0).toFixed(2)}</p>
-                    <p className="text-[10px] text-[#F5F5DC]/50">{invoice.confirmedData.items.length} items</p>
+                    <p className="text-[10px] text-foreground/50">{invoice.confirmedData.items.length} items</p>
                   </div>
                 </div>
 
@@ -248,13 +250,13 @@ export default function Arqueo() {
                   {invoice.confirmedData.items.slice(0, 2).map((item, idx) => (
                     <span
                       key={idx}
-                      className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/70"
+                      className="inline-flex items-center gap-1 bg-foreground/8 px-1.5 py-0.5 rounded-full text-[10px] text-foreground/70"
                     >
                       {item.description} (x{item.quantity})
                     </span>
                   ))}
                   {invoice.confirmedData.items.length > 2 && (
-                    <span className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/40">
+                    <span className="inline-flex items-center gap-1 bg-foreground/8 px-1.5 py-0.5 rounded-full text-[10px] text-foreground/40">
                       +{invoice.confirmedData.items.length - 2} more
                     </span>
                   )}
@@ -279,18 +281,18 @@ export default function Arqueo() {
             </button>
             <button
               onClick={handleStartNewSession}
-              className="w-full sm:flex-1 bg-transparent border border-[#F5F5DC]/50 text-[#F5F5DC] font-bold py-2.5 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all active:scale-95 text-sm min-h-[44px]"
+              className="w-full sm:flex-1 bg-transparent border border-foreground/50 text-foreground font-bold py-2.5 px-4 rounded-lg hover:bg-foreground/10 transition-all active:scale-95 text-sm min-h-[44px]"
             >
               Close Session
             </button>
           </div>
         </div>
       ) : (
-        <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg p-6 mb-6 text-center">
-          <h2 className="text-lg md:text-xl font-semibold text-[#F5F5DC] mb-4">No Active Session</h2>
+        <div className="bg-surface-alt border border-foreground/30 rounded-lg p-6 mb-6 text-center">
+          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">No Active Session</h2>
           <button
             onClick={() => setShowScanner(true)}
-            className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-6 rounded-lg hover:bg-opacity-80 transition-all active:scale-95 text-sm min-h-[44px]"
+            className="w-full sm:w-auto bg-foreground text-surface font-bold py-2.5 px-6 rounded-lg hover:bg-opacity-80 transition-all active:scale-95 text-sm min-h-[44px]"
           >
             📷 Start New Session & Scan Invoice
           </button>
@@ -308,24 +310,24 @@ export default function Arqueo() {
       {/* Previous Sessions */}
       {state.arqueoSessions.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-[#F5F5DC] mb-4">Previous Sessions</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Previous Sessions</h2>
           <div className="flex flex-col gap-3">
             {state.arqueoSessions.map((session) => (
               <div
                 key={session.id}
-                className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 md:p-4 active:scale-[0.98] transition-transform"
+                className="w-full bg-surface-alt border border-foreground/20 rounded-lg p-3 md:p-4 active:scale-[0.98] transition-transform"
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-sm text-[#F5F5DC]/60">
+                    <p className="text-sm text-foreground/60">
                       Closed on:{' '}
-                      <span className="text-[#F5F5DC]">{new Date(session.createdAt).toLocaleDateString()}</span>
+                      <span className="text-foreground">{new Date(session.createdAt).toLocaleDateString()}</span>
                     </p>
                     <div className="flex flex-wrap gap-3 mt-2">
-                      <span className="inline-flex items-center text-xs text-[#F5F5DC]/70 bg-[#F5F5DC]/8 px-2 py-1 rounded">
+                      <span className="inline-flex items-center text-xs text-foreground/70 bg-foreground/8 px-2 py-1 rounded">
                         📄 {session.invoices.length} invoice{session.invoices.length !== 1 ? 's' : ''}
                       </span>
-                      <span className="inline-flex items-center text-xs text-[#F5F5DC]/70 bg-[#F5F5DC]/8 px-2 py-1 rounded">
+                      <span className="inline-flex items-center text-xs text-foreground/70 bg-foreground/8 px-2 py-1 rounded">
                         📦 {session.createdProducts.length} product{session.createdProducts.length !== 1 ? 's' : ''}
                       </span>
                       <span className="inline-flex items-center text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded">
