@@ -139,11 +139,11 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 flex-wrap">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC] shrink-0">{t('sales.title')}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground shrink-0">{t('sales.title')}</h2>
         {canEdit && (
           <button
             onClick={() => handleOpenModal()}
-            className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
+            className="w-full sm:w-auto bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
             data-testid="add-sale-button"
           >
             {t('sales.addSale')}
@@ -156,7 +156,7 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
         <InfiniteTable
           data={sortedSales}
           height="calc(100vh - 200px)"
-          emptyContent={<div className="text-center p-8 text-[#F5F5DC]/70">{t('sales.empty')}</div>}
+          emptyContent={<div className="text-center p-8 text-foreground/70">{t('sales.empty')}</div>}
           fixedHeaderContent={() => (
             <tr>
               <SortableHeader sortKey="date" labelKey="sales.date" />
@@ -224,11 +224,11 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
           sortedSales.map((sale) => (
             <div
               key={sale.id}
-              className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
+              className="w-full bg-surface-alt border border-foreground/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
             >
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <p className="text-xs text-[#F5F5DC]/50">{t('sales.date')}</p>
+                  <p className="text-xs text-foreground/50">{t('sales.date')}</p>
                   <p className="text-sm font-bold">{new Date(sale.date).toLocaleDateString()}</p>
                 </div>
                 <div className="text-right">
@@ -238,11 +238,11 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
                   </p>
                 </div>
               </div>
-              <div className="text-xs text-[#F5F5DC]/70 mb-2 line-clamp-2">
+              <div className="text-xs text-foreground/70 mb-2 line-clamp-2">
                 {sale.items.map((item) => `${item.productName} (x${item.quantity})`).join(', ')}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[#F5F5DC]/50">{sale.clientName || t('common.notAvailable')}</span>
+                <span className="text-xs text-foreground/50">{sale.clientName || t('common.notAvailable')}</span>
                 <div className="flex gap-3">
                   {canEdit && (
                     <button
@@ -282,7 +282,7 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
           ))
         ) : (
           <div
-            className="text-center p-8 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg"
+            className="text-center p-8 text-foreground/70 bg-surface-alt border border-foreground/20 rounded-lg"
             data-testid="empty-sales-message"
           >
             {t('sales.empty')}
@@ -307,14 +307,14 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
           title={t('sales.deleteConfirmTitle') || 'Delete Sale'}
         >
           <div className="space-y-4">
-            <p className="text-[#F5F5DC]/80">
+            <p className="text-foreground/80">
               {t('sales.deleteConfirmMessage') ||
                 'Are you sure you want to delete this sale? This will restore product quantities.'}
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDeletingSaleId(null)}
-                className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2.5 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 min-h-[44px]"
+                className="bg-transparent border border-foreground/50 font-bold py-2.5 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95 min-h-[44px]"
               >
                 {t('common.cancel')}
               </button>
@@ -625,7 +625,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
             data-testid="sale-barcode-capture"
             data-barcode-capture="true"
             placeholder={t('sales.scan.placeholder') || 'Escanear código o SKU…'}
-            className="flex-1 min-w-0 p-2.5 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-sm min-h-[44px]"
+            className="flex-1 min-w-0 p-2.5 bg-surface border border-foreground/30 rounded-md text-sm min-h-[44px]"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -640,7 +640,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
           />
         </div>
         {scanFeedback && (
-          <p className="text-xs text-[#F5F5DC]/70" data-testid="sale-scan-feedback">
+          <p className="text-xs text-foreground/70" data-testid="sale-scan-feedback">
             {scanFeedback}
           </p>
         )}
@@ -649,12 +649,12 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
           const variants = product ? getProductVariants(product) : [];
           const selectedVariant = getSelectedVariant(product, item.productVariantId);
           return (
-            <div key={index} className="flex flex-col gap-2 p-3 rounded-md bg-[#121212]">
+            <div key={index} className="flex flex-col gap-2 p-3 rounded-md bg-surface">
               <div className="flex items-center gap-2">
                 <select
                   value={item.productId}
                   onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
-                  className="flex-1 min-w-0 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md text-sm min-h-[44px]"
+                  className="flex-1 min-w-0 p-2.5 bg-panel border border-foreground/30 rounded-md text-sm min-h-[44px]"
                   data-testid={`sale-item-product-${index}`}
                 >
                   <option value="" disabled>
@@ -677,7 +677,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
                 <button
                   type="button"
                   onClick={() => openImagePreview(product, selectedVariant)}
-                  className="flex w-full items-center gap-3 rounded-md border border-[#F5F5DC]/15 bg-[#1a1a1a] p-2 text-left transition-colors hover:border-[#F5F5DC]/30 active:scale-[0.99]"
+                  className="flex w-full items-center gap-3 rounded-md border border-foreground/15 bg-surface-alt p-2 text-left transition-colors hover:border-foreground/30 active:scale-[0.99]"
                   aria-label={t('common.product')}
                 >
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/10 bg-black/20">
@@ -688,26 +688,26 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-[#F5F5DC]">{product?.name || ''}</p>
-                    <p className="truncate text-xs text-[#F5F5DC]/60">
+                    <p className="truncate text-sm font-semibold text-foreground">{product?.name || ''}</p>
+                    <p className="truncate text-xs text-foreground/60">
                       {selectedVariant
                         ? product
                           ? getProductVariantDisplay(product, selectedVariant) || selectedVariant.label
                           : selectedVariant.label
                         : t('common.product')}
                     </p>
-                    <p className="text-[11px] text-[#F5F5DC]/45">
+                    <p className="text-[11px] text-foreground/45">
                       {t('inventory.form.clickImageToPreview') || 'Toca la imagen para verla grande'}
                     </p>
                   </div>
-                  <ImageIcon className="h-4 w-4 shrink-0 text-[#F5F5DC]/50" aria-hidden="true" />
+                  <ImageIcon className="h-4 w-4 shrink-0 text-foreground/50" aria-hidden="true" />
                 </button>
               )}
               {variants.length > 1 && (
                 <select
                   value={item.productVariantId || variants[0]?.id || ''}
                   onChange={(e) => handleVariantChange(index, e.target.value)}
-                  className="w-full p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md text-sm min-h-[44px]"
+                  className="w-full p-2.5 bg-panel border border-foreground/30 rounded-md text-sm min-h-[44px]"
                   data-testid={`sale-item-variant-${index}`}
                 >
                   {variants.map((variant) => (
@@ -727,7 +727,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
                   onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                   min="1"
                   max={product?.quantity}
-                  className="w-full p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md text-sm min-h-[44px]"
+                  className="w-full p-2.5 bg-panel border border-foreground/30 rounded-md text-sm min-h-[44px]"
                 />
                 <input
                   data-testid={`sale-item-price-${index}`}
@@ -737,11 +737,11 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
                   onChange={(e) => handleItemChange(index, 'price', e.target.value)}
                   min="0"
                   step="0.01"
-                  className="w-full p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md text-sm min-h-[44px]"
+                  className="w-full p-2.5 bg-panel border border-foreground/30 rounded-md text-sm min-h-[44px]"
                 />
               </div>
               {selectedVariant && (
-                <p className="text-[11px] text-[#F5F5DC]/50">
+                <p className="text-[11px] text-foreground/50">
                   {product?.name || ''} -{' '}
                   {product
                     ? getProductVariantDisplay(product, selectedVariant) || selectedVariant.label
@@ -762,12 +762,12 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
         </button>
         {errors.general && <p className="text-red-400 text-xs mt-1">{errors.general}</p>}
 
-        <div className="border-t border-[#F5F5DC]/20 pt-4">
+        <div className="border-t border-foreground/20 pt-4">
           <select
             data-testid="sale-client-select"
             value={clientId || ''}
             onChange={(e) => setClientId(e.target.value || undefined)}
-            className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 min-h-[44px]"
+            className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 min-h-[44px]"
           >
             <option value="">{t('sales.form.selectClientOptional')}</option>
             {state.clients
@@ -781,12 +781,12 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-6 border-t border-[#F5F5DC]/20 pt-4 gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-6 border-t border-foreground/20 pt-4 gap-4">
         <div>
-          <p className="text-sm text-[#F5F5DC]/70">
-            {t('sales.total')}: <span className="font-bold text-lg text-[#F5F5DC]">{formatCurrency(totalPrice)}</span>
+          <p className="text-sm text-foreground/70">
+            {t('sales.total')}: <span className="font-bold text-lg text-foreground">{formatCurrency(totalPrice)}</span>
           </p>
-          <p className="text-xs text-[#F5F5DC]/60">
+          <p className="text-xs text-foreground/60">
             {t('sales.profit')}: <span className="font-semibold text-green-400">{formatCurrency(totalProfit)}</span>
           </p>
         </div>
@@ -795,14 +795,14 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
             data-testid="cancel-sale-button"
             type="button"
             onClick={onCancel}
-            className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2.5 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 min-h-[44px]"
+            className="w-full sm:w-auto bg-transparent border border-foreground/50 font-bold py-2.5 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95 min-h-[44px]"
           >
             {t('common.cancel')}
           </button>
           <button
             data-testid="save-sale-button"
             type="submit"
-            className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95 min-h-[44px]"
+            className="w-full sm:w-auto bg-foreground text-surface font-bold py-2.5 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95 min-h-[44px]"
           >
             {t('common.save')}
           </button>
@@ -821,15 +821,15 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
             >
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-[#F5F5DC]">{previewImage.label}</p>
-                  <p className="text-xs text-[#F5F5DC]/50">
+                  <p className="truncate text-sm font-bold text-foreground">{previewImage.label}</p>
+                  <p className="text-xs text-foreground/50">
                     {t('inventory.form.previewImage') || 'Vista previa de la imagen'}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setPreviewImage(null)}
-                  className="rounded-full border border-white/10 bg-white/5 p-2 text-[#F5F5DC]/80 hover:bg-white/10"
+                  className="rounded-full border border-white/10 bg-white/5 p-2 text-foreground/80 hover:bg-white/10"
                   aria-label={t('modal.close')}
                 >
                   <X size={16} />

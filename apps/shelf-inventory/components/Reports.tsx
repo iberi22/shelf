@@ -321,14 +321,14 @@ const Reports: React.FC = () => {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold mb-2 text-[#F5F5DC]">{t('reports.title')}</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2 text-foreground">{t('reports.title')}</h2>
           <p className="text-sm md:text-base text-foreground/80">{t('reports.description')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex gap-2 mr-2">
             <button
               onClick={generateInventoryValuationPDF}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border bg-transparent text-[#F5F5DC] border-[#F5F5DC]/30 hover:bg-[#F5F5DC]/5"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border bg-transparent text-foreground border-foreground/30 hover:bg-foreground/5"
               data-testid="export-inventory-valuation-pdf"
               title={t('reports.inventoryValuation')}
             >
@@ -337,7 +337,7 @@ const Reports: React.FC = () => {
             </button>
             <button
               onClick={generateLowStockPDF}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border bg-transparent text-[#F5F5DC] border-[#F5F5DC]/30 hover:bg-[#F5F5DC]/5"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border bg-transparent text-foreground border-foreground/30 hover:bg-foreground/5"
               data-testid="export-low-stock-pdf"
               title={t('reports.lowStockReport')}
             >
@@ -351,8 +351,8 @@ const Reports: React.FC = () => {
               onClick={() => setIsConsolidated(!isConsolidated)}
               className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold transition-all active:scale-95 border ${
                 isConsolidated
-                  ? 'bg-[#4ADE80] text-[#121212] border-[#4ADE80]'
-                  : 'bg-transparent text-[#F5F5DC] border-[#F5F5DC]/30 hover:bg-[#F5F5DC]/5'
+                  ? 'bg-accent-green text-surface border-accent-green'
+                  : 'bg-transparent text-foreground border-foreground/30 hover:bg-foreground/5'
               }`}
               data-testid="consolidated-report-toggle"
             >
@@ -362,13 +362,13 @@ const Reports: React.FC = () => {
           )}
 
           {state.branches.filter((b) => b.isActive).length > 0 && (
-            <div className="flex bg-[#1a1a1a] p-1 rounded-lg border border-[#F5F5DC]/20">
+            <div className="flex bg-surface-alt p-1 rounded-lg border border-foreground/20">
               <button
                 onClick={() => setReportType('sales')}
                 className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
                   reportType === 'sales'
-                    ? 'bg-[#F5F5DC]/10 text-[#F5F5DC]'
-                    : 'text-[#F5F5DC]/50 hover:text-[#F5F5DC]/80'
+                    ? 'bg-foreground/10 text-foreground'
+                    : 'text-foreground/50 hover:text-foreground/80'
                 }`}
               >
                 {t('reports.typeSales')}
@@ -377,8 +377,8 @@ const Reports: React.FC = () => {
                 onClick={() => setReportType('consolidated-inventory')}
                 className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
                   reportType === 'consolidated-inventory'
-                    ? 'bg-[#F5F5DC]/10 text-[#F5F5DC]'
-                    : 'text-[#F5F5DC]/50 hover:text-[#F5F5DC]/80'
+                    ? 'bg-foreground/10 text-foreground'
+                    : 'text-foreground/50 hover:text-foreground/80'
                 }`}
               >
                 {t('reports.typeConsolidatedMultiBranch')}
@@ -389,37 +389,37 @@ const Reports: React.FC = () => {
       </div>
 
       {/* Filters Section */}
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
-        <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">{t('reports.filters.title')}</h3>
+      <div className="bg-surface-alt border border-foreground/30 p-4 rounded-lg">
+        <h3 className="text-lg font-bold mb-4 text-foreground">{t('reports.filters.title')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="sm:col-span-2 lg:col-span-1">
-            <label className="text-xs text-[#F5F5DC]/80">{t('reports.filters.dateRange')}</label>
+            <label className="text-xs text-foreground/80">{t('reports.filters.dateRange')}</label>
             <div className="flex gap-2">
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full min-w-0 p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 text-xs"
+                className="w-full min-w-0 p-2.5 bg-surface border rounded-md border-foreground/30 text-xs"
                 data-testid="reports-start-date"
               />
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full min-w-0 p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 text-xs"
+                className="w-full min-w-0 p-2.5 bg-surface border rounded-md border-foreground/30 text-xs"
                 data-testid="reports-end-date"
               />
             </div>
           </div>
           <div>
-            <label htmlFor="productFilter" className="text-xs text-[#F5F5DC]/80">
+            <label htmlFor="productFilter" className="text-xs text-foreground/80">
               {t('reports.filters.product')}
             </label>
             <select
               id="productFilter"
               value={selectedProductId}
               onChange={(e) => setSelectedProductId(e.target.value)}
-              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 min-h-[44px]"
+              className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 min-h-[44px]"
               data-testid="reports-product-filter"
             >
               <option value="all">
@@ -433,14 +433,14 @@ const Reports: React.FC = () => {
             </select>
           </div>
           <div>
-            <label htmlFor="clientFilter" className="text-xs text-[#F5F5DC]/80">
+            <label htmlFor="clientFilter" className="text-xs text-foreground/80">
               {t('reports.filters.client')}
             </label>
             <select
               id="clientFilter"
               value={selectedClientId}
               onChange={(e) => setSelectedClientId(e.target.value)}
-              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 min-h-[44px]"
+              className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 min-h-[44px]"
               data-testid="reports-client-filter"
             >
               <option value="all">
@@ -469,8 +469,8 @@ const Reports: React.FC = () => {
           {filteredSales.length > 0 ? (
             <div className="space-y-8">
               {/* Sales over Time Chart */}
-              <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
-                <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">{t('reports.salesOverTime')}</h3>
+              <div className="bg-surface-alt border border-foreground/30 p-4 rounded-lg">
+                <h3 className="text-lg font-bold mb-4 text-foreground">{t('reports.salesOverTime')}</h3>
                 <div className="relative h-72">
                   <Line options={chartOptions} data={chartData} />
                 </div>
@@ -478,10 +478,10 @@ const Reports: React.FC = () => {
 
               {/* Top Products */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
-                <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
-                  <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">
+                <div className="bg-surface-alt border border-foreground/30 p-4 rounded-lg">
+                  <h3 className="text-lg font-bold mb-4 text-foreground">
                     {t('reports.topProducts')}{' '}
-                    <span className="text-sm font-normal text-[#F5F5DC]/80">({t('reports.byRevenue')})</span>
+                    <span className="text-sm font-normal text-foreground/80">({t('reports.byRevenue')})</span>
                   </h3>
                   <ul className="space-y-2">
                     {topProducts.byRevenue.map((p, i) => (
@@ -494,7 +494,7 @@ const Reports: React.FC = () => {
                             {i + 1}. {p.name}
                           </div>
                           {(p as any).branchName && (
-                            <div className="text-[10px] text-[#F5F5DC]/40 uppercase tracking-wider">
+                            <div className="text-[10px] text-foreground/40 uppercase tracking-wider">
                               {(p as any).branchName}
                             </div>
                           )}
@@ -504,10 +504,10 @@ const Reports: React.FC = () => {
                     ))}
                   </ul>
                 </div>
-                <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
-                  <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">
+                <div className="bg-surface-alt border border-foreground/30 p-4 rounded-lg">
+                  <h3 className="text-lg font-bold mb-4 text-foreground">
                     {t('reports.topProducts')}{' '}
-                    <span className="text-sm font-normal text-[#F5F5DC]/80">({t('reports.byProfit')})</span>
+                    <span className="text-sm font-normal text-foreground/80">({t('reports.byProfit')})</span>
                   </h3>
                   <ul className="space-y-2">
                     {topProducts.byProfit.map((p, i) => (
@@ -520,7 +520,7 @@ const Reports: React.FC = () => {
                             {i + 1}. {p.name}
                           </div>
                           {(p as any).branchName && (
-                            <div className="text-[10px] text-[#F5F5DC]/40 uppercase tracking-wider">
+                            <div className="text-[10px] text-foreground/40 uppercase tracking-wider">
                               {(p as any).branchName}
                             </div>
                           )}
@@ -533,7 +533,7 @@ const Reports: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="text-center py-16 text-[#F5F5DC]/80">
+            <div className="text-center py-16 text-foreground/80">
               <p>{t('reports.noDataForPeriod')}</p>
             </div>
           )}
@@ -545,11 +545,11 @@ const Reports: React.FC = () => {
             <StatCard titleKey="reports.summary.skus" value={inventoryStats.skus.toString()} icon="🏷️" />
           </div>
 
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-4 rounded-lg">
-            <h3 className="text-lg font-bold mb-4 text-[#F5F5DC]">{t('reports.typeConsolidatedMultiBranch')}</h3>
+          <div className="bg-surface-alt border border-foreground/30 p-4 rounded-lg">
+            <h3 className="text-lg font-bold mb-4 text-foreground">{t('reports.typeConsolidatedMultiBranch')}</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm border-collapse">
-                <thead className="text-[#F5F5DC]/60 border-b border-[#F5F5DC]/10 bg-[#121212]/50">
+                <thead className="text-foreground/60 border-b border-foreground/10 bg-surface/50">
                   <tr>
                     <th className="py-3 px-3 min-w-[200px]">{t('common.product')}</th>
                     <th className="py-3 px-3">{t('common.sku')}</th>
@@ -561,25 +561,25 @@ const Reports: React.FC = () => {
                         {bName}
                       </th>
                     ))}
-                    <th className="py-3 px-3 text-right font-bold text-[#4ADE80] border-l border-[#F5F5DC]/10 bg-[#F5F5DC]/5">
+                    <th className="py-3 px-3 text-right font-bold text-accent-green border-l border-foreground/10 bg-foreground/5">
                       {t('reports.summary.total')}
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F5F5DC]/5">
+                <tbody className="divide-y divide-foreground/5">
                   {aggregatedInventory.items.map((item) => (
-                    <tr key={item.sku + item.name} className="hover:bg-[#F5F5DC]/5 transition-colors">
+                    <tr key={item.sku + item.name} className="hover:bg-foreground/5 transition-colors">
                       <td className="py-3 px-3 font-medium">{item.name}</td>
-                      <td className="py-3 px-3 text-[#F5F5DC]/40 font-mono text-xs">{item.sku || '-'}</td>
+                      <td className="py-3 px-3 text-foreground/40 font-mono text-xs">{item.sku || '-'}</td>
                       {aggregatedInventory.branches.map((bName) => (
                         <td
                           key={bName}
-                          className={`py-3 px-3 text-right font-mono ${item.quantities[bName] ? 'text-[#F5F5DC]' : 'text-[#F5F5DC]/20'}`}
+                          className={`py-3 px-3 text-right font-mono ${item.quantities[bName] ? 'text-foreground' : 'text-foreground/20'}`}
                         >
                           {item.quantities[bName] || 0}
                         </td>
                       ))}
-                      <td className="py-3 px-3 text-right font-bold font-mono text-[#4ADE80] border-l border-[#F5F5DC]/10 bg-[#F5F5DC]/5">
+                      <td className="py-3 px-3 text-right font-bold font-mono text-accent-green border-l border-foreground/10 bg-foreground/5">
                         {item.total}
                       </td>
                     </tr>
@@ -588,7 +588,7 @@ const Reports: React.FC = () => {
                     <tr>
                       <td
                         colSpan={aggregatedInventory.branches.length + 3}
-                        className="py-12 text-center text-[#F5F5DC]/40 italic"
+                        className="py-12 text-center text-foreground/40 italic"
                       >
                         {t('reports.noDataForPeriod')}
                       </td>
@@ -602,9 +602,9 @@ const Reports: React.FC = () => {
       )}
 
       {/* AI Assistant Section */}
-      <div className="bg-[#F5F5DC]/5 border border-[#F5F5DC]/20 rounded-lg overflow-hidden">
-        <div className="p-4 bg-[#F5F5DC]/10">
-          <h3 className="text-lg font-bold flex items-center gap-2 text-[#F5F5DC]">
+      <div className="bg-foreground/5 border border-foreground/20 rounded-lg overflow-hidden">
+        <div className="p-4 bg-foreground/10">
+          <h3 className="text-lg font-bold flex items-center gap-2 text-foreground">
             <span className="text-xl">🤖</span>
             {t('reports.aiAssistantTitle')}
           </h3>
