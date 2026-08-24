@@ -17,7 +17,7 @@ const readProduct = (page: any, name: string) =>
   }, name);
 
 const getVariantRowLocator = (page: any, index: number) => {
-  return page.locator('[data-testid="product-form"] div.rounded-xl[class*="bg-[#121212]"]').nth(index - 1);
+  return page.locator('[data-testid="product-form"] div.rounded-xl[class~="bg-surface"]').nth(index - 1);
 };
 
 test.describe('Variant System — Full E2E Coverage', () => {
@@ -42,8 +42,8 @@ test.describe('Variant System — Full E2E Coverage', () => {
     await page.getByTestId('mc-material-Cemento').click();
 
     // Verify chips are added in green color text theme
-    const plasticoChip = page.locator('span[class*="text-[#22C55E]"]', { hasText: /^Plástico$/ });
-    const cementoChip = page.locator('span[class*="text-[#22C55E]"]', { hasText: /^Cemento$/ });
+    const plasticoChip = page.locator('span[class*="text-accent-green"]', { hasText: /^Plástico$/ });
+    const cementoChip = page.locator('span[class*="text-accent-green"]', { hasText: /^Cemento$/ });
     await expect(plasticoChip).toBeVisible();
     await expect(cementoChip).toBeVisible();
   });
@@ -198,7 +198,7 @@ test.describe('Variant System — Full E2E Coverage', () => {
     const logInfo = await page.evaluate(() => {
       const cards = document.querySelectorAll('[data-testid="product-form"] div');
       return Array.from(cards)
-        .filter((c) => c.className?.includes('bg-[#121212]'))
+        .filter((c) => /(^|\s)bg-surface(\s|$)/.test(c.className || ''))
         .map((card, idx) => `CARD ${idx}: class="${card.className}" text="${card.textContent?.slice(0, 100)}"`)
         .join('\n');
     });
@@ -219,7 +219,7 @@ test.describe('Variant System — Full E2E Coverage', () => {
     await input.press('Enter');
 
     // Verify chip containing "Fibra de vidrio" is visible
-    const chip = page.locator('span[class*="text-[#22C55E]"]', { hasText: /^Fibra de vidrio$/ });
+    const chip = page.locator('span[class*="text-accent-green"]', { hasText: /^Fibra de vidrio$/ });
     await expect(chip).toBeVisible();
   });
 
