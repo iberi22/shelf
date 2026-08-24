@@ -5,11 +5,11 @@ import { useAppContext } from '../context/AppContext';
 import CollapsibleCard from './CollapsibleCard';
 
 const LogDetails: React.FC<{ details: any; action: string }> = ({ details, action }) => {
-  if (!details) return <span className="text-[#F5F5DC]/40 italic text-xs">-</span>;
+  if (!details) return <span className="text-foreground/40 italic text-xs">-</span>;
 
   if (details.diff) {
     const keys = Object.keys(details.diff);
-    if (keys.length === 0) return <span className="text-[#F5F5DC]/40 italic text-xs">No changes detected</span>;
+    if (keys.length === 0) return <span className="text-foreground/40 italic text-xs">No changes detected</span>;
     return (
       <div className="flex flex-col gap-1 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
         {keys.map((key) => {
@@ -23,11 +23,11 @@ const LogDetails: React.FC<{ details: any; action: string }> = ({ details, actio
               key={key}
               className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono bg-black/20 p-1 rounded"
             >
-              <span className="font-bold text-[#F5F5DC]/80">{key}:</span>
+              <span className="font-bold text-foreground/80">{key}:</span>
               <span className="text-red-400/90 line-through truncate max-w-[100px]" title={String(oldVal)}>
                 {String(oldVal)}
               </span>
-              <span className="text-[#F5F5DC]/50">→</span>
+              <span className="text-foreground/50">→</span>
               <span className="text-green-400/90 truncate max-w-[100px]" title={String(newVal)}>
                 {String(newVal)}
               </span>
@@ -64,12 +64,12 @@ const LogDetails: React.FC<{ details: any; action: string }> = ({ details, actio
     }
 
     if (Array.isArray(details.payload)) {
-      return <span className="text-xs text-[#F5F5DC]/70">{details.payload.length} items modified</span>;
+      return <span className="text-xs text-foreground/70">{details.payload.length} items modified</span>;
     }
   }
 
   return (
-    <div className="text-[10px] font-mono text-[#F5F5DC]/60 max-w-[200px] truncate" title={JSON.stringify(details)}>
+    <div className="text-[10px] font-mono text-foreground/60 max-w-[200px] truncate" title={JSON.stringify(details)}>
       {JSON.stringify(details)}
     </div>
   );
@@ -107,7 +107,7 @@ const AuditLogViewer: React.FC = () => {
   return (
     <CollapsibleCard title="Audit Logs" icon={<History className="h-5 w-5" />} testId="settings-audit-logs-card">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-        <span className="text-xs text-[#F5F5DC]/60">
+        <span className="text-xs text-foreground/60">
           Historial detallado de todas las mutaciones locales y remotas.
         </span>
 
@@ -115,7 +115,7 @@ const AuditLogViewer: React.FC = () => {
           <select
             value={filterAction}
             onChange={(e) => setFilterAction(e.target.value)}
-            className="w-full sm:w-auto bg-background border border-[#F5F5DC]/20 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#F5F5DC]/50"
+            className="w-full sm:w-auto bg-background border border-foreground/20 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-foreground/50"
           >
             <option value="ALL">Todos los eventos ({state.auditLogs.length})</option>
             {uniqueActions.map((action) => (
@@ -145,9 +145,9 @@ const AuditLogViewer: React.FC = () => {
         </div>
       </div>
 
-      <div className="w-full min-w-0 flex-1 overflow-hidden rounded-md border border-[#F5F5DC]/10 bg-black/10">
+      <div className="w-full min-w-0 flex-1 overflow-hidden rounded-md border border-foreground/10 bg-black/10">
         {filteredLogs.length === 0 ? (
-          <div className="text-center p-4 text-[#F5F5DC]/50 italic">No logs available.</div>
+          <div className="text-center p-4 text-foreground/50 italic">No logs available.</div>
         ) : (
           <div className="max-h-[400px] overflow-y-auto overflow-x-hidden p-2 custom-scrollbar md:overflow-auto md:p-0">
             <table className="responsive-table w-full table-fixed border-collapse text-left">
@@ -158,24 +158,24 @@ const AuditLogViewer: React.FC = () => {
                 <col className="w-[170px]" />
                 <col className="w-[280px]" />
               </colgroup>
-              <thead className="sticky top-0 bg-[#1a1a1a] z-10 shadow-sm">
+              <thead className="sticky top-0 bg-surface-alt z-10 shadow-sm">
                 <tr>
-                  <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Timestamp</th>
-                  <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Peer ID</th>
-                  <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Action</th>
-                  <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Entity ID</th>
-                  <th className="p-2 text-left font-bold text-[#F5F5DC] border-b border-[#F5F5DC]/10">Details</th>
+                  <th className="p-2 text-left font-bold text-foreground border-b border-foreground/10">Timestamp</th>
+                  <th className="p-2 text-left font-bold text-foreground border-b border-foreground/10">Peer ID</th>
+                  <th className="p-2 text-left font-bold text-foreground border-b border-foreground/10">Action</th>
+                  <th className="p-2 text-left font-bold text-foreground border-b border-foreground/10">Entity ID</th>
+                  <th className="p-2 text-left font-bold text-foreground border-b border-foreground/10">Details</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredLogs.map((log, index) => (
                   <tr
                     key={log.id || index}
-                    className="border-b border-[#F5F5DC]/5 hover:bg-[#F5F5DC]/5 transition-colors"
+                    className="border-b border-foreground/5 hover:bg-foreground/5 transition-colors"
                   >
                     <td
                       data-label="Timestamp"
-                      className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/70 md:whitespace-nowrap"
+                      className="p-2 text-[10px] md:text-xs font-mono text-foreground/70 md:whitespace-nowrap"
                     >
                       {new Date(log.timestamp).toLocaleString()}
                     </td>
@@ -193,7 +193,7 @@ const AuditLogViewer: React.FC = () => {
                     </td>
                     <td
                       data-label="Entity ID"
-                      className="p-2 text-[10px] md:text-xs font-mono text-[#F5F5DC]/60 truncate"
+                      className="p-2 text-[10px] md:text-xs font-mono text-foreground/60 truncate"
                       title={log.entityId || '-'}
                     >
                       {log.entityId || '-'}
