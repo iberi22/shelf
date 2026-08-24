@@ -88,18 +88,18 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
 
   const renderMethodStep = () => (
     <>
-      <h2 className="text-2xl font-bold mb-2 text-[#F5F5DC]">🔑 Recover Account</h2>
-      <p className="text-[#F5F5DC]/60 text-sm mb-6">
+      <h2 className="text-2xl font-bold mb-2 text-foreground">🔑 Recover Account</h2>
+      <p className="text-foreground/60 text-sm mb-6">
         Enter your email and recovery seed to restore access to your account on this device.
       </p>
 
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-1 text-[#F5F5DC]">Account Email</label>
+        <label className="block text-sm font-medium mb-1 text-foreground">Account Email</label>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-[#F5F5DC]"
+          className="w-full p-2 bg-surface border border-foreground/30 rounded-md text-foreground"
           placeholder="your@email.com"
         />
       </div>
@@ -109,8 +109,8 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
           onClick={() => setInputMode('words')}
           className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
             inputMode === 'words'
-              ? 'bg-[#F5F5DC] text-[#121212]'
-              : 'bg-[#F5F5DC]/10 text-[#F5F5DC]/70 hover:bg-[#F5F5DC]/20'
+              ? 'bg-foreground text-surface'
+              : 'bg-foreground/10 text-foreground/70 hover:bg-foreground/20'
           }`}
         >
           Word by Word
@@ -119,8 +119,8 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
           onClick={() => setInputMode('paste')}
           className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
             inputMode === 'paste'
-              ? 'bg-[#F5F5DC] text-[#121212]'
-              : 'bg-[#F5F5DC]/10 text-[#F5F5DC]/70 hover:bg-[#F5F5DC]/20'
+              ? 'bg-foreground text-surface'
+              : 'bg-foreground/10 text-foreground/70 hover:bg-foreground/20'
           }`}
         >
           Paste All Words
@@ -131,12 +131,12 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
         <div className="grid grid-cols-3 gap-2 mb-4">
           {seedWords.map((word, index) => (
             <div key={index} className="flex items-center gap-1">
-              <span className="text-[#F5F5DC]/40 text-xs font-mono w-5 shrink-0">{index + 1}.</span>
+              <span className="text-foreground/40 text-xs font-mono w-5 shrink-0">{index + 1}.</span>
               <input
                 type="text"
                 value={word}
                 onChange={(e) => handleSeedWordChange(index, e.target.value)}
-                className="w-full p-1.5 bg-[#121212] border border-[#F5F5DC]/20 rounded text-[#F5F5DC] text-sm font-mono"
+                className="w-full p-1.5 bg-surface border border-foreground/20 rounded text-foreground text-sm font-mono"
                 placeholder={`word ${index + 1}`}
               />
             </div>
@@ -147,11 +147,11 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
           <textarea
             value={seedInput}
             onChange={(e) => handlePasteInput(e.target.value)}
-            className="w-full p-3 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-[#F5F5DC] font-mono text-sm h-24 resize-none"
+            className="w-full p-3 bg-surface border border-foreground/30 rounded-md text-foreground font-mono text-sm h-24 resize-none"
             placeholder="Paste your 12 recovery words separated by spaces..."
           />
           {seedInput && (
-            <p className="text-xs text-[#F5F5DC]/50 mt-1">{stringToSeed(seedInput).length} / 12 words detected</p>
+            <p className="text-xs text-foreground/50 mt-1">{stringToSeed(seedInput).length} / 12 words detected</p>
           )}
         </div>
       )}
@@ -164,7 +164,7 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
 
       <button
         onClick={handleValidateSeed}
-        className="w-full bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
+        className="w-full bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
       >
         Verify Seed →
       </button>
@@ -175,33 +175,33 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
     <>
       <button
         onClick={() => setStep('method')}
-        className="text-[#F5F5DC]/50 hover:text-[#F5F5DC] text-sm mb-4 flex items-center gap-1"
+        className="text-foreground/50 hover:text-foreground text-sm mb-4 flex items-center gap-1"
       >
         ← Back
       </button>
-      <h2 className="text-2xl font-bold mb-2 text-[#F5F5DC]">✅ Seed Verified</h2>
-      <p className="text-[#F5F5DC]/60 text-sm mb-6">Your seed is valid. Set a new password for this device.</p>
+      <h2 className="text-2xl font-bold mb-2 text-foreground">✅ Seed Verified</h2>
+      <p className="text-foreground/60 text-sm mb-6">Your seed is valid. Set a new password for this device.</p>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1 text-[#F5F5DC]">New Password</label>
+          <label className="block text-sm font-medium mb-1 text-foreground">New Password</label>
           <input
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-[#F5F5DC]"
+            className="w-full p-2 bg-surface border border-foreground/30 rounded-md text-foreground"
             placeholder="••••••••"
           />
-          <p className="text-xs text-[#F5F5DC]/50 mt-1">Minimum 6 characters</p>
+          <p className="text-xs text-foreground/50 mt-1">Minimum 6 characters</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1 text-[#F5F5DC]">Confirm Password</label>
+          <label className="block text-sm font-medium mb-1 text-foreground">Confirm Password</label>
           <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-[#F5F5DC]"
+            className="w-full p-2 bg-surface border border-foreground/30 rounded-md text-foreground"
             placeholder="••••••••"
           />
         </div>
@@ -216,7 +216,7 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
       <button
         onClick={handleRecover}
         disabled={loading}
-        className="w-full mt-6 bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full mt-6 bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? 'Recovering...' : 'Recover Account'}
       </button>
@@ -226,11 +226,11 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
   const renderSuccessStep = () => (
     <div className="text-center py-4">
       <div className="text-6xl mb-4">🎉</div>
-      <h2 className="text-2xl font-bold mb-2 text-[#F5F5DC]">Account Recovered!</h2>
-      <p className="text-[#F5F5DC]/60 text-sm mb-6">Your account has been successfully restored on this device.</p>
+      <h2 className="text-2xl font-bold mb-2 text-foreground">Account Recovered!</h2>
+      <p className="text-foreground/60 text-sm mb-6">Your account has been successfully restored on this device.</p>
       <button
         onClick={onRecovered}
-        className="w-full bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
+        className="w-full bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
       >
         Continue to App
       </button>
@@ -240,7 +240,7 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
   const content = (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
       <div
-        className="bg-[#1a1a1a] p-6 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto m-4 animate-modal-enter"
+        className="bg-surface-alt p-6 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto m-4 animate-modal-enter"
         onClick={(e) => e.stopPropagation()}
       >
         {step === 'method' && renderMethodStep()}
@@ -249,7 +249,7 @@ const AccountRecoveryModal: React.FC<AccountRecoveryModalProps> = ({ onClose, on
 
         {step !== 'success' && (
           <div className="mt-4 text-center">
-            <button onClick={onSwitchToLogin} className="text-[#F5F5DC]/50 hover:text-[#F5F5DC] text-xs">
+            <button onClick={onSwitchToLogin} className="text-foreground/50 hover:text-foreground text-xs">
               Back to login
             </button>
           </div>

@@ -48,7 +48,7 @@ const DeviceManagementPanel: React.FC = () => {
       testId="settings-devices-card"
     >
       <div className="space-y-3">
-        {devices.length === 0 && <p className="text-[#F5F5DC]/40 text-sm italic">No devices registered.</p>}
+        {devices.length === 0 && <p className="text-foreground/40 text-sm italic">No devices registered.</p>}
 
         {devices.map((device) => {
           const isCurrent = device.deviceId === currentDevice.deviceId;
@@ -56,20 +56,20 @@ const DeviceManagementPanel: React.FC = () => {
             <div
               key={device.deviceId}
               className={`flex min-w-0 flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-start sm:justify-between ${
-                isCurrent ? 'border-[#F5F5DC]/30 bg-[#F5F5DC]/5' : 'border-[#F5F5DC]/10 bg-[#121212]'
+                isCurrent ? 'border-foreground/30 bg-foreground/5' : 'border-foreground/10 bg-surface'
               }`}
             >
               <div className="flex-1 min-w-0">
                 <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-[#F5F5DC] truncate">{device.deviceName}</span>
+                  <span className="text-sm font-medium text-foreground truncate">{device.deviceName}</span>
                   {isCurrent && (
-                    <span className="text-xs bg-[#F5F5DC]/20 text-[#F5F5DC]/70 px-1.5 py-0.5 rounded shrink-0">
+                    <span className="text-xs bg-foreground/20 text-foreground/70 px-1.5 py-0.5 rounded shrink-0">
                       This device
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-[#F5F5DC]/40 font-mono truncate">{device.peerId || 'No peer ID yet'}</p>
-                <p className="text-xs text-[#F5F5DC]/30 mt-0.5">
+                <p className="text-xs text-foreground/40 font-mono truncate">{device.peerId || 'No peer ID yet'}</p>
+                <p className="text-xs text-foreground/30 mt-0.5">
                   Authorized {formatDate(device.authorizedAt)} · Last seen {formatDate(device.lastSeen)}
                 </p>
               </div>
@@ -81,7 +81,7 @@ const DeviceManagementPanel: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setConfirmRevoke(null)}
-                        className="text-xs text-[#F5F5DC]/50 hover:text-[#F5F5DC] px-2 py-1 cursor-pointer"
+                        className="text-xs text-foreground/50 hover:text-foreground px-2 py-1 cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -113,14 +113,14 @@ const DeviceManagementPanel: React.FC = () => {
                         type="text"
                         value={newDeviceName}
                         onChange={(e) => setNewDeviceName(e.target.value)}
-                        className="w-full min-w-0 rounded border border-[#F5F5DC]/30 bg-[#121212] p-1 text-xs text-[#F5F5DC] sm:w-28"
+                        className="w-full min-w-0 rounded border border-foreground/30 bg-surface p-1 text-xs text-foreground sm:w-28"
                         placeholder="Device name"
                         onKeyDown={(e) => e.key === 'Enter' && handleSaveDeviceName()}
                       />
                       <button
                         type="button"
                         onClick={handleSaveDeviceName}
-                        className="text-xs text-[#F5F5DC]/70 hover:text-[#F5F5DC] cursor-pointer"
+                        className="text-xs text-foreground/70 hover:text-foreground cursor-pointer"
                       >
                         Save
                       </button>
@@ -132,7 +132,7 @@ const DeviceManagementPanel: React.FC = () => {
                         setNewDeviceName(device.deviceName);
                         setEditingName(true);
                       }}
-                      className="text-xs text-[#F5F5DC]/40 hover:text-[#F5F5DC]/70 transition-colors cursor-pointer"
+                      className="text-xs text-foreground/40 hover:text-foreground/70 transition-colors cursor-pointer"
                     >
                       Rename
                     </button>

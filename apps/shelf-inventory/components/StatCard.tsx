@@ -8,10 +8,10 @@ const StatCard: React.FC<StatCardData> = ({ titleKey, value, icon, change, chang
   const isWarning = icon === '⚠️';
   const displayChange = change || '+1.5%';
   const displayChangeType = changeType || 'positive';
-  const changeColor = displayChangeType === 'negative' ? 'text-[#F87171]' : 'text-[#4ADE80] glow-text-green';
+  const changeColor = displayChangeType === 'negative' ? 'text-accent-red' : 'text-accent-green glow-text-green';
 
   return (
-    <div className="glass-panel p-6 h-full flex flex-col justify-between min-h-[140px] hover:border-[#4ADE80]/30 transition-colors group cursor-default">
+    <div className="glass-panel p-6 h-full flex flex-col justify-between min-h-[140px] hover:border-accent-green/30 transition-colors group cursor-default">
       <p className="text-sm font-medium text-neutral-400 tracking-wide">{t(titleKey)}</p>
       <div className="mt-4">
         <p className="text-3xl font-bold text-white tracking-tight">{value}</p>

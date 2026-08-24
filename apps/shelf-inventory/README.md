@@ -13,6 +13,7 @@
 -   **🧾 Purchase Orders:** Create and manage purchase orders to suppliers and update your inventory automatically when items are received.
 -   **📈 Advanced Reports:** Analyze your sales data with dynamic filters (date, product, client), charts for sales over time, and lists of top-selling products.
 -   **⚙️ Settings:** Customize your experience with currency settings, low-stock alerts, and data management tools.
+-   **🎨 Dual Theme (Clásico & SWAL):** Dynamic multi-brand theme switching using semantic CSS tokens and Tailwind v4.
 -   **🌐 Multi-language Support:** Available in English, Spanish, and Portuguese.
 -   **📱 PWA & Offline-First:** Install Shelf. on your device and use it anywhere, anytime—even without an internet connection. All data is stored locally.
 
@@ -24,10 +25,23 @@ Upgrade to a Pro plan to unlock:
 -   **🤖 AI Assistant:** Get intelligent insights by asking questions about your business data in natural language, powered by Google Gemini.
 -   **🚫 Ad-Free Experience:** Enjoy a clean, uninterrupted interface.
 
+## 🎨 Temas (Dual-Theme)
+
+Shelf. cuenta con un sistema de temas dual coexistente (**Clásico** y **SWAL / edge-hive**):
+
+- **Funcionamiento:** La aplicación utiliza variables CSS semánticas (`--color-background`, `--color-surface`, `--color-foreground`, etc.) definidas en `@theme` dentro de `apps/shelf-inventory/src/styles.css`.
+- **Persistencia:** La preferencia del usuario se almacena en `localStorage` bajo la clave `'shelf-theme'` (`'classic'` o `'swal'`).
+- **Tema Clásico (predeterminado):** Remueve el atributo `data-theme` del elemento raíz `document.documentElement` (`<html>`).
+- **Tema SWAL:** Aplica `data-theme="swal"` en `document.documentElement`, activando el bloque de overrides CSS con la paleta oscura slate-950 (`#020617`) y acentos cian/naranja importados de `@swal/ui` / `swal-tokens.css`.
+- **Cómo agregar un nuevo tema:**
+  1. Define un nuevo bloque CSS con selector de atributo en `styles.css` (ej. `[data-theme="custom"]`).
+  2. Sobrescribe las variables de color semánticas (`--color-background`, `--color-surface`, `--color-surface-alt`, `--color-foreground`, `--color-accent-green`, etc.).
+  3. Añade la opción en el selector de tema en `Settings.tsx` para permitir que el usuario seleccione la nueva opción y se persista en `localStorage.setItem('shelf-theme', 'custom')`.
+
 ## 💻 Tech Stack
 
 -   **Frontend:** React (with Vite), TypeScript
--   **Styling:** Tailwind CSS
+-   **Styling:** Tailwind CSS v4 + Semantic CSS Variables
 -   **State Management:** React Context API
 -   **Local Storage:** `localStorage` for offline-first data persistence.
 -   **Backend & Database (Pro):** Firebase (Authentication, Firestore, Cloud Functions)

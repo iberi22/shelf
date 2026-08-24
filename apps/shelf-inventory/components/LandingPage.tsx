@@ -50,7 +50,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   ];
 
   return (
-    <div className="bg-[#0a0a0a] text-[#F5F5DC] min-h-screen flex flex-col font-sans selection:bg-yellow-500/30 selection:text-yellow-200">
+    <div className="bg-background text-foreground min-h-screen flex flex-col font-sans selection:bg-yellow-500/30 selection:text-yellow-200">
       {/* Background ambient lighting */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-500/10 blur-[120px]" />
@@ -58,7 +58,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
       </div>
 
       <header className="py-5 px-6 md:px-12 flex justify-between items-center relative z-20 border-b border-white/5 bg-black/20 backdrop-blur-md">
-        <h1 className="text-xl md:text-2xl font-bold tracking-widest text-[#F5F5DC] drop-shadow-md">
+        <h1 className="text-xl md:text-2xl font-bold tracking-widest text-foreground drop-shadow-md">
           [ {t('appName')} ]
         </h1>
         <div className="flex items-center gap-4 md:gap-6">
@@ -77,7 +77,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
           {!user && (
             <button
               onClick={handleGuestLogin}
-              className="hidden lg:block text-sm font-semibold text-[#F5F5DC]/80 hover:text-[#F5F5DC] transition-colors"
+              className="hidden lg:block text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors"
             >
               {t('auth.useLocalMode')}
             </button>
@@ -100,7 +100,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               Sincronización P2P Avanzada Activa
             </div>
 
-            <h2 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white via-[#F5F5DC] to-neutral-500 drop-shadow-sm">
+            <h2 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white via-foreground to-neutral-500 drop-shadow-sm">
               Tu Inventario.
               <br />
               En Cualquier Lugar. Sin Nubes.

@@ -172,7 +172,7 @@ const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, onClose
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 md:p-10 animate-fade-in">
-      <div className="bg-[#121212] border border-white/10 rounded-2xl w-full max-w-6xl h-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl relative">
+      <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-6xl h-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl relative">
         {/* Header Modal */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-black/20">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -229,7 +229,7 @@ const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, onClose
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 p-6 md:p-10 overflow-y-auto text-neutral-300 bg-[#0a0a0a]">
+          <div className="flex-1 p-6 md:p-10 overflow-y-auto text-neutral-300 bg-background">
             {docsData.find((d) => d.id === activeTab)?.content}
           </div>
         </div>

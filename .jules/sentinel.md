@@ -1,9 +1,5 @@
-## 2026-08-13 - [Fix Reverse Tabnabbing Vulnerability in P2PSyncManager]
-**Vulnerability:** A `target="_blank"` link used for the PWA install in `P2PSyncManager.tsx` only had `rel="noreferrer"` but was missing `noopener`. This exposes the application to reverse tabnabbing vulnerabilities because the newly opened tab retains a reference to `window.opener` and can modify the original page's location, facilitating phishing attacks.
-**Learning:** Even internal links to `window.location.origin` should explicitly use both `noopener` and `noreferrer` when using `target="_blank"` to strictly enforce separation of browsing contexts, as `window.opener` manipulation is a browser-level security concern regardless of domain origin.
-**Prevention:** Ensure all `target="_blank"` links strictly define `rel="noopener noreferrer"` across React frontend components unless passing window features actively requires preserving the opener context.
+# Sentinel: Security Vulnerability Remediation Agent Framework
 
-## 2026-08-13 - [Fix Reverse Tabnabbing Vulnerability in P2PSyncManager]
-**Vulnerability:** A `target="_blank"` link used for the PWA install in `P2PSyncManager.tsx` only had `rel="noreferrer"` but was missing `noopener`. This exposes the application to reverse tabnabbing vulnerabilities because the newly opened tab retains a reference to `window.opener` and can modify the original page's location, facilitating phishing attacks.
-**Learning:** Even internal links to `window.location.origin` should explicitly use both `noopener` and `noreferrer` when using `target="_blank"` to strictly enforce separation of browsing contexts, as `window.opener` manipulation is a browser-level security concern regardless of domain origin.
-**Prevention:** Ensure all `target="_blank"` links strictly define `rel="noopener noreferrer"` across React frontend components unless passing window features actively requires preserving the opener context.
+## Objectives
+- Detect and fix security vulnerabilities, including XSS, Tabnabbing, and insecure payload handling.
+- Verify that every fix is accompanied by tests and respects project coding guidelines.

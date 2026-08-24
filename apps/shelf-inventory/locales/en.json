@@ -239,6 +239,12 @@
     "aiHelpCloudBody": "Optional API key or proxy URL in Settings. Not required for offline-first use."
   },
   "settings": {
+    "appearance": {
+      "title": "Appearance / Theme",
+      "description": "Switch between the original Shelf look and the SWAL ecosystem edge-hive theme.",
+      "themeClassic": "Classic",
+      "themeSwal": "SWAL Hive"
+    },
     "languageDescription": "Change the interface language.",
     "title": "Settings",
     "general": {

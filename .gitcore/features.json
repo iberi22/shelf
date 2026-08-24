@@ -5,15 +5,15 @@
     "project_display": "Shelf Inventory Management",
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
-    "updated": "2026-08-02",
-    "version": "0.5.0",
-    "sdlc_phase": "ola-i-edge-authz",
-    "total_features": 21,
-    "features_implemented": 21,
+    "updated": "2026-08-24",
+    "version": "0.5.3",
+    "sdlc_phase": "wave-theme-qa",
+    "total_features": 22,
+    "features_implemented": 22,
     "features_partial": 0,
     "features_skeleton": 0,
-    "implementation_percentage": 91,
-    "overall_progress_pct": 91,
+    "implementation_percentage": 92,
+    "overall_progress_pct": 92,
     "stack": {
       "monorepo": "pnpm + Turborepo",
       "frontend": "React 19 + Vite 8",
@@ -32,7 +32,7 @@
     "categories": {
       "FUN": {
         "name": "Funcionalidades Core",
-        "count": 14,
+        "count": 15,
         "description": "Funcionalidades core del sistema de inventario SaaS"
       },
       "PQC": {
@@ -71,7 +71,7 @@
         "description": "Progressive Web App con soporte offline"
       }
     },
-    "implementation_notes": "Post Ola I: entity remote canEdit ACL on primary CRDT path. Project avg ~91%. Residual polish: maloca extract, signed envelopes optional.",
+    "implementation_notes": "Post Wave THEME: Dual-theme SWAL + Clásico complete across 47 components. Total features: 22.",
     "status_model": {
       "skeleton": "API o package existe, comportamiento mock/placeholder",
       "unit": "Lógica local o unit tests; no E2E mesh endurecido",
@@ -79,16 +79,16 @@
       "hardened": "Authz/crypto en path de red + coverage y CI verdes"
     },
     "audit": {
-      "date": "2026-07-18",
-      "method": "Ola H integrate + entity remote authz implementation",
-      "simple_average_percent": 91,
-      "product_core_fun_average": 92,
+      "date": "2026-08-24",
+      "method": "Wave THEME QA audit + dual-theme E2E visual verification",
+      "simple_average_percent": 92,
+      "product_core_fun_average": 93,
       "mesh_pqc_edge_gpu_average": 90,
-      "features_ge_85": 21,
+      "features_ge_85": 22,
       "features_partial_40_84": 0,
       "features_skeleton_lt_40": 0,
       "ssot_file": ".gitcore/features.json",
-      "root_features_json": "status-only index; was falsely 100% — corrected",
+      "root_features_json": "status-only index",
       "primary_inventory_path": "p2p-mesh-core (YJS_UPDATE)",
       "secondary_edge_path": "edge-mesh + EdgeMeshWorkflowBridge (EDGE_MESH_ENVELOPE)",
       "auth_runtime": "localAuth ACs realigned (cloud=ROADMAP-003)",
@@ -98,30 +98,24 @@
       "phase_c_unified_transport": true,
       "phase_d_thin_p2p_core": false,
       "locales_count": 20,
-      "playwright_specs": 35,
+      "playwright_specs": 36,
       "cypress_e2e_specs": 16,
       "edge_mesh_unit_tests": 214,
-      "p2p_gate_e2e_local": "9/9 green (multi-peer, edge-mesh, p2p-sync, offline, conflict, three-node, security)",
+      "p2p_gate_e2e_local": "9/9 green",
       "session_gap_close": true,
-      "phase": "I-edge-authz",
+      "phase": "wave-theme-qa",
       "invite_authority_bootstrap": true,
       "yjs_wire": "envelope-when-ready",
       "gpu": "kernels+webgpu+cpu",
       "qa_hardened": true,
       "lint_staged_root": true,
       "ci_package_tests": true,
-      "ola_h_issues": [
-        297,
-        298,
-        299,
-        300
-      ],
-      "ola_h_prs": [
-        301,
-        302,
-        303,
-        304
-      ]
+      "wave_theme": {
+        "status": "complete",
+        "audited_components": 47,
+        "arbitrary_hex_residuals": 0,
+        "dual_theme_e2e": true
+      }
     }
   },
   "features": [
@@ -631,6 +625,41 @@
       "gaps": [
         "Optional all-or-nothing import rollback"
       ]
+    },
+    {
+      "id": "SRC-FUN-015",
+      "name": "Dual Theme System (Clásico & SWAL)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Sistema dual-theme que permite alternar dinámicamente entre el tema Clásico y el tema SWAL (edge-hive) con persistencia en localStorage ('shelf-theme') y tokens CSS semánticos.",
+      "user_story": "Como usuario, quiero elegir entre el tema Clásico y el tema SWAL para adaptar la interfaz visual a mis preferencias",
+      "actor": "Todos los usuarios",
+      "dependencies": [],
+      "technologies": [
+        "React",
+        "Tailwind CSS v4",
+        "CSS Variables",
+        "localStorage"
+      ],
+      "acceptance_criteria": [
+        "Selector de temas en Settings.tsx que alterna entre Clásico y SWAL",
+        "Persistencia en localStorage bajo la clave 'shelf-theme'",
+        "Normalización de clases de color con variables semánticas (--color-*) a través de 47 componentes",
+        "Soporte para overrides vía selector de atributo [data-theme='swal']",
+        "Verificación visual E2E automatizada con Playwright"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened",
+      "evidence": [
+        "apps/shelf-inventory/context/ThemeContext.tsx",
+        "apps/shelf-inventory/src/styles.css",
+        "apps/shelf-inventory/components/Settings.tsx",
+        "apps/shelf-inventory/tests/dual-theme-visual.spec.ts"
+      ],
+      "gaps": []
     },
     {
       "id": "SRC-PQC-001",

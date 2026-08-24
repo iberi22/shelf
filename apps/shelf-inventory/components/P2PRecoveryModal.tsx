@@ -137,8 +137,8 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
 
   const renderConnectStep = () => (
     <>
-      <h2 className="text-2xl font-bold mb-2 text-[#F5F5DC]">📡 P2P Account Recovery</h2>
-      <p className="text-[#F5F5DC]/60 text-sm mb-4">
+      <h2 className="text-2xl font-bold mb-2 text-foreground">📡 P2P Account Recovery</h2>
+      <p className="text-foreground/60 text-sm mb-4">
         Connect to a device that already has your account to recover access.
       </p>
 
@@ -150,24 +150,24 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
       </div>
 
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-1 text-[#F5F5DC]">Your Account Email</label>
+        <label className="block text-sm font-medium mb-1 text-foreground">Your Account Email</label>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-[#F5F5DC]"
+          className="w-full p-2 bg-surface border border-foreground/30 rounded-md text-foreground"
           placeholder="your@email.com"
         />
       </div>
 
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-1 text-[#F5F5DC]">Master Device Peer ID</label>
+        <label className="block text-sm font-medium mb-1 text-foreground">Master Device Peer ID</label>
         <div className="flex gap-2">
           <input
             type="text"
             value={targetPeerId}
             onChange={(e) => setTargetPeerId(e.target.value)}
-            className="flex-1 p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-[#F5F5DC] font-mono text-sm"
+            className="flex-1 p-2 bg-surface border border-foreground/30 rounded-md text-foreground font-mono text-sm"
             placeholder="Peer ID from master device..."
           />
           <button
@@ -187,8 +187,8 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
       )}
 
       {localPeerId && (
-        <div className="mb-4 bg-[#121212] rounded-lg p-3">
-          <p className="text-xs text-[#F5F5DC]/50 mb-1">Your current Peer ID (share with master device if needed):</p>
+        <div className="mb-4 bg-surface rounded-lg p-3">
+          <p className="text-xs text-foreground/50 mb-1">Your current Peer ID (share with master device if needed):</p>
           <p className="font-mono text-xs text-yellow-400 break-all">{localPeerId}</p>
         </div>
       )}
@@ -201,7 +201,7 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
 
       <button
         onClick={handleConnect}
-        className="w-full bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
+        className="w-full bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
       >
         Send Recovery Request
       </button>
@@ -211,15 +211,15 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
   const renderWaitingStep = () => (
     <div className="text-center py-6">
       <div className="text-5xl mb-4 animate-pulse">⏳</div>
-      <h2 className="text-xl font-bold mb-2 text-[#F5F5DC]">Waiting for Approval</h2>
-      <p className="text-[#F5F5DC]/60 text-sm mb-6">
+      <h2 className="text-xl font-bold mb-2 text-foreground">Waiting for Approval</h2>
+      <p className="text-foreground/60 text-sm mb-6">
         A notification has been sent to your master device. Please approve the request there.
       </p>
-      <div className="bg-[#121212] rounded-lg p-4 text-left mb-6">
-        <p className="text-xs text-[#F5F5DC]/50 mb-1">Recovery request sent for:</p>
-        <p className="text-[#F5F5DC] font-mono text-sm">{email}</p>
+      <div className="bg-surface rounded-lg p-4 text-left mb-6">
+        <p className="text-xs text-foreground/50 mb-1">Recovery request sent for:</p>
+        <p className="text-foreground font-mono text-sm">{email}</p>
       </div>
-      <button onClick={() => setStep('connect')} className="text-[#F5F5DC]/50 hover:text-[#F5F5DC] text-sm underline">
+      <button onClick={() => setStep('connect')} className="text-foreground/50 hover:text-foreground text-sm underline">
         Cancel and go back
       </button>
     </div>
@@ -229,21 +229,21 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
     <>
       <div className="text-center mb-4">
         <div className="text-4xl mb-2">🔓</div>
-        <h2 className="text-xl font-bold text-[#F5F5DC]">Recovery Approved!</h2>
-        <p className="text-[#F5F5DC]/60 text-sm mt-1">Set a new password for this device.</p>
+        <h2 className="text-xl font-bold text-foreground">Recovery Approved!</h2>
+        <p className="text-foreground/60 text-sm mt-1">Set a new password for this device.</p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1 text-[#F5F5DC]">New Password for This Device</label>
+          <label className="block text-sm font-medium mb-1 text-foreground">New Password for This Device</label>
           <input
             type="password"
             value={decryptPassword}
             onChange={(e) => setDecryptPassword(e.target.value)}
-            className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-[#F5F5DC]"
+            className="w-full p-2 bg-surface border border-foreground/30 rounded-md text-foreground"
             placeholder="••••••••"
           />
-          <p className="text-xs text-[#F5F5DC]/50 mt-1">Minimum 6 characters</p>
+          <p className="text-xs text-foreground/50 mt-1">Minimum 6 characters</p>
         </div>
       </div>
 
@@ -256,7 +256,7 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
       <button
         onClick={handleDecryptAndRecover}
         disabled={loading}
-        className="w-full mt-6 bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors disabled:opacity-50"
+        className="w-full mt-6 bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors disabled:opacity-50"
       >
         {loading ? 'Recovering...' : 'Complete Recovery'}
       </button>
@@ -266,18 +266,18 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
   const renderDeniedStep = () => (
     <div className="text-center py-6">
       <div className="text-5xl mb-4">❌</div>
-      <h2 className="text-xl font-bold mb-2 text-[#F5F5DC]">Request Denied</h2>
-      <p className="text-[#F5F5DC]/60 text-sm mb-2">{deniedReason}</p>
+      <h2 className="text-xl font-bold mb-2 text-foreground">Request Denied</h2>
+      <p className="text-foreground/60 text-sm mb-2">{deniedReason}</p>
       <div className="flex flex-col gap-3 mt-6">
         <button
           onClick={() => setStep('connect')}
-          className="w-full bg-[#F5F5DC]/10 border border-[#F5F5DC]/30 text-[#F5F5DC] font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/20 transition-colors"
+          className="w-full bg-foreground/10 border border-foreground/30 text-foreground font-bold py-2 px-4 rounded-lg hover:bg-foreground/20 transition-colors"
         >
           Try Again
         </button>
         <button
           onClick={onSwitchToSeedRecovery}
-          className="w-full bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
+          className="w-full bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
         >
           Use Recovery Seed Instead
         </button>
@@ -288,11 +288,11 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
   const renderSuccessStep = () => (
     <div className="text-center py-6">
       <div className="text-6xl mb-4">🎉</div>
-      <h2 className="text-2xl font-bold mb-2 text-[#F5F5DC]">Account Recovered!</h2>
-      <p className="text-[#F5F5DC]/60 text-sm mb-6">Your account has been restored on this device via P2P.</p>
+      <h2 className="text-2xl font-bold mb-2 text-foreground">Account Recovered!</h2>
+      <p className="text-foreground/60 text-sm mb-6">Your account has been restored on this device via P2P.</p>
       <button
         onClick={onRecovered}
-        className="w-full bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
+        className="w-full bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
       >
         Continue to App
       </button>
@@ -302,7 +302,7 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
   const content = (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
       <div
-        className="bg-[#1a1a1a] p-6 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto m-4 animate-modal-enter"
+        className="bg-surface-alt p-6 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto m-4 animate-modal-enter"
         onClick={(e) => e.stopPropagation()}
       >
         {step === 'connect' && renderConnectStep()}
@@ -312,8 +312,8 @@ const P2PRecoveryModal: React.FC<P2PRecoveryModalProps> = ({ onClose, onRecovere
         {step === 'success' && renderSuccessStep()}
 
         {step === 'connect' && (
-          <div className="mt-4 pt-4 border-t border-[#F5F5DC]/10 text-center">
-            <button onClick={onSwitchToSeedRecovery} className="text-[#F5F5DC]/50 hover:text-[#F5F5DC] text-xs">
+          <div className="mt-4 pt-4 border-t border-foreground/10 text-center">
+            <button onClick={onSwitchToSeedRecovery} className="text-foreground/50 hover:text-foreground text-xs">
               Use recovery seed instead →
             </button>
           </div>
