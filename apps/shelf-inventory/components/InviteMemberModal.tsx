@@ -100,7 +100,7 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
               type="button"
               data-testid="invite-cancel"
               onClick={onClose}
-              className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95"
+              className="bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95"
             >
               {t('common.cancel')}
             </button>
@@ -126,7 +126,7 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className={`w-full p-2 bg-[#121212] border rounded-md ${error ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
+            className={`w-full p-2 bg-surface border rounded-md ${error ? 'border-red-400/70' : 'border-foreground/30'}`}
           />
           {error && (
             <p className="text-red-400 text-xs mt-1" data-testid="invite-error">
@@ -143,7 +143,7 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
             data-testid="invite-role-select"
             value={role}
             onChange={(e) => setRole(e.target.value as TeamMemberRole)}
-            className="w-full p-2 bg-[#121212] border rounded-md border-[#F5F5DC]/30"
+            className="w-full p-2 bg-surface border rounded-md border-foreground/30"
           >
             <option value="collaborator">{t('p2pSync.roleCollaborator') || 'Collaborator'}</option>
             <option value="admin">{t('p2pSync.roleAdmin') || 'Admin'}</option>
@@ -152,7 +152,7 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
         </div>
         {lastLink && (
           <div
-            className="text-xs break-all bg-background/50 border border-[#F5F5DC]/20 rounded p-2"
+            className="text-xs break-all bg-background/50 border border-foreground/20 rounded p-2"
             data-testid="invite-link-preview"
           >
             {lastLink}
@@ -163,14 +163,14 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ onClose, onInvite
             type="button"
             data-testid="invite-cancel"
             onClick={onClose}
-            className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95"
+            className="bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95"
           >
             {t('common.cancel')}
           </button>
           <button
             type="submit"
             data-testid="invite-submit"
-            className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95"
+            className="bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95"
           >
             {t('settings.team.sendInvitation')}
           </button>

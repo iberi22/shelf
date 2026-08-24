@@ -23,18 +23,18 @@ const DataRecovery: React.FC = () => {
     if (items.length === 0) return null;
     return (
       <div className="mb-4">
-        <h4 className="text-sm font-bold text-[#F5F5DC]/80 mb-2 border-b border-[#F5F5DC]/10 pb-1 uppercase tracking-wider">
+        <h4 className="text-sm font-bold text-foreground/80 mb-2 border-b border-foreground/10 pb-1 uppercase tracking-wider">
           {title}
         </h4>
         <div className="space-y-2">
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex justify-between items-center p-2 rounded-md bg-[#121212] border border-[#F5F5DC]/5"
+              className="flex justify-between items-center p-2 rounded-md bg-surface border border-foreground/5"
             >
               <div className="flex flex-col">
                 <span className="text-sm font-medium">{item.name || item.supplierName || item.id}</span>
-                <span className="text-[10px] text-[#F5F5DC]/40 font-mono">ID: {item.id}</span>
+                <span className="text-[10px] text-foreground/40 font-mono">ID: {item.id}</span>
               </div>
               <button
                 type="button"
@@ -65,7 +65,7 @@ const DataRecovery: React.FC = () => {
           <RenderSection title="Purchase Orders" items={inactivePOs} type="purchaseOrder" />
         </div>
       ) : (
-        <div className="text-center p-8 text-[#F5F5DC]/50 italic text-sm">
+        <div className="text-center p-8 text-foreground/50 italic text-sm">
           No items currently available for recovery.
         </div>
       )}

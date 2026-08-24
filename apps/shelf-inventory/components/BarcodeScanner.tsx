@@ -118,12 +118,12 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
 
   const content = (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-      <div className="bg-[#1e1e1e] p-4 md:p-6 rounded-lg shadow-xl border border-[#F5F5DC]/30 max-w-md w-full m-4">
-        <h3 className="text-lg font-bold mb-4 text-center text-[#F5F5DC]">{t('scanner.title')}</h3>
+      <div className="bg-panel p-4 md:p-6 rounded-lg shadow-xl border border-foreground/30 max-w-md w-full m-4">
+        <h3 className="text-lg font-bold mb-4 text-center text-foreground">{t('scanner.title')}</h3>
         <div
           id="reader"
           style={{ width: '100%', borderRadius: '8px', overflow: 'hidden', minHeight: '250px' }}
-          className="bg-[#121212] flex items-center justify-center text-center text-[#F5F5DC]/70"
+          className="bg-surface flex items-center justify-center text-center text-foreground/70"
         >
           {isLoading && <p>{t('scanner.checking')}</p>}
           {error && (
@@ -137,7 +137,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
         </div>
         <button
           onClick={onClose}
-          className="w-full mt-4 bg-transparent border border-[#F5F5DC]/50 text-[#F5F5DC] font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all active:scale-95"
+          className="w-full mt-4 bg-transparent border border-foreground/50 text-foreground font-bold py-2 px-4 rounded-lg hover:bg-foreground/10 transition-all active:scale-95"
         >
           {t('common.cancel')}
         </button>

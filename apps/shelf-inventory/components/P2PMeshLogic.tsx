@@ -122,15 +122,15 @@ const P2PMeshLogic: React.FC = () => {
             const hasVoted = state.localPeerId && proposal.votes[state.localPeerId];
 
             return (
-              <div key={proposal.id} className="p-4 rounded-lg bg-[#121212] border border-[#F5F5DC]/10">
+              <div key={proposal.id} className="p-4 rounded-lg bg-surface border border-foreground/10">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <UserCheck className="h-4 w-4 text-yellow-400" />
-                      <span className="text-sm font-semibold text-[#F5F5DC]">Candidato:</span>
+                      <span className="text-sm font-semibold text-foreground">Candidato:</span>
                       <code className="text-xs text-yellow-400 truncate">{proposal.targetPeerId}</code>
                     </div>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-[#F5F5DC]/60">
+                    <div className="flex items-center gap-4 mt-2 text-xs text-foreground/60">
                       <span className="flex items-center gap-1">
                         <Timer className="h-3 w-3" />
                         {proposal.status === 'active'
@@ -186,12 +186,12 @@ const P2PMeshLogic: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="text-center py-6 bg-[#121212] rounded-lg border border-dashed border-[#F5F5DC]/20">
-          <p className="text-sm text-[#F5F5DC]/40 italic">No hay elecciones activas en este momento.</p>
+        <div className="text-center py-6 bg-surface rounded-lg border border-dashed border-foreground/20">
+          <p className="text-sm text-foreground/40 italic">No hay elecciones activas en este momento.</p>
           {isNextEligible && (
             <button
               onClick={handlePostulate}
-              className="mt-4 px-6 py-2 bg-[#F5F5DC] text-[#121212] rounded-lg text-sm font-bold hover:bg-opacity-80 active:scale-95 transition-all"
+              className="mt-4 px-6 py-2 bg-foreground text-surface rounded-lg text-sm font-bold hover:bg-opacity-80 active:scale-95 transition-all"
             >
               Postularme como Admin
             </button>

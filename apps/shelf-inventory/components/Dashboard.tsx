@@ -72,7 +72,7 @@ const Dashboard: React.FC = () => {
         <button
           data-testid="dashboard-customize-button"
           onClick={() => setIsEditing(!isEditing)}
-          className="w-full sm:w-auto bg-[#1A251A] text-[#4ADE80] border border-[#4ADE80]/30 font-bold py-2.5 px-6 rounded-lg hover:bg-[#4ADE80]/10 transition-all duration-200 active:scale-95 text-sm shadow-[0_0_10px_rgba(74,222,128,0.1)]"
+          className="w-full sm:w-auto bg-[#1A251A] text-accent-green border border-accent-green/30 font-bold py-2.5 px-6 rounded-lg hover:bg-accent-green/10 transition-all duration-200 active:scale-95 text-sm shadow-[0_0_10px_rgba(74,222,128,0.1)]"
         >
           {isEditing ? t('common.done') : t('dashboard.customize')}
         </button>
@@ -103,13 +103,13 @@ const Dashboard: React.FC = () => {
         {/* Message when no cards are visible */}
         {!isEditing && statsToDisplay.length === 0 && (
           <div
-            className="col-span-full text-center p-8 bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg flex flex-col items-center gap-4"
+            className="col-span-full text-center p-8 bg-surface-alt border border-foreground/30 rounded-lg flex flex-col items-center gap-4"
             data-testid="no-stats-visible-message"
           >
-            <p className="text-[#F5F5DC]/80">{t('dashboard.noCardsVisible')}</p>
+            <p className="text-foreground/80">{t('dashboard.noCardsVisible')}</p>
             <button
               onClick={() => setIsEditing(true)}
-              className="bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
+              className="bg-foreground text-surface font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
             >
               {t('dashboard.customize')}
             </button>

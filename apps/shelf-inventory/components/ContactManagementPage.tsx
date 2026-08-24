@@ -99,11 +99,11 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 flex-wrap">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC] shrink-0">{title}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground shrink-0">{title}</h2>
         {canEdit && (
           <button
             onClick={() => handleOpenModal()}
-            className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
+            className="w-full sm:w-auto bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
             data-testid={`add-${contactType}-button`}
           >
             {addContactText}
@@ -116,7 +116,7 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
         <InfiniteTable
           data={sortedContacts}
           height="calc(100vh - 200px)"
-          emptyContent={<div className="text-center p-8 text-[#F5F5DC]/70">{emptyMessage}</div>}
+          emptyContent={<div className="text-center p-8 text-foreground/70">{emptyMessage}</div>}
           fixedHeaderContent={() => (
             <tr>
               <SortableHeader sortKey="name" labelKey="common.name" />
@@ -162,17 +162,17 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
             <div
               key={contact.id}
               data-testid={`${contactType}-card-${contact.id}`}
-              className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
+              className="w-full bg-surface-alt border border-foreground/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-sm text-[#F5F5DC] truncate">{contact.name}</h3>
-                  <p className="text-xs text-[#F5F5DC]/60 mt-0.5">{contact.phone}</p>
-                  {contact.email && <p className="text-xs text-[#F5F5DC]/50 truncate">{contact.email}</p>}
+                  <h3 className="font-bold text-sm text-foreground truncate">{contact.name}</h3>
+                  <p className="text-xs text-foreground/60 mt-0.5">{contact.phone}</p>
+                  {contact.email && <p className="text-xs text-foreground/50 truncate">{contact.email}</p>}
                 </div>
               </div>
               {canEdit && (
-                <div className="flex gap-2 mt-2 pt-2 border-t border-[#F5F5DC]/10">
+                <div className="flex gap-2 mt-2 pt-2 border-t border-foreground/10">
                   <button
                     onClick={() => handleOpenModal(contact)}
                     className="flex-1 bg-transparent border border-yellow-500/50 text-yellow-400 font-bold py-2.5 px-3 rounded-lg hover:bg-yellow-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
@@ -193,7 +193,7 @@ const ContactManagementPage: React.FC<ContactManagementPageProps> = (props) => {
           ))
         ) : (
           <div
-            className="text-center p-8 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg"
+            className="text-center p-8 text-foreground/70 bg-surface-alt border border-foreground/20 rounded-lg"
             data-testid={`empty-${contactType}s-message`}
           >
             {emptyMessage}

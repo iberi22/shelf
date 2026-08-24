@@ -150,7 +150,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
         </div>
 
         {rawHeaders.length > 0 && (
-          <div className="border border-[#F5F5DC]/30 bg-[#121212] rounded-lg p-4 space-y-3">
+          <div className="border border-foreground/30 bg-surface rounded-lg p-4 space-y-3">
             <h4 className="text-sm font-semibold text-foreground">
               {t('settings.import.mapColumns') || 'Map CSV Columns'}
             </h4>
@@ -173,7 +173,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
                       data-testid={`csv-map-${index}`}
                       value={mappedVal}
                       onChange={(e) => handleMappingChange(index, e.target.value as CanonicalCsvHeader | 'ignore')}
-                      className="bg-[#1a1a1a] border border-[#F5F5DC]/30 text-foreground text-xs rounded-md p-1 min-h-[44px] focus:ring-yellow-400 focus:border-yellow-400 w-full sm:w-auto"
+                      className="bg-surface-alt border border-foreground/30 text-foreground text-xs rounded-md p-1 min-h-[44px] focus:ring-yellow-400 focus:border-yellow-400 w-full sm:w-auto"
                     >
                       <option value="ignore">{t('settings.import.ignoreColumn') || '(Ignore)'}</option>
                       {CANONICAL_CSV_HEADERS.map((canon) => (
@@ -241,7 +241,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
             type="button"
             onClick={onClose}
             data-testid="import-csv-cancel"
-            className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95"
+            className="bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95"
           >
             {t('common.cancel')}
           </button>
@@ -250,7 +250,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
             onClick={handleImport}
             disabled={!file || isLoading || !isNameMapped}
             data-testid="import-csv-submit"
-            className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
+            className="bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? t('settings.import.importing') : t('settings.import.button')}
           </button>
