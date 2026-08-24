@@ -90,13 +90,33 @@ export const normalizeInventoryConfig = (config?: Partial<InventoryConfig> | nul
     }
     usedFieldKeys.add(key);
 
-    const type = ['text', 'color', 'measure'].includes(field.type) ? field.type : 'text';
+    // Lista blanca completa de InventoryFieldType (types.ts). 'material'/'multiMaterial'
+    // faltaban y degradaban el campo Material a 'text', ocultando los chips en filas
+    // de variantes (regresion desde 2026-08-01, SRC-FUN-001).
+    const VALID_FIELD_TYPES = [
+      'text',
+      'color',
+      'measure',
+      'material',
+      'multiColor',
+      'multiMeasure',
+      'multiMaterial',
+    ] as const;
+    const rawType = field.type as (typeof VALID_FIELD_TYPES)[number];
+    const type = VALID_FIELD_TYPES.includes(rawType) ? rawType : 'text';
+    // Migracion: configs persistidas antes del fix quedaron con type 'text' en el
+    // campo cuyo key/label corresponde a material — restaurarlo.
+    const isLegacyDegradedMaterialField =
+      type === 'text' &&
+      (baseKey === 'material' || field.label?.trim().toLowerCase() === 'material') &&
+      Array.isArray(config?.materialOptions) &&
+      config!.materialOptions!.length > 0;
 
     return {
       id: field.id || createId(`field_${index}`),
       key,
       label: field.label.trim() || `Campo ${index + 1}`,
-      type,
+      type: isLegacyDegradedMaterialField ? 'material' : type,
     };
   });
 
