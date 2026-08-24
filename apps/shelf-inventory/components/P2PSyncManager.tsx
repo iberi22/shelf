@@ -102,8 +102,8 @@ const permissionOptions: { key: keyof PeerPermissions; label: string }[] = [
 const modalOverlayClass =
   'fixed inset-0 z-50 flex h-[var(--app-height,100vh)] items-center justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm sm:p-4';
 const modalPanelClass =
-  'flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full flex-col overflow-hidden rounded-2xl border border-[#F5F5DC]/30 bg-[#1a1a1a] shadow-2xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg';
-const modalBodyClass = 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 text-sm text-[#F5F5DC]/80 sm:p-5';
+  'flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full flex-col overflow-hidden rounded-2xl border border-foreground/30 bg-surface-alt shadow-2xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg';
+const modalBodyClass = 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 text-sm text-foreground/80 sm:p-5';
 
 const P2PSyncManager: React.FC = () => {
   const { state, dispatch } = useAppContext();
@@ -717,7 +717,7 @@ const P2PSyncManager: React.FC = () => {
               e.stopPropagation();
               setShowInfoModal(true);
             }}
-            className="text-[#F5F5DC]/60 transition-colors hover:text-[#F5F5DC] cursor-pointer inline-flex items-center bg-transparent border-none p-0"
+            className="text-foreground/60 transition-colors hover:text-foreground cursor-pointer inline-flex items-center bg-transparent border-none p-0"
             title={t('p2pSync.infoTitle')}
           >
             <Info size={16} />
@@ -729,15 +729,15 @@ const P2PSyncManager: React.FC = () => {
     >
       <div className="flex flex-col gap-4">
         {/* Local Node Summary Card */}
-        <div className="flex flex-col gap-3 rounded-xl border border-[#F5F5DC]/10 bg-[#121212] p-4 shadow-sm relative overflow-hidden">
+        <div className="flex flex-col gap-3 rounded-xl border border-foreground/10 bg-surface p-4 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <RadioTower size={18} className={edgeMeshStatus.enabled ? 'text-cyan-400' : 'text-[#F5F5DC]/50'} />
-              <span className="text-sm font-bold text-[#F5F5DC]">Mi Nodo (Edge Mesh)</span>
+              <RadioTower size={18} className={edgeMeshStatus.enabled ? 'text-cyan-400' : 'text-foreground/50'} />
+              <span className="text-sm font-bold text-foreground">Mi Nodo (Edge Mesh)</span>
             </div>
             <button
               onClick={() => setShowConfigModal(true)}
-              className="p-1.5 text-[#F5F5DC]/50 hover:text-white bg-white/5 rounded-md transition-colors"
+              className="p-1.5 text-foreground/50 hover:text-white bg-white/5 rounded-md transition-colors"
               title="Configuración Avanzada"
             >
               <Settings size={14} />
@@ -745,7 +745,7 @@ const P2PSyncManager: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider">Peer ID:</span>
+            <span className="text-[10px] text-foreground/50 uppercase tracking-wider">Peer ID:</span>
             <button
               onClick={copyLocalPeerId}
               disabled={!state.localPeerId}
@@ -755,7 +755,7 @@ const P2PSyncManager: React.FC = () => {
                 {state.localPeerId || 'Initializing...'}
               </code>
               {state.localPeerId && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-[#F5F5DC]/60 group-hover:text-white transition">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-foreground/60 group-hover:text-white transition">
                   Copiar
                 </span>
               )}
@@ -763,7 +763,7 @@ const P2PSyncManager: React.FC = () => {
             {copyStatus === 'copied' && <span className="text-[10px] text-green-400 ml-1">¡Copiado!</span>}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#F5F5DC]/60">
+          <div className="flex flex-wrap items-center gap-3 text-[11px] text-foreground/60">
             <span className="flex items-center gap-1">
               <CheckCircle2
                 size={12}
@@ -822,7 +822,7 @@ const P2PSyncManager: React.FC = () => {
                 href={pwaInstallLink || window.location.origin}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F5F5DC]/10 text-[#F5F5DC] hover:bg-[#F5F5DC]/20 text-xs transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground/10 text-foreground hover:bg-foreground/20 text-xs transition-colors whitespace-nowrap"
                 title="PWA"
                 data-testid="p2p-pwa-link"
               >
@@ -865,7 +865,7 @@ const P2PSyncManager: React.FC = () => {
             </span>
             <label className="relative inline-flex items-center cursor-pointer select-none">
               <input type="checkbox" checked={wakeLockActive} onChange={toggleWakeLock} className="sr-only peer" />
-              <div className="w-8 h-4.5 bg-[#121212] border border-[#F5F5DC]/25 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-[#121212] peer-checked:after:border-[#121212]"></div>
+              <div className="w-8 h-4.5 bg-surface border border-foreground/25 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-surface peer-checked:after:border-surface"></div>
             </label>
           </div>
           <p className="text-[10px] text-green-400/80 leading-relaxed">
@@ -891,16 +891,16 @@ const P2PSyncManager: React.FC = () => {
 
         {/* Connect / Scanner Unified Input */}
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold text-[#F5F5DC]/70 px-1">Conectar a un Nodo</span>
-          <div className="flex items-center gap-2 rounded-xl border border-[#F5F5DC]/20 bg-[#1a1a1a] p-1.5 shadow-sm">
-            <div className="flex-1 flex items-center bg-[#121212] rounded-lg border border-transparent focus-within:border-yellow-400/50 px-3 transition-colors">
+          <span className="text-xs font-bold text-foreground/70 px-1">Conectar a un Nodo</span>
+          <div className="flex items-center gap-2 rounded-xl border border-foreground/20 bg-surface-alt p-1.5 shadow-sm">
+            <div className="flex-1 flex items-center bg-surface rounded-lg border border-transparent focus-within:border-yellow-400/50 px-3 transition-colors">
               <input
                 data-testid="manual-peer-id-input"
                 type="text"
                 placeholder="Ingresa Peer ID..."
                 value={manualPeerId}
                 onChange={(e) => setManualPeerId(e.target.value)}
-                className="w-full bg-transparent py-2.5 text-sm text-[#F5F5DC] placeholder-[#F5F5DC]/40 focus:outline-none"
+                className="w-full bg-transparent py-2.5 text-sm text-foreground placeholder-foreground/40 focus:outline-none"
               />
               {manualPeerId.trim() && (
                 <button
@@ -930,7 +930,7 @@ const P2PSyncManager: React.FC = () => {
 
         <div className="mt-2">
           <div className="mb-3 flex items-center justify-between">
-            <h4 className="font-bold text-[#F5F5DC] text-sm">
+            <h4 className="font-bold text-foreground text-sm">
               {t('p2pSync.linkedDevices') || 'Dispositivos Enlazados'}
             </h4>
             {state.peers.length > 0 && (
@@ -989,7 +989,7 @@ const P2PSyncManager: React.FC = () => {
                 return (
                   <div
                     key={peer.id}
-                    className="flex flex-col gap-3 p-3 rounded-md bg-background/50 text-sm border border-[#F5F5DC]/10 hover:border-[#F5F5DC]/20 transition-all animate-fadeIn"
+                    className="flex flex-col gap-3 p-3 rounded-md bg-background/50 text-sm border border-foreground/10 hover:border-foreground/20 transition-all animate-fadeIn"
                   >
                     <div className="flex flex-col w-full gap-2 min-w-0">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between w-full gap-3 min-w-0">
@@ -1007,7 +1007,7 @@ const P2PSyncManager: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-4 mt-1 text-[11px] text-[#F5F5DC]/60">
+                          <div className="flex items-center gap-4 mt-1 text-[11px] text-foreground/60">
                             <span className="flex items-center gap-1">
                               <span
                                 className={`w-1.5 h-1.5 rounded-full ${isOnline || isLocal ? 'bg-green-500 shadow-sm shadow-green-500/50' : 'bg-gray-500'}`}
@@ -1020,11 +1020,11 @@ const P2PSyncManager: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 self-start sm:self-center w-full sm:w-auto">
-                          <span className="capitalize px-2 py-0.5 rounded text-xs bg-foreground/10 font-bold border border-[#F5F5DC]/10">
+                          <span className="capitalize px-2 py-0.5 rounded text-xs bg-foreground/10 font-bold border border-foreground/10">
                             {peer.role}
                           </span>
                           {lastHealthText && (
-                            <span className={`px-2 py-0.5 rounded text-xs border border-[#F5F5DC]/10 ${statusColor}`}>
+                            <span className={`px-2 py-0.5 rounded text-xs border border-foreground/10 ${statusColor}`}>
                               salud {health?.status}: {lastHealthText}
                             </span>
                           )}
@@ -1080,7 +1080,7 @@ const P2PSyncManager: React.FC = () => {
                         </div>
                       </div>
                       {showPermissions === peer.id && canManagePeer && (
-                        <div className="mt-2 p-2 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-md grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div className="mt-2 p-2 bg-surface-alt border border-foreground/20 rounded-md grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                           {[
                             { key: 'canViewProducts', label: 'Ver Productos' },
                             { key: 'canEditProducts', label: 'Editar Productos' },
@@ -1108,7 +1108,7 @@ const P2PSyncManager: React.FC = () => {
                                   onChange={() => togglePermission(peer.id, perm.key as keyof PeerPermissions, hasPerm)}
                                   className="accent-yellow-500 rounded-sm"
                                 />
-                                <span className="text-[#F5F5DC]/80">
+                                <span className="text-foreground/80">
                                   {t(`p2pSync.permissions.${perm.key}`) || perm.label}
                                 </span>
                               </label>
@@ -1122,7 +1122,7 @@ const P2PSyncManager: React.FC = () => {
               })}
             </div>
           ) : (
-            <p className="text-xs text-[#F5F5DC]/50">{t('p2pSync.noDevices') || 'No secure devices linked.'}</p>
+            <p className="text-xs text-foreground/50">{t('p2pSync.noDevices') || 'No secure devices linked.'}</p>
           )}
         </div>
       </div>
@@ -1134,26 +1134,26 @@ const P2PSyncManager: React.FC = () => {
             {showConfirmConnectModal && (
               <div className={modalOverlayClass}>
                 <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-xl sm:h-auto`}>
-                  <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
-                    <h3 className="min-w-0 flex-1 font-bold text-[#F5F5DC]">
+                  <div className="flex items-start justify-between gap-3 border-b border-foreground/10 p-4 sm:p-5">
+                    <h3 className="min-w-0 flex-1 font-bold text-foreground">
                       {t('p2pSync.confirmTitle') || 'Confirmar conexión P2P'}
                     </h3>
                     <button
                       type="button"
                       onClick={() => setShowConfirmConnectModal(false)}
-                      className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
+                      className="text-foreground/60 hover:text-foreground"
                     >
                       <X size={20} />
                     </button>
                   </div>
                   <div className={`${modalBodyClass} space-y-4`}>
-                    <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10">
-                      <p className="text-xs text-[#F5F5DC]/60 mb-1">Peer ID destino</p>
+                    <div className="p-3 bg-surface rounded border border-foreground/10">
+                      <p className="text-xs text-foreground/60 mb-1">Peer ID destino</p>
                       <code className="font-mono text-yellow-400 break-all">{pendingPeerId}</code>
                     </div>
 
                     <div>
-                      <p className="mb-2 font-semibold text-[#F5F5DC]">
+                      <p className="mb-2 font-semibold text-foreground">
                         {t('p2pSync.configCollaboratorTitle') || 'Configuracion del Colaborador'}
                       </p>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-4">
@@ -1169,8 +1169,8 @@ const P2PSyncManager: React.FC = () => {
                             onClick={() => handleRoleChange(option.role)}
                             className={`min-h-11 rounded border px-3 py-2 text-xs font-bold transition-colors ${
                               selectedRole === option.role
-                                ? 'bg-yellow-400 text-[#121212] border-yellow-300'
-                                : 'bg-[#121212] text-[#F5F5DC] border-[#F5F5DC]/20 hover:border-[#F5F5DC]/50'
+                                ? 'bg-yellow-400 text-surface border-yellow-300'
+                                : 'bg-surface text-foreground border-foreground/20 hover:border-foreground/50'
                             }`}
                           >
                             {option.label}
@@ -1181,7 +1181,7 @@ const P2PSyncManager: React.FC = () => {
 
                     <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
                       {permissionOptions.map((perm) => (
-                        <label key={perm.key} className="flex min-h-11 items-start gap-2 rounded bg-[#121212] p-2">
+                        <label key={perm.key} className="flex min-h-11 items-start gap-2 rounded bg-surface p-2">
                           <input
                             type="checkbox"
                             checked={selectedPermissions[perm.key]}
@@ -1189,7 +1189,7 @@ const P2PSyncManager: React.FC = () => {
                             onChange={() => handleCustomPermissionToggle(perm.key)}
                             className="accent-yellow-500 rounded-sm"
                           />
-                          <span className={selectedRole === 'custom' ? 'text-[#F5F5DC]/80' : 'text-[#F5F5DC]/45'}>
+                          <span className={selectedRole === 'custom' ? 'text-foreground/80' : 'text-foreground/45'}>
                             {t(`p2pSync.permissions.${perm.key}`) || perm.label}
                           </span>
                         </label>
@@ -1198,18 +1198,18 @@ const P2PSyncManager: React.FC = () => {
 
                     <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 md:grid-cols-3">
                       {Object.entries(counts).map(([key, value]) => (
-                        <div key={key} className="p-2 rounded bg-[#121212] border border-[#F5F5DC]/10">
-                          <span className="block text-[#F5F5DC]/50">{t(`p2pSync.${key}`) || key}</span>
-                          <span className="font-mono text-[#F5F5DC]">{value}</span>
+                        <div key={key} className="p-2 rounded bg-surface border border-foreground/10">
+                          <span className="block text-foreground/50">{t(`p2pSync.${key}`) || key}</span>
+                          <span className="font-mono text-foreground">{value}</span>
                         </div>
                       ))}
-                      <div className="p-2 rounded bg-[#121212] border border-[#F5F5DC]/10">
-                        <span className="block text-[#F5F5DC]/50">{t('p2pSync.confirmSize') || 'Peso Estimado'}</span>
-                        <span className="font-mono text-[#F5F5DC]">{sizeStr}</span>
+                      <div className="p-2 rounded bg-surface border border-foreground/10">
+                        <span className="block text-foreground/50">{t('p2pSync.confirmSize') || 'Peso Estimado'}</span>
+                        <span className="font-mono text-foreground">{sizeStr}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex shrink-0 flex-col gap-2 border-t border-[#F5F5DC]/10 p-4 sm:flex-row sm:justify-end">
+                  <div className="flex shrink-0 flex-col gap-2 border-t border-foreground/10 p-4 sm:flex-row sm:justify-end">
                     <button
                       type="button"
                       onClick={() => setShowConfirmConnectModal(false)}
@@ -1220,7 +1220,7 @@ const P2PSyncManager: React.FC = () => {
                     <button
                       type="button"
                       onClick={confirmAndConnect}
-                      className="w-full rounded bg-[#F5F5DC] px-4 py-2 text-sm font-bold text-[#121212] transition-colors hover:bg-white sm:w-auto"
+                      className="w-full rounded bg-foreground px-4 py-2 text-sm font-bold text-surface transition-colors hover:bg-white sm:w-auto"
                     >
                       {t('p2pSync.confirmProceed') || 'Sincronizar y Conectar'}
                     </button>
@@ -1233,12 +1233,15 @@ const P2PSyncManager: React.FC = () => {
             {showInfoModal && (
               <div className={modalOverlayClass}>
                 <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-lg sm:h-auto`}>
-                  <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
-                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
+                  <div className="flex items-start justify-between gap-3 border-b border-foreground/10 p-4 sm:p-5">
+                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-foreground">
                       <Info size={18} className="text-yellow-400" />
                       {t('p2pSync.infoTitle')}
                     </h3>
-                    <button onClick={() => setShowInfoModal(false)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
+                    <button
+                      onClick={() => setShowInfoModal(false)}
+                      className="text-foreground/60 hover:text-foreground"
+                    >
                       <X size={20} />
                     </button>
                   </div>
@@ -1265,7 +1268,7 @@ const P2PSyncManager: React.FC = () => {
                       {t('p2pSync.infoProtection').split(':')[1]}
                     </p>
                   </div>
-                  <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
+                  <div className="flex shrink-0 justify-end border-t border-foreground/10 p-4">
                     <button
                       onClick={() => setShowInfoModal(false)}
                       className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
@@ -1281,14 +1284,14 @@ const P2PSyncManager: React.FC = () => {
             {showConfigModal && (
               <div className={modalOverlayClass}>
                 <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-md sm:h-auto`}>
-                  <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
-                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
+                  <div className="flex items-start justify-between gap-3 border-b border-foreground/10 p-4 sm:p-5">
+                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-foreground">
                       <Settings size={18} className="text-yellow-400" />
                       Configuración Avanzada
                     </h3>
                     <button
                       onClick={() => setShowConfigModal(false)}
-                      className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
+                      className="text-foreground/60 hover:text-foreground"
                     >
                       <X size={20} />
                     </button>
@@ -1297,7 +1300,7 @@ const P2PSyncManager: React.FC = () => {
                     {/* Host Status & Failover */}
                     <div className="flex flex-col gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-3">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-[#F5F5DC]">Host Principal</span>
+                        <span className="text-xs font-bold text-foreground">Host Principal</span>
                         {state.role === 'admin' && !isHostLocal && (
                           <button
                             onClick={handleManualFailover}
@@ -1350,7 +1353,7 @@ const P2PSyncManager: React.FC = () => {
                             onChange={toggleWakeLock}
                             className="sr-only peer"
                           />
-                          <div className="w-8 h-4.5 bg-[#121212] border border-[#F5F5DC]/25 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-[#121212] peer-checked:after:border-[#121212]"></div>
+                          <div className="w-8 h-4.5 bg-surface border border-foreground/25 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-400 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-surface peer-checked:after:border-surface"></div>
                         </label>
                       </div>
                       <p className="text-[10px] text-green-400/80 leading-relaxed">
@@ -1387,7 +1390,7 @@ const P2PSyncManager: React.FC = () => {
                           placeholder="ID de Rama (vacio para Global)..."
                           value={branchInput}
                           onChange={(e) => setBranchInput(e.target.value)}
-                          className="flex-1 bg-black/40 border border-[#F5F5DC]/20 rounded px-2 py-1.5 text-xs text-purple-200 focus:outline-none focus:border-purple-500/50"
+                          className="flex-1 bg-black/40 border border-foreground/20 rounded px-2 py-1.5 text-xs text-purple-200 focus:outline-none focus:border-purple-500/50"
                         />
                         <button
                           onClick={handleBranchSwitch}
@@ -1402,18 +1405,18 @@ const P2PSyncManager: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 flex flex-col gap-2">
+                    <div className="p-3 bg-surface rounded border border-foreground/10 flex flex-col gap-2">
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-[#F5F5DC]/70">Rol Actual:</span>
+                        <span className="text-foreground/70">Rol Actual:</span>
                         <span className="font-bold text-green-400 capitalize">{state.role}</span>
                       </div>
-                      <p className="text-[10px] text-[#F5F5DC]/50">
+                      <p className="text-[10px] text-foreground/50">
                         Solo el host original puede conceder permisos o promover nodos. Los nodos compartidos fuera del
                         host quedan en modo comprador/portafolio.
                       </p>
                     </div>
                   </div>
-                  <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
+                  <div className="flex shrink-0 justify-end border-t border-foreground/10 p-4">
                     <button
                       onClick={() => setShowConfigModal(false)}
                       className="rounded bg-[#333] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#444]"
@@ -1429,12 +1432,15 @@ const P2PSyncManager: React.FC = () => {
             {showMyQrModal && (
               <div className={modalOverlayClass}>
                 <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-sm sm:h-auto`}>
-                  <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
-                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
+                  <div className="flex items-start justify-between gap-3 border-b border-foreground/10 p-4 sm:p-5">
+                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-foreground">
                       <QrCode size={18} className="text-yellow-400" />
                       {t('p2pSync.myQrTitle')}
                     </h3>
-                    <button onClick={() => setShowMyQrModal(false)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
+                    <button
+                      onClick={() => setShowMyQrModal(false)}
+                      className="text-foreground/60 hover:text-foreground"
+                    >
                       <X size={20} />
                     </button>
                   </div>
@@ -1448,9 +1454,9 @@ const P2PSyncManager: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    <p className="text-sm text-[#F5F5DC]/80 mt-2">{t('p2pSync.qrInstructions')}</p>
+                    <p className="text-sm text-foreground/80 mt-2">{t('p2pSync.qrInstructions')}</p>
                   </div>
-                  <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
+                  <div className="flex shrink-0 justify-end border-t border-foreground/10 p-4">
                     <button
                       onClick={() => setShowMyQrModal(false)}
                       className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
@@ -1475,7 +1481,7 @@ const P2PSyncManager: React.FC = () => {
               }`}
             >
               <div
-                className={`flex w-full max-w-[calc(100vw-1.5rem)] flex-col items-center gap-4 overflow-hidden rounded-t-2xl border border-green-500/30 bg-[#1a1a1a] p-5 text-center shadow-[0_0_30px_rgba(34,197,94,0.15)] sm:max-w-sm sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg sm:p-6 transition-transform duration-300 ${
+                className={`flex w-full max-w-[calc(100vw-1.5rem)] flex-col items-center gap-4 overflow-hidden rounded-t-2xl border border-green-500/30 bg-surface-alt p-5 text-center shadow-[0_0_30px_rgba(34,197,94,0.15)] sm:max-w-sm sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:rounded-lg sm:p-6 transition-transform duration-300 ${
                   showSyncModal ? 'translate-y-0 scale-100' : 'translate-y-4 scale-95'
                 }`}
               >
@@ -1483,14 +1489,14 @@ const P2PSyncManager: React.FC = () => {
                   {syncProgress < 100 ? 'Sincronizando Paridad...' : '¡Empalme Completado!'}
                 </h3>
 
-                <div className="w-full bg-[#121212] rounded-full h-3 border border-[#F5F5DC]/10 overflow-hidden relative">
+                <div className="w-full bg-surface rounded-full h-3 border border-foreground/10 overflow-hidden relative">
                   <div
                     className="bg-green-500 h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(34,197,94,0.8)]"
                     style={{ width: `${Math.min(syncProgress, 100)}%` }}
                   />
                 </div>
 
-                <p className="text-[#F5F5DC]/70 text-sm font-mono font-bold">
+                <p className="text-foreground/70 text-sm font-mono font-bold">
                   {syncProgress < 100 ? `${Math.round(syncProgress)}% Paridad` : '100% Paridad Lograda'}
                 </p>
               </div>
@@ -1500,45 +1506,45 @@ const P2PSyncManager: React.FC = () => {
             {showHistoryForPeer && (
               <div className={modalOverlayClass}>
                 <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-2xl sm:h-auto`}>
-                  <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
-                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
+                  <div className="flex items-start justify-between gap-3 border-b border-foreground/10 p-4 sm:p-5">
+                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-foreground">
                       <History size={18} className="text-orange-400" />
                       Historial de Conexión
                     </h3>
                     <button
                       onClick={() => setShowHistoryForPeer(null)}
-                      className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]"
+                      className="text-foreground/60 hover:text-foreground"
                     >
                       <X size={20} />
                     </button>
                   </div>
                   <div className={`${modalBodyClass} space-y-4`}>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#121212] p-3 rounded-md border border-[#F5F5DC]/10">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface p-3 rounded-md border border-foreground/10">
                       <div className="min-w-0">
-                        <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider block mb-0.5">
+                        <span className="text-[10px] text-foreground/50 uppercase tracking-wider block mb-0.5">
                           Peer ID
                         </span>
                         <code className="text-yellow-400 text-xs font-mono break-all">{showHistoryForPeer}</code>
                       </div>
                       <div className="shrink-0 text-right">
-                        <span className="text-[10px] text-[#F5F5DC]/50 uppercase tracking-wider block mb-0.5">
+                        <span className="text-[10px] text-foreground/50 uppercase tracking-wider block mb-0.5">
                           Total
                         </span>
-                        <span className="text-sm font-bold text-[#F5F5DC]">
+                        <span className="text-sm font-bold text-foreground">
                           {t('p2pSync.eventsRegistered', { count: dbSync.getPeerHistory(showHistoryForPeer).length })}
                         </span>
                       </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-lg border border-[#F5F5DC]/10 bg-black/20">
+                    <div className="overflow-hidden rounded-lg border border-foreground/10 bg-black/20">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-[#121212] text-[#F5F5DC]/60 uppercase tracking-wider text-[10px]">
+                        <thead className="bg-surface text-foreground/60 uppercase tracking-wider text-[10px]">
                           <tr>
                             <th className="px-4 py-2 font-bold">{t('sales.date')}</th>
                             <th className="px-4 py-2 font-bold">{t('common.status')}</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#F5F5DC]/5">
+                        <tbody className="divide-y divide-foreground/5">
                           {[...dbSync.getPeerHistory(showHistoryForPeer)].reverse().map((event, idx) => {
                             const iconMap: Record<string, any> = {
                               connected: { color: 'text-green-400', icon: CheckCircle2 },
@@ -1552,7 +1558,7 @@ const P2PSyncManager: React.FC = () => {
 
                             return (
                               <tr key={`${event.timestamp}-${idx}`} className="hover:bg-white/5 transition-colors">
-                                <td className="px-4 py-3 font-mono text-[#F5F5DC]/70 whitespace-nowrap">
+                                <td className="px-4 py-3 font-mono text-foreground/70 whitespace-nowrap">
                                   {new Date(event.timestamp).toLocaleString()}
                                 </td>
                                 <td className="px-4 py-3">
@@ -1566,7 +1572,7 @@ const P2PSyncManager: React.FC = () => {
                           })}
                           {dbSync.getPeerHistory(showHistoryForPeer).length === 0 && (
                             <tr>
-                              <td colSpan={2} className="px-4 py-8 text-center text-[#F5F5DC]/40 italic">
+                              <td colSpan={2} className="px-4 py-8 text-center text-foreground/40 italic">
                                 No hay eventos registrados.
                               </td>
                             </tr>
@@ -1580,7 +1586,7 @@ const P2PSyncManager: React.FC = () => {
                       <p>{t('p2pSync.historyMemoryDisclaimer')}</p>
                     </div>
                   </div>
-                  <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
+                  <div className="flex shrink-0 justify-end border-t border-foreground/10 p-4">
                     <button
                       onClick={() => setShowHistoryForPeer(null)}
                       className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"
@@ -1596,11 +1602,14 @@ const P2PSyncManager: React.FC = () => {
             {showLogsForPeer && (
               <div className={modalOverlayClass}>
                 <div className={`${modalPanelClass} h-[calc(var(--app-height,100vh)-1.5rem)] sm:max-w-2xl sm:h-auto`}>
-                  <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4 sm:p-5">
-                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-[#F5F5DC]">
+                  <div className="flex items-start justify-between gap-3 border-b border-foreground/10 p-4 sm:p-5">
+                    <h3 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-foreground">
                       📋 Registro de Actividad
                     </h3>
-                    <button onClick={() => setShowLogsForPeer(null)} className="text-[#F5F5DC]/60 hover:text-[#F5F5DC]">
+                    <button
+                      onClick={() => setShowLogsForPeer(null)}
+                      className="text-foreground/60 hover:text-foreground"
+                    >
                       <X size={20} />
                     </button>
                   </div>
@@ -1616,7 +1625,7 @@ const P2PSyncManager: React.FC = () => {
                         .map((log) => (
                           <div
                             key={log.id}
-                            className="p-3 bg-[#121212] rounded border border-[#F5F5DC]/10 text-sm flex flex-col gap-1"
+                            className="p-3 bg-surface rounded border border-foreground/10 text-sm flex flex-col gap-1"
                           >
                             <div className="flex justify-between items-center text-xs opacity-70">
                               <span>{new Date(log.timestamp).toLocaleString()}</span>
@@ -1624,7 +1633,7 @@ const P2PSyncManager: React.FC = () => {
                                 {log.entityType || 'General'}
                               </span>
                             </div>
-                            <div className="text-[#F5F5DC] mt-1">{log.action}</div>
+                            <div className="text-foreground mt-1">{log.action}</div>
                           </div>
                         ))
                     ) : (
@@ -1633,7 +1642,7 @@ const P2PSyncManager: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex shrink-0 justify-end border-t border-[#F5F5DC]/10 p-4">
+                  <div className="flex shrink-0 justify-end border-t border-foreground/10 p-4">
                     <button
                       onClick={() => setShowLogsForPeer(null)}
                       className="rounded bg-[#333] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#444]"

@@ -199,23 +199,23 @@ const NetworkConfig: React.FC = () => {
         icon={<Languages className="h-5 w-5" />}
         testId="settings-general-card"
       >
-        <div className="flex flex-col gap-3 rounded-md border border-[#F5F5DC]/10 bg-[#121212] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-md border border-foreground/10 bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-sm font-semibold text-[#F5F5DC]/90">
-              <Languages className="h-4 w-4 text-[#4ADE80]" aria-hidden="true" />
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
+              <Languages className="h-4 w-4 text-accent-green" aria-hidden="true" />
               {t('settings.language') || t('common.language') || 'Language'}
             </div>
-            <p className="mt-1 text-xs text-[#F5F5DC]/60">{t('settings.languageDescription')}</p>
+            <p className="mt-1 text-xs text-foreground/60">{t('settings.languageDescription')}</p>
           </div>
           <div className="self-start sm:self-center" data-testid="settings-language-selector">
             <LanguageSelector direction="down" />
           </div>
         </div>
         <div className="mt-4">
-          <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-[#F5F5DC]/90">
+          <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-foreground/90">
             {t('settings.lowStockThreshold')}
           </label>
-          <p className="text-xs text-[#F5F5DC]/70 mb-2">{t('settings.lowStockThresholdDescription')}</p>
+          <p className="text-xs text-foreground/70 mb-2">{t('settings.lowStockThresholdDescription')}</p>
           <input
             id="lowStockThreshold"
             data-testid="low-stock-input"
@@ -223,14 +223,14 @@ const NetworkConfig: React.FC = () => {
             value={lowStockThreshold}
             onChange={(e) => setLowStockThreshold(Number(e.target.value))}
             min="0"
-            className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+            className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 focus:outline-none focus:ring-1 focus:ring-foreground"
           />
         </div>
         <div className="mt-4">
-          <label htmlFor="tablePageSize" className="block text-sm font-medium text-[#F5F5DC]/90">
+          <label htmlFor="tablePageSize" className="block text-sm font-medium text-foreground/90">
             Tamaño de página de tablas
           </label>
-          <p className="text-xs text-[#F5F5DC]/70 mb-2">
+          <p className="text-xs text-foreground/70 mb-2">
             Define cuántos registros se muestran por página en inventario, ventas, compras y contactos.
           </p>
           <input
@@ -241,7 +241,7 @@ const NetworkConfig: React.FC = () => {
             onChange={(e) => setTablePageSize(Math.max(1, Number(e.target.value) || 50))}
             min="1"
             step="1"
-            className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+            className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 focus:outline-none focus:ring-1 focus:ring-foreground"
           />
         </div>
       </CollapsibleCard>
@@ -254,16 +254,16 @@ const NetworkConfig: React.FC = () => {
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>
-            <label htmlFor="currencySymbol" className="block text-sm font-medium text-[#F5F5DC]/90">
+            <label htmlFor="currencySymbol" className="block text-sm font-medium text-foreground/90">
               {t('settings.currency.symbol')}
             </label>
-            <p className="text-xs text-[#F5F5DC]/70 mb-2">{t('settings.currency.symbolDescription')}</p>
+            <p className="text-xs text-foreground/70 mb-2">{t('settings.currency.symbolDescription')}</p>
             <select
               id="currencySymbol"
               data-testid="currency-select"
               value={currencyCode}
               onChange={(e) => setCurrencyCode(e.target.value)}
-              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+              className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 focus:outline-none focus:ring-1 focus:ring-foreground"
             >
               {CURRENCIES.map(({ code, nameKey }) => (
                 <option key={code} value={code}>
@@ -273,16 +273,16 @@ const NetworkConfig: React.FC = () => {
             </select>
           </div>
           <div>
-            <label htmlFor="numberFormat" className="block text-sm font-medium text-[#F5F5DC]/90">
+            <label htmlFor="numberFormat" className="block text-sm font-medium text-foreground/90">
               {t('settings.currency.format')}
             </label>
-            <p className="text-xs text-[#F5F5DC]/70 mb-2">{t('settings.currency.formatDescription')}</p>
+            <p className="text-xs text-foreground/70 mb-2">{t('settings.currency.formatDescription')}</p>
             <select
               id="numberFormat"
               data-testid="number-format-select"
               value={numberFormat}
               onChange={(e) => setNumberFormat(e.target.value as any)}
-              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+              className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 focus:outline-none focus:ring-1 focus:ring-foreground"
             >
               <option value="en-US">1,234.56 ({t('settings.currency.formats.en-US')})</option>
               <option value="de-DE">1.234,56 ({t('settings.currency.formats.de-DE')})</option>
@@ -299,13 +299,13 @@ const NetworkConfig: React.FC = () => {
         testId="settings-team-card"
       >
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-          <span className="text-xs text-[#F5F5DC]/70">{t('settings.team.description')}</span>
+          <span className="text-xs text-foreground/70">{t('settings.team.description')}</span>
           {mayInvite && (
             <button
               type="button"
               data-testid="invite-member-button"
               onClick={() => setInviteModalOpen(true)}
-              className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-opacity-80 text-sm active:scale-95 cursor-pointer"
+              className="w-full sm:w-auto bg-foreground text-surface font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-opacity-80 text-sm active:scale-95 cursor-pointer"
             >
               {t('settings.team.invite')}
             </button>
@@ -316,7 +316,7 @@ const NetworkConfig: React.FC = () => {
             team.map((member) => (
               <div
                 key={member.id}
-                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-md bg-background/50 border border-[#F5F5DC]/5"
+                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-md bg-background/50 border border-foreground/5"
               >
                 <span className="truncate min-w-0">{member.email}</span>
                 <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
@@ -339,7 +339,7 @@ const NetworkConfig: React.FC = () => {
               </div>
             ))
           ) : (
-            <p className="text-xs text-[#F5F5DC]/50 text-center py-2 italic">
+            <p className="text-xs text-foreground/50 text-center py-2 italic">
               {t('settings.team.noMembers') || 'No team members added yet.'}
             </p>
           )}
@@ -357,10 +357,10 @@ const NetworkConfig: React.FC = () => {
           <div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-[#F5F5DC]/90">
+                <label className="block text-sm font-medium text-foreground/90">
                   {t('settings.ai.localOcrTitle') || 'Local invoice OCR'}
                 </label>
-                <p className="mt-1 text-xs text-[#F5F5DC]/60">
+                <p className="mt-1 text-xs text-foreground/60">
                   {t('settings.ai.localOcrDescription') ||
                     'Use Tesseract.js for 100% offline invoice OCR. When off, Gemini API is used (requires internet and API key).'}
                 </p>
@@ -369,7 +369,7 @@ const NetworkConfig: React.FC = () => {
                 type="button"
                 data-testid="toggle-local-ocr"
                 onClick={() => setUseLocalOcr(!useLocalOcr)}
-                className={`bg-transparent border border-[#F5F5DC]/30 text-[#F5F5DC] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-all text-sm cursor-pointer ${useLocalOcr ? 'bg-[#4ADE80]/10 border-[#4ADE80]/30' : ''}`}
+                className={`bg-transparent border border-foreground/30 text-foreground font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-foreground/10 transition-all text-sm cursor-pointer ${useLocalOcr ? 'bg-accent-green/10 border-accent-green/30' : ''}`}
               >
                 {useLocalOcr
                   ? t('settings.ai.localOcrOn') || 'Local (On)'
@@ -378,14 +378,14 @@ const NetworkConfig: React.FC = () => {
             </div>
           </div>
           <div>
-            <label htmlFor="aiEngine" className="block text-sm font-medium text-[#F5F5DC]/90 mb-1">
+            <label htmlFor="aiEngine" className="block text-sm font-medium text-foreground/90 mb-1">
               {t('settings.ai.engine')}
             </label>
             <select
               id="aiEngine"
               value={aiEngine}
               onChange={(e) => setAiEngine(e.target.value as any)}
-              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+              className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 focus:outline-none focus:ring-1 focus:ring-foreground"
             >
               <option value="auto">{t('settings.ai.engineAuto')}</option>
               <option value="cloud">{t('settings.ai.engineCloud') || 'SWAL AI / OpenRouter (Cloud)'}</option>
@@ -397,20 +397,20 @@ const NetworkConfig: React.FC = () => {
 
           {aiEngine === 'local' && (
             <div>
-              <label htmlFor="localAiModel" className="block text-sm font-medium text-[#F5F5DC]/90 mb-1">
+              <label htmlFor="localAiModel" className="block text-sm font-medium text-foreground/90 mb-1">
                 {t('settings.ai.localModel')}
               </label>
               <select
                 id="localAiModel"
                 value={localAiModel}
                 onChange={(e) => setLocalAiModel(e.target.value)}
-                className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 focus:outline-none focus:ring-1 focus:ring-foreground"
               >
                 <option value="Phi-3-mini-4k-instruct-q4f16_1-MLC">{t('settings.ai.modelSmall')}</option>
                 <option value="Qwen2.5-1.5B-Instruct-q4f16_1-MLC">{t('settings.ai.modelMedium')}</option>
                 <option value="Llama-3-8B-Instruct-q4f16_1-MLC">Large (Llama 3 8B - Heavy)</option>
               </select>
-              <p className="mt-2 text-[10px] text-[#F5F5DC]/50 italic">
+              <p className="mt-2 text-[10px] text-foreground/50 italic">
                 * Los modelos locales se descargan al navegador y pueden ocupar entre 1GB y 5GB.
               </p>
             </div>
@@ -418,13 +418,13 @@ const NetworkConfig: React.FC = () => {
 
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label htmlFor="geminiApiKey" className="block text-sm font-medium text-[#F5F5DC]/90">
+              <label htmlFor="geminiApiKey" className="block text-sm font-medium text-foreground/90">
                 Gemini API Key
               </label>
               <button
                 type="button"
                 onClick={() => setShowGeminiKey(!showGeminiKey)}
-                className="text-xs text-[#F5F5DC]/60 hover:text-[#F5F5DC] cursor-pointer"
+                className="text-xs text-foreground/60 hover:text-foreground cursor-pointer"
               >
                 {showGeminiKey ? 'Ocultar' : 'Mostrar'}
               </button>
@@ -435,19 +435,19 @@ const NetworkConfig: React.FC = () => {
               value={geminiApiKey}
               onChange={(e) => setGeminiApiKey(e.target.value)}
               placeholder="AIzaSy..."
-              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+              className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 focus:outline-none focus:ring-1 focus:ring-foreground"
             />
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label htmlFor="openCodeGoKey" className="block text-sm font-medium text-[#F5F5DC]/90">
+              <label htmlFor="openCodeGoKey" className="block text-sm font-medium text-foreground/90">
                 OpenCodeGo Key
               </label>
               <button
                 type="button"
                 onClick={() => setShowOpenCodeGoKey(!showOpenCodeGoKey)}
-                className="text-xs text-[#F5F5DC]/60 hover:text-[#F5F5DC] cursor-pointer"
+                className="text-xs text-foreground/60 hover:text-foreground cursor-pointer"
               >
                 {showOpenCodeGoKey ? 'Ocultar' : 'Mostrar'}
               </button>
@@ -458,10 +458,10 @@ const NetworkConfig: React.FC = () => {
               value={openCodeGoKey}
               onChange={(e) => setOpenCodeGoKey(e.target.value)}
               placeholder="sk-..."
-              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC] mb-3"
+              className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 focus:outline-none focus:ring-1 focus:ring-foreground mb-3"
             />
 
-            <label htmlFor="openCodeGoModel" className="block text-sm font-medium text-[#F5F5DC]/90">
+            <label htmlFor="openCodeGoModel" className="block text-sm font-medium text-foreground/90">
               Modelo de OpenCodeGo
             </label>
             <input
@@ -470,12 +470,12 @@ const NetworkConfig: React.FC = () => {
               value={openCodeGoModel}
               onChange={(e) => setOpenCodeGoModel(e.target.value)}
               placeholder="ej. deepseek-v4-flash, gpt-4o"
-              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+              className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 focus:outline-none focus:ring-1 focus:ring-foreground"
             />
           </div>
 
           <div>
-            <label htmlFor="aiProxyUrl" className="block text-sm font-medium text-[#F5F5DC]/90">
+            <label htmlFor="aiProxyUrl" className="block text-sm font-medium text-foreground/90">
               {t('settings.ai.proxyUrl')}
             </label>
             <input
@@ -484,7 +484,7 @@ const NetworkConfig: React.FC = () => {
               value={aiProxyUrl}
               onChange={(e) => setAiProxyUrl(e.target.value)}
               placeholder="http://localhost:3000"
-              className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+              className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 focus:outline-none focus:ring-1 focus:ring-foreground"
             />
           </div>
         </div>
@@ -502,7 +502,7 @@ const NetworkConfig: React.FC = () => {
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
           placeholder={t('settings.feedback.placeholder')}
-          className="w-full p-2.5 bg-[#121212] border rounded-md border-[#F5F5DC]/30 min-h-[100px] focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+          className="w-full p-2.5 bg-surface border rounded-md border-foreground/30 min-h-[100px] focus:outline-none focus:ring-1 focus:ring-foreground"
         />
         <button
           type="button"
@@ -523,11 +523,13 @@ const NetworkConfig: React.FC = () => {
         testId="settings-security-card"
       >
         <div className="space-y-4">
-          <div className="rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-4">
+          <div className="rounded-lg border border-foreground/10 bg-surface p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <label className="block text-sm font-medium text-[#F5F5DC]/90">Contraseña o PIN de la aplicación</label>
-                <p className="text-xs text-[#F5F5DC]/60">
+                <label className="block text-sm font-medium text-foreground/90">
+                  Contraseña o PIN de la aplicación
+                </label>
+                <p className="text-xs text-foreground/60">
                   {hasAppLock ? 'Protegido con contraseña/PIN' : 'Sin contraseña local'}
                 </p>
               </div>
@@ -551,7 +553,7 @@ const NetworkConfig: React.FC = () => {
                   value={newPin}
                   onChange={(e) => setNewPin(e.target.value)}
                   placeholder="Nueva contraseña o PIN"
-                  className="min-w-0 flex-1 p-2.5 bg-[#0f0f0f] border rounded-md border-[#F5F5DC]/30 focus:outline-none focus:ring-1 focus:ring-[#F5F5DC]"
+                  className="min-w-0 flex-1 p-2.5 bg-surface-deep border rounded-md border-foreground/30 focus:outline-none focus:ring-1 focus:ring-foreground"
                 />
                 <button
                   type="button"
@@ -565,28 +567,28 @@ const NetworkConfig: React.FC = () => {
                       showNotification('La contraseña o PIN debe tener al menos 4 caracteres', 'error');
                     }
                   }}
-                  className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-opacity-80 transition-all text-sm cursor-pointer"
+                  className="bg-foreground text-surface font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-opacity-80 transition-all text-sm cursor-pointer"
                 >
                   {t('settings.security.enable') || 'Activar'}
                 </button>
               </div>
             ) : (
-              <div className="mt-4 p-3 bg-[#F5F5DC]/5 rounded-lg border border-[#F5F5DC]/10">
-                <p className="text-xs text-[#F5F5DC]/60 italic">
+              <div className="mt-4 p-3 bg-foreground/5 rounded-lg border border-foreground/10">
+                <p className="text-xs text-foreground/60 italic">
                   {t('settings.security.lockedNote') || 'La aplicación se bloqueará automáticamente al recargar.'}
                 </p>
               </div>
             )}
           </div>
 
-          <div className="rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-4">
+          <div className="rounded-lg border border-foreground/10 bg-surface p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <Fingerprint className="h-4 w-4 text-[#4ADE80]" aria-hidden="true" />
-                  <label className="block text-sm font-medium text-[#F5F5DC]/90">Huella digital</label>
+                  <Fingerprint className="h-4 w-4 text-accent-green" aria-hidden="true" />
+                  <label className="block text-sm font-medium text-foreground/90">Huella digital</label>
                 </div>
-                <p className="mt-1 text-xs text-[#F5F5DC]/60">
+                <p className="mt-1 text-xs text-foreground/60">
                   {biometricsSupported
                     ? hasBiometricLock
                       ? 'Huella habilitada para desbloquear la aplicación.'
@@ -605,7 +607,7 @@ const NetworkConfig: React.FC = () => {
                     'success',
                   );
                 }}
-                className="bg-transparent border border-[#F5F5DC]/30 text-[#F5F5DC] font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-all text-sm disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                className="bg-transparent border border-foreground/30 text-foreground font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-foreground/10 transition-all text-sm disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
               >
                 {hasBiometricLock ? 'Desactivar huella' : 'Activar huella'}
               </button>
@@ -622,36 +624,36 @@ const NetworkConfig: React.FC = () => {
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Import */}
-          <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-[#F5F5DC]/20">
-            <h4 className="font-bold text-[#F5F5DC]">{t('settings.import.button')}</h4>
-            <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.import.cardDescription')}</p>
+          <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
+            <h4 className="font-bold text-foreground">{t('settings.import.button')}</h4>
+            <p className="text-xs text-foreground/70 flex-grow">{t('settings.import.cardDescription')}</p>
             <button
               type="button"
               data-testid="open-import-csv-button"
               onClick={() => setIsImportModalOpen(true)}
-              className="w-full mt-2 text-sm bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 cursor-pointer"
+              className="w-full mt-2 text-sm bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-foreground/10 transition-colors active:scale-95 cursor-pointer"
             >
               {t('settings.import.button')}
             </button>
           </div>
 
           {/* Backup */}
-          <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-[#F5F5DC]/20">
-            <h4 className="font-bold text-[#F5F5DC]">{t('settings.backup.button')}</h4>
-            <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.backup.description')}</p>
+          <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
+            <h4 className="font-bold text-foreground">{t('settings.backup.button')}</h4>
+            <p className="text-xs text-foreground/70 flex-grow">{t('settings.backup.description')}</p>
             <button
               type="button"
               onClick={handleCreateBackup}
-              className="w-full mt-2 text-sm bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 cursor-pointer"
+              className="w-full mt-2 text-sm bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-foreground/10 transition-colors active:scale-95 cursor-pointer"
             >
               {t('settings.backup.button')}
             </button>
           </div>
 
           {/* Restore */}
-          <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-[#F5F5DC]/20">
-            <h4 className="font-bold text-[#F5F5DC]">{t('settings.restore.button')}</h4>
-            <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.restore.description')}</p>
+          <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-foreground/20">
+            <h4 className="font-bold text-foreground">{t('settings.restore.button')}</h4>
+            <p className="text-xs text-foreground/70 flex-grow">{t('settings.restore.description')}</p>
             <input
               type="file"
               accept="application/json"
@@ -662,7 +664,7 @@ const NetworkConfig: React.FC = () => {
             />
             <label
               htmlFor="restore-file-input"
-              className="w-full mt-2 cursor-pointer text-center text-sm bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 inline-flex items-center justify-center font-bold"
+              className="w-full mt-2 cursor-pointer text-center text-sm bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg min-h-[40px] hover:bg-foreground/10 transition-colors active:scale-95 inline-flex items-center justify-center font-bold"
             >
               {t('settings.restore.button')}
             </label>
@@ -671,7 +673,7 @@ const NetworkConfig: React.FC = () => {
           {/* Reset */}
           <div className="flex min-w-0 flex-col gap-2 p-4 rounded-md bg-background/50 border border-red-500/30">
             <h4 className="font-bold text-red-400">{t('settings.reset.button')}</h4>
-            <p className="text-xs text-[#F5F5DC]/70 flex-grow">{t('settings.reset.description')}</p>
+            <p className="text-xs text-foreground/70 flex-grow">{t('settings.reset.description')}</p>
             <button
               type="button"
               onClick={handleResetData}
