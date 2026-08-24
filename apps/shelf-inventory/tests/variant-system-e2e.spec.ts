@@ -207,7 +207,7 @@ test.describe('Variant System — Full E2E Coverage', () => {
     // Check highlights inside variant rows
     const row1 = getVariantRowLocator(page, 1);
     const plasticoBtn = row1.locator('button', { hasText: 'Plástico' });
-    await expect(plasticoBtn).toHaveClass(/22C55E/);
+    await expect(plasticoBtn).toHaveClass(/accent-green/);
   });
 
   test('Custom material input: adding a custom material like "Fibra de vidrio" creates a chip', async ({ page }) => {
@@ -269,11 +269,13 @@ test.describe('Variant System — Full E2E Coverage', () => {
     await page.getByText('Con variantes').click();
 
     // Locating the variant row "Material" block
+    // (fix: filter({has}) con locator derivado devolvia 0 elementos —
+    //  se busca el boton directamente dentro de la fila)
     const variantRow = getVariantRowLocator(page, 1);
     const input = variantRow.getByPlaceholder('Valor de material');
-    const materialBlock = variantRow.locator('div').filter({ has: input }).first();
-    const metalBtn = materialBlock.locator('button', { hasText: 'Metal' });
+    const metalBtn = variantRow.locator('button', { hasText: /^Metal$/ });
 
+    await expect(metalBtn).toBeVisible();
     await metalBtn.click();
     await expect(input).toHaveValue('Metal');
   });
