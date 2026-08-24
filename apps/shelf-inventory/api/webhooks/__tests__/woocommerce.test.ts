@@ -137,6 +137,49 @@ describe('WooCommerce webhook handler', () => {
     expect(res.status).toBe(200);
   });
 
+
+  // ── Payload limits and validation ───────────────────────────────────
+  it('returns 413 when content-length exceeds 500KB', async () => {
+    const req = makeWooRequest({});
+    req.headers.set('content-length', '500001');
+    const res = await handler(req);
+    expect(res.status).toBe(413);
+  });
+
+  it('returns 400 for invalid JSON body', async () => {
+    const req = makeWooRequest({});
+    Object.defineProperty(req, 'text', { value: async () => '{invalid-json' });
+    Object.defineProperty(req, 'clone', { value: () => ({ text: async () => '{invalid-json' }) });
+
+    req.headers.set('X-WC-Webhook-Signature', computeHmac('{invalid-json', WEBHOOK_SECRET));
+
+    const res = await handler(req);
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for non-object JSON body', async () => {
+    const req = makeWooRequest({});
+    Object.defineProperty(req, 'text', { value: async () => '"string-body"' });
+    Object.defineProperty(req, 'clone', { value: () => ({ text: async () => '"string-body"' }) });
+
+    req.headers.set('X-WC-Webhook-Signature', computeHmac('"string-body"', WEBHOOK_SECRET));
+
+    const res = await handler(req);
+    expect(res.status).toBe(400);
+  });
+
+
+  it('returns 400 for array JSON body', async () => {
+    const req = makeWooRequest({});
+    Object.defineProperty(req, 'text', { value: async () => '[]' });
+    Object.defineProperty(req, 'clone', { value: () => ({ text: async () => '[]' }) });
+
+    req.headers.set('X-WC-Webhook-Signature', computeHmac('[]', WEBHOOK_SECRET));
+
+    const res = await handler(req);
+    expect(res.status).toBe(400);
+  });
+
   // ── Product parsing (product.updated & product.created) ─────────────
   it('parses product.updated webhook', async () => {
     const wooProduct = {

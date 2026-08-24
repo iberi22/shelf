@@ -108,6 +108,51 @@ describe('Shopify webhook handler', () => {
     expect(res.status).toBe(200);
   });
 
+
+  // ── Payload limits and validation ───────────────────────────────────
+  it('returns 413 when content-length exceeds 500KB', async () => {
+    const req = makeShopifyRequest({});
+    req.headers.set('content-length', '500001');
+    const res = await handler(req);
+    expect(res.status).toBe(413);
+  });
+
+  it('returns 400 for invalid JSON body', async () => {
+    const req = makeShopifyRequest({});
+    // Replace the body with invalid JSON but keep valid HMAC
+    Object.defineProperty(req, 'text', { value: async () => '{invalid-json' });
+    Object.defineProperty(req, 'clone', { value: () => ({ text: async () => '{invalid-json' }) });
+
+    // We also need to update the signature to match the invalid JSON
+    req.headers.set('X-Shopify-Hmac-SHA256', computeHmac('{invalid-json', WEBHOOK_SECRET));
+
+    const res = await handler(req);
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for non-object JSON body', async () => {
+    const req = makeShopifyRequest({});
+    Object.defineProperty(req, 'text', { value: async () => '"string-body"' });
+    Object.defineProperty(req, 'clone', { value: () => ({ text: async () => '"string-body"' }) });
+
+    req.headers.set('X-Shopify-Hmac-SHA256', computeHmac('"string-body"', WEBHOOK_SECRET));
+
+    const res = await handler(req);
+    expect(res.status).toBe(400);
+  });
+
+
+  it('returns 400 for array JSON body', async () => {
+    const req = makeShopifyRequest({});
+    Object.defineProperty(req, 'text', { value: async () => '[]' });
+    Object.defineProperty(req, 'clone', { value: () => ({ text: async () => '[]' }) });
+
+    req.headers.set('X-Shopify-Hmac-SHA256', computeHmac('[]', WEBHOOK_SECRET));
+
+    const res = await handler(req);
+    expect(res.status).toBe(400);
+  });
+
   // ── Product parsing (products/update & products/create) ─────────────
   it('parses product update webhook and calls processWebhookEntity', async () => {
     const shopifyProduct = {
