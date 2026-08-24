@@ -54,7 +54,7 @@ export function InfiniteTable<T>({
     >
       <div className="overflow-x-auto overflow-y-auto no-scrollbar pb-[72px] md:pb-0">
         <table className="w-full text-left border-collapse">
-          <thead className="bg-[#161616] border-b border-white/5 sticky top-0 z-10">{fixedHeaderContent()}</thead>
+          <thead className="bg-primary border-b border-white/5 sticky top-0 z-10">{fixedHeaderContent()}</thead>
           <tbody>
             {pageData.map((item, index) => (
               <tr
@@ -72,18 +72,18 @@ export function InfiniteTable<T>({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex flex-col gap-3 border-t border-white/5 bg-[#161616] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-xs text-[#F5F5DC]/65">
-            Mostrando <span className="font-semibold text-[#F5F5DC]">{startItem}</span>-
-            <span className="font-semibold text-[#F5F5DC]">{endItem}</span> de{' '}
-            <span className="font-semibold text-[#F5F5DC]">{data.length}</span>
+        <div className="flex flex-col gap-3 border-t border-white/5 bg-primary px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-xs text-foreground/65">
+            Mostrando <span className="font-semibold text-foreground">{startItem}</span>-
+            <span className="font-semibold text-foreground">{endItem}</span> de{' '}
+            <span className="font-semibold text-foreground">{data.length}</span>
           </div>
           <div className="flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => setCurrentPage(1)}
               disabled={safePage === 1}
-              className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-[#F5F5DC] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Primera
             </button>
@@ -91,18 +91,18 @@ export function InfiniteTable<T>({
               type="button"
               onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
               disabled={safePage === 1}
-              className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-[#F5F5DC] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Anterior
             </button>
-            <span className="min-w-16 text-center text-xs font-semibold text-[#F5F5DC]/75">
+            <span className="min-w-16 text-center text-xs font-semibold text-foreground/75">
               {safePage} / {totalPages}
             </span>
             <button
               type="button"
               onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
               disabled={safePage === totalPages}
-              className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-[#F5F5DC] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Siguiente
             </button>
@@ -110,7 +110,7 @@ export function InfiniteTable<T>({
               type="button"
               onClick={() => setCurrentPage(totalPages)}
               disabled={safePage === totalPages}
-              className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-[#F5F5DC] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Ultima
             </button>

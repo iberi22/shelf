@@ -183,7 +183,7 @@ const P2PSyncStatusHeader: React.FC = () => {
 
           {/* Pulsing indicator dot */}
           <span
-            className={`absolute top-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-[#1a1a1a] ${
+            className={`absolute top-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-surface-alt ${
               syncStatus === 'synced'
                 ? 'bg-green-500 animate-pulse'
                 : syncStatus === 'syncing'
@@ -212,7 +212,7 @@ const P2PSyncStatusHeader: React.FC = () => {
       {isExpanded && (
         <div className="w-full mt-1 animate-fadeIn transition-all duration-300 space-y-3">
           {/* Premium Glassmorphism Status Bar */}
-          <div className="relative overflow-hidden rounded-xl border border-[#F5F5DC]/25 bg-[#1a1a1a]/85 backdrop-blur-md px-4 py-3 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg">
+          <div className="relative overflow-hidden rounded-xl border border-foreground/25 bg-surface-alt/85 backdrop-blur-md px-4 py-3 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg">
             {/* Connection status section */}
             <div className="flex items-center gap-3">
               <div className="relative flex items-center justify-center">
@@ -227,7 +227,7 @@ const P2PSyncStatusHeader: React.FC = () => {
                 )}
                 {/* Status pulsing dot */}
                 <span
-                  className={`absolute top-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-[#1a1a1a] ${
+                  className={`absolute top-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-surface-alt ${
                     syncStatus === 'synced'
                       ? 'bg-green-500 animate-pulse'
                       : syncStatus === 'syncing'
@@ -239,7 +239,7 @@ const P2PSyncStatusHeader: React.FC = () => {
 
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#F5F5DC]/55 font-semibold uppercase tracking-wider">
+                  <span className="text-xs text-foreground/55 font-semibold uppercase tracking-wider">
                     {t('p2pSync.topBar.status') || 'Estado'}
                   </span>
                   <span
@@ -261,28 +261,28 @@ const P2PSyncStatusHeader: React.FC = () => {
                 {state.localPeerId ? (
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span
-                      className="text-[10px] text-[#F5F5DC]/50 font-mono select-all truncate max-w-[200px] sm:max-w-xs"
+                      className="text-[10px] text-foreground/50 font-mono select-all truncate max-w-[200px] sm:max-w-xs"
                       data-testid="local-peer-id-display"
                     >
                       {t('p2pSync.topBar.localNode') || 'Nodo Local'}: {state.localPeerId}
                     </span>
                     <button
                       onClick={handleCopyPeerId}
-                      className="p-1 text-[#F5F5DC]/60 hover:text-[#F5F5DC] hover:bg-white/5 rounded transition-colors"
+                      className="p-1 text-foreground/60 hover:text-foreground hover:bg-white/5 rounded transition-colors"
                       title={t('p2pSync.topBar.copyId') || 'Copiar ID'}
                     >
                       {copied ? <Check size={11} className="text-green-400" /> : <Copy size={11} />}
                     </button>
                   </div>
                 ) : (
-                  <span className="text-[10px] text-[#F5F5DC]/30 mt-0.5 animate-pulse">Initializing P2P node...</span>
+                  <span className="text-[10px] text-foreground/30 mt-0.5 animate-pulse">Initializing P2P node...</span>
                 )}
               </div>
             </div>
 
             {/* Stats indicators */}
-            <div className="flex items-center flex-wrap justify-center gap-4 sm:gap-6 text-xs text-[#F5F5DC]/80">
-              <div className="px-3 py-1.5 bg-[#121212] rounded-lg border border-[#F5F5DC]/10 flex items-center gap-2">
+            <div className="flex items-center flex-wrap justify-center gap-4 sm:gap-6 text-xs text-foreground/80">
+              <div className="px-3 py-1.5 bg-surface rounded-lg border border-foreground/10 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
                 <span>
                   {t('p2pSync.topBar.connectedNodes') || 'Dispositivos Conectados'}:{' '}
@@ -290,7 +290,7 @@ const P2PSyncStatusHeader: React.FC = () => {
                 </span>
               </div>
 
-              <div className="px-3 py-1.5 bg-[#121212] rounded-lg border border-[#F5F5DC]/10 capitalize">
+              <div className="px-3 py-1.5 bg-surface rounded-lg border border-foreground/10 capitalize">
                 <span>
                   {t('p2pSync.roleLabel') || 'Rol'}: <strong className="text-yellow-400">{state.role}</strong>
                 </span>
@@ -318,7 +318,7 @@ const P2PSyncStatusHeader: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setIsResolverOpen(true)}
-                  className="flex-1 sm:flex-initial px-3.5 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-[#1a1a1a] rounded-lg text-xs font-bold transition-colors active:scale-95"
+                  className="flex-1 sm:flex-initial px-3.5 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-surface-alt rounded-lg text-xs font-bold transition-colors active:scale-95"
                 >
                   {t('p2pSync.topBar.resolve') || 'Resolver'}
                 </button>

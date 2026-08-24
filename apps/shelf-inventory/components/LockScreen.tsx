@@ -41,14 +41,14 @@ const LockScreen: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[300] bg-[#0a0a0a] flex flex-col items-center justify-center p-6">
+    <div className="fixed inset-0 z-[300] bg-background flex flex-col items-center justify-center p-6">
       <div className={`w-full max-w-sm transition-transform duration-200 ${error ? 'animate-shake' : ''}`}>
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-[#F5F5DC]/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#F5F5DC]/20">
+          <div className="w-20 h-20 bg-foreground/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-foreground/20">
             <span className="text-4xl">🔐</span>
           </div>
-          <h2 className="text-2xl font-bold text-[#F5F5DC]">{t('auth.lockedTitle') || 'Aplicación Bloqueada'}</h2>
-          <p className="text-[#F5F5DC]/60 mt-2">
+          <h2 className="text-2xl font-bold text-foreground">{t('auth.lockedTitle') || 'Aplicación Bloqueada'}</h2>
+          <p className="text-foreground/60 mt-2">
             {t('auth.lockedDescription') || 'Ingresa tu PIN o Contraseña para continuar'}
           </p>
         </div>
@@ -68,7 +68,7 @@ const LockScreen: React.FC = () => {
               setError(false);
             }}
             placeholder="ContraseÃ±a o PIN"
-            className="mb-6 w-full rounded-xl border border-[#F5F5DC]/20 bg-[#1a1a1a] px-4 py-3 text-center text-[#F5F5DC] placeholder:text-[#F5F5DC]/35 focus:border-[#F5F5DC]/50 focus:outline-none"
+            className="mb-6 w-full rounded-xl border border-foreground/20 bg-surface-alt px-4 py-3 text-center text-foreground placeholder:text-foreground/35 focus:border-foreground/50 focus:outline-none"
           />
 
           <div className="flex justify-center gap-3 mb-10 flex-wrap">
@@ -76,7 +76,7 @@ const LockScreen: React.FC = () => {
               <div
                 key={i}
                 className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
-                  pin.length > i ? 'bg-[#F5F5DC] border-[#F5F5DC] scale-110' : 'border-[#F5F5DC]/30'
+                  pin.length > i ? 'bg-foreground border-foreground scale-110' : 'border-foreground/30'
                 } ${error ? 'border-red-500 bg-red-500' : ''}`}
               />
             ))}
@@ -88,7 +88,7 @@ const LockScreen: React.FC = () => {
                 key={num}
                 type="button"
                 onClick={() => handleNumberClick(num)}
-                className="w-16 h-16 rounded-full bg-[#1a1a1a] text-2xl font-bold text-[#F5F5DC] hover:bg-[#F5F5DC]/10 active:scale-90 transition-all flex items-center justify-center border border-[#F5F5DC]/5"
+                className="w-16 h-16 rounded-full bg-surface-alt text-2xl font-bold text-foreground hover:bg-foreground/10 active:scale-90 transition-all flex items-center justify-center border border-foreground/5"
               >
                 {num}
               </button>
@@ -96,21 +96,21 @@ const LockScreen: React.FC = () => {
             <button
               type="button"
               onClick={() => setPin('')}
-              className="w-16 h-16 rounded-full flex items-center justify-center text-[#F5F5DC]/40 hover:text-[#F5F5DC] transition-colors"
+              className="w-16 h-16 rounded-full flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors"
             >
               ✕
             </button>
             <button
               type="button"
               onClick={() => handleNumberClick('0')}
-              className="w-16 h-16 rounded-full bg-[#1a1a1a] text-2xl font-bold text-[#F5F5DC] hover:bg-[#F5F5DC]/10 active:scale-90 transition-all flex items-center justify-center border border-[#F5F5DC]/5"
+              className="w-16 h-16 rounded-full bg-surface-alt text-2xl font-bold text-foreground hover:bg-foreground/10 active:scale-90 transition-all flex items-center justify-center border border-foreground/5"
             >
               0
             </button>
             <button
               type="button"
               onClick={handleDelete}
-              className="w-16 h-16 rounded-full flex items-center justify-center text-[#F5F5DC]/40 hover:text-[#F5F5DC] transition-colors"
+              className="w-16 h-16 rounded-full flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors"
             >
               ⌫
             </button>
@@ -118,7 +118,7 @@ const LockScreen: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full mt-10 bg-[#F5F5DC] text-[#0a0a0a] font-bold py-4 rounded-xl hover:bg-opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-10 bg-foreground text-background font-bold py-4 rounded-xl hover:bg-opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={pin.length === 0}
           >
             {t('auth.unlock') || 'Desbloquear'}
@@ -128,7 +128,7 @@ const LockScreen: React.FC = () => {
               type="button"
               data-testid="biometric-unlock-button"
               onClick={handleBiometricUnlock}
-              className="mt-3 w-full rounded-xl border border-[#F5F5DC]/20 py-3 font-bold text-[#F5F5DC] transition-colors hover:bg-[#F5F5DC]/10 active:scale-[0.98]"
+              className="mt-3 w-full rounded-xl border border-foreground/20 py-3 font-bold text-foreground transition-colors hover:bg-foreground/10 active:scale-[0.98]"
             >
               Usar huella digital
             </button>

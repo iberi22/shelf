@@ -274,7 +274,7 @@ const AIChat: React.FC = () => {
     <div className="flex flex-col h-[50vh] md:h-[60vh] p-3 md:p-4" data-testid="ai-chat-panel">
       <div className="flex flex-col gap-1 mb-2 px-1">
         <div className="flex justify-between items-center gap-2">
-          <p className="text-[10px] text-[#F5F5DC]/40 italic">
+          <p className="text-[10px] text-foreground/40 italic">
             {t('reports.aiPrivacyNote') ||
               'Note: A limited subset of your inventory and sales data is used to provide context.'}
           </p>
@@ -282,7 +282,7 @@ const AIChat: React.FC = () => {
             value={aiEngine}
             data-testid="ai-engine-select"
             onChange={(e) => setAiEngine(e.target.value as 'auto' | 'cloud' | 'local' | 'gemini' | 'nano')}
-            className="text-[10px] bg-transparent border border-[#F5F5DC]/20 rounded px-1 py-0.5 text-[#F5F5DC]/60 focus:outline-none"
+            className="text-[10px] bg-transparent border border-foreground/20 rounded px-1 py-0.5 text-foreground/60 focus:outline-none"
             disabled={false}
           >
             <option value="auto">Auto</option>
@@ -292,7 +292,7 @@ const AIChat: React.FC = () => {
             <option value="nano">Nano</option>
           </select>
         </div>
-        <p className="text-[10px] text-[#F5F5DC]/50" data-testid="ai-engine-hint">
+        <p className="text-[10px] text-foreground/50" data-testid="ai-engine-hint">
           {engineHint}
         </p>
       </div>
@@ -300,8 +300,8 @@ const AIChat: React.FC = () => {
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         {isInitializing && (
           <div className="flex flex-col items-center justify-center h-full space-y-2">
-            <div className="w-8 h-8 border-2 border-[#F5F5DC] border-t-transparent rounded-full animate-spin" />
-            <p className="text-xs text-[#F5F5DC]">
+            <div className="w-8 h-8 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs text-foreground">
               {t('reports.aiLoadingModel').replace('{{progress}}', initProgress.toString())}
             </p>
           </div>
@@ -309,12 +309,12 @@ const AIChat: React.FC = () => {
         {messages.length === 0 && !isInitializing && (
           <div className="flex flex-col gap-3 max-w-md w-full">
             <div className="flex justify-start">
-              <div className="p-3 rounded-lg bg-[#F5F5DC]/10 w-full">
+              <div className="p-3 rounded-lg bg-foreground/10 w-full">
                 <div className="flex justify-between items-start mb-2">
                   <p className="text-sm whitespace-pre-wrap font-bold">{t('reports.aiWelcome')}</p>
                   <button
                     onClick={() => setShowHelp(!showHelp)}
-                    className="text-[#F5F5DC]/60 hover:text-[#F5F5DC] transition-colors"
+                    className="text-foreground/60 hover:text-foreground transition-colors"
                     title="How it works"
                   >
                     <Info className="w-4 h-4" />
@@ -322,7 +322,7 @@ const AIChat: React.FC = () => {
                 </div>
                 {showHelp && (
                   <div
-                    className="text-xs text-[#F5F5DC]/80 space-y-2 mt-3 border-t border-[#F5F5DC]/10 pt-2"
+                    className="text-xs text-foreground/80 space-y-2 mt-3 border-t border-foreground/10 pt-2"
                     data-testid="ai-help-panel"
                   >
                     <p>
@@ -349,7 +349,7 @@ const AIChat: React.FC = () => {
         {messages.map((msg, index) => (
           <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-xs md:max-w-md p-3 rounded-lg ${msg.role === 'user' ? 'bg-[#F5F5DC] text-[#121212]' : 'bg-[#F5F5DC]/10'}`}
+              className={`max-w-xs md:max-w-md p-3 rounded-lg ${msg.role === 'user' ? 'bg-foreground text-surface' : 'bg-foreground/10'}`}
             >
               <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
             </div>
@@ -357,7 +357,7 @@ const AIChat: React.FC = () => {
         ))}
         {isLoading && !isInitializing && (
           <div className="flex justify-start">
-            <div className="max-w-xs md:max-w-md p-3 rounded-lg bg-[#F5F5DC]/10">
+            <div className="max-w-xs md:max-w-md p-3 rounded-lg bg-foreground/10">
               <p className="text-sm animate-pulse">{t('reports.aiThinking')}</p>
             </div>
           </div>
@@ -366,7 +366,7 @@ const AIChat: React.FC = () => {
 
       {error && <p className="text-red-400 text-sm my-2 text-center">{error}</p>}
 
-      <div className="mt-4 flex gap-2 border-t border-[#F5F5DC]/20 pt-4">
+      <div className="mt-4 flex gap-2 border-t border-foreground/20 pt-4">
         <input
           type="text"
           data-testid="ai-chat-input"
@@ -374,7 +374,7 @@ const AIChat: React.FC = () => {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
           placeholder={t('reports.aiPlaceholder')}
-          className="flex-1 min-w-0 p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5F5DC] text-sm"
+          className="flex-1 min-w-0 p-2 bg-surface border border-foreground/30 rounded-md focus:outline-none focus:ring-1 focus:ring-foreground text-sm"
           disabled={isLoading || isInitializing}
         />
         <button
@@ -382,7 +382,7 @@ const AIChat: React.FC = () => {
           data-testid="ai-chat-send"
           onClick={handleSendMessage}
           disabled={isLoading || !input.trim() || isInitializing}
-          className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-opacity-80 transition-all active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
+          className="bg-foreground text-surface font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-opacity-80 transition-all active:scale-95 disabled:bg-opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? '🤔' : '➤'}
         </button>

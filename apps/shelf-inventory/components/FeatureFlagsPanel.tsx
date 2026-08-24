@@ -15,8 +15,8 @@ const FeatureFlagsPanel: React.FC = () => {
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h3 className="text-lg font-bold text-[#F5F5DC]">Control de Funcionalidades (GitCore)</h3>
-          <p className="text-xs text-[#F5F5DC]/70 mt-1">
+          <h3 className="text-lg font-bold text-foreground">Control de Funcionalidades (GitCore)</h3>
+          <p className="text-xs text-foreground/70 mt-1">
             Protocolo: v{featuresMetadata.protocol_version} | Proyecto: {featuresMetadata.project_display} v
             {featuresMetadata.version}
           </p>
@@ -32,7 +32,7 @@ const FeatureFlagsPanel: React.FC = () => {
         )}
       </div>
 
-      <div className="bg-background/30 rounded-lg p-3 mb-4 text-xs text-[#F5F5DC]/70 border border-[#F5F5DC]/10 flex flex-col md:flex-row md:justify-around gap-2 text-center">
+      <div className="bg-background/30 rounded-lg p-3 mb-4 text-xs text-foreground/70 border border-foreground/10 flex flex-col md:flex-row md:justify-around gap-2 text-center">
         <div>
           Progreso: <strong>{featuresMetadata.implementation_percentage}%</strong>
         </div>
@@ -62,16 +62,16 @@ const FeatureFlagsPanel: React.FC = () => {
             <div
               key={feature.id}
               className={`flex items-start justify-between p-3 rounded-lg border transition-all ${
-                enabled ? 'bg-[#4ADE80]/5 border-[#4ADE80]/20' : 'bg-[#ef4444]/5 border-[#ef4444]/10 opacity-70'
+                enabled ? 'bg-accent-green/5 border-accent-green/20' : 'bg-accent-red/5 border-accent-red/10 opacity-70'
               }`}
             >
               <div className="flex-1 min-w-0 pr-4">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono text-[10px] font-bold bg-[#121212] px-1.5 py-0.5 rounded border border-[#F5F5DC]/10 text-[#F5F5DC]/80">
+                  <span className="font-mono text-[10px] font-bold bg-surface px-1.5 py-0.5 rounded border border-foreground/10 text-foreground/80">
                     {feature.id}
                   </span>
-                  <h4 className="font-bold text-sm text-[#F5F5DC] truncate">{feature.name}</h4>
-                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-background/50 text-[#F5F5DC]/60">
+                  <h4 className="font-bold text-sm text-foreground truncate">{feature.name}</h4>
+                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-background/50 text-foreground/60">
                     {feature.category}
                   </span>
                   <span
@@ -91,13 +91,13 @@ const FeatureFlagsPanel: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-[#F5F5DC]/60 mt-1.5 leading-relaxed">{feature.description}</p>
+                <p className="text-xs text-foreground/60 mt-1.5 leading-relaxed">{feature.description}</p>
                 {feature.technologies && feature.technologies.length > 0 && (
                   <div className="flex gap-1.5 mt-2 flex-wrap">
                     {feature.technologies.map((tech) => (
                       <span
                         key={tech}
-                        className="text-[10px] text-[#F5F5DC]/40 bg-[#121212]/30 px-1 py-0.2 rounded border border-[#F5F5DC]/5"
+                        className="text-[10px] text-foreground/40 bg-surface/30 px-1 py-0.2 rounded border border-foreground/5"
                       >
                         {tech}
                       </span>
@@ -113,7 +113,7 @@ const FeatureFlagsPanel: React.FC = () => {
                     onChange={() => toggleFeature(feature.id)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-[#121212] border border-[#F5F5DC]/20 peer-focus:outline-none rounded-full peer peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-[#121212] peer-checked:after:border-[#121212]"></div>
+                  <div className="w-9 h-5 bg-surface border border-foreground/20 peer-focus:outline-none rounded-full peer peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 peer-checked:after:bg-surface peer-checked:after:border-surface"></div>
                 </label>
               </div>
             </div>
