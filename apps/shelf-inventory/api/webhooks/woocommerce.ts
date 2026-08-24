@@ -22,6 +22,11 @@ export default async function handler(req: Request) {
     return new Response('Method Not Allowed', { status: 405 });
   }
 
+  const contentLength = req.headers.get('content-length');
+  if (contentLength && parseInt(contentLength, 10) > 500000) {
+    return new Response('Payload Too Large', { status: 413 });
+  }
+
   const wooSecret = process.env.WOOCOMMERCE_WEBHOOK_SECRET;
   if (!wooSecret) {
     console.error('WOOCOMMERCE_WEBHOOK_SECRET is not configured');
@@ -34,7 +39,21 @@ export default async function handler(req: Request) {
   }
 
   const topic = req.headers.get('X-WC-Webhook-Topic');
-  const body = await req.json();
+  const bodyText = await req.text();
+  if (bodyText.length > 500000) {
+    return new Response('Payload Too Large', { status: 413 });
+  }
+
+  let body;
+  try {
+    body = JSON.parse(bodyText);
+  } catch (e) {
+    return new Response('Bad Request', { status: 400 });
+  }
+
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return new Response('Bad Request', { status: 400 });
+  }
 
   const peerId = 'woocommerce-webhook-bot';
 

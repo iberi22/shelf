@@ -41,3 +41,8 @@
 **Vulnerability:** The `/api/ai/chat.ts` endpoint was exposed without any rate limiting, payload size constraints, or input validation. Because this endpoint proxies requests to a paid external API (OpenRouter) using a server-side secret key, an attacker could abuse it to cause resource exhaustion or run up significant billing costs.
 **Learning:** Public-facing API routes that proxy requests to paid services must have defensive constraints in place, even if they aren't fully authenticated.
 **Prevention:** Always implement rate limiting (e.g., using `TokenBucketRateLimiter` keyed by IP), payload size limits (e.g., 50KB), and strict input validation (checking required fields and maximum string lengths) on unauthenticated or lightly authenticated API endpoints.
+
+## 2025-02-27 - [Add payload size and schema validation to webhook endpoints]
+**Vulnerability:** Webhook handlers (`apps/shelf-inventory/api/webhooks/shopify.ts` and `apps/shelf-inventory/api/webhooks/woocommerce.ts`) did not validate payload size or schema structure before reading request bodies (`req.clone().text()` and `req.json()`), which could lead to resource exhaustion/DoS.
+**Learning:** Public or semi-public API endpoints, including those that verify HMAC signatures, should fail fast on overly large payloads and properly validate incoming JSON schemas (ensuring they are plain objects, not arrays or primitives) to avoid bloat and unexpected errors during parsing.
+**Prevention:** Implement `content-length` header checks (falling back to checking `bodyText.length`) to restrict payload sizes (e.g., 500KB limit). Always validate that parsed JSON bodies are objects (`!body || typeof body !== 'object' || Array.isArray(body)`) before attempting to extract data.
