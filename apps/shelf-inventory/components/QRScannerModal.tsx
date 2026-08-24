@@ -137,10 +137,10 @@ export default function QRScannerModal({ onScan, onClose }: QRScannerModalProps)
 
   const content = (
     <div className="fixed inset-0 z-[100] flex h-[var(--app-height,100vh)] items-end justify-center overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm sm:items-center sm:p-4">
-      <div className="flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-t-2xl bg-[#1a1a1a] border border-[#F5F5DC]/20 shadow-2xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:max-w-md sm:rounded-lg">
-        <div className="flex items-start justify-between gap-3 border-b border-[#F5F5DC]/10 p-4">
-          <h2 className="min-w-0 flex-1 text-lg font-bold text-[#F5F5DC] sm:text-xl">Escanear Código QR</h2>
-          <button onClick={onClose} className="shrink-0 text-2xl font-bold text-[#F5F5DC]/50 hover:text-[#F5F5DC]">
+      <div className="flex max-h-[calc(var(--app-height,100vh)-1.5rem)] w-full max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-t-2xl bg-surface-alt border border-foreground/20 shadow-2xl sm:max-h-[calc(var(--app-height,100vh)-2rem)] sm:max-w-md sm:rounded-lg">
+        <div className="flex items-start justify-between gap-3 border-b border-foreground/10 p-4">
+          <h2 className="min-w-0 flex-1 text-lg font-bold text-foreground sm:text-xl">Escanear Código QR</h2>
+          <button onClick={onClose} className="shrink-0 text-2xl font-bold text-foreground/50 hover:text-foreground">
             &times;
           </button>
         </div>
@@ -150,14 +150,14 @@ export default function QRScannerModal({ onScan, onClose }: QRScannerModalProps)
 
           {cameras.length > 1 && (
             <div className="w-full mb-4">
-              <label htmlFor="camera-select" className="block text-xs font-medium text-[#F5F5DC]/60 mb-1">
+              <label htmlFor="camera-select" className="block text-xs font-medium text-foreground/60 mb-1">
                 Seleccionar Cámara
               </label>
               <select
                 id="camera-select"
                 value={activeCameraId}
                 onChange={handleCameraChange}
-                className="w-full rounded-md border border-[#F5F5DC]/30 bg-[#121212] py-2 px-3 text-[#F5F5DC] focus:outline-none focus:border-yellow-400"
+                className="w-full rounded-md border border-foreground/30 bg-surface py-2 px-3 text-foreground focus:outline-none focus:border-yellow-400"
               >
                 {cameras.map((camera) => (
                   <option key={camera.id} value={camera.id}>
@@ -170,13 +170,13 @@ export default function QRScannerModal({ onScan, onClose }: QRScannerModalProps)
 
           <div
             id="qr-reader"
-            className="w-full overflow-hidden rounded-lg bg-black border border-[#F5F5DC]/10 flex items-center justify-center min-h-[300px]"
+            className="w-full overflow-hidden rounded-lg bg-black border border-foreground/10 flex items-center justify-center min-h-[300px]"
           >
-            {!isScanning && !error && <div className="text-[#F5F5DC]/50 animate-pulse">Iniciando cámara...</div>}
+            {!isScanning && !error && <div className="text-foreground/50 animate-pulse">Iniciando cámara...</div>}
           </div>
         </div>
 
-        <div className="border-t border-[#F5F5DC]/10 p-4">
+        <div className="border-t border-foreground/10 p-4">
           <button
             onClick={onClose}
             className="w-full rounded bg-[#333] px-4 py-2 font-bold text-white transition-colors hover:bg-[#444]"
