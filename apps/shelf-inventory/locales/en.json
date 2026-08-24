@@ -241,6 +241,12 @@
   "settings": {
     "languageDescription": "Change the interface language.",
     "title": "Settings",
+    "appearance": {
+      "title": "Appearance",
+      "description": "Switch between the original Shelf look and the SWAL ecosystem edge-hive theme.",
+      "themeClassic": "Classic",
+      "themeSwal": "SWAL Hive"
+    },
     "general": {
       "title": "General"
     },

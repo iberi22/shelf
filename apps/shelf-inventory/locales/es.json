@@ -241,6 +241,12 @@
   "settings": {
     "languageDescription": "Cambia el idioma de la interfaz desde configuración.",
     "title": "Configuración",
+    "appearance": {
+      "title": "Apariencia",
+      "description": "Cambia entre el aspecto original de Shelf y el tema edge-hive del ecosistema SWAL.",
+      "themeClassic": "Clásico",
+      "themeSwal": "SWAL Hive"
+    },
     "general": {
       "title": "General"
     },

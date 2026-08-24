@@ -241,6 +241,12 @@
   "settings": {
     "languageDescription": "Change the interface language.",
     "title": "Settings",
+    "appearance": {
+      "title": "Appearance",
+      "description": "Switch between the original Shelf look and the SWAL ecosystem edge-hive theme.",
+      "themeClassic": "Classic",
+      "themeSwal": "SWAL Hive"
+    },
     "general": {
       "title": "General"
     },
@@ -432,6 +438,7 @@
     "saleItemsRequired": "A sale must have at least one item.",
     "selectProduct": "Please select a product.",
     "insufficientStock": "Insufficient stock. Available: {{stock}}.",
+    "offlineCapExceeded": "Offline reservation cap exceeded. Authorized cap: {{cap}}.",
     "quantityPositive": "Quantity must be a positive number.",
     "poItemsRequired": "A purchase order must have at least one item.",
     "poItemQuantityPositive": "Item quantity must be a positive number.",
@@ -618,6 +625,7 @@
       "syncing": "Syncing...",
       "disconnected": "Disconnected",
       "conflictsFound": "{{count}} product conflicts",
+      "businessConflictsFound": "⚠️ Negative stock detected! {{count}} product(s) in conflict from offline sales.",
       "resolve": "Resolve",
       "autoMerge": "Auto-Merge",
       "copyId": "Copy ID",
@@ -626,13 +634,17 @@
     },
     "conflictResolver": {
       "title": "Resolve Product Conflicts",
+      "businessTitle": "Resolve Stock Conflicts (Concurrency)",
       "warning": "The following products have the same SKU or name but different details. Choose which product's details to keep. Quantities will be combined.",
+      "businessWarning": "Simultaneous sales have been detected that exceeded the actual available stock. Choose to adjust nominal stock or cancel one of the sales to balance the inventory.",
       "keepThis": "Keep this product's details",
       "mergeBtn": "Merge Group",
       "autoMergeAll": "Auto-Merge All",
       "noConflicts": "No product conflicts found.",
+      "noBusinessConflicts": "No negative stock conflicts detected.",
       "groupLabel": "Conflict on {{type}}: {{key}}",
       "quantityMerged": "Combined Quantity: {{qty}}",
+      "negativeStockDetail": "Initial Stock: {{initial}} | Sold: {{sold}} | Discrepancy: {{diff}}",
       "price": "Price: {{val}}",
       "cost": "Cost: {{val}}",
       "updatedAt": "Updated: {{val}}",
