@@ -379,7 +379,7 @@ const Inventory: React.FC = () => {
               placeholder={t('inventory.searchPlaceholder')}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full p-2.5 pl-9 bg-[#1e1e1e] border border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4ADE80] text-sm text-white"
+              className="w-full p-2.5 pl-9 bg-panel border border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-accent-green text-sm text-white"
               data-testid="inventory-search-input"
             />
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
@@ -427,7 +427,7 @@ const Inventory: React.FC = () => {
                 <button
                   onClick={() => handleOpenModal()}
                   disabled={isProcessingBatch}
-                  className="flex-1 sm:flex-none bg-[#4ADE80] text-[#161616] font-bold py-2.5 px-6 rounded-lg hover:bg-[#22C55E] transition-all duration-200 active:scale-95 text-sm disabled:opacity-50 shadow-[0_0_15px_rgba(74,222,128,0.2)]"
+                  className="flex-1 sm:flex-none bg-accent-green text-primary font-bold py-2.5 px-6 rounded-lg hover:bg-accent-green transition-all duration-200 active:scale-95 text-sm disabled:opacity-50 shadow-[0_0_15px_rgba(74,222,128,0.2)]"
                   data-testid="add-product-button"
                 >
                   {t('inventory.addProduct')}
@@ -442,7 +442,7 @@ const Inventory: React.FC = () => {
         <InfiniteTable
           data={filteredProducts}
           height="calc(100vh - 200px)"
-          emptyContent={<div className="text-center p-8 text-[#F5F5DC]/70">{t('inventory.empty')}</div>}
+          emptyContent={<div className="text-center p-8 text-foreground/70">{t('inventory.empty')}</div>}
           onItemClick={(product) => handleOpenModal(product)}
           fixedHeaderContent={() => (
             <tr className="text-xs md:text-sm text-neutral-400 font-medium tracking-wide">
@@ -509,8 +509,8 @@ const Inventory: React.FC = () => {
                     className="h-8 w-8 md:h-10 md:w-10 rounded-md object-cover"
                   />
                 ) : (
-                  <div className="h-8 w-8 md:h-10 md:w-10 rounded-md bg-[#F5F5DC]/10 flex items-center justify-center text-base md:text-lg">
-                    <Package2 className="h-5 w-5 text-[#F5F5DC]/45" aria-hidden="true" />
+                  <div className="h-8 w-8 md:h-10 md:w-10 rounded-md bg-foreground/10 flex items-center justify-center text-base md:text-lg">
+                    <Package2 className="h-5 w-5 text-foreground/45" aria-hidden="true" />
                   </div>
                 )}
               </td>
@@ -519,12 +519,12 @@ const Inventory: React.FC = () => {
                   {product.name}
                 </div>
                 {getVariantSummary(product) && (
-                  <div className="mt-1 text-[10px] text-[#F5F5DC]/45 truncate" title={getVariantSummary(product)}>
+                  <div className="mt-1 text-[10px] text-foreground/45 truncate" title={getVariantSummary(product)}>
                     {getVariantSummary(product)}
                   </div>
                 )}
                 {getCustomFieldSummary(product) && (
-                  <div className="mt-1 text-[10px] text-[#F5F5DC]/55 truncate" title={getCustomFieldSummary(product)}>
+                  <div className="mt-1 text-[10px] text-foreground/55 truncate" title={getCustomFieldSummary(product)}>
                     {getCustomFieldSummary(product)}
                   </div>
                 )}
@@ -538,13 +538,13 @@ const Inventory: React.FC = () => {
               <td className="p-2 md:p-4 whitespace-nowrap">
                 <div className="flex items-center gap-2">
                   {product.quantity > 0 && product.quantity <= lowStockThreshold ? (
-                    <div className="flex items-center gap-1.5 bg-[#EAB308]/10 text-[#EAB308] px-2.5 py-1 rounded-full text-xs font-bold border border-[#EAB308]/20 glow-text-yellow w-max">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#EAB308] animate-pulse"></div>
+                    <div className="flex items-center gap-1.5 bg-accent-yellow/10 text-accent-yellow px-2.5 py-1 rounded-full text-xs font-bold border border-accent-yellow/20 glow-text-yellow w-max">
+                      <div className="w-1.5 h-1.5 rounded-full bg-accent-yellow animate-pulse"></div>
                       {product.quantity}
                     </div>
                   ) : product.quantity > 0 ? (
-                    <div className="flex items-center gap-1.5 bg-[#4ADE80]/10 text-[#4ADE80] px-2.5 py-1 rounded-full text-xs font-bold border border-[#4ADE80]/20 glow-text-green w-max">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#4ADE80]"></div>
+                    <div className="flex items-center gap-1.5 bg-accent-green/10 text-accent-green px-2.5 py-1 rounded-full text-xs font-bold border border-accent-green/20 glow-text-green w-max">
+                      <div className="w-1.5 h-1.5 rounded-full bg-accent-green"></div>
                       {product.quantity}
                     </div>
                   ) : (
@@ -644,38 +644,38 @@ const Inventory: React.FC = () => {
             <div
               key={product.id}
               data-testid={`product-card-${product.id}`}
-              className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-xl active:scale-[0.98] transition-transform overflow-hidden cursor-pointer"
+              className="w-full bg-surface-alt border border-foreground/20 rounded-xl active:scale-[0.98] transition-transform overflow-hidden cursor-pointer"
               onClick={() => handleOpenModal(product)}
             >
               <div className="flex items-start gap-3 p-2.5">
                 {product.imageUrl ? (
                   <img src={product.imageUrl} alt={product.name} className="h-11 w-11 rounded-lg object-cover" />
                 ) : (
-                  <div className="h-11 w-11 rounded-lg bg-[#F5F5DC]/10 flex items-center justify-center text-xl shrink-0">
-                    <Package2 className="h-5 w-5 text-[#F5F5DC]/45" aria-hidden="true" />
+                  <div className="h-11 w-11 rounded-lg bg-foreground/10 flex items-center justify-center text-xl shrink-0">
+                    <Package2 className="h-5 w-5 text-foreground/45" aria-hidden="true" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm text-[#F5F5DC] leading-tight line-clamp-2" title={product.name}>
+                  <h3 className="font-semibold text-sm text-foreground leading-tight line-clamp-2" title={product.name}>
                     {product.name}
                   </h3>
                   {getVariantSummary(product) && (
-                    <p className="text-[10px] text-[#F5F5DC]/45 mt-1 line-clamp-1" title={getVariantSummary(product)}>
+                    <p className="text-[10px] text-foreground/45 mt-1 line-clamp-1" title={getVariantSummary(product)}>
                       {getVariantSummary(product)}
                     </p>
                   )}
                   {getCustomFieldSummary(product) && (
                     <p
-                      className="text-[10px] text-[#F5F5DC]/55 mt-1 line-clamp-2"
+                      className="text-[10px] text-foreground/55 mt-1 line-clamp-2"
                       title={getCustomFieldSummary(product)}
                     >
                       {getCustomFieldSummary(product)}
                     </p>
                   )}
                   {product.sku ? (
-                    <p className="text-[10px] text-[#F5F5DC]/40 mt-0.5 font-mono">{product.sku}</p>
+                    <p className="text-[10px] text-foreground/40 mt-0.5 font-mono">{product.sku}</p>
                   ) : (
-                    <p className="text-[10px] text-[#F5F5DC]/20 mt-0.5 italic">{t('common.notAvailable')}</p>
+                    <p className="text-[10px] text-foreground/20 mt-0.5 italic">{t('common.notAvailable')}</p>
                   )}
                 </div>
                 {canEdit && (
@@ -714,7 +714,7 @@ const Inventory: React.FC = () => {
                     return (
                       <span
                         key={`${product.id}-${field.key}`}
-                        className="inline-flex items-center gap-1 bg-[#F5F5DC]/8 px-1.5 py-0.5 rounded-full text-[10px] text-[#F5F5DC]/80"
+                        className="inline-flex items-center gap-1 bg-foreground/8 px-1.5 py-0.5 rounded-full text-[10px] text-foreground/80"
                       >
                         {field.type === 'color' ? (
                           <span
@@ -733,43 +733,43 @@ const Inventory: React.FC = () => {
                     );
                   })}
                   {(product.variantAttributes?.length ?? 0) > 0 && (
-                    <span className="inline-flex items-center gap-1 bg-[#4ADE80]/10 px-1.5 py-0.5 rounded-full text-[10px] text-[#4ADE80]">
+                    <span className="inline-flex items-center gap-1 bg-accent-green/10 px-1.5 py-0.5 rounded-full text-[10px] text-accent-green">
                       {product.variants?.length || 0} variantes
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="flex border-t border-[#F5F5DC]/8">
-                <div className="flex-1 flex items-center justify-center gap-1 py-2 px-1.5 border-r border-[#F5F5DC]/8">
-                  <span className="text-[9px] uppercase tracking-wider text-[#F5F5DC]/50">{t('common.stock')}</span>
+              <div className="flex border-t border-foreground/8">
+                <div className="flex-1 flex items-center justify-center gap-1 py-2 px-1.5 border-r border-foreground/8">
+                  <span className="text-[9px] uppercase tracking-wider text-foreground/50">{t('common.stock')}</span>
                   <span
-                    className={`text-xs font-bold ${product.quantity > 0 && product.quantity <= lowStockThreshold ? 'text-yellow-400' : 'text-[#F5F5DC]'}`}
+                    className={`text-xs font-bold ${product.quantity > 0 && product.quantity <= lowStockThreshold ? 'text-yellow-400' : 'text-foreground'}`}
                   >
                     {product.quantity}
                   </span>
                 </div>
-                <div className="flex-1 flex items-center justify-center gap-1 py-2 px-1.5 border-r border-[#F5F5DC]/8">
-                  <span className="text-[9px] uppercase tracking-wider text-[#F5F5DC]/50">{t('common.price')}</span>
-                  <span className="text-xs font-bold text-[#F5F5DC]">{formatCurrency(product.price)}</span>
+                <div className="flex-1 flex items-center justify-center gap-1 py-2 px-1.5 border-r border-foreground/8">
+                  <span className="text-[9px] uppercase tracking-wider text-foreground/50">{t('common.price')}</span>
+                  <span className="text-xs font-bold text-foreground">{formatCurrency(product.price)}</span>
                 </div>
                 <div className="flex-1 flex items-center justify-center gap-1 py-2 px-1.5">
-                  <span className="text-[9px] uppercase tracking-wider text-[#F5F5DC]/50">{t('common.cost')}</span>
-                  <span className="text-xs font-bold text-[#F5F5DC]/70">{formatCurrency(product.cost)}</span>
+                  <span className="text-[9px] uppercase tracking-wider text-foreground/50">{t('common.cost')}</span>
+                  <span className="text-xs font-bold text-foreground/70">{formatCurrency(product.cost)}</span>
                 </div>
               </div>
             </div>
           ))
         ) : (
           <div
-            className="text-center py-10 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-xl"
+            className="text-center py-10 text-foreground/70 bg-surface-alt border border-foreground/20 rounded-xl"
             data-testid="empty-inventory-message"
           >
             {t('inventory.empty')}
           </div>
         )}
         {filteredProducts.length > 0 && (
-          <p className="text-center text-[10px] text-[#F5F5DC]/40" data-testid="mobile-list-count">
+          <p className="text-center text-[10px] text-foreground/40" data-testid="mobile-list-count">
             {t('inventory.showingCount', {
               shown: Math.min(mobileVisibleCount, filteredProducts.length),
               total: filteredProducts.length,
@@ -795,11 +795,11 @@ const Inventory: React.FC = () => {
       {isProcessingBatch &&
         createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 p-6 rounded-lg max-w-sm w-full shadow-2xl flex flex-col items-center text-center gap-4">
-              <div className="w-12 h-12 border-4 border-[#F5F5DC]/20 border-t-yellow-500 rounded-full animate-spin"></div>
-              <h3 className="font-bold text-[#F5F5DC] text-lg">{t('inventory.batchProcessing')}</h3>
-              <p className="text-sm text-[#F5F5DC]/70">{t('inventory.batchCompiling')}</p>
-              <span className="font-mono text-yellow-400 font-bold bg-[#121212] px-3 py-1.5 rounded border border-[#F5F5DC]/10">
+            <div className="bg-surface-alt border border-foreground/30 p-6 rounded-lg max-w-sm w-full shadow-2xl flex flex-col items-center text-center gap-4">
+              <div className="w-12 h-12 border-4 border-foreground/20 border-t-yellow-500 rounded-full animate-spin"></div>
+              <h3 className="font-bold text-foreground text-lg">{t('inventory.batchProcessing')}</h3>
+              <p className="text-sm text-foreground/70">{t('inventory.batchCompiling')}</p>
+              <span className="font-mono text-yellow-400 font-bold bg-surface px-3 py-1.5 rounded border border-foreground/10">
                 {batchProgress}
               </span>
             </div>
@@ -1312,7 +1312,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
       <form onSubmit={handleSubmit} onPaste={handlePaste} data-testid="product-form" className="min-w-0">
         <div className="space-y-4 min-w-0">
           <div className="relative flex flex-col sm:flex-row items-center gap-4 overflow-visible">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#121212] border border-[#F5F5DC]/30 rounded-md flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-surface border border-foreground/30 rounded-md flex items-center justify-center flex-shrink-0 overflow-hidden">
               {imageUrl ? (
                 <button
                   type="button"
@@ -1323,7 +1323,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   <img src={imageUrl} alt={t('common.product')} className="w-full h-full object-cover rounded-md" />
                 </button>
               ) : (
-                <Package2 className="h-8 w-8 text-[#F5F5DC]/50" aria-hidden="true" />
+                <Package2 className="h-8 w-8 text-foreground/50" aria-hidden="true" />
               )}
             </div>
             <div className="flex flex-col gap-2">
@@ -1337,7 +1337,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
               />
               <label
                 htmlFor="productImage"
-                className="cursor-pointer bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-all text-sm text-center active:scale-95"
+                className="cursor-pointer bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg hover:bg-foreground/10 transition-all text-sm text-center active:scale-95"
               >
                 {imageUrl ? t('inventory.form.changeImage') : t('inventory.form.uploadImage')}
               </label>
@@ -1352,7 +1352,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
               )}
             </div>
             {imagePreviewUrl && (
-              <div className="absolute left-0 top-full z-20 mt-3 w-[min(18rem,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#0f0f0f] p-3 shadow-2xl sm:left-full sm:top-0 sm:ml-3 sm:mt-0">
+              <div className="absolute left-0 top-full z-20 mt-3 w-[min(18rem,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-surface-deep p-3 shadow-2xl sm:left-full sm:top-0 sm:ml-3 sm:mt-0">
                 <button
                   type="button"
                   onClick={handleCloseImagePreview}
@@ -1383,7 +1383,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
               placeholder={t('inventory.form.namePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className={`w-full p-2 bg-[#121212] border rounded-md ${errors.name ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
+              className={`w-full p-2 bg-surface border rounded-md ${errors.name ? 'border-red-400/70' : 'border-foreground/30'}`}
             />
             {errors.name && (
               <p data-testid="product-name-error" className="text-red-400 text-xs mt-1">
@@ -1399,13 +1399,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
               placeholder={t('inventory.form.skuPlaceholder')}
               value={sku}
               onChange={(e) => setSku(e.target.value)}
-              className="flex-grow p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md"
+              className="flex-grow p-2 bg-surface border border-foreground/30 rounded-md"
             />
             <button
               data-testid="open-scanner-button"
               type="button"
               onClick={() => setIsScannerOpen(true)}
-              className="p-2.5 bg-transparent border border-[#F5F5DC]/50 rounded-md hover:bg-[#F5F5DC]/10 transition-colors flex-shrink-0 active:scale-95"
+              className="p-2.5 bg-transparent border border-foreground/50 rounded-md hover:bg-foreground/10 transition-colors flex-shrink-0 active:scale-95"
               aria-label={t('scanner.title')}
             >
               <svg
@@ -1427,11 +1427,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
           </div>
 
           <div>
-            <label className="block text-xs text-[#F5F5DC]/60 mb-1.5">{t('common.supplier')}</label>
+            <label className="block text-xs text-foreground/60 mb-1.5">{t('common.supplier')}</label>
             <select
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
-              className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F5F5DC] text-sm text-[#F5F5DC]"
+              className="w-full p-2 bg-surface border border-foreground/30 rounded-md focus:outline-none focus:ring-1 focus:ring-foreground text-sm text-foreground"
               data-testid="product-supplier-input"
             >
               <option value="">{t('common.notAvailable')}</option>
@@ -1446,7 +1446,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
           </div>
 
           {useVariants && (
-            <div className="rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 space-y-4 min-w-0">
+            <div className="rounded-xl border border-foreground/15 bg-surface-deep p-4 space-y-4 min-w-0">
               {inventoryConfig.fields.map((field) => {
                 const fieldValue = getFieldValue(field.key);
                 const isColorField = field.type === 'color';
@@ -1457,7 +1457,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
 
                 return (
                   <div key={field.id} className="space-y-2">
-                    <label className="block text-xs text-[#F5F5DC]/60">{field.label}</label>
+                    <label className="block text-xs text-foreground/60">{field.label}</label>
                     {isColorField && (
                       <div className="flex flex-wrap gap-2">
                         {inventoryConfig.colorOptions.map((preset) => (
@@ -1468,7 +1468,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                             className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 ${
                               fieldValue === preset.name
                                 ? 'border-white scale-110 ring-2 ring-white/30'
-                                : 'border-[#F5F5DC]/20 hover:scale-105'
+                                : 'border-foreground/20 hover:scale-105'
                             }`}
                             style={{ backgroundColor: preset.hex }}
                             title={preset.name}
@@ -1488,8 +1488,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                               onClick={() => setFieldValue(field.key, selected ? '' : suggestion)}
                               className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
                                 selected
-                                  ? 'border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308]'
-                                  : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
+                                  ? 'border-accent-yellow/60 bg-accent-yellow/15 text-accent-yellow'
+                                  : 'border-foreground/20 bg-white/5 text-foreground/75 hover:bg-white/10'
                               }`}
                             >
                               {suggestion}
@@ -1504,7 +1504,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       placeholder={field.label}
                       value={fieldValue}
                       onChange={(e) => setFieldValue(field.key, e.target.value)}
-                      className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-sm"
+                      className="w-full p-2 bg-surface border border-foreground/30 rounded-md text-sm"
                     />
                   </div>
                 );
@@ -1512,9 +1512,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
             </div>
           )}
 
-          <div className="rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 space-y-4 min-w-0">
+          <div className="rounded-xl border border-foreground/15 bg-surface-deep p-4 space-y-4 min-w-0">
             {isEditing && (
-              <div className="grid grid-cols-2 gap-2 rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-1">
+              <div className="grid grid-cols-2 gap-2 rounded-lg border border-foreground/10 bg-surface p-1">
                 {[
                   { enabled: false, label: 'Articulo simple', icon: Box },
                   { enabled: true, label: 'Con variantes', icon: Layers3 },
@@ -1535,8 +1535,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       }}
                       className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${
                         selected
-                          ? 'bg-[#F5F5DC] text-[#121212]'
-                          : 'bg-transparent text-[#F5F5DC]/70 hover:bg-white/5 hover:text-[#F5F5DC]'
+                          ? 'bg-foreground text-surface'
+                          : 'bg-transparent text-foreground/70 hover:bg-white/5 hover:text-foreground'
                       }`}
                     >
                       <Icon className="h-4 w-4" aria-hidden="true" />
@@ -1549,8 +1549,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
 
             {!isEditing && (
               <div className="space-y-4">
-                <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
-                  <label className="block text-xs text-[#F5F5DC]/60">
+                <div className="flex flex-col gap-2 rounded-lg bg-surface border border-foreground/10 p-3">
+                  <label className="block text-xs text-foreground/60">
                     Colores (Selecciona o escribe varios para crear variantes)
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -1569,7 +1569,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                           className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 ${
                             selected
                               ? 'border-white scale-110 ring-2 ring-white/30'
-                              : 'border-[#F5F5DC]/20 hover:scale-105'
+                              : 'border-foreground/20 hover:scale-105'
                           }`}
                           style={{ backgroundColor: preset.hex }}
                           title={preset.name}
@@ -1584,7 +1584,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       placeholder="Color personalizado (ej. Azul marino)"
                       value={customColorValue}
                       onChange={(e) => setCustomColorValue(e.target.value)}
-                      className="flex-1 p-1.5 text-xs bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded"
+                      className="flex-1 p-1.5 text-xs bg-panel border border-foreground/20 rounded"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -1598,7 +1598,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     />
                     <button
                       type="button"
-                      className="px-3 py-1.5 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 rounded transition-colors text-[#F5F5DC]"
+                      className="px-3 py-1.5 text-xs bg-foreground/10 hover:bg-foreground/20 rounded transition-colors text-foreground"
                       onClick={() => {
                         const val = customColorValue.trim();
                         if (val && !selectedColors.includes(val)) {
@@ -1611,21 +1611,21 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     </button>
                   </div>
                   {selectedColors.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-[#0f0f0f] rounded border border-[#F5F5DC]/5">
-                      <span className="text-xs text-[#F5F5DC]/50 mr-1">Seleccionados:</span>
+                    <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-surface-deep rounded border border-foreground/5">
+                      <span className="text-xs text-foreground/50 mr-1">Seleccionados:</span>
                       {selectedColors.map((c) => {
                         const preset = inventoryConfig.colorOptions.find((p) => p.name === c);
                         return (
                           <div
                             key={`selc-${c}`}
-                            className="flex items-center gap-1 bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded-full pl-2 pr-1 py-1"
+                            className="flex items-center gap-1 bg-panel border border-foreground/20 rounded-full pl-2 pr-1 py-1"
                           >
                             {preset && <div className="w-3 h-3 rounded-full" style={{ backgroundColor: preset.hex }} />}
-                            <span className="text-xs text-[#F5F5DC]">{c}</span>
+                            <span className="text-xs text-foreground">{c}</span>
                             <button
                               type="button"
                               onClick={() => setSelectedColors((prev) => prev.filter((x) => x !== c))}
-                              className="w-4 h-4 rounded-full hover:bg-red-500/20 text-[#F5F5DC]/50 hover:text-red-300 flex items-center justify-center transition-colors"
+                              className="w-4 h-4 rounded-full hover:bg-red-500/20 text-foreground/50 hover:text-red-300 flex items-center justify-center transition-colors"
                             >
                               ×
                             </button>
@@ -1643,8 +1643,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   )}
                 </div>
 
-                <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
-                  <label className="block text-xs text-[#F5F5DC]/60">Medidas (Selecciona o escribe varias)</label>
+                <div className="flex flex-col gap-2 rounded-lg bg-surface border border-foreground/10 p-3">
+                  <label className="block text-xs text-foreground/60">Medidas (Selecciona o escribe varias)</label>
                   <div className="flex flex-wrap gap-1.5">
                     {inventoryConfig.measureOptions.map((suggestion) => {
                       const selected = selectedSizes.includes(suggestion);
@@ -1660,8 +1660,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                           }}
                           className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
                             selected
-                              ? 'border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308]'
-                              : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
+                              ? 'border-accent-yellow/60 bg-accent-yellow/15 text-accent-yellow'
+                              : 'border-foreground/20 bg-white/5 text-foreground/75 hover:bg-white/10'
                           }`}
                         >
                           {suggestion}
@@ -1675,7 +1675,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       placeholder="Medida personalizada (ej. 35CM)"
                       value={customMeasureValue}
                       onChange={(e) => setCustomMeasureValue(e.target.value)}
-                      className="flex-1 p-1.5 text-xs bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded uppercase"
+                      className="flex-1 p-1.5 text-xs bg-panel border border-foreground/20 rounded uppercase"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -1689,7 +1689,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     />
                     <button
                       type="button"
-                      className="px-3 py-1.5 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 rounded transition-colors text-[#F5F5DC]"
+                      className="px-3 py-1.5 text-xs bg-foreground/10 hover:bg-foreground/20 rounded transition-colors text-foreground"
                       onClick={() => {
                         const val = customMeasureValue.trim().toUpperCase();
                         if (val && !selectedSizes.includes(val)) {
@@ -1702,18 +1702,18 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     </button>
                   </div>
                   {selectedSizes.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-[#0f0f0f] rounded border border-[#F5F5DC]/5">
-                      <span className="text-xs text-[#F5F5DC]/50 mr-1">Seleccionadas:</span>
+                    <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-surface-deep rounded border border-foreground/5">
+                      <span className="text-xs text-foreground/50 mr-1">Seleccionadas:</span>
                       {selectedSizes.map((s) => (
                         <div
                           key={`sels-${s}`}
-                          className="flex items-center gap-1 bg-[#1e1e1e] border border-[#EAB308]/30 rounded-full pl-2 pr-1 py-1"
+                          className="flex items-center gap-1 bg-panel border border-accent-yellow/30 rounded-full pl-2 pr-1 py-1"
                         >
-                          <span className="text-xs text-[#EAB308] font-medium">{s}</span>
+                          <span className="text-xs text-accent-yellow font-medium">{s}</span>
                           <button
                             type="button"
                             onClick={() => setSelectedSizes((prev) => prev.filter((x) => x !== s))}
-                            className="w-4 h-4 rounded-full hover:bg-red-500/20 text-[#F5F5DC]/50 hover:text-red-300 flex items-center justify-center transition-colors"
+                            className="w-4 h-4 rounded-full hover:bg-red-500/20 text-foreground/50 hover:text-red-300 flex items-center justify-center transition-colors"
                           >
                             ×
                           </button>
@@ -1730,8 +1730,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   )}
                 </div>
 
-                <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
-                  <label className="block text-xs text-[#F5F5DC]/60">
+                <div className="flex flex-col gap-2 rounded-lg bg-surface border border-foreground/10 p-3">
+                  <label className="block text-xs text-foreground/60">
                     Versiones o modelos (escribe varios para crear variantes)
                   </label>
                   <div className="flex gap-2 mt-1">
@@ -1740,7 +1740,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       placeholder="Versión o modelo (ej. V2, Modelo 2026)"
                       value={customVersionValue}
                       onChange={(e) => setCustomVersionValue(e.target.value)}
-                      className="flex-1 p-1.5 text-xs bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded"
+                      className="flex-1 p-1.5 text-xs bg-panel border border-foreground/20 rounded"
                       data-testid="version-custom-input"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
@@ -1755,7 +1755,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     />
                     <button
                       type="button"
-                      className="px-3 py-1.5 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 rounded transition-colors text-[#F5F5DC]"
+                      className="px-3 py-1.5 text-xs bg-foreground/10 hover:bg-foreground/20 rounded transition-colors text-foreground"
                       data-testid="version-add-button"
                       onClick={() => {
                         const val = customVersionValue.trim();
@@ -1769,19 +1769,19 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     </button>
                   </div>
                   {selectedVersions.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-[#0f0f0f] rounded border border-[#F5F5DC]/5">
-                      <span className="text-xs text-[#F5F5DC]/50 mr-1">Seleccionadas:</span>
+                    <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-surface-deep rounded border border-foreground/5">
+                      <span className="text-xs text-foreground/50 mr-1">Seleccionadas:</span>
                       {selectedVersions.map((v) => (
                         <div
                           key={`selv-${v}`}
-                          className="flex items-center gap-1 bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded-full pl-2 pr-1 py-1"
+                          className="flex items-center gap-1 bg-panel border border-foreground/20 rounded-full pl-2 pr-1 py-1"
                           data-testid={`version-chip-${v}`}
                         >
-                          <span className="text-xs text-[#F5F5DC]">{v}</span>
+                          <span className="text-xs text-foreground">{v}</span>
                           <button
                             type="button"
                             onClick={() => setSelectedVersions((prev) => prev.filter((x) => x !== v))}
-                            className="w-4 h-4 rounded-full hover:bg-red-500/20 text-[#F5F5DC]/50 hover:text-red-300 flex items-center justify-center transition-colors"
+                            className="w-4 h-4 rounded-full hover:bg-red-500/20 text-foreground/50 hover:text-red-300 flex items-center justify-center transition-colors"
                           >
                             ×
                           </button>
@@ -1798,8 +1798,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   )}
                 </div>
 
-                <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3">
-                  <label className="block text-xs text-[#F5F5DC]/60">Materiales (Selecciona o escribe varios)</label>
+                <div className="flex flex-col gap-2 rounded-lg bg-surface border border-foreground/10 p-3">
+                  <label className="block text-xs text-foreground/60">Materiales (Selecciona o escribe varios)</label>
                   <div className="flex flex-wrap gap-1.5">
                     {inventoryConfig.materialOptions.map((suggestion) => {
                       const selected = selectedMaterials.includes(suggestion);
@@ -1815,8 +1815,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                           }}
                           className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
                             selected
-                              ? 'border-[#22C55E]/60 bg-[#22C55E]/15 text-[#22C55E]'
-                              : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
+                              ? 'border-accent-green/60 bg-accent-green/15 text-accent-green'
+                              : 'border-foreground/20 bg-white/5 text-foreground/75 hover:bg-white/10'
                           }`}
                         >
                           {suggestion}
@@ -1830,7 +1830,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       placeholder="Material personalizado (ej. Fibra de vidrio)"
                       value={customMaterialValue}
                       onChange={(e) => setCustomMaterialValue(e.target.value)}
-                      className="flex-1 p-1.5 text-xs bg-[#1e1e1e] border border-[#F5F5DC]/20 rounded"
+                      className="flex-1 p-1.5 text-xs bg-panel border border-foreground/20 rounded"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -1844,7 +1844,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     />
                     <button
                       type="button"
-                      className="px-3 py-1.5 text-xs bg-[#F5F5DC]/10 hover:bg-[#F5F5DC]/20 rounded transition-colors text-[#F5F5DC]"
+                      className="px-3 py-1.5 text-xs bg-foreground/10 hover:bg-foreground/20 rounded transition-colors text-foreground"
                       onClick={() => {
                         const val = customMaterialValue.trim();
                         if (val && !selectedMaterials.includes(val)) {
@@ -1857,18 +1857,18 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     </button>
                   </div>
                   {selectedMaterials.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-[#0f0f0f] rounded border border-[#F5F5DC]/5">
-                      <span className="text-xs text-[#F5F5DC]/50 mr-1">Seleccionados:</span>
+                    <div className="mt-2 flex flex-wrap gap-2 items-center p-2 bg-surface-deep rounded border border-foreground/5">
+                      <span className="text-xs text-foreground/50 mr-1">Seleccionados:</span>
                       {selectedMaterials.map((m) => (
                         <div
                           key={`selm-${m}`}
-                          className="flex items-center gap-1 bg-[#1e1e1e] border border-[#22C55E]/30 rounded-full pl-2 pr-1 py-1"
+                          className="flex items-center gap-1 bg-panel border border-accent-green/30 rounded-full pl-2 pr-1 py-1"
                         >
-                          <span className="text-xs text-[#22C55E] font-medium">{m}</span>
+                          <span className="text-xs text-accent-green font-medium">{m}</span>
                           <button
                             type="button"
                             onClick={() => setSelectedMaterials((prev) => prev.filter((x) => x !== m))}
-                            className="w-4 h-4 rounded-full hover:bg-red-500/20 text-[#F5F5DC]/50 hover:text-red-300 flex items-center justify-center transition-colors"
+                            className="w-4 h-4 rounded-full hover:bg-red-500/20 text-foreground/50 hover:text-red-300 flex items-center justify-center transition-colors"
                           >
                             ×
                           </button>
@@ -1891,11 +1891,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <h3 className="text-sm font-semibold text-[#F5F5DC]">Atributos de variante</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Atributos de variante</h3>
                     <button
                       type="button"
                       onClick={addVariantAttribute}
-                      className="w-full text-xs bg-[#F5F5DC]/10 px-3 py-2 rounded hover:bg-[#F5F5DC]/20 transition sm:w-auto"
+                      className="w-full text-xs bg-foreground/10 px-3 py-2 rounded hover:bg-foreground/20 transition sm:w-auto"
                     >
                       Agregar más
                     </button>
@@ -1907,7 +1907,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                           type="text"
                           value={label}
                           onChange={(e) => renameVariantAttribute(index, e.target.value)}
-                          className="w-full min-w-0 p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
+                          className="w-full min-w-0 p-2.5 bg-surface border border-foreground/20 rounded-md text-sm"
                           placeholder={`Atributo ${index + 1}`}
                         />
                         <button
@@ -1922,12 +1922,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 rounded-lg bg-[#121212] border border-[#F5F5DC]/10 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-2 rounded-lg bg-surface border border-foreground/10 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <div className="text-[#F5F5DC]/70">Cantidad total</div>
-                    <div className="font-bold text-[#F5F5DC]">{aggregateQuantity}</div>
+                    <div className="text-foreground/70">Cantidad total</div>
+                    <div className="font-bold text-foreground">{aggregateQuantity}</div>
                   </div>
-                  <div className="text-left text-xs text-[#F5F5DC]/55 sm:text-right">
+                  <div className="text-left text-xs text-foreground/55 sm:text-right">
                     La cantidad final se calcula como la suma de las variantes.
                   </div>
                 </div>
@@ -1936,10 +1936,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   {variantRows.map((row, rowIndex) => (
                     <div
                       key={row.id}
-                      className="rounded-xl border border-[#F5F5DC]/15 bg-[#121212] p-3 space-y-3 min-w-0"
+                      className="rounded-xl border border-foreground/15 bg-surface p-3 space-y-3 min-w-0"
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#F5F5DC]/45">
+                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/45">
                           Variante {rowIndex + 1}
                         </div>
                         <button
@@ -1954,7 +1954,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
                         {variantAttributes.map((label) => (
                           <div key={`${row.id}-${label}`} className="min-w-0">
-                            <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">{label}</label>
+                            <label className="block text-[11px] text-foreground/55 mb-1">{label}</label>
                             {isColorAttribute(label, inventoryConfig) && (
                               <div className="flex flex-wrap gap-1.5 mb-2 max-w-full">
                                 {inventoryConfig.colorOptions.map((preset) => {
@@ -1969,7 +1969,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                       className={`w-7 h-7 rounded-full border-2 transition-all active:scale-90 ${
                                         selected
                                           ? 'border-white scale-110 ring-2 ring-white/30'
-                                          : 'border-[#F5F5DC]/20 hover:scale-105'
+                                          : 'border-foreground/20 hover:scale-105'
                                       }`}
                                       style={{ backgroundColor: preset.hex }}
                                       title={preset.name}
@@ -1992,8 +1992,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                       }
                                       className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
                                         selected
-                                          ? 'border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308]'
-                                          : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
+                                          ? 'border-accent-yellow/60 bg-accent-yellow/15 text-accent-yellow'
+                                          : 'border-foreground/20 bg-white/5 text-foreground/75 hover:bg-white/10'
                                       }`}
                                     >
                                       {suggestion}
@@ -2016,8 +2016,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                       }
                                       className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
                                         selected
-                                          ? 'border-[#22C55E]/60 bg-[#22C55E]/15 text-[#22C55E]'
-                                          : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
+                                          ? 'border-accent-green/60 bg-accent-green/15 text-accent-green'
+                                          : 'border-foreground/20 bg-white/5 text-foreground/75 hover:bg-white/10'
                                       }`}
                                     >
                                       {suggestion}
@@ -2030,7 +2030,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                               type="text"
                               value={row.attributes?.[label] || ''}
                               onChange={(e) => updateVariantAttributeValue(rowIndex, label, e.target.value)}
-                              className="w-full min-w-0 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded-md text-sm"
+                              className="w-full min-w-0 p-2.5 bg-panel border border-foreground/15 rounded-md text-sm"
                               placeholder={
                                 isVersionAttributeLabel(label)
                                   ? 'Ej. V2, Modelo 2026'
@@ -2040,16 +2040,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                           </div>
                         ))}
                         <div className="min-w-0">
-                          <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">SKU variante</label>
+                          <label className="block text-[11px] text-foreground/55 mb-1">SKU variante</label>
                           <input
                             type="text"
                             value={row.sku}
                             onChange={(e) => updateVariantRow(rowIndex, 'sku', e.target.value)}
-                            className="w-full min-w-0 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded-md text-sm"
+                            className="w-full min-w-0 p-2.5 bg-panel border border-foreground/15 rounded-md text-sm"
                           />
                         </div>
                         <div className="min-w-0">
-                          <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">Cantidad</label>
+                          <label className="block text-[11px] text-foreground/55 mb-1">Cantidad</label>
                           <input
                             type="number"
                             min="0"
@@ -2059,13 +2059,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                             onFocus={(e) => {
                               if (e.currentTarget.value === '0') e.currentTarget.select();
                             }}
-                            className={`w-full min-w-0 p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
-                              errors[`variant_${rowIndex}_quantity`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
+                            className={`w-full min-w-0 p-2.5 bg-panel border rounded-md text-sm ${
+                              errors[`variant_${rowIndex}_quantity`] ? 'border-red-400/70' : 'border-foreground/15'
                             }`}
                           />
                         </div>
                         <div className="min-w-0">
-                          <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">Precio</label>
+                          <label className="block text-[11px] text-foreground/55 mb-1">Precio</label>
                           <input
                             type="number"
                             min="0"
@@ -2075,13 +2075,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                             onFocus={(e) => {
                               if (e.currentTarget.value === '0') e.currentTarget.select();
                             }}
-                            className={`w-full min-w-0 p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
-                              errors[`variant_${rowIndex}_price`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
+                            className={`w-full min-w-0 p-2.5 bg-panel border rounded-md text-sm ${
+                              errors[`variant_${rowIndex}_price`] ? 'border-red-400/70' : 'border-foreground/15'
                             }`}
                           />
                         </div>
                         <div className="min-w-0">
-                          <label className="block text-[11px] text-[#F5F5DC]/55 mb-1">Costo</label>
+                          <label className="block text-[11px] text-foreground/55 mb-1">Costo</label>
                           <input
                             type="number"
                             min="0"
@@ -2091,15 +2091,15 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                             onFocus={(e) => {
                               if (e.currentTarget.value === '0') e.currentTarget.select();
                             }}
-                            className={`w-full min-w-0 p-2.5 bg-[#1e1e1e] border rounded-md text-sm ${
-                              errors[`variant_${rowIndex}_cost`] ? 'border-red-400/70' : 'border-[#F5F5DC]/15'
+                            className={`w-full min-w-0 p-2.5 bg-panel border rounded-md text-sm ${
+                              errors[`variant_${rowIndex}_cost`] ? 'border-red-400/70' : 'border-foreground/15'
                             }`}
                           />
                         </div>
                       </div>
 
                       {Object.values(row.attributes || {}).some(Boolean) && (
-                        <div className="text-xs text-[#F5F5DC]/45">
+                        <div className="text-xs text-foreground/45">
                           {Object.entries(row.attributes)
                             .filter(([, value]) => value)
                             .map(([key, value]) => `${key}: ${value}`)
@@ -2134,7 +2134,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
 
                   return (
                     <div key={field.id} className="space-y-2">
-                      <label className="block text-xs text-[#F5F5DC]/60">{field.label}</label>
+                      <label className="block text-xs text-foreground/60">{field.label}</label>
                       {isColorField && (
                         <div className="flex flex-wrap gap-2">
                           {inventoryConfig.colorOptions.map((preset) => (
@@ -2145,7 +2145,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                               className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 ${
                                 fieldValue === preset.name
                                   ? 'border-white scale-110 ring-2 ring-white/30'
-                                  : 'border-[#F5F5DC]/20 hover:scale-105'
+                                  : 'border-foreground/20 hover:scale-105'
                               }`}
                               style={{ backgroundColor: preset.hex }}
                               title={preset.name}
@@ -2165,8 +2165,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                 onClick={() => setFieldValue(field.key, selected ? '' : suggestion)}
                                 className={`rounded-full border px-2.5 py-1 text-[11px] transition-all active:scale-95 ${
                                   selected
-                                    ? 'border-[#EAB308]/60 bg-[#EAB308]/15 text-[#EAB308]'
-                                    : 'border-[#F5F5DC]/20 bg-white/5 text-[#F5F5DC]/75 hover:bg-white/10'
+                                    ? 'border-accent-yellow/60 bg-accent-yellow/15 text-accent-yellow'
+                                    : 'border-foreground/20 bg-white/5 text-foreground/75 hover:bg-white/10'
                                 }`}
                               >
                                 {suggestion}
@@ -2181,7 +2181,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                         placeholder={field.label}
                         value={fieldValue}
                         onChange={(e) => setFieldValue(field.key, e.target.value)}
-                        className="w-full p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded-md text-sm"
+                        className="w-full p-2 bg-surface border border-foreground/30 rounded-md text-sm"
                       />
                     </div>
                   );
@@ -2198,7 +2198,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                     }}
                     min="0"
                     step="1"
-                    className={`w-full p-2 bg-[#121212] border rounded-md ${errors.quantity ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
+                    className={`w-full p-2 bg-surface border rounded-md ${errors.quantity ? 'border-red-400/70' : 'border-foreground/30'}`}
                   />
                   {errors.quantity && <p className="text-red-400 text-xs mt-1">{errors.quantity}</p>}
                 </div>
@@ -2215,7 +2215,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       }}
                       min="0"
                       step="0.01"
-                      className={`w-full p-2 bg-[#121212] border rounded-md ${errors.price ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
+                      className={`w-full p-2 bg-surface border rounded-md ${errors.price ? 'border-red-400/70' : 'border-foreground/30'}`}
                     />
                     {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price}</p>}
                   </div>
@@ -2231,7 +2231,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                       }}
                       min="0"
                       step="0.01"
-                      className={`w-full p-2 bg-[#121212] border rounded-md ${errors.cost ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
+                      className={`w-full p-2 bg-surface border rounded-md ${errors.cost ? 'border-red-400/70' : 'border-foreground/30'}`}
                     />
                     {errors.cost && <p className="text-red-400 text-xs mt-1">{errors.cost}</p>}
                   </div>
@@ -2241,7 +2241,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
               <>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-[#F5F5DC]">
+                    <h3 className="text-sm font-semibold text-foreground">
                       {`Variantes (${getComboEntries(selectedColors, selectedSizes, selectedVersions, selectedMaterials).length})`}
                     </h3>
                   </div>
@@ -2273,15 +2273,15 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                           return (
                             <div
                               key={`combo-${i}`}
-                              className="rounded-lg border border-[#F5F5DC]/15 bg-[#121212] p-3 space-y-2"
+                              className="rounded-lg border border-foreground/15 bg-surface p-3 space-y-2"
                               data-testid={`combo-card-${label}`}
                             >
-                              <div className="text-xs font-semibold text-[#F5F5DC]/60 uppercase tracking-wide">
+                              <div className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">
                                 {label}
                               </div>
                               <div className="grid grid-cols-3 gap-2">
                                 <div>
-                                  <label className="block text-[10px] text-[#F5F5DC]/50 mb-0.5">Cant</label>
+                                  <label className="block text-[10px] text-foreground/50 mb-0.5">Cant</label>
                                   <input
                                     type="number"
                                     min="0"
@@ -2293,11 +2293,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                         [key]: { ...(prev[key] || val), quantity: Number(e.target.value) },
                                       }));
                                     }}
-                                    className="w-full p-1.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded text-xs"
+                                    className="w-full p-1.5 bg-panel border border-foreground/15 rounded text-xs"
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-[10px] text-[#F5F5DC]/50 mb-0.5">Precio</label>
+                                  <label className="block text-[10px] text-foreground/50 mb-0.5">Precio</label>
                                   <input
                                     type="number"
                                     min="0"
@@ -2309,11 +2309,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                         [key]: { ...(prev[key] || val), price: Number(e.target.value) },
                                       }));
                                     }}
-                                    className="w-full p-1.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded text-xs"
+                                    className="w-full p-1.5 bg-panel border border-foreground/15 rounded text-xs"
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-[10px] text-[#F5F5DC]/50 mb-0.5">Costo</label>
+                                  <label className="block text-[10px] text-foreground/50 mb-0.5">Costo</label>
                                   <input
                                     type="number"
                                     min="0"
@@ -2325,7 +2325,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                                         [key]: { ...(prev[key] || val), cost: Number(e.target.value) },
                                       }));
                                     }}
-                                    className="w-full p-1.5 bg-[#1e1e1e] border border-[#F5F5DC]/15 rounded text-xs"
+                                    className="w-full p-1.5 bg-panel border border-foreground/15 rounded text-xs"
                                   />
                                 </div>
                               </div>
@@ -2345,7 +2345,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   />
                 )}
 
-                <div className="flex items-center gap-2 text-xs text-[#F5F5DC]/50">
+                <div className="flex items-center gap-2 text-xs text-foreground/50">
                   <Ruler className="h-3 w-3" />
                   <span>
                     {[
@@ -2364,20 +2364,20 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
         </div>
 
         {productHistory.length > 0 && (
-          <div className="mt-5 rounded-xl border border-[#F5F5DC]/15 bg-[#0f0f0f] p-4 min-w-0">
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#F5F5DC]">
-              <History className="h-4 w-4 text-[#F5F5DC]/70" aria-hidden="true" />
+          <div className="mt-5 rounded-xl border border-foreground/15 bg-surface-deep p-4 min-w-0">
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <History className="h-4 w-4 text-foreground/70" aria-hidden="true" />
               Historial de cambios
             </div>
             <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
               {productHistory.map((entry) => (
                 <div
                   key={entry.id}
-                  className="grid grid-cols-1 gap-3 rounded-lg border border-[#F5F5DC]/10 bg-[#121212] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                  className="grid grid-cols-1 gap-3 rounded-lg border border-foreground/10 bg-surface p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                 >
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-[#F5F5DC]">{entry.snapshot.name}</div>
-                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#F5F5DC]/55">
+                    <div className="truncate text-sm font-semibold text-foreground">{entry.snapshot.name}</div>
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground/55">
                       <span>{new Date(entry.updatedAt).toLocaleString()}</span>
                       <span>Cant. {entry.snapshot.quantity}</span>
                       <span>Precio {entry.snapshot.price}</span>
@@ -2386,7 +2386,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
                   <button
                     type="button"
                     onClick={() => restoreProductVersion(entry.id)}
-                    className="inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-md border border-[#F5F5DC]/20 px-3 py-2 text-xs font-semibold text-[#F5F5DC] hover:bg-white/5 sm:w-auto"
+                    className="inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-md border border-foreground/20 px-3 py-2 text-xs font-semibold text-foreground hover:bg-white/5 sm:w-auto"
                   >
                     <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                     Restaurar
@@ -2402,14 +2402,14 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSave, onCancel }) 
             data-testid="cancel-product-button"
             type="button"
             onClick={onCancel}
-            className="bg-transparent border border-[#F5F5DC]/50 font-bold py-2 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95"
+            className="bg-transparent border border-foreground/50 font-bold py-2 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95"
           >
             {t('common.cancel')}
           </button>
           <button
             data-testid="save-product-button"
             type="submit"
-            className="bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95"
+            className="bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95"
           >
             {t('common.save')}
           </button>
