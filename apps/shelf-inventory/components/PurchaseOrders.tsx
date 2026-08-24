@@ -119,11 +119,11 @@ const PurchaseOrders: React.FC = () => {
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 flex-wrap">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#F5F5DC] shrink-0">{t('purchases.title')}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground shrink-0">{t('purchases.title')}</h2>
         {canEdit && (
           <button
             onClick={() => handleOpenModal()}
-            className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
+            className="w-full sm:w-auto bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
             data-testid="add-purchase-order-button"
           >
             {t('purchases.addPurchaseOrder')}
@@ -136,7 +136,7 @@ const PurchaseOrders: React.FC = () => {
         <InfiniteTable
           data={sortedPOs}
           height="calc(100vh - 200px)"
-          emptyContent={<div className="text-center p-8 text-[#F5F5DC]/70">{t('purchases.empty')}</div>}
+          emptyContent={<div className="text-center p-8 text-foreground/70">{t('purchases.empty')}</div>}
           fixedHeaderContent={() => (
             <tr>
               <SortableHeader sortKey="supplierName" labelKey="common.supplier" />
@@ -205,12 +205,12 @@ const PurchaseOrders: React.FC = () => {
           sortedPOs.map((po) => (
             <div
               key={po.id}
-              className="w-full bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
+              className="w-full bg-surface-alt border border-foreground/20 rounded-lg p-3 active:scale-[0.98] transition-transform"
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm text-[#F5F5DC] truncate">{po.supplierName}</p>
-                  <p className="text-xs text-[#F5F5DC]/50 mt-0.5">
+                  <p className="font-bold text-sm text-foreground truncate">{po.supplierName}</p>
+                  <p className="text-xs text-foreground/50 mt-0.5">
                     {t('purchases.orderDate')}: {po.orderDate}
                   </p>
                 </div>
@@ -220,11 +220,11 @@ const PurchaseOrders: React.FC = () => {
                   {statusLabel(po.status)}
                 </span>
               </div>
-              <p className="text-xs text-[#F5F5DC]/70 mb-3">
+              <p className="text-xs text-foreground/70 mb-3">
                 {t('common.items')}: {po.items.reduce((sum, item) => sum + item.quantity, 0)}
               </p>
               {canEdit && (
-                <div className="flex gap-2 pt-2 border-t border-[#F5F5DC]/10">
+                <div className="flex gap-2 pt-2 border-t border-foreground/10">
                   <button
                     onClick={() => handleOpenModal(po)}
                     className="flex-1 bg-transparent border border-yellow-500/50 text-yellow-400 font-bold py-2.5 px-3 rounded-lg hover:bg-yellow-500/10 transition-all active:scale-95 text-sm min-h-[44px]"
@@ -259,7 +259,7 @@ const PurchaseOrders: React.FC = () => {
             </div>
           ))
         ) : (
-          <div className="text-center p-8 text-[#F5F5DC]/70 bg-[#1a1a1a] border border-[#F5F5DC]/20 rounded-lg">
+          <div className="text-center p-8 text-foreground/70 bg-surface-alt border border-foreground/20 rounded-lg">
             {t('purchases.empty')}
           </div>
         )}
@@ -429,7 +429,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
           <select
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
-            className={`w-full p-2.5 bg-[#121212] border rounded-md min-h-[44px] ${errors.supplierId ? 'border-red-400/70' : 'border-[#F5F5DC]/30'}`}
+            className={`w-full p-2.5 bg-surface border rounded-md min-h-[44px] ${errors.supplierId ? 'border-red-400/70' : 'border-foreground/30'}`}
             disabled={isEditingReceived}
             data-testid="purchase-order-supplier-select"
           >
@@ -449,11 +449,11 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
 
         <div className="space-y-2">
           {items.map((item, index) => (
-            <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-md bg-[#121212]">
+            <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-md bg-surface">
               <select
                 value={item.productId}
                 onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
-                className="w-full sm:flex-1 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md min-h-[44px]"
+                className="w-full sm:flex-1 p-2.5 bg-panel border border-foreground/30 rounded-md min-h-[44px]"
                 disabled={isEditingReceived}
                 data-testid={`purchase-order-item-product-${index}`}
               >
@@ -473,7 +473,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
                   <select
                     value={item.productVariantId || variants[0]?.id || ''}
                     onChange={(e) => handleItemChange(index, 'productVariantId', e.target.value)}
-                    className="w-full sm:flex-1 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md min-h-[44px]"
+                    className="w-full sm:flex-1 p-2.5 bg-panel border border-foreground/30 rounded-md min-h-[44px]"
                     disabled={isEditingReceived}
                     data-testid={`purchase-order-item-variant-${index}`}
                   >
@@ -492,7 +492,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
                   value={item.quantity}
                   onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                   min="1"
-                  className="w-full sm:w-20 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md min-h-[44px]"
+                  className="w-full sm:w-20 p-2.5 bg-panel border border-foreground/30 rounded-md min-h-[44px]"
                   disabled={isEditingReceived}
                   data-testid={`purchase-order-item-quantity-${index}`}
                 />
@@ -502,7 +502,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
                   onChange={(e) => handleItemChange(index, 'cost', e.target.value)}
                   min="0"
                   step="0.01"
-                  className="w-full sm:w-24 p-2.5 bg-[#1e1e1e] border border-[#F5F5DC]/30 rounded-md min-h-[44px]"
+                  className="w-full sm:w-24 p-2.5 bg-panel border border-foreground/30 rounded-md min-h-[44px]"
                   disabled={isEditingReceived}
                   data-testid={`purchase-order-item-cost-${index}`}
                 />
@@ -537,14 +537,14 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrder, on
         <button
           type="button"
           onClick={onCancel}
-          className="w-full sm:w-auto bg-transparent border border-[#F5F5DC]/50 font-bold py-2.5 px-4 rounded-lg hover:bg-[#F5F5DC]/10 transition-colors active:scale-95 min-h-[44px]"
+          className="w-full sm:w-auto bg-transparent border border-foreground/50 font-bold py-2.5 px-4 rounded-lg hover:bg-foreground/10 transition-colors active:scale-95 min-h-[44px]"
           data-testid="cancel-purchase-order-button"
         >
           {t('common.cancel')}
         </button>
         <button
           type="submit"
-          className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95 min-h-[44px]"
+          className="w-full sm:w-auto bg-foreground text-surface font-bold py-2.5 px-4 rounded-lg hover:bg-opacity-80 transition-opacity active:scale-95 min-h-[44px]"
           disabled={isEditingReceived}
           data-testid="save-purchase-order-button"
         >

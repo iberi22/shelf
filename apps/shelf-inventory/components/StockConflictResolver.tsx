@@ -89,16 +89,16 @@ const StockConflictResolver: React.FC<StockConflictResolverProps> = ({ isOpen, o
 
   const content = (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 rounded-lg max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col my-8 max-h-[85vh]">
+      <div className="bg-surface-alt border border-foreground/30 rounded-lg max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col my-8 max-h-[85vh]">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-[#F5F5DC]/10 bg-[#121212]">
-          <h3 className="font-bold text-[#F5F5DC] flex items-center gap-2 text-lg sm:text-xl">
+        <div className="flex justify-between items-center p-4 border-b border-foreground/10 bg-surface">
+          <h3 className="font-bold text-foreground flex items-center gap-2 text-lg sm:text-xl">
             <AlertTriangle className="text-yellow-400" size={20} />
             {t('p2pSync.conflictResolver.businessTitle') || 'Resolver Conflictos de Stock (Simultaneidad)'}
           </h3>
           <button
             onClick={onClose}
-            className="text-[#F5F5DC]/60 hover:text-[#F5F5DC] p-1 rounded-md hover:bg-white/5 transition-colors"
+            className="text-foreground/60 hover:text-foreground p-1 rounded-md hover:bg-white/5 transition-colors"
           >
             <X size={20} />
           </button>
@@ -107,7 +107,7 @@ const StockConflictResolver: React.FC<StockConflictResolverProps> = ({ isOpen, o
         {/* Content */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
           {conflicts.length === 0 ? (
-            <div className="text-center py-12 text-[#F5F5DC]/50">
+            <div className="text-center py-12 text-foreground/50">
               <Sparkles size={48} className="mx-auto mb-3 text-green-400/80 animate-pulse" />
               <p className="text-sm font-medium">
                 {t('p2pSync.conflictResolver.noBusinessConflicts') || 'No se detectaron conflictos de stock negativo.'}
@@ -115,7 +115,7 @@ const StockConflictResolver: React.FC<StockConflictResolverProps> = ({ isOpen, o
             </div>
           ) : (
             <>
-              <p className="text-xs sm:text-sm text-[#F5F5DC]/70 leading-relaxed bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-md">
+              <p className="text-xs sm:text-sm text-foreground/70 leading-relaxed bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-md">
                 ⚠️{' '}
                 {t('p2pSync.conflictResolver.businessWarning') ||
                   'Se han detectado ventas simultáneas que excedieron el stock real disponible. Elige ajustar el stock nominal o cancelar una de las ventas para equilibrar el inventario.'}
@@ -128,14 +128,14 @@ const StockConflictResolver: React.FC<StockConflictResolverProps> = ({ isOpen, o
                   return (
                     <div
                       key={conflict.id}
-                      className="border border-[#F5F5DC]/20 bg-[#121212]/50 p-4 rounded-lg space-y-4"
+                      className="border border-foreground/20 bg-surface/50 p-4 rounded-lg space-y-4"
                       data-testid={`stock-conflict-group-${conflict.id}`}
                     >
                       {/* Product Header */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#F5F5DC]/10 pb-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-foreground/10 pb-3">
                         <div className="flex flex-col">
                           <span
-                            className="font-bold text-sm text-[#F5F5DC]"
+                            className="font-bold text-sm text-foreground"
                             data-testid={`conflict-product-name-${conflict.id}`}
                           >
                             {conflict.productName} {conflict.variantLabel ? `- ${conflict.variantLabel}` : ''}
@@ -157,12 +157,12 @@ const StockConflictResolver: React.FC<StockConflictResolverProps> = ({ isOpen, o
                       {/* Resolution Choices */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Option 1: Adjust Nominal Stock */}
-                        <div className="p-4 rounded-lg bg-[#1a1a1a] border border-[#F5F5DC]/10 flex flex-col justify-between space-y-4">
+                        <div className="p-4 rounded-lg bg-surface-alt border border-foreground/10 flex flex-col justify-between space-y-4">
                           <div>
-                            <span className="block font-bold text-xs text-[#F5F5DC] uppercase tracking-wider mb-1">
+                            <span className="block font-bold text-xs text-foreground uppercase tracking-wider mb-1">
                               Opción A: Ajustar Stock
                             </span>
-                            <p className="text-xs text-[#F5F5DC]/60 leading-relaxed">
+                            <p className="text-xs text-foreground/60 leading-relaxed">
                               Mantén todas las ventas. Registra un nuevo nivel de stock para este producto.
                             </p>
                           </div>
@@ -174,13 +174,13 @@ const StockConflictResolver: React.FC<StockConflictResolverProps> = ({ isOpen, o
                               placeholder="Nuevo stock..."
                               value={inputVal}
                               onChange={(e) => handleAdjustQuantityChange(conflict.id, e.target.value)}
-                              className="p-2 bg-[#121212] border border-[#F5F5DC]/30 rounded text-xs w-full min-h-[40px]"
+                              className="p-2 bg-surface border border-foreground/30 rounded text-xs w-full min-h-[40px]"
                               data-testid={`adjust-stock-input-${conflict.id}`}
                             />
                             <button
                               onClick={() => handleSaveStockAdjustment(conflict)}
                               disabled={Number.isNaN(inputVal)}
-                              className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed text-[#1a1a1a] font-bold rounded text-xs transition-colors shrink-0 flex items-center gap-1 active:scale-95 min-h-[40px]"
+                              className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed text-surface-alt font-bold rounded text-xs transition-colors shrink-0 flex items-center gap-1 active:scale-95 min-h-[40px]"
                               data-testid={`adjust-stock-btn-${conflict.id}`}
                             >
                               <Check size={14} />
@@ -190,12 +190,12 @@ const StockConflictResolver: React.FC<StockConflictResolverProps> = ({ isOpen, o
                         </div>
 
                         {/* Option 2: Overlapping/Conflicting Sales */}
-                        <div className="p-4 rounded-lg bg-[#1a1a1a] border border-[#F5F5DC]/10 flex flex-col justify-between space-y-4">
+                        <div className="p-4 rounded-lg bg-surface-alt border border-foreground/10 flex flex-col justify-between space-y-4">
                           <div>
-                            <span className="block font-bold text-xs text-[#F5F5DC] uppercase tracking-wider mb-1">
+                            <span className="block font-bold text-xs text-foreground uppercase tracking-wider mb-1">
                               Opción B: Cancelar una Venta
                             </span>
-                            <p className="text-xs text-[#F5F5DC]/60 leading-relaxed mb-3">
+                            <p className="text-xs text-foreground/60 leading-relaxed mb-3">
                               Cancela una de las ventas concurrentes para liberar las unidades reservadas.
                             </p>
 
@@ -211,14 +211,14 @@ const StockConflictResolver: React.FC<StockConflictResolverProps> = ({ isOpen, o
                                 return (
                                   <div
                                     key={sale.id}
-                                    className="p-2.5 bg-[#121212] rounded border border-white/5 flex items-center justify-between text-xs gap-2"
+                                    className="p-2.5 bg-surface rounded border border-white/5 flex items-center justify-between text-xs gap-2"
                                     data-testid={`conflicting-sale-${sale.id}`}
                                   >
                                     <div className="min-w-0 flex-1">
-                                      <p className="font-semibold text-[#F5F5DC] truncate">
+                                      <p className="font-semibold text-foreground truncate">
                                         Venta: {sale.id.slice(0, 8)} - Cant: {saleItem.quantity}
                                       </p>
-                                      <p className="text-[10px] text-[#F5F5DC]/50 mt-0.5">
+                                      <p className="text-[10px] text-foreground/50 mt-0.5">
                                         Por: {sale.updatedBy?.slice(0, 8) || 'local'} |{' '}
                                         {new Date(sale.date).toLocaleTimeString()}
                                       </p>
@@ -246,14 +246,14 @@ const StockConflictResolver: React.FC<StockConflictResolverProps> = ({ isOpen, o
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[#F5F5DC]/10 bg-[#121212] flex flex-col sm:flex-row justify-between gap-3">
-          <div className="text-xs text-[#F5F5DC]/50 self-center">
+        <div className="p-4 border-t border-foreground/10 bg-surface flex flex-col sm:flex-row justify-between gap-3">
+          <div className="text-xs text-foreground/50 self-center">
             {conflicts.length > 0 && `${conflicts.length} conflicto(s) de stock`}
           </div>
           <div className="flex justify-end gap-3 w-full sm:w-auto">
             <button
               onClick={onClose}
-              className="flex-1 sm:flex-initial px-5 py-2.5 bg-[#333] hover:bg-[#444] rounded text-[#F5F5DC] font-medium text-sm transition-colors active:scale-95"
+              className="flex-1 sm:flex-initial px-5 py-2.5 bg-[#333] hover:bg-[#444] rounded text-foreground font-medium text-sm transition-colors active:scale-95"
               data-testid="close-stock-resolver-btn"
             >
               {t('p2pSync.close') || 'Cerrar'}
