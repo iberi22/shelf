@@ -310,14 +310,14 @@ const BranchConfig: React.FC = () => {
         testId="settings-articles-config-card"
       >
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-4">
-          <p className="text-xs text-[#F5F5DC]/70">
+          <p className="text-xs text-foreground/70">
             Ajusta los campos del producto, los atributos de variante y las listas sugeridas de medidas, colores y
             materiales desde aquí.
           </p>
           <button
             type="button"
             onClick={saveInventoryConfig}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#F5F5DC] px-4 py-2.5 text-sm font-bold text-[#121212] min-h-[44px] hover:bg-opacity-80 active:scale-95 md:w-auto cursor-pointer shrink-0"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-4 py-2.5 text-sm font-bold text-surface min-h-[44px] hover:bg-opacity-80 active:scale-95 md:w-auto cursor-pointer shrink-0"
             data-testid="save-inventory-config"
           >
             <Save className="h-4 w-4" aria-hidden="true" />
@@ -327,9 +327,9 @@ const BranchConfig: React.FC = () => {
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-5 mb-5">
           {inventoryConfigSummary.map((item) => (
-            <div key={item.label} className="rounded-md border border-white/10 bg-[#121212] p-3">
-              <div className="text-[11px] uppercase tracking-[0.12em] text-[#F5F5DC]/45">{item.label}</div>
-              <div className="mt-1 text-2xl font-bold text-[#F5F5DC]">{item.value}</div>
+            <div key={item.label} className="rounded-md border border-white/10 bg-surface p-3">
+              <div className="text-[11px] uppercase tracking-[0.12em] text-foreground/45">{item.label}</div>
+              <div className="mt-1 text-2xl font-bold text-foreground">{item.value}</div>
             </div>
           ))}
         </div>
@@ -343,19 +343,19 @@ const BranchConfig: React.FC = () => {
         )}
 
         <div className="space-y-6">
-          <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
+          <div className="rounded-lg border border-white/5 bg-surface p-4 min-w-0">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h4 className="font-semibold text-[#F5F5DC]">Gobierno y sincronizacion</h4>
-                <p className="text-xs text-[#F5F5DC]/55">
+                <h4 className="font-semibold text-foreground">Gobierno y sincronizacion</h4>
+                <p className="text-xs text-foreground/55">
                   Controla cómo el host aplica cambios de productos enviados por otros nodos.
                 </p>
               </div>
-              <span className="rounded-full border border-[#F5F5DC]/15 bg-[#0f0f0f] px-3 py-1 text-xs text-[#F5F5DC]/65 self-start sm:self-center">
+              <span className="rounded-full border border-foreground/15 bg-surface-deep px-3 py-1 text-xs text-foreground/65 self-start sm:self-center">
                 Historial: {inventoryConfigDraft.productHistoryLimit} cambios
               </span>
             </div>
-            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-md border border-[#F5F5DC]/10 bg-[#0f0f0f] p-3">
+            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-md border border-foreground/10 bg-surface-deep p-3">
               <input
                 type="checkbox"
                 checked={inventoryConfigDraft.autoApplyProductUpdates}
@@ -363,10 +363,10 @@ const BranchConfig: React.FC = () => {
                 className="mt-1 h-4 w-4 shrink-0 accent-[#4f9d69]"
               />
               <span className="min-w-0">
-                <span className="block text-sm font-semibold text-[#F5F5DC]">
+                <span className="block text-sm font-semibold text-foreground">
                   Aplicar actualizaciones automáticamente
                 </span>
-                <span className="mt-1 block text-xs text-[#F5F5DC]/55">
+                <span className="mt-1 block text-xs text-foreground/55">
                   Si está activo, los cambios de producto con permiso se aplican sin revisión manual y se conserva una
                   versión anterior para restaurar.
                 </span>
@@ -374,18 +374,18 @@ const BranchConfig: React.FC = () => {
             </label>
           </div>
 
-          <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
+          <div className="rounded-lg border border-white/5 bg-surface p-4 min-w-0">
             <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h4 className="font-semibold text-[#F5F5DC]">Estructura de variantes</h4>
-                <p className="text-xs text-[#F5F5DC]/55">
+                <h4 className="font-semibold text-foreground">Estructura de variantes</h4>
+                <p className="text-xs text-foreground/55">
                   Define que diferencia una variante vendible: Color, Medida o Material.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={addVariantAttribute}
-                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
+                className="w-full bg-transparent border border-foreground/20 text-foreground px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
               >
                 <span className="inline-flex items-center gap-2">
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -399,7 +399,7 @@ const BranchConfig: React.FC = () => {
                   <input
                     value={attribute}
                     onChange={(e) => updateVariantAttribute(index, e.target.value)}
-                    className="w-full min-w-0 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
+                    className="w-full min-w-0 p-2.5 bg-surface-deep border border-foreground/20 rounded-md text-sm"
                     placeholder={`Atributo ${index + 1}`}
                   />
                   <button
@@ -414,16 +414,16 @@ const BranchConfig: React.FC = () => {
             </div>
           </div>
 
-          <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
+          <div className="rounded-lg border border-white/5 bg-surface p-4 min-w-0">
             <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h4 className="font-semibold text-[#F5F5DC]">Listas sugeridas</h4>
-                <p className="text-xs text-[#F5F5DC]/55">Valores rapidos para los campos de tipo medida.</p>
+                <h4 className="font-semibold text-foreground">Listas sugeridas</h4>
+                <p className="text-xs text-foreground/55">Valores rapidos para los campos de tipo medida.</p>
               </div>
               <button
                 type="button"
                 onClick={addMeasureOption}
-                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
+                className="w-full bg-transparent border border-foreground/20 text-foreground px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
                 data-testid="add-measure-option"
               >
                 <span className="inline-flex items-center gap-2">
@@ -438,7 +438,7 @@ const BranchConfig: React.FC = () => {
                   <input
                     value={option}
                     onChange={(e) => updateMeasureOption(index, e.target.value)}
-                    className="w-full min-w-0 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
+                    className="w-full min-w-0 p-2.5 bg-surface-deep border border-foreground/20 rounded-md text-sm"
                     placeholder={`Medida ${index + 1}`}
                     data-testid={`measure-option-input-${index}`}
                   />
@@ -454,18 +454,18 @@ const BranchConfig: React.FC = () => {
             </div>
           </div>
 
-          <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
+          <div className="rounded-lg border border-white/5 bg-surface p-4 min-w-0">
             <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h4 className="font-semibold text-[#F5F5DC]">Colores sugeridos</h4>
-                <p className="text-xs text-[#F5F5DC]/55">
+                <h4 className="font-semibold text-foreground">Colores sugeridos</h4>
+                <p className="text-xs text-foreground/55">
                   Catalogo de colores disponibles al crear o editar productos y sus variantes.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={addColorOption}
-                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
+                className="w-full bg-transparent border border-foreground/20 text-foreground px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
                 data-testid="add-color-option"
               >
                 <span className="inline-flex items-center gap-2">
@@ -484,14 +484,14 @@ const BranchConfig: React.FC = () => {
                     type="color"
                     value={/^#[0-9a-f]{6}$/i.test(option.hex) ? option.hex : '#808080'}
                     onChange={(e) => updateColorOption(index, { hex: e.target.value })}
-                    className="h-10 w-10 shrink-0 cursor-pointer rounded-md border border-[#F5F5DC]/20 bg-[#0f0f0f] p-1"
+                    className="h-10 w-10 shrink-0 cursor-pointer rounded-md border border-foreground/20 bg-surface-deep p-1"
                     aria-label={`Tono de ${option.name || `color ${index + 1}`}`}
                     data-testid={`color-option-hex-${index}`}
                   />
                   <input
                     value={option.name}
                     onChange={(e) => updateColorOption(index, { name: e.target.value })}
-                    className="w-full min-w-0 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
+                    className="w-full min-w-0 p-2.5 bg-surface-deep border border-foreground/20 rounded-md text-sm"
                     placeholder={`Color ${index + 1}`}
                     data-testid={`color-option-name-${index}`}
                   />
@@ -508,18 +508,18 @@ const BranchConfig: React.FC = () => {
             </div>
           </div>
 
-          <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
+          <div className="rounded-lg border border-white/5 bg-surface p-4 min-w-0">
             <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h4 className="font-semibold text-[#F5F5DC]">Materiales sugeridos</h4>
-                <p className="text-xs text-[#F5F5DC]/55">
+                <h4 className="font-semibold text-foreground">Materiales sugeridos</h4>
+                <p className="text-xs text-foreground/55">
                   Catalogo de materiales disponibles al crear o editar productos y sus variantes.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={addMaterialOption}
-                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
+                className="w-full bg-transparent border border-foreground/20 text-foreground px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
                 data-testid="add-material-option"
               >
                 <span className="inline-flex items-center gap-2">
@@ -534,7 +534,7 @@ const BranchConfig: React.FC = () => {
                   <input
                     value={option}
                     onChange={(e) => updateMaterialOption(index, e.target.value)}
-                    className="w-full min-w-0 p-2.5 bg-[#0f0f0f] border border-[#F5F5DC]/20 rounded-md text-sm"
+                    className="w-full min-w-0 p-2.5 bg-surface-deep border border-foreground/20 rounded-md text-sm"
                     placeholder={`Material ${index + 1}`}
                     data-testid={`material-option-input-${index}`}
                   />
@@ -550,18 +550,18 @@ const BranchConfig: React.FC = () => {
             </div>
           </div>
 
-          <div className="rounded-lg border border-white/5 bg-[#121212] p-4 min-w-0">
+          <div className="rounded-lg border border-white/5 bg-surface p-4 min-w-0">
             <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h4 className="font-semibold text-[#F5F5DC]">Ficha maestra del producto</h4>
-                <p className="text-xs text-[#F5F5DC]/55">
+                <h4 className="font-semibold text-foreground">Ficha maestra del producto</h4>
+                <p className="text-xs text-foreground/55">
                   Campos que describen el articulo completo y aparecen al agregar inventario.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={addInventoryField}
-                className="w-full bg-transparent border border-[#F5F5DC]/20 text-[#F5F5DC] px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
+                className="w-full bg-transparent border border-foreground/20 text-foreground px-3 py-2 rounded-md text-xs hover:bg-white/5 sm:w-auto cursor-pointer shrink-0"
               >
                 <span className="inline-flex items-center gap-2">
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -573,19 +573,19 @@ const BranchConfig: React.FC = () => {
               {inventoryConfigDraft.fields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="grid grid-cols-1 gap-2 rounded-md border border-[#F5F5DC]/10 p-3 bg-[#0f0f0f] md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center"
+                  className="grid grid-cols-1 gap-2 rounded-md border border-foreground/10 p-3 bg-surface-deep md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center"
                 >
                   <input
                     value={field.key}
                     onBlur={() => normalizeInventoryFieldAt(index)}
                     onChange={(e) => updateInventoryField(index, { key: e.target.value })}
-                    className="w-full min-w-0 p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
+                    className="w-full min-w-0 p-2.5 bg-surface border border-foreground/20 rounded-md text-sm"
                     placeholder="Clave"
                   />
                   <input
                     value={field.label}
                     onChange={(e) => updateInventoryField(index, { label: e.target.value })}
-                    className="w-full min-w-0 p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
+                    className="w-full min-w-0 p-2.5 bg-surface border border-foreground/20 rounded-md text-sm"
                     placeholder="Etiqueta"
                   />
                   <select
@@ -593,7 +593,7 @@ const BranchConfig: React.FC = () => {
                     onChange={(e) =>
                       updateInventoryField(index, { type: e.target.value as InventoryFieldDefinition['type'] })
                     }
-                    className="w-full min-w-0 p-2.5 bg-[#121212] border border-[#F5F5DC]/20 rounded-md text-sm"
+                    className="w-full min-w-0 p-2.5 bg-surface border border-foreground/20 rounded-md text-sm"
                   >
                     <option value="text">Texto</option>
                     <option value="color">Color</option>
@@ -622,12 +622,12 @@ const BranchConfig: React.FC = () => {
           testId="settings-branches-card"
         >
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-            <span className="text-xs text-[#F5F5DC]/70">{t('settings.branches.description')}</span>
+            <span className="text-xs text-foreground/70">{t('settings.branches.description')}</span>
             <button
               type="button"
               data-testid="add-branch-button"
               onClick={handleAddBranch}
-              className="w-full sm:w-auto bg-[#F5F5DC] text-[#121212] font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 text-sm active:scale-95 cursor-pointer shrink-0"
+              className="w-full sm:w-auto bg-foreground text-surface font-bold py-2.5 px-4 rounded-lg min-h-[44px] hover:bg-opacity-80 text-sm active:scale-95 cursor-pointer shrink-0"
             >
               <Plus className="h-4 w-4 inline mr-1" />
               {t('settings.branches.add')}
@@ -637,7 +637,7 @@ const BranchConfig: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#F5F5DC]/10 text-[#F5F5DC]/50 text-xs uppercase tracking-wider">
+                <tr className="border-b border-foreground/10 text-foreground/50 text-xs uppercase tracking-wider">
                   <th className="py-3 px-4 font-semibold">{t('settings.branches.table.name')}</th>
                   <th className="py-3 px-4 font-semibold">{t('settings.branches.table.type')}</th>
                   <th className="py-3 px-4 font-semibold hidden md:table-cell">{t('settings.branches.table.id')}</th>
@@ -645,27 +645,27 @@ const BranchConfig: React.FC = () => {
                   <th className="py-3 px-4 font-semibold text-right">{t('settings.branches.table.actions')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F5F5DC]/10">
+              <tbody className="divide-y divide-foreground/10">
                 {state.branches.filter((b) => b.isActive).length > 0 ? (
                   state.branches
                     .filter((b) => b.isActive)
                     .map((branch) => (
-                      <tr key={branch.id} className="text-[#F5F5DC]/90 text-sm hover:bg-white/5 transition-colors">
+                      <tr key={branch.id} className="text-foreground/90 text-sm hover:bg-white/5 transition-colors">
                         <td className="py-4 px-4 font-medium">
                           <div>{branch.name}</div>
                           {branch.address && (
-                            <div className="text-[10px] text-[#F5F5DC]/50 mt-0.5">{branch.address}</div>
+                            <div className="text-[10px] text-foreground/50 mt-0.5">{branch.address}</div>
                           )}
                         </td>
                         <td className="py-4 px-4">
-                          <span className="text-[10px] uppercase tracking-wider bg-[#F5F5DC]/10 px-2 py-0.5 rounded border border-[#F5F5DC]/20">
+                          <span className="text-[10px] uppercase tracking-wider bg-foreground/10 px-2 py-0.5 rounded border border-foreground/20">
                             {branch.type === 'bodega'
                               ? t('settings.branches.types.bodega')
                               : t('settings.branches.types.sucursal')}
                           </span>
                         </td>
                         <td className="py-4 px-4 hidden md:table-cell">
-                          <code className="text-[10px] bg-[#121212] px-1.5 py-0.5 rounded border border-[#F5F5DC]/10 text-[#F5F5DC]/40">
+                          <code className="text-[10px] bg-surface px-1.5 py-0.5 rounded border border-foreground/10 text-foreground/40">
                             {branch.id}
                           </code>
                         </td>
@@ -675,7 +675,7 @@ const BranchConfig: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleEditBranch(branch)}
-                              className="p-2 text-[#4ADE80] hover:bg-[#4ADE80]/10 rounded-md transition-colors cursor-pointer"
+                              className="p-2 text-accent-green hover:bg-accent-green/10 rounded-md transition-colors cursor-pointer"
                               title={t('common.edit')}
                             >
                               <Pencil className="h-4 w-4" />
@@ -694,7 +694,7 @@ const BranchConfig: React.FC = () => {
                     ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="py-10 text-center text-[#F5F5DC]/40 italic">
+                    <td colSpan={5} className="py-10 text-center text-foreground/40 italic">
                       {t('settings.branches.empty')}
                     </td>
                   </tr>
@@ -707,14 +707,14 @@ const BranchConfig: React.FC = () => {
 
       {isBranchModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#1a1a1a] border border-[#F5F5DC]/30 w-full max-w-md rounded-xl shadow-2xl overflow-hidden">
+          <div className="bg-surface-alt border border-foreground/30 w-full max-w-md rounded-xl shadow-2xl overflow-hidden">
             <div className="p-6">
-              <h3 className="text-xl font-bold text-[#F5F5DC] mb-4">
+              <h3 className="text-xl font-bold text-foreground mb-4">
                 {editingBranch ? t('settings.branches.edit') : t('settings.branches.new')}
               </h3>
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="branch-name" className="block text-sm font-medium text-[#F5F5DC]/70 mb-1">
+                  <label htmlFor="branch-name" className="block text-sm font-medium text-foreground/70 mb-1">
                     {t('settings.branches.nameLabel')}
                   </label>
                   <input
@@ -724,11 +724,11 @@ const BranchConfig: React.FC = () => {
                     value={branchName}
                     onChange={(e) => setBranchName(e.target.value)}
                     placeholder={t('settings.branches.namePlaceholder')}
-                    className="w-full p-3 bg-[#121212] border border-[#F5F5DC]/20 rounded-lg text-[#F5F5DC] focus:outline-none focus:ring-2 focus:ring-[#4ADE80]/50 transition-all"
+                    className="w-full p-3 bg-surface border border-foreground/20 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent-green/50 transition-all"
                   />
                 </div>
                 <div>
-                  <label htmlFor="branch-address" className="block text-sm font-medium text-[#F5F5DC]/70 mb-1">
+                  <label htmlFor="branch-address" className="block text-sm font-medium text-foreground/70 mb-1">
                     {t('settings.branches.addressLabel')}
                   </label>
                   <input
@@ -738,11 +738,11 @@ const BranchConfig: React.FC = () => {
                     value={branchAddress}
                     onChange={(e) => setBranchAddress(e.target.value)}
                     placeholder={t('settings.branches.addressPlaceholder')}
-                    className="w-full p-3 bg-[#121212] border border-[#F5F5DC]/20 rounded-lg text-[#F5F5DC] focus:outline-none focus:ring-2 focus:ring-[#4ADE80]/50 transition-all"
+                    className="w-full p-3 bg-surface border border-foreground/20 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent-green/50 transition-all"
                   />
                 </div>
                 <div>
-                  <label htmlFor="branch-type" className="block text-sm font-medium text-[#F5F5DC]/70 mb-1">
+                  <label htmlFor="branch-type" className="block text-sm font-medium text-foreground/70 mb-1">
                     {t('settings.branches.typeLabel')}
                   </label>
                   <select
@@ -750,7 +750,7 @@ const BranchConfig: React.FC = () => {
                     data-testid="branch-type-select"
                     value={branchType}
                     onChange={(e) => setBranchType(e.target.value as 'sucursal' | 'bodega')}
-                    className="w-full p-3 bg-[#121212] border border-[#F5F5DC]/20 rounded-lg text-[#F5F5DC] focus:outline-none focus:ring-2 focus:ring-[#4ADE80]/50 transition-all"
+                    className="w-full p-3 bg-surface border border-foreground/20 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent-green/50 transition-all"
                   >
                     <option value="sucursal">{t('settings.branches.types.sucursal')}</option>
                     <option value="bodega">{t('settings.branches.types.bodega')}</option>
@@ -761,7 +761,7 @@ const BranchConfig: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsBranchModalOpen(false)}
-                  className="flex-1 px-4 py-3 border border-[#F5F5DC]/20 text-[#F5F5DC]/70 rounded-lg font-bold hover:bg-white/5 transition-all active:scale-95 cursor-pointer"
+                  className="flex-1 px-4 py-3 border border-foreground/20 text-foreground/70 rounded-lg font-bold hover:bg-white/5 transition-all active:scale-95 cursor-pointer"
                 >
                   {t('common.cancel')}
                 </button>
@@ -770,7 +770,7 @@ const BranchConfig: React.FC = () => {
                   data-testid="save-branch-button"
                   onClick={handleSaveBranch}
                   disabled={!branchName.trim()}
-                  className="flex-1 px-4 py-3 bg-[#F5F5DC] text-[#121212] rounded-lg font-bold hover:bg-opacity-90 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="flex-1 px-4 py-3 bg-foreground text-surface rounded-lg font-bold hover:bg-opacity-90 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {editingBranch ? t('common.save') : t('settings.branches.add')}
                 </button>
