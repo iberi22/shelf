@@ -63,17 +63,17 @@ test.describe('Mobile Responsive Layout & Interactions', () => {
 
     // It should start unselected (checking its text color/class)
     let className = (await chip.getAttribute('class')) || '';
-    expect(className).not.toContain('text-[#22C55E]');
+    expect(className).not.toContain('text-accent-green');
 
     // Click to select
     await chip.click();
     className = (await chip.getAttribute('class')) || '';
-    expect(className).toContain('text-[#22C55E]');
+    expect(className).toContain('text-accent-green');
 
     // Click again to deselect
     await chip.click();
     className = (await chip.getAttribute('class')) || '';
-    expect(className).not.toContain('text-[#22C55E]');
+    expect(className).not.toContain('text-accent-green');
   });
 
   test("3. Custom material input → keyboard doesn't overlap chips", async ({ page }) => {
