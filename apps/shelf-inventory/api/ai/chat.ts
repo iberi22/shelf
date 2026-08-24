@@ -67,9 +67,10 @@ export default async function handler(req: Request): Promise<Response> {
 
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
+    console.error('OPENROUTER_API_KEY is not configured on the server.');
     return new Response(
       JSON.stringify({
-        error: 'OPENROUTER_API_KEY is not configured on the server.',
+        error: 'Service Unavailable',
       }),
       {
         status: 503,
@@ -145,7 +146,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenRouter API error:', response.status, errorText);
-      return new Response(JSON.stringify({ error: `OpenRouter error: ${response.statusText}`, details: errorText }), {
+      return new Response(JSON.stringify({ error: 'Service Error' }), {
         status: response.status,
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
       });
@@ -176,7 +177,7 @@ export default async function handler(req: Request): Promise<Response> {
     console.error('Error handling /api/ai/chat:', error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Internal Server Error',
+        error: 'Internal Server Error',
       }),
       {
         status: 500,
