@@ -384,6 +384,29 @@ export class DatabaseSyncManager {
     _setMasterPeerId(this._ctx(), peerId);
   }
 
+  /**
+   * Deterministic authority election between two peers (split-brain cure).
+   * Both peers independently compute the SAME winner (lowest peer ID wins),
+   * so after a Yjs metadata merge both converge to one master without
+   * conflicting `authorityPeerId` claims racing in the CRDT.
+   * Returns the elected master ID.
+   */
+  public electMasterWith(remotePeerId: string): string | null {
+    const local = this.localPeerId;
+    if (!local || !remotePeerId) return null;
+    if (!this.isReady) return null;
+    const currentMaster = this.getMasterPeerId();
+    // If a third party is already the stable master, do not steal it.
+    if (currentMaster && currentMaster !== local && currentMaster !== remotePeerId) {
+      return currentMaster;
+    }
+    const winner = [local, remotePeerId].sort()[0];
+    if (winner !== currentMaster) {
+      _setMasterPeerId(this._ctx(), winner);
+    }
+    return winner;
+  }
+
   public getLinkedNodes(): LinkedNodeRecord[] {
     return _getLinkedNodes(this._ctx());
   }

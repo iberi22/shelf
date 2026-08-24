@@ -369,6 +369,17 @@ export function onConnectionOpen(ctx: MessageHandlerContext, conn: DataConnectio
   ctx.health.markConnected(conn.peer);
   ctx.updatePeerList(conn.peer, 'collaborator');
 
+  // Deterministic master election (split-brain cure): both sides compute
+  // the same winner (lowest peer ID), so the Yjs metadata merge never sees
+  // two competing authorityPeerId claims. Self-master bootstrap above only
+  // happens when no remote is known yet; this reconciles it on first contact.
+  if (ctx.localPeerId) {
+    const electedMaster = dbSync.electMasterWith(conn.peer);
+    if (electedMaster && electedMaster !== ctx.localPeerId && ctx.role === 'admin') {
+      ctx.role = 'collaborator';
+    }
+  }
+
   // Broadcast updated peer list to the mesh
   ctx.broadcastPeerList();
 
