@@ -13,6 +13,7 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import { FeatureFlagProvider } from './context/FeatureFlagContext';
 import { I18nProvider } from './context/I18nContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { UIProvider, useUI } from './context/UIContext';
 import useErrorMonitoring from './hooks/useErrorMonitoring';
 import useLocalStorage from './hooks/useLocalStorage';
@@ -157,22 +158,24 @@ const AppContainer = () => {
 };
 
 const App = () => (
-  <FeatureFlagProvider>
-    <I18nProvider>
-      <UIProvider>
-        <AuthProvider>
-          <CurrencyProvider>
-            <SubscriptionProvider>
-              <AppProvider>
-                <AppContainer />
-                <UpdateNotification />
-              </AppProvider>
-            </SubscriptionProvider>
-          </CurrencyProvider>
-        </AuthProvider>
-      </UIProvider>
-    </I18nProvider>
-  </FeatureFlagProvider>
+  <ThemeProvider>
+    <FeatureFlagProvider>
+      <I18nProvider>
+        <UIProvider>
+          <AuthProvider>
+            <CurrencyProvider>
+              <SubscriptionProvider>
+                <AppProvider>
+                  <AppContainer />
+                  <UpdateNotification />
+                </AppProvider>
+              </SubscriptionProvider>
+            </CurrencyProvider>
+          </AuthProvider>
+        </UIProvider>
+      </I18nProvider>
+    </FeatureFlagProvider>
+  </ThemeProvider>
 );
 
 export default App;
