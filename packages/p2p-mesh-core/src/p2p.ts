@@ -14,7 +14,7 @@
 import { createPeerHealthMonitor, getReconnectDelay, type PeerHealthState } from 'edge-mesh';
 import { type DataConnection, Peer } from 'peerjs';
 import { encryptData as encryptDataHelper } from './crypto';
-import { toHex as toHexHelper, derivePQCKeysFromSeed } from './crypto-pqc';
+import { derivePQCKeysFromSeed, toHex as toHexHelper } from './crypto-pqc';
 import { dbSync } from './database-sync';
 import { canInvite as checkCanInvite } from './database-sync/authority-checks';
 import type { P2PRole, PeerInfo } from './types';
@@ -522,7 +522,11 @@ class P2PManager {
     });
 
     const onOpen = () => {
+      // Keep ctx.role live: onConnectionOpen may demote after deterministic
+      // master election, and the rest of the handlers must see the new role.
+      ctx.role = this.role;
       onConnectionOpen(ctx, conn);
+      this.role = ctx.role;
     };
     if (conn.open) {
       onOpen();
