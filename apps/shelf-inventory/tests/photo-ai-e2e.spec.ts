@@ -265,7 +265,7 @@ test.describe('Photo-to-Variants + AI Assistant E2E Coverage', () => {
     await expect(sendBtn).toBeDisabled();
 
     // Verify loading indicator is displayed
-    await expect(page.locator('.animate-pulse')).toBeVisible();
+    await expect(page.locator('.animate-pulse').first()).toBeVisible();
   });
 
   test('10. AI Chat: Shows message bubbles for user and model', async ({ page }) => {

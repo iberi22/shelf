@@ -336,7 +336,17 @@ export function getMasterPeerId(ctx: SyncContext): string | null {
 /** Designate mesh master with authorization guards. */
 export function setMasterPeerId(ctx: SyncContext, peerId: string): void {
   const currentMaster = getMasterPeerId(ctx);
-  if (currentMaster && currentMaster !== peerId && currentMaster !== ctx.localPeerId) {
+  // Self-designation is always allowed: a node (real admin after invite/restore,
+  // or explicit operator choice) may (re)claim mastership of its own view.
+  // Only FOREIGN designations (local forcing an unrelated third party over an
+  // existing master) are treated as hijack attempts.
+  const isSelfDesignation = peerId === ctx.localPeerId;
+  if (
+    !isSelfDesignation &&
+    currentMaster &&
+    currentMaster !== peerId &&
+    currentMaster !== ctx.localPeerId
+  ) {
     logger.warn(`[SECURITY] Blocked unauthorized master reassignment to ${peerId}`);
     return;
   }
