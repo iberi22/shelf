@@ -80,4 +80,63 @@ test.describe('P2P UI Sync Features', () => {
     await context1.close();
     await context2.close();
   });
+
+  test('should reflect offline writes instantly via CRDT (unidirectional reactive, SHELF-103)', async ({ page }) => {
+    // Single device with NO peers connected — validates the local CRDT apply
+    // path: a UI mutation must reach the Yjs doc and the React projection
+    // without any P2P round-trip, and CRDT state must match the UI.
+    await setupPage(page);
+    await dismissModals(page);
+    await page.locator('[data-testid="nav-item-nav.inventory"]').last().click();
+    await dismissModals(page);
+
+    const productName = `Offline CRDT ${Date.now()}`;
+    await page.getByTestId('add-product-button').click();
+    await expect(page.getByTestId('product-form')).toBeVisible();
+    await page.getByTestId('product-name-input').fill(productName);
+    await page.getByTestId('product-quantity-input').fill('7');
+    await page.getByTestId('product-price-input').fill('99');
+    await page.getByTestId('save-product-button').click();
+
+    // 1) The Yjs CRDT map must contain the product IMMEDIATELY after the save
+    //    click (synchronously applied to the local doc — no sync wait).
+    const crdtSnapshot = (await page.evaluate((name) => {
+      const db = (window as any)._dbSyncForTest;
+      const map = db?.doc?.getMap?.('products');
+      if (!map) return null;
+      const product = Array.from(map.values?.() || []).find((p: any) => p?.name === name);
+      return product ? { id: product.id, name: product.name, quantity: product.quantity, price: product.price } : null;
+    }, productName)) as { id: string; name: string; quantity: number; price: number } | null;
+    expect(crdtSnapshot).toEqual({
+      id: expect.any(String),
+      name: productName,
+      quantity: 7,
+      price: 99,
+    });
+
+    // 2) React state is a read-only projection of the CRDT doc → must agree.
+    const reactProjection = await page.evaluate((name) => {
+      const state = (window as any).__shelfAppStateForTest;
+      const product = state?.products?.find((p: any) => p?.name === name);
+      return product ? { id: product.id, name: product.name, quantity: product.quantity } : null;
+    }, productName);
+    expect(reactProjection).toEqual({
+      id: crdtSnapshot?.id,
+      name: productName,
+      quantity: 7,
+    });
+
+    // 3) The offline-created product is visible in the UI.
+    await expect(page.locator(`text=${productName}`).first()).toBeVisible({ timeout: 5000 });
+
+    // 4) CRDT id and UI projection id are the same entity.
+    await expect
+      .poll(async () =>
+        page.evaluate((id) => {
+          const state = (window as any).__shelfAppStateForTest;
+          return state?.products?.some((p: any) => p?.id === id);
+        }, crdtSnapshot?.id as string),
+      )
+      .toBe(true);
+  });
 });

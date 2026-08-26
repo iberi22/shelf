@@ -10,7 +10,13 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./test-setup.ts'],
-    include: ['lib/**/*.{spec,test}.{ts,tsx}', 'api/**/*.{spec,test}.{ts,tsx}', 'utils/**/*.{spec,test}.{ts,tsx}', 'context/**/*.{spec,test}.{ts,tsx}'],
+    include: [
+      'lib/**/*.{spec,test}.{ts,tsx}',
+      'api/**/*.{spec,test}.{ts,tsx}',
+      'utils/**/*.{spec,test}.{ts,tsx}',
+      'context/**/*.{spec,test}.{ts,tsx}',
+      'hooks/**/*.{spec,test}.{ts,tsx}',
+    ],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',

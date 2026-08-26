@@ -31,6 +31,8 @@ import React, {
 import EdgeMeshTransportBinder from '../components/EdgeMeshTransportBinder';
 import EdgeMeshWorkflowBridge from '../components/EdgeMeshWorkflowBridge';
 import usePersistedReducer from '../hooks/usePersistedReducer';
+import { useReactiveProducts } from '../hooks/useReactiveProducts';
+import { useReactiveSales } from '../hooks/useReactiveSales';
 import { DEFAULT_INVENTORY_CONFIG, normalizeInventoryConfig } from '../lib/inventoryConfig';
 import { getProductVariants, normalizeProduct } from '../lib/productVariants';
 import { scheduleXavierInventorySync } from '../lib/xavier';
@@ -569,9 +571,41 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, rawDispatch, isLoaded] = usePersistedReducer(appReducer, initialState, 'shelfState');
+  const [reducerState, rawDispatch, isLoaded] = usePersistedReducer(appReducer, initialState, 'shelfState');
   const isSyncInitialized = React.useRef(false);
-  const stateRef = React.useRef(state);
+  const stateRef = React.useRef<AppState>(reducerState);
+
+  // SHELF-103 — Unidirectional reactive pattern (CRDT-only mutations).
+  // products/sales are a READ-ONLY projection of the shared Yjs doc: these
+  // hooks subscribe directly to the dbSync CRDT maps, so any local or remote
+  // mutation applied to the CRDT (dispatch → dbSync → Yjs map) reflects
+  // instantly. No component sets these collections via setState directly.
+  const reactiveProducts = useReactiveProducts();
+  const reactiveSales = useReactiveSales();
+
+  // Once the CRDT has produced data for a collection, trust the reactive
+  // projection unconditionally (also when the map is later emptied). Before
+  // hydration / `dbSync.initWithState`, fall back to the reducer projection
+  // to avoid an empty-list flash on app start.
+  const reactiveProductsReady = React.useRef(false);
+  const reactiveSalesReady = React.useRef(false);
+  useEffect(() => {
+    if (!reactiveProductsReady.current && reactiveProducts.length > 0) {
+      reactiveProductsReady.current = true;
+    }
+    if (!reactiveSalesReady.current && reactiveSales.length > 0) {
+      reactiveSalesReady.current = true;
+    }
+  }, [reactiveProducts, reactiveSales]);
+
+  const state: AppState = useMemo(() => {
+    if (!isLoaded) return reducerState;
+    const products =
+      reactiveProductsReady.current || reactiveProducts.length > 0 ? reactiveProducts : reducerState.products;
+    const sales = reactiveSalesReady.current || reactiveSales.length > 0 ? reactiveSales : reducerState.sales;
+    if (products === reducerState.products && sales === reducerState.sales) return reducerState;
+    return { ...reducerState, products, sales };
+  }, [isLoaded, reducerState, reactiveProducts, reactiveSales]);
 
   // Keep stateRef in sync for the dispatch closure
   useEffect(() => {
