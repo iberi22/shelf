@@ -19,6 +19,7 @@ import {
 } from '../lib/productVariants';
 import { telemetry } from '../lib/telemetry';
 import BarcodeScanner from './BarcodeScanner';
+import FilterBar, { type InventoryFacetFilters, type InventoryStockStatus, readFacetFiltersFromUrl } from './FilterBar';
 import { InfiniteTable } from './InfiniteTable';
 import Modal from './Modal';
 import PhotoVariantPicker from './PhotoVariantPicker';
@@ -108,6 +109,19 @@ const getInitialVariantRows = (product: Product | null, labels: string[], config
   ];
 };
 
+/** Map a product's quantity to a facet status, mirroring the badge colors shown in the table. */
+const getStockStatus = (product: Product, lowStockThreshold: number): InventoryStockStatus => {
+  if (product.quantity <= 0) return 'out';
+  if (product.quantity <= lowStockThreshold) return 'low';
+  return 'in-stock';
+};
+
+/** Parse a YYYY-MM-DD facet value into a local-midnight timestamp (ms). */
+const parseDateParam = (value: string): number => {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, (month || 1) - 1, day || 1).getTime();
+};
+
 const Inventory: React.FC = () => {
   const { state, dispatch } = useAppContext();
   const canEdit = state.role === 'admin' || state.permissions?.canEditProducts !== false;
@@ -128,6 +142,14 @@ const Inventory: React.FC = () => {
   const dimensionsField = inventoryFieldDefinitions.find((field) => field.key === 'dimensions');
   const capacityField = inventoryFieldDefinitions.find((field) => field.key === 'capacity');
   const materialField = inventoryFieldDefinitions.find((field) => field.key === 'material');
+  // SHELF-108: category facet reads from a configured 'category' field when present,
+  // otherwise falls back to customFields.category.
+  const categoryField = inventoryFieldDefinitions.find(
+    (field) =>
+      field.key.toLowerCase() === 'category' ||
+      field.label.trim().toLowerCase() === 'category' ||
+      field.label.trim().toLowerCase() === 'categoría',
+  );
 
   const activeProducts = useMemo(
     () =>
@@ -146,6 +168,25 @@ const Inventory: React.FC = () => {
   } = useSortableTable<Product>(activeProducts, { key: 'name', direction: 'asc' });
 
   const [filter, setFilter] = useState('');
+  // SHELF-108: active facet filters (category / status / price / supplier / dates),
+  // initialized from the URL query string so shared filtered views restore on load.
+  const [facetFilters, setFacetFilters] = useState<InventoryFacetFilters>(() => readFacetFiltersFromUrl());
+
+  const categories = useMemo(() => {
+    const values = new Set<string>();
+    for (const product of activeProducts) {
+      const value = categoryField
+        ? getInventoryFieldValue(product, categoryField)
+        : (product.customFields?.category ?? '');
+      if (value) values.add(value);
+    }
+    return Array.from(values).sort((a, b) => a.localeCompare(b));
+  }, [activeProducts, categoryField]);
+
+  const suppliers = useMemo(
+    () => state.suppliers.map((supplier) => ({ id: supplier.id, name: supplier.name })),
+    [state.suppliers],
+  );
   const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const mobileSentinelRef = useRef<HTMLDivElement>(null);
 
@@ -160,24 +201,47 @@ const Inventory: React.FC = () => {
   };
 
   const filteredProducts = useMemo(() => {
-    if (!filter) return sortedProducts;
-    const q = filter.toLowerCase();
-    return sortedProducts.filter(
-      (product) =>
-        product.name.toLowerCase().includes(q) ||
-        product.sku?.toLowerCase().includes(q) ||
-        product.color?.toLowerCase().includes(q) ||
-        product.dimensions?.toLowerCase().includes(q) ||
-        product.capacity?.toLowerCase().includes(q) ||
-        product.material?.toLowerCase().includes(q) ||
-        Object.values(product.customFields || {}).some((value) => String(value).toLowerCase().includes(q)) ||
-        inventoryFieldDefinitions.some((field) => field.label.toLowerCase().includes(q)) ||
-        product.variantAttributes?.some((attr: string) => attr.toLowerCase().includes(q)) ||
-        product.variants?.some((variant) =>
-          Object.values(variant.attributes || {}).some((value: unknown) => String(value).toLowerCase().includes(q)),
-        ),
-    );
-  }, [sortedProducts, filter, inventoryFieldDefinitions]);
+    let result = sortedProducts;
+    if (filter) {
+      const q = filter.toLowerCase();
+      result = result.filter(
+        (product) =>
+          product.name.toLowerCase().includes(q) ||
+          product.sku?.toLowerCase().includes(q) ||
+          product.color?.toLowerCase().includes(q) ||
+          product.dimensions?.toLowerCase().includes(q) ||
+          product.capacity?.toLowerCase().includes(q) ||
+          product.material?.toLowerCase().includes(q) ||
+          Object.values(product.customFields || {}).some((value) => String(value).toLowerCase().includes(q)) ||
+          inventoryFieldDefinitions.some((field) => field.label.toLowerCase().includes(q)) ||
+          product.variantAttributes?.some((attr: string) => attr.toLowerCase().includes(q)) ||
+          product.variants?.some((variant) =>
+            Object.values(variant.attributes || {}).some((value: unknown) => String(value).toLowerCase().includes(q)),
+          ),
+      );
+    }
+
+    // SHELF-108: facet filters compose with AND (category ∩ status ∩ price ∩ supplier ∩ dates).
+    const { category, status, minPrice, maxPrice, supplierId, dateFrom, dateTo } = facetFilters;
+    if (category || status || minPrice !== undefined || maxPrice !== undefined || supplierId || dateFrom || dateTo) {
+      result = result.filter((product) => {
+        if (category) {
+          const value = categoryField
+            ? getInventoryFieldValue(product, categoryField)
+            : (product.customFields?.category ?? '');
+          if (value !== category) return false;
+        }
+        if (status && getStockStatus(product, lowStockThreshold) !== status) return false;
+        if (minPrice !== undefined && product.price < minPrice) return false;
+        if (maxPrice !== undefined && product.price > maxPrice) return false;
+        if (supplierId && product.supplierId !== supplierId) return false;
+        if (dateFrom && Date.parse(product.updatedAt) < parseDateParam(dateFrom)) return false;
+        if (dateTo && Date.parse(product.updatedAt) > parseDateParam(dateTo) + 86_400_000 - 1) return false;
+        return true;
+      });
+    }
+    return result;
+  }, [sortedProducts, filter, facetFilters, inventoryFieldDefinitions, categoryField, lowStockThreshold]);
 
   const mobileHasMore = mobileVisibleCount < filteredProducts.length;
 
@@ -437,6 +501,14 @@ const Inventory: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <FilterBar
+        filters={facetFilters}
+        onChange={setFacetFilters}
+        categories={categories}
+        suppliers={suppliers}
+        lowStockThreshold={lowStockThreshold}
+      />
 
       <div className="hidden sm:block" data-testid="inventory-table">
         <InfiniteTable
