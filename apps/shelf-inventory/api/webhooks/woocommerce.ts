@@ -44,10 +44,10 @@ export default async function handler(req: Request) {
     return new Response('Payload Too Large', { status: 413 });
   }
 
-  let body;
+  let body: unknown;
   try {
     body = JSON.parse(bodyText);
-  } catch (e) {
+  } catch {
     return new Response('Bad Request', { status: 400 });
   }
 
@@ -58,11 +58,11 @@ export default async function handler(req: Request) {
   const peerId = 'woocommerce-webhook-bot';
 
   if (topic === 'product.created' || topic === 'product.updated') {
-    const product = parseWooProduct(body, peerId);
+    const product = parseWooProduct(body as WooProduct, peerId);
     await processWebhookEntity(product, 'products');
     console.log('Processed Woo Product:', product.id);
   } else if (topic === 'order.created') {
-    const sale = parseWooOrder(body, peerId);
+    const sale = parseWooOrder(body as WooOrder, peerId);
     await processWebhookEntity(sale, 'sales');
     console.log('Processed Woo Order:', sale.id);
   }
@@ -70,5 +70,5 @@ export default async function handler(req: Request) {
   return new Response('OK', { status: 200 });
 }
 
-import { parseWooOrder, parseWooProduct } from './parsers';
+import { parseWooOrder, parseWooProduct, type WooOrder, type WooProduct } from './parsers';
 import { processWebhookEntity } from './sync-helper';

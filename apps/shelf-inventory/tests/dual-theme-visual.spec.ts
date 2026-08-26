@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
-import * as path from 'node:path';
 import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { expect, test } from '@playwright/test';
 
 test('dual-theme visual verification and screenshots', async ({ page }) => {
   const screenshotsDir = path.resolve('tests/screenshots');

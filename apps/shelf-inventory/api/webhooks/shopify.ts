@@ -44,10 +44,10 @@ export default async function handler(req: Request) {
     return new Response('Payload Too Large', { status: 413 });
   }
 
-  let body;
+  let body: unknown;
   try {
     body = JSON.parse(bodyText);
-  } catch (e) {
+  } catch {
     return new Response('Bad Request', { status: 400 });
   }
 
@@ -59,11 +59,11 @@ export default async function handler(req: Request) {
   const peerId = 'shopify-webhook-bot';
 
   if (topic === 'products/update' || topic === 'products/create') {
-    const product = parseShopifyProduct(body, peerId);
+    const product = parseShopifyProduct(body as ShopifyProduct, peerId);
     await processWebhookEntity(product, 'products');
     console.log('Processed Shopify Product:', product.id);
   } else if (topic === 'orders/create') {
-    const sale = parseShopifyOrder(body, peerId);
+    const sale = parseShopifyOrder(body as ShopifyOrder, peerId);
     await processWebhookEntity(sale, 'sales');
     console.log('Processed Shopify Order:', sale.id);
   }
@@ -71,5 +71,5 @@ export default async function handler(req: Request) {
   return new Response('OK', { status: 200 });
 }
 
-import { parseShopifyOrder, parseShopifyProduct } from './parsers';
+import { parseShopifyOrder, parseShopifyProduct, type ShopifyOrder, type ShopifyProduct } from './parsers';
 import { processWebhookEntity } from './sync-helper';

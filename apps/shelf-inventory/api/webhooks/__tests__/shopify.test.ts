@@ -108,7 +108,6 @@ describe('Shopify webhook handler', () => {
     expect(res.status).toBe(200);
   });
 
-
   // ── Payload limits and validation ───────────────────────────────────
   it('returns 413 when content-length exceeds 500KB', async () => {
     const req = makeShopifyRequest({});
@@ -140,7 +139,6 @@ describe('Shopify webhook handler', () => {
     const res = await handler(req);
     expect(res.status).toBe(400);
   });
-
 
   it('returns 400 for array JSON body', async () => {
     const req = makeShopifyRequest({});
