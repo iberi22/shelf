@@ -242,7 +242,7 @@ function isRemoteAuthorityClaimCryptoValid(
   if (!dbSync.isPeerVerified(fromPeerId)) return false;
   if (!verifyAdminClaim(fromPeerId, signature, dsaPublicKey)) return false;
   const node = dbSync.getLinkedNodes().find((n) => n.id === fromPeerId);
-  if (node && node.dsaPublicKey && node.dsaPublicKey !== dsaPublicKey) return false;
+  if (node?.dsaPublicKey && node.dsaPublicKey !== dsaPublicKey) return false;
   return true;
 }
 
