@@ -15,3 +15,27 @@ export {
 } from './gpu-agent';
 export type { PeerCapacity } from './mesh-marketplace';
 export { GpuMeshMarketplace } from './mesh-marketplace';
+export {
+  type AggregateOptions,
+  type AggregationStrategy,
+  DEFAULT_MAX_ATTEMPTS,
+  DEFAULT_PEER_TIMEOUT_MS,
+  type DispatchOptions,
+  type DispatchTask,
+  type FanOutReducer,
+  GpuMeshMarketplaceFull,
+  type MarketplaceFullOptions,
+  type MeshPeerInfo,
+  type MeshPeerStatus,
+  type PeerChangeEvent,
+  PeerDiscovery,
+  type PeerDiscoveryOptions,
+  ResultAggregator,
+  type RouteSelection,
+  TaskProgress,
+  type TaskProgressEvent,
+  TaskRouter,
+  type TaskRouterOptions,
+  type TaskState,
+  TaskTimeoutError,
+} from './mesh-marketplace-full';
