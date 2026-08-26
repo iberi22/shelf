@@ -42,6 +42,7 @@
     "cypress-downloadfile": "^1.2.4",
     "edge-mesh": "workspace:*",
     "edge-mesh-react": "workspace:*",
+    "firebase": "12.17.1",
     "gpu-agent": "workspace:*",
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",

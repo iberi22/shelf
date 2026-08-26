@@ -11,6 +11,7 @@ interface ImportMetaEnv {
   readonly VITE_GA4_MEASUREMENT_ID?: string;
   readonly VITE_GA4_API_SECRET?: string;
   readonly VITE_GA4_ENDPOINT?: string;
+  readonly VITE_FIREBASE_CONFIG?: string;
 }
 
 interface ImportMeta {
