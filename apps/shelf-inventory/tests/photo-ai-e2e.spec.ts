@@ -12,7 +12,7 @@ async function createProductWithVariants(page: any, productName: string) {
   await expect(page.getByTestId('product-form')).toBeVisible();
 
   await page.getByTestId('product-name-input').fill(productName);
-  await page.getByTestId('product-sku-input').fill(`VPP-${Math.floor(Math.random() * 100000)}`);
+  await page.getByTestId('product-sku-input').fill(`VPP-${crypto.getRandomValues(new Uint32Array(1))[0] % 100000}`);
   await page.getByTestId('product-price-input').fill('150');
   await page.getByTestId('product-cost-input').fill('75');
 

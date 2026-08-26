@@ -1,5 +1,6 @@
 import type { ChatMessage, Product, Sale } from 'p2p-mesh-core';
 import { describe, expect, it } from 'vitest';
+import { generateSecureId } from './id';
 
 /**
  * AIChat Context Serialization Tests
@@ -13,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 
 const buildProduct = (overrides: Partial<Product> = {}): Product =>
   ({
-    id: `prod-${Math.random().toString(36).slice(2, 8)}`,
+    id: `prod-${generateSecureId().slice(0, 8)}`,
     isActive: true,
     updatedBy: 'local',
     updatedAt: new Date().toISOString(),
@@ -26,7 +27,7 @@ const buildProduct = (overrides: Partial<Product> = {}): Product =>
 
 const buildSale = (overrides: Partial<Sale> = {}): Sale =>
   ({
-    id: `sale-${Math.random().toString(36).slice(2, 8)}`,
+    id: `sale-${generateSecureId().slice(0, 8)}`,
     isActive: true,
     updatedBy: 'local',
     updatedAt: new Date().toISOString(),

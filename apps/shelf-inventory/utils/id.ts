@@ -1,20 +1,9 @@
 /**
- * Generates a unique identifier using crypto.randomUUID() if available,
- * falling back to a math-based random string.
+ * Backwards-compatible entry point for `generateId` / `generateSecureId`.
+ *
+ * The canonical implementation lives in `lib/id.ts` (SHELF-107): a single
+ * `crypto.getRandomValues()`-backed UUID v4 generator with no non-secure PRNG
+ * in any ID-generation path. This module only re-exports it so existing
+ * importers of `utils/id` keep working unchanged.
  */
-export const generateId = (): string => {
-  if (typeof crypto !== 'undefined') {
-    if (typeof crypto.randomUUID === 'function') {
-      return crypto.randomUUID();
-    }
-    if (typeof crypto.getRandomValues === 'function') {
-      const buf = new Uint8Array(16);
-      crypto.getRandomValues(buf);
-      return Array.from(buf)
-        .map((b) => b.toString(36).padStart(2, '0'))
-        .join('')
-        .substring(0, 26);
-    }
-  }
-  return Date.now().toString(36) + Date.now().toString(36);
-};
+export { generateId, generateSecureId } from '../lib/id';
