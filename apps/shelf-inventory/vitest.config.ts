@@ -36,6 +36,7 @@ export default defineConfig({
         'lib/sentry.ts',
         'lib/discovery.ts',
         'lib/edge-mesh-workflow.ts',
+        'lib/cloudSync.ts',
         'lib/invitation.ts',
         'lib/share-links.ts',
         'lib/webauthn.ts',
