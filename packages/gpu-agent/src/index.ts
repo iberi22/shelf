@@ -1,12 +1,17 @@
 export {
+  type CapacityAnnouncement,
+  type DotProductInput,
+  type EchoInput,
   GpuAgent,
+  type GpuAgentConfig,
+  type MatrixScaleInput,
   type Task,
+  type TaskRequestEnvelope,
   type TaskResult,
+  type TaskResultEnvelope,
   type TaskType,
   type TaskVerifier,
-  type GpuAgentConfig,
   type VectorSumInput,
-  type DotProductInput,
-  type MatrixScaleInput,
-  type EchoInput,
 } from './gpu-agent';
+export type { PeerCapacity } from './mesh-marketplace';
+export { GpuMeshMarketplace } from './mesh-marketplace';

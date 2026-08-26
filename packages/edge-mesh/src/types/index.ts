@@ -13,6 +13,10 @@ export const TIPO_MENSAJE = {
   GOVERNANCE: 'governance',
   IDENTITY: 'identity',
   ERROR: 'error',
+  // SHELF-112: GPU mesh marketplace messages (handled by GpuMeshMarketplace extension)
+  GPU_CAPACITY: 'gpu_capacity',
+  GPU_TASK_REQUEST: 'gpu_task_request',
+  GPU_TASK_RESULT: 'gpu_task_result',
 } as const;
 
 export type TipoMensaje = (typeof TIPO_MENSAJE)[keyof typeof TIPO_MENSAJE];
@@ -277,7 +281,10 @@ export interface EdgeMeshConfig {
   readonly requireAuthz?: boolean;
   /**
    * When true, remote SYNC/AUTHZ envelopes must carry a verifiable ML-DSA signature.
-   * Default false for backward compatibility; enable in hardened deployments/tests.
+   * Default `true` since SHELF-111 (2026-08-26): enforcement is no longer optional.
+   * Existing deployments that still emit unsigned envelopes must upgrade within the
+   * 7-day grace period enforced at the SyncEngine level; pass `false` only to keep
+   * legacy unsigned traffic during migration.
    */
   readonly requireSignedEnvelopes?: boolean;
   /**

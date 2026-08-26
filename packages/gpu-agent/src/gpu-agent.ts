@@ -4,7 +4,8 @@
  * and optional mesh capacity announcements via EdgeMesh.
  */
 
-import type { EdgeMesh } from 'edge-mesh';
+import type { EdgeMesh, NodoId } from 'edge-mesh';
+import { TIPO_MENSAJE } from 'edge-mesh';
 
 export type TaskType = 'vector-sum' | 'dot-product' | 'matrix-scale' | 'echo' | string;
 
@@ -24,6 +25,28 @@ export interface TaskResult {
   output: unknown;
   error?: string;
   durationMs: number;
+}
+
+/** SHELF-112: payload broadcast by announceCapacity(). */
+export interface CapacityAnnouncement {
+  readonly maxConcurrentTasks: number;
+  readonly capabilities: readonly string[];
+  readonly timestamp: number;
+}
+
+/** SHELF-112: payload broadcast by requestTask(). */
+export interface TaskRequestEnvelope {
+  readonly kind: 'gpu-agent.task-request';
+  readonly task: Task;
+  readonly timestamp: number;
+}
+
+/** SHELF-112: payload delivered back to the requester by acceptTask(). */
+export interface TaskResultEnvelope {
+  readonly kind: 'gpu-agent.task-result';
+  readonly taskId: string;
+  readonly result: TaskResult;
+  readonly timestamp: number;
 }
 
 export type TaskVerifier = (task: Task) => boolean | Promise<boolean>;
@@ -67,9 +90,20 @@ export class GpuAgent {
   private runningTasks = 0;
   private taskQueue: Array<{
     task: Task;
+    /** SHELF-112: 0 = local (prioridad alta), 1 = remota. */
+    prioridad: number;
     resolve: (r: TaskResult) => void;
     reject: (e: unknown) => void;
   }> = [];
+  /** SHELF-112: one-shot resolvers for requestTask() peticiones pendientes. */
+  private readonly pendingResultados = new Map<
+    string,
+    {
+      resolve: (r: TaskResult) => void;
+      reject: (e: unknown) => void;
+      timeout: ReturnType<typeof setTimeout> | null;
+    }
+  >();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private device: any = null;
   private deviceInit: Promise<any | null> | null = null;
@@ -144,34 +178,122 @@ export class GpuAgent {
   }
 
   /**
-   * Announce worker capacity on the mesh (best-effort transmit).
+   * SHELF-112: broadcast available compute capacity to the mesh.
+   * Keeps the agent's own capabilities/concurrency in sync before announcing.
    */
-  public async offerWorkerCapacity(capacity: { maxConcurrentTasks: number; capabilities?: string[] }): Promise<void> {
-    this.maxConcurrentTasks = capacity.maxConcurrentTasks;
-    if (capacity.capabilities) {
+  public async announceCapacity(capacity?: { maxConcurrentTasks?: number; capabilities?: string[] }): Promise<void> {
+    if (capacity?.maxConcurrentTasks !== undefined) {
+      this.maxConcurrentTasks = capacity.maxConcurrentTasks;
+    }
+    if (capacity?.capabilities !== undefined) {
       this.capabilities = new Set(capacity.capabilities);
     }
     if (!this.mesh) return;
+
+    const announcement: CapacityAnnouncement = {
+      maxConcurrentTasks: this.maxConcurrentTasks,
+      capabilities: this.getCapabilities(),
+      timestamp: Date.now(),
+    };
+
     try {
-      await this.mesh.transmitir(
-        {
-          type: 'gpu-agent.capacity',
-          maxConcurrentTasks: this.maxConcurrentTasks,
-          capabilities: this.getCapabilities(),
-          timestamp: Date.now(),
-        },
-        // HEARTBEAT-like free-form payload; mesh accepts unknown as payload
-        'HEARTBEAT' as never,
-      );
+      await this.mesh.transmitir(announcement, TIPO_MENSAJE.GPU_CAPACITY);
     } catch {
-      // Mesh optional — ignore transmit failures
+      // Mesh opcional — tolerar fallos de transmisión
     }
+  }
+
+  /**
+   * Compatibility alias: announce worker capacity on the mesh (best-effort transmit).
+   */
+  public async offerWorkerCapacity(capacity: { maxConcurrentTasks: number; capabilities?: string[] }): Promise<void> {
+    await this.announceCapacity(capacity);
+  }
+
+  /**
+   * SHELF-112: send a compute request to the mesh and await a peer result.
+   * One-shot: the first `gpu.task-result` for `task.id` resolves the promise.
+   */
+  public requestTask(task: Omit<Task, 'peerId'>, timeoutMs = 30_000): Promise<TaskResult> {
+    const tarea: Task = { ...task, peerId: 'local' };
+    if (!tarea.id) {
+      return Promise.reject(new Error('requestTask requires a task id'));
+    }
+    return new Promise<TaskResult>((resolve, reject) => {
+      this.pendingResultados.set(tarea.id, {
+        resolve,
+        reject,
+        timeout: setTimeout(() => {
+          this.pendingResultados.delete(tarea.id);
+          reject(new Error(`requestTask timeout (${timeoutMs}ms) for task ${tarea.id}`));
+        }, timeoutMs),
+      });
+
+      void this.enviarSolicitud(tarea).catch((e: unknown) => {
+        const pendiente = this.pendingResultados.get(tarea.id);
+        if (pendiente?.timeout) clearTimeout(pendiente.timeout);
+        this.pendingResultados.delete(tarea.id);
+        reject(e);
+      });
+    });
+  }
+
+  /**
+   * SHELF-112: resolve a pending requestTask() once a peer result envelope arrives.
+   */
+  public async resolverResultado(envelope: TaskResultEnvelope): Promise<void> {
+    const pendiente = this.pendingResultados.get(envelope.taskId);
+    if (!pendiente) return;
+    if (pendiente.timeout) clearTimeout(pendiente.timeout);
+    this.pendingResultados.delete(envelope.taskId);
+    pendiente.resolve(envelope.result);
+  }
+
+  /**
+   * SHELF-112: process a compute request received from the mesh.
+   * Verifies (remote tasks) and runs it on the local priority queue, then
+   * broadcasts the result back to the requester.
+   */
+  public async acceptTask(task: Task): Promise<TaskResult> {
+    const resultado = await this.submitTask(task);
+    if (this.mesh && task.peerId !== 'local') {
+      const envelope: TaskResultEnvelope = {
+        kind: 'gpu-agent.task-result',
+        taskId: task.id,
+        result: resultado,
+        timestamp: Date.now(),
+      };
+      try {
+        await this.mesh.enviar(task.peerId as NodoId, envelope, TIPO_MENSAJE.GPU_TASK_RESULT);
+      } catch {
+        // Best-effort reply — el resultado local ya está calculado
+      }
+    }
+    return resultado;
+  }
+
+  private async enviarSolicitud(tarea: Task): Promise<void> {
+    if (!this.mesh) {
+      throw new Error('requestTask requires a mesh (GpuAgent config.mesh)');
+    }
+    const payload: TaskRequestEnvelope = {
+      kind: 'gpu-agent.task-request',
+      task: tarea,
+      timestamp: Date.now(),
+    };
+    await this.mesh.transmitir(payload, TIPO_MENSAJE.GPU_TASK_REQUEST);
   }
 
   private enqueueTask(task: Task): Promise<TaskResult> {
     if (this.runningTasks >= this.maxConcurrentTasks) {
       return new Promise((resolve, reject) => {
-        this.taskQueue.push({ task, resolve, reject });
+        // SHELF-112: tareas locales (peerId 'local') tienen prioridad sobre remotas.
+        this.taskQueue.push({
+          task,
+          prioridad: task.peerId === 'local' ? 0 : 1,
+          resolve,
+          reject,
+        });
       });
     }
     return this.runTaskNow(task);
@@ -218,6 +340,10 @@ export class GpuAgent {
   }
 
   private processQueue() {
+    // SHELF-112: local tasks (0) run before remote tasks (1).
+    if (this.taskQueue.length > 1) {
+      this.taskQueue.sort((a, b) => a.prioridad - b.prioridad);
+    }
     while (this.taskQueue.length > 0 && this.runningTasks < this.maxConcurrentTasks) {
       const next = this.taskQueue.shift();
       if (!next) break;

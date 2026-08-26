@@ -137,7 +137,8 @@ export class EdgeMesh {
     this.snapshots = new Map();
     this.peerPublicKeys = new Map();
     this.requireAuthz = config.requireAuthz !== false;
-    this.requireSignedEnvelopes = config.requireSignedEnvelopes === true;
+    // SHELF-111: signed envelope enforcement is no longer optional (default true).
+    this.requireSignedEnvelopes = config.requireSignedEnvelopes !== false;
     this.defaultSyncNamespace = config.defaultSyncNamespace ?? 'global';
     this.sharesExternalDoc = config.yDoc !== undefined;
     // Host-owned doc (dbSync) already broadcasts via p2pManager YJS_UPDATE — avoid double relay.
@@ -609,6 +610,7 @@ export class EdgeMesh {
     const sync = new SyncEngine({
       docId,
       opLog,
+      requireSignedEnvelopes: this.requireSignedEnvelopes,
     });
 
     this.syncs.set(docId, sync);
