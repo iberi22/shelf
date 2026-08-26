@@ -1,4 +1,4 @@
-import type { Product, Sale, SaleItem } from '../../../packages/p2p-mesh-core/src/types';
+import type { Product, Sale, SaleItem } from '../../../../packages/p2p-mesh-core/src/types';
 
 export interface ShopifyProduct {
   id: number;
