@@ -12,9 +12,15 @@ import type { P2PRole, PeerInfo } from '../types';
 import { logger } from '../utils/logger';
 import { decapsulate, encapsulate, fromHex, toHex } from './crypto-handshake';
 import { isAuthorityMessage, isAuthorizedAuthoritySender, isLocalAuthorityPeer } from './permissions';
-import type { ConnectionErrorInfo, HandshakeRequestPayload, HandshakeResponsePayload, SyncMessage } from './sync-types';
+import type {
+  ConnectionErrorInfo,
+  CrdtEnvelope,
+  HandshakeRequestPayload,
+  HandshakeResponsePayload,
+  SyncMessage,
+} from './sync-types';
 import type { YjsSyncContext } from './yjs-sync';
-import { requestYjsSync, sendYjsDiff } from './yjs-sync';
+import { requestYjsSync, sendYjsDiff, verifyCrdtEnvelope } from './yjs-sync';
 
 // ─── Handler context — everything the message router needs from P2PManager ──
 
@@ -139,12 +145,9 @@ export async function handleMessage(ctx: MessageHandlerContext, conn: DataConnec
 
   // Handle Yjs Updates
   if (message.type === 'YJS_UPDATE') {
-    const branchId = message.payload.branchId;
-    // Only apply update if it matches our active branch, or is a global update
-    if (!branchId || branchId === dbSync.activeBranchId) {
-      dbSync.applyUpdate(fromHex(message.payload.update), conn.peer);
+    if (applyVerifiedYjsUpdate(ctx, message.payload, conn.peer)) {
+      ctx.emitMessageCallbacks(message, conn.peer);
     }
-    ctx.emitMessageCallbacks(message, conn.peer);
     return; // Already handled; prevent fallthrough to callbacks
   }
 
@@ -195,9 +198,41 @@ export async function handleMessage(ctx: MessageHandlerContext, conn: DataConnec
     return;
   }
 
+  // SHELF-104: authority messages require a PQC-verified, ML-DSA-signed sender
+  // on the plain wire path too (not just the encrypted path).
+  if (!isAuthorizedAuthorityMessage(message, conn.peer)) {
+    return;
+  }
+
   for (const cb of ctx.onMessageCallbacks) {
     cb(message, conn.peer);
   }
+}
+
+// ─── Authority gate (SHELF-104) ─────────────────────────────────────────────
+
+/** Extract the admin-claim proof fields from any authority message payload. */
+function getAuthorityClaimProof(message: SyncMessage): { signature?: string; dsaPublicKey?: string } {
+  const payload = (message as { payload?: { signature?: string; dsaPublicKey?: string } }).payload;
+  return {
+    signature: typeof payload?.signature === 'string' ? payload.signature : undefined,
+    dsaPublicKey: typeof payload?.dsaPublicKey === 'string' ? payload.dsaPublicKey : undefined,
+  };
+}
+
+/**
+ * SHELF-104: authority messages are accepted ONLY from PQC-verified, signed
+ * senders — on both the plain and encrypted wire paths. Drops the message and
+ * records an audit entry otherwise.
+ */
+function isAuthorizedAuthorityMessage(message: SyncMessage, fromPeerId: string): boolean {
+  if (!isAuthorityMessage(message)) return true;
+  const { signature, dsaPublicKey } = getAuthorityClaimProof(message);
+  if (!isAuthorizedAuthoritySender(fromPeerId, signature, dsaPublicKey)) {
+    logger.warn(`[SECURITY] Ignored authority message ${message.type} from unauthorized peer ${fromPeerId}`);
+    return false;
+  }
+  return true;
 }
 
 // ─── PQC handshake sub-handlers ─────────────────────────────────────────────
@@ -312,18 +347,15 @@ export async function handleEncryptedMessage(
     const decrypted = await decryptData(ciphertext, key);
     const message = JSON.parse(decrypted) as SyncMessage;
 
-    if (isAuthorityMessage(message) && !isAuthorizedAuthoritySender(fromPeerId)) {
-      logger.warn(`[SECURITY] Ignored encrypted authority message ${message.type} from non-master peer ${fromPeerId}`);
+    if (!isAuthorizedAuthorityMessage(message, fromPeerId)) {
       return;
     }
 
     // Dispatch the decrypted message
     if (message.type === 'YJS_UPDATE') {
-      const branchId = message.payload.branchId;
-      if (!branchId || branchId === dbSync.activeBranchId) {
-        dbSync.applyUpdate(fromHex(message.payload.update), fromPeerId);
+      if (applyVerifiedYjsUpdate(ctx, message.payload, fromPeerId)) {
+        ctx.emitMessageCallbacks(message, fromPeerId);
       }
-      ctx.emitMessageCallbacks(message, fromPeerId);
       return; // Already applied; prevent double-handling via callbacks
     }
 
@@ -456,6 +488,50 @@ export function onEncryptionReady(ctx: MessageHandlerContext, peerId: string): v
 
 // ─── Internal helpers ───────────────────────────────────────────────────────
 
+/**
+ * SHELF-113: apply a remote Yjs update ONLY after its signed CRDT envelope
+ * verifies against the peer's registered ML-DSA public key. Envelopes with
+ * invalid or missing signatures, unregistered signers, stale/future
+ * timestamps, or a signer ≠ connection mismatch are rejected (audit-logged,
+ * never applied). Returns true when the update passed verification and was
+ * applied (or matched for branch semantics as before).
+ */
+function applyVerifiedYjsUpdate(
+  ctx: MessageHandlerContext,
+  payload: { update: string; branchId?: string; signature?: string; signerPeerId?: string; timestamp?: number },
+  fromPeerId: string,
+): boolean {
+  const envelope: CrdtEnvelope = {
+    data: payload.update,
+    signature: payload.signature || '',
+    peerId: payload.signerPeerId || '',
+    timestamp: typeof payload.timestamp === 'number' ? payload.timestamp : Number.NaN,
+  };
+
+  const verification = verifyCrdtEnvelope(envelope, fromPeerId);
+  if (!verification.ok) {
+    // The in-memory audit trail + console log already record the rejection;
+    // surface it to connection-error listeners as well for observability.
+    ctx.emitConnectionError({
+      peerId: fromPeerId,
+      type: 'CRDT_ENVELOPE_REJECTED',
+      message: verification.reason || 'signed envelope rejected',
+      source: 'connection',
+    });
+    return false;
+  }
+
+  const branchId = payload.branchId;
+  // Only apply update if it matches our active branch, or is a global update
+  if (!branchId || branchId === dbSync.activeBranchId) {
+    dbSync.applyUpdate(fromHex(envelope.data), fromPeerId);
+  }
+  return true;
+}
+
 function isLocalAuth(ctx: MessageHandlerContext): boolean {
-  return isLocalAuthorityPeer(ctx.localPeerId, ctx.role);
+  // SHELF-105: a disconnected peer cannot claim authority — an empty
+  // connection map means the local node is offline (deny, don't promote).
+  const isConnected = ctx.connections.size > 0;
+  return isLocalAuthorityPeer(ctx.localPeerId, ctx.role, isConnected);
 }

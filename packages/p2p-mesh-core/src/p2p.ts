@@ -37,7 +37,7 @@ export type {
 import { loadOrGenerateKeys, sign as pqcSign, verify as pqcVerify } from './p2p/crypto-handshake';
 import type { MessageHandlerContext } from './p2p/message-handler';
 import { handleMessage, onConnectionOpen } from './p2p/message-handler';
-import { isAuthorityMessage, isLocalAuthorityPeer, shouldEncryptMessage } from './p2p/permissions';
+import { getOfflineRole, isAuthorityMessage, isLocalAuthorityPeer, shouldEncryptMessage } from './p2p/permissions';
 import type {
   ConnectionErrorInfo,
   HandshakeRequestPayload,
@@ -217,6 +217,9 @@ class P2PManager {
       connections: this.connections as any,
       lastSentStateVectors: this.lastSentStateVectors,
       dualReadyEncryption: this.dualReadyEncryption,
+      localPeerId: this.localPeerId,
+      // SHELF-113: sign outgoing YJS diffs/broadcasts with the local ML-DSA key.
+      signFn: (message) => this.sign(message),
     };
   }
 
@@ -324,21 +327,48 @@ class P2PManager {
 
       const currentMaster = dbSync.getMasterPeerId();
       if (!currentMaster) {
-        dbSync.setMasterPeerId(id);
-        dbSync.updateLinkedNode(
-          id,
-          {
-            role: 'admin',
-            isMaster: true,
-            status: 'verified',
-            dsaPublicKey: toHexHelper(this.dsaKeyPair.publicKey),
-          },
-          id,
-        );
-        // Force local role to admin as well to repair state
-        this.role = 'admin';
-        this.updatePeerList(id, 'admin');
-        this.notifyConnectionChange();
+        // SHELF-105: offline admin fallback must DENY, not promote. A node may
+        // only become master when the CRDT knows no other peers (genuine
+        // standalone bootstrap) or when it already WAS the CRDT authority
+        // (masterPeerId would then match — handled by the `currentMaster === id`
+        // branch). Nodes that rejoined a mesh with peers but no master are
+        // downgraded to `readonly` instead of self-promoting to admin.
+        const hasOtherPeers = dbSync.getLinkedNodes().some((n) => n.id !== id);
+        if (!hasOtherPeers) {
+          dbSync.setMasterPeerId(id);
+          dbSync.updateLinkedNode(
+            id,
+            {
+              role: 'admin',
+              isMaster: true,
+              status: 'verified',
+              dsaPublicKey: toHexHelper(this.dsaKeyPair.publicKey),
+            },
+            id,
+          );
+          // Force local role to admin as well to repair state
+          this.role = 'admin';
+          this.updatePeerList(id, 'admin');
+          this.notifyConnectionChange();
+        } else {
+          const downgraded = getOfflineRole(id, 'admin');
+          logger.warn(
+            `[SECURITY] SHELF-105: denied offline admin self-promotion for ${id} (mesh peers present, master unknown). Role: ${downgraded}.`,
+          );
+          this.role = downgraded;
+          dbSync.updateLinkedNode(
+            id,
+            {
+              role: downgraded,
+              isMaster: false,
+              status: 'verified',
+              dsaPublicKey: toHexHelper(this.dsaKeyPair.publicKey),
+            },
+            id,
+          );
+          this.updatePeerList(id, downgraded);
+          this.notifyConnectionChange();
+        }
       } else if (currentMaster === id) {
         const existingNode = dbSync.getLinkedNodes().find((n) => n.id === id);
         const dsaPubKey = toHexHelper(this.dsaKeyPair.publicKey);
@@ -606,6 +636,14 @@ class P2PManager {
     return conn ? conn.open : false;
   }
 
+  /** SHELF-105: true when the local node has at least one open mesh connection. */
+  public hasOpenMeshConnection(): boolean {
+    for (const conn of this.connections.values()) {
+      if (conn.open) return true;
+    }
+    return false;
+  }
+
   public broadcast(message: SyncMessage) {
     this.connections.forEach((conn) => {
       if (conn.open) {
@@ -626,7 +664,10 @@ class P2PManager {
     const conn = this.connections.get(peerId);
     if (!conn?.open) return;
 
-    if (isAuthorityMessage(message) && !isLocalAuthorityPeer(this.localPeerId, this.role)) {
+    if (
+      isAuthorityMessage(message) &&
+      !isLocalAuthorityPeer(this.localPeerId, this.role, this.hasOpenMeshConnection())
+    ) {
       logger.warn(
         `[SECURITY] Blocked outgoing authority message ${message.type} from non-master peer ${this.localPeerId || 'unknown'}`,
       );

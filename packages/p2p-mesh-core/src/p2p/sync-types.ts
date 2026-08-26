@@ -8,6 +8,30 @@
 import type { PeerHealthState } from 'edge-mesh';
 import type { AppState, P2PRole, PeerInfo, PeerPermissions } from '../types';
 
+// ─── Signed CRDT envelope (SHELF-113) ───────────────────────────────────────
+
+/**
+ * Signed CRDT envelope carried by `YJS_UPDATE` messages.
+ *
+ * Wire format (JSON-safe, hex-encoded):
+ *   { data: YjsUpdate (hex), signature: ML-DSA-65 (hex), peerId, timestamp }
+ *
+ * The ML-DSA signature is computed over the raw `data` bytes with the
+ * sender's registered public key (stored in the CRDT `linkedNodes` metadata
+ * document). Receivers MUST verify the signature against the peer's
+ * registered key and reject envelopes with invalid/missing signatures.
+ */
+export interface CrdtEnvelope {
+  /** Yjs update bytes, hex-encoded for JSON transport. */
+  data: string;
+  /** ML-DSA-65 signature over `data` (hex-encoded). */
+  signature: string;
+  /** Peer ID of the signing peer. MUST match the connection peer at receive time. */
+  peerId: string;
+  /** Envelope creation time (ms epoch). Rejected when stale or in the future. */
+  timestamp: number;
+}
+
 // ─── Public SyncMessage union ───────────────────────────────────────────────
 
 export type SyncMessage =
@@ -16,13 +40,20 @@ export type SyncMessage =
   | { type: 'ENCRYPTION_READY'; payload?: { v?: number } }
   | { type: 'STATE_UPDATE'; payload: Partial<AppState> }
   | { type: 'REQUEST_FULL_STATE' }
-  | { type: 'PROMOTE_ADMIN'; payload: { targetPeerId: string } }
+  | {
+      type: 'PROMOTE_ADMIN';
+      payload: { targetPeerId: string; signature?: string; dsaPublicKey?: string };
+    }
   | {
       type: 'CHANGE_ROLE';
       payload: {
         targetPeerId: string;
         role: P2PRole;
         permissions?: PeerPermissions;
+        /** SHELF-104: ML-DSA admin-claim signature over `shelf:admin-claim:<senderPeerId>`. */
+        signature?: string;
+        /** SHELF-104: sender DSA public key (must match CRDT-registered key). */
+        dsaPublicKey?: string;
       };
     }
   | { type: 'PEER_LIST_UPDATE'; payload: PeerInfo[] }
@@ -57,7 +88,17 @@ export type SyncMessage =
       type: 'PQC_HANDSHAKE_RESPONSE';
       payload: { cipherText: string; signature: string; dsaPubKey: string };
     }
-  | { type: 'YJS_UPDATE'; payload: { update: string; branchId?: string } }
+  | {
+      type: 'YJS_UPDATE';
+      payload: {
+        update: string;
+        branchId?: string;
+        /** SHELF-113 signed envelope — signature is mandatory on the mesh. */
+        signature?: string;
+        signerPeerId?: string;
+        timestamp?: number;
+      };
+    }
   | {
       type: 'YJS_SYNC_REQUEST';
       payload: { stateVector: string; branchId?: string; respondWithRequest?: boolean };
@@ -69,6 +110,10 @@ export type SyncMessage =
         targetPeerId: string;
         permissions: PeerPermissions;
         role?: P2PRole;
+        /** SHELF-104: ML-DSA admin-claim signature over `shelf:admin-claim:<senderPeerId>`. */
+        signature?: string;
+        /** SHELF-104: sender DSA public key (must match CRDT-registered key). */
+        dsaPublicKey?: string;
       };
     }
   | { type: 'PING'; peerId?: string; timestamp?: number }
@@ -92,7 +137,7 @@ export type SyncMessage =
       type: 'DEVICE_AUTHORIZED';
       payload: { deviceId: string; deviceName: string; authorizedAt: string };
     }
-  | { type: 'CRDT_SYNC_ENVELOPE'; payload: { envelope: any } }
+  | { type: 'CRDT_SYNC_ENVELOPE'; payload: { envelope: CrdtEnvelope; branchId?: string } }
   | { type: 'EDGE_MESH_SYNC'; payload: Uint8Array }
   /** Phase C: edge-mesh Envolvente over the same PeerJS data channel. */
   | {

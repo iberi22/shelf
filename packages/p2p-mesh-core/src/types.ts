@@ -136,7 +136,7 @@ export interface User {
 
 export type UserRole = 'owner' | 'admin' | 'member';
 
-export type P2PRole = 'admin' | 'collaborator' | 'vendedor' | 'custom';
+export type P2PRole = 'admin' | 'collaborator' | 'vendedor' | 'custom' | 'readonly';
 
 export type TeamMemberRole = 'owner' | P2PRole | 'member';
 
