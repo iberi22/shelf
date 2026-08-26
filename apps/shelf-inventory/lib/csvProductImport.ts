@@ -5,6 +5,15 @@ export const CANONICAL_CSV_HEADERS = ['name', 'sku', 'quantity', 'price', 'cost'
 
 export type CanonicalCsvHeader = (typeof CANONICAL_CSV_HEADERS)[number];
 
+/**
+ * Import modes (SHELF-109):
+ * - 'all-or-nothing': validate EVERY row first; if any row is invalid the whole
+ *   batch is rejected (atomic import, nothing committed).
+ * - 'import-valid-rows': invalid rows are skipped and reported; valid rows are
+ *   imported.
+ */
+export type CsvImportMode = 'all-or-nothing' | 'import-valid-rows';
+
 /** Accept common aliases / localized headers */
 const HEADER_ALIASES: Record<string, CanonicalCsvHeader> = {
   name: 'name',
@@ -38,6 +47,12 @@ export interface CsvProductParseResult {
   products: Omit<Product, 'id'>[];
   errors: CsvParseRowError[];
   mappedHeaders: CanonicalCsvHeader[];
+  /** true when the parsed rows can be applied under the requested mode */
+  ok: boolean;
+  mode: CsvImportMode;
+  validCount: number;
+  invalidCount: number;
+  invalidRows: CsvParseRowError[];
 }
 
 export interface AtomicCsvImportResult {
@@ -46,6 +61,18 @@ export interface AtomicCsvImportResult {
   errors: CsvParseRowError[];
   mappedHeaders: CanonicalCsvHeader[];
   abortReason?: string;
+  mode?: CsvImportMode;
+  validCount?: number;
+  invalidCount?: number;
+  invalidRows?: CsvParseRowError[];
+}
+
+/** Post-parse validation report shown to the user *before* applying the import. */
+export interface CsvValidationReport {
+  validCount: number;
+  invalidCount: number;
+  totalRows: number;
+  invalidRows: CsvParseRowError[];
 }
 
 function normalizeHeader(raw: string): string {
@@ -121,25 +148,52 @@ export function previewCsvHeaders(text: string): {
   };
 }
 
+function emptyResult(
+  errors: CsvParseRowError[],
+  mappedHeaders: CanonicalCsvHeader[],
+  mode: CsvImportMode,
+): CsvProductParseResult {
+  return {
+    products: [],
+    errors,
+    mappedHeaders,
+    ok: errors.length === 0,
+    mode,
+    validCount: 0,
+    invalidCount: errors.length,
+    invalidRows: errors,
+  };
+}
+
 /**
  * Parse product CSV text into product drafts + per-row errors.
  * Requires name + at least one of quantity/price/cost columns (name is mandatory).
+ *
+ * Mode semantics (SHELF-109):
+ * - 'import-valid-rows' (default): invalid rows are skipped and reported, the
+ *   remaining valid rows are returned.
+ * - 'all-or-nothing': when ANY row is invalid the result returns `ok: false`
+ *   with `products: []` so callers can abort before touching the CRDT.
  */
 export function parseProductCsv(
   text: string,
-  options?: { columnMapping?: (CanonicalCsvHeader | null)[] },
+  options?: { columnMapping?: (CanonicalCsvHeader | null)[]; mode?: CsvImportMode },
 ): CsvProductParseResult {
+  return parseProductCsvWithMode(text, options);
+}
+
+export function parseProductCsvWithMode(
+  text: string,
+  options?: { columnMapping?: (CanonicalCsvHeader | null)[]; mode?: CsvImportMode },
+): CsvProductParseResult {
+  const mode = options?.mode ?? 'import-valid-rows';
   const lines = text
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
 
   if (lines.length < 2) {
-    return {
-      products: [],
-      errors: [{ line: 1, message: 'CSV must include a header row and at least one data row' }],
-      mappedHeaders: [],
-    };
+    return emptyResult([{ line: 1, message: 'CSV must include a header row and at least one data row' }], [], mode);
   }
 
   const rawHeaders = splitCsvLine(lines[0]);
@@ -158,16 +212,16 @@ export function parseProductCsv(
   }
 
   if (missing.includes('name')) {
-    return {
-      products: [],
-      errors: [
+    return emptyResult(
+      [
         {
           line: 1,
           message: `Missing required column "name" (aliases: nombre, product). Got: ${rawHeaders.join(', ')}`,
         },
       ],
-      mappedHeaders: [],
-    };
+      [],
+      mode,
+    );
   }
 
   if (missing.length > 0) {
@@ -217,7 +271,30 @@ export function parseProductCsv(
 
   const mappedHeaders = [...new Set(mapping.filter((m): m is CanonicalCsvHeader => m !== null))];
 
-  return { products, errors, mappedHeaders };
+  // ── SHELF-109: all-or-nothing gate ─────────────────────────────────────────
+  // Validate EVERY row first; if any row is invalid the whole batch is
+  // rejected so callers never commit a partial import.
+  if (mode === 'all-or-nothing' && errors.length > 0) {
+    return emptyResult(errors, mappedHeaders, mode);
+  }
+  if (mode === 'all-or-nothing' && products.length === 0) {
+    return emptyResult(
+      errors.length > 0 ? errors : [{ line: 1, message: 'No valid products found in CSV' }],
+      mappedHeaders,
+      mode,
+    );
+  }
+
+  return {
+    products,
+    errors,
+    mappedHeaders,
+    ok: true,
+    mode,
+    validCount: products.length,
+    invalidCount: errors.length,
+    invalidRows: errors,
+  };
 }
 
 function parseNumber(raw: string | undefined, fallback: number): number {
@@ -230,14 +307,18 @@ export function parseProductCsvAtomic(
   text: string,
   options?: { columnMapping?: (CanonicalCsvHeader | null)[] },
 ): AtomicCsvImportResult {
-  const parsed = parseProductCsv(text, options);
-  if (parsed.errors.length > 0) {
+  const parsed = parseProductCsvWithMode(text, { ...options, mode: 'all-or-nothing' });
+  if (!parsed.ok) {
     return {
       ok: false,
       products: [],
       errors: parsed.errors,
       mappedHeaders: parsed.mappedHeaders,
-      abortReason: `CSV import aborted: ${parsed.errors.length} invalid row(s). Nothing was imported.`,
+      abortReason: `CSV import aborted: ${parsed.invalidCount} invalid row(s). Nothing was imported.`,
+      mode: 'all-or-nothing',
+      validCount: 0,
+      invalidCount: parsed.invalidCount,
+      invalidRows: parsed.invalidRows,
     };
   }
   if (parsed.products.length === 0) {
@@ -247,7 +328,30 @@ export function parseProductCsvAtomic(
       errors: parsed.errors.length ? parsed.errors : [{ line: 1, message: 'No valid products found in CSV' }],
       mappedHeaders: parsed.mappedHeaders,
       abortReason: 'CSV import aborted: no valid products found. Nothing was imported.',
+      mode: 'all-or-nothing',
+      validCount: 0,
+      invalidCount: parsed.invalidCount,
+      invalidRows: parsed.invalidRows,
     };
   }
-  return { ok: true, products: parsed.products, errors: [], mappedHeaders: parsed.mappedHeaders };
+  return {
+    ok: true,
+    products: parsed.products,
+    errors: [],
+    mappedHeaders: parsed.mappedHeaders,
+    mode: 'all-or-nothing',
+    validCount: parsed.validCount,
+    invalidCount: 0,
+    invalidRows: [],
+  };
+}
+
+/** Build the human-readable validation report shown before an import is applied. */
+export function buildCsvValidationReport(result: CsvProductParseResult): CsvValidationReport {
+  return {
+    validCount: result.validCount,
+    invalidCount: result.invalidCount,
+    totalRows: result.validCount + result.invalidCount,
+    invalidRows: result.invalidRows,
+  };
 }

@@ -1,7 +1,7 @@
 import { Image as ImageIcon, ScanBarcode, X } from 'lucide-react';
 import type { Product, Sale, SaleItem } from 'p2p-mesh-core';
 import type React from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -14,12 +14,18 @@ import BarcodeScanner from './BarcodeScanner';
 import { InfiniteTable } from './InfiniteTable';
 import Modal from './Modal';
 
+// SHELF-110: scan mode auto-disables after this inactivity window (ms).
+const SCAN_MODE_TIMEOUT_MS = 30_000;
+const SCAN_MODE_IDLE_CHECK_MS = 5_000;
+
 const Sales: React.FC = () => {
   const { state, dispatch } = useAppContext();
   const canEdit = state.role === 'admin' || state.permissions?.canEditSales !== false;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [deletingSaleId, setDeletingSaleId] = useState<string | null>(null);
+  // SHELF-110: "Scan Mode" opens a new-sale form ready to receive barcode scans.
+  const [scanModeRequested, setScanModeRequested] = useState(false);
   const { t } = useI18n();
   const { formatCurrency } = useCurrency();
 
@@ -101,6 +107,7 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
   const handleCloseModal = () => {
     setEditingSale(null);
     setIsModalOpen(false);
+    setScanModeRequested(false);
   };
 
   const handleSaveSale = (saleData: Omit<Sale, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>) => {
@@ -141,13 +148,27 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 flex-wrap">
         <h2 className="text-2xl md:text-3xl font-bold text-foreground shrink-0">{t('sales.title')}</h2>
         {canEdit && (
-          <button
-            onClick={() => handleOpenModal()}
-            className="w-full sm:w-auto bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
-            data-testid="add-sale-button"
-          >
-            {t('sales.addSale')}
-          </button>
+          <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+            {/* SHELF-110: Scan Mode toggle — opens a new sale ready to auto-add scanned products */}
+            <button
+              onClick={() => {
+                setScanModeRequested(true);
+                handleOpenModal();
+              }}
+              className="flex items-center justify-center gap-2 bg-transparent border border-yellow-500/50 text-yellow-400 font-bold py-2 px-4 rounded-lg hover:bg-yellow-500/10 transition-all duration-200 active:scale-95 text-sm min-h-[44px]"
+              data-testid="sales-scan-mode-toggle"
+            >
+              <ScanBarcode size={16} aria-hidden="true" />
+              {t('sales.scanMode') || 'Scan Mode'}
+            </button>
+            <button
+              onClick={() => handleOpenModal()}
+              className="w-full sm:w-auto bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 active:scale-95 text-sm"
+              data-testid="add-sale-button"
+            >
+              {t('sales.addSale')}
+            </button>
+          </div>
         )}
       </div>
 
@@ -296,7 +317,12 @@ ${sale.items.map((item) => `- ${item.productName} x${item.quantity}: ${formatCur
           onClose={handleCloseModal}
           title={editingSale ? t('sales.editSale') || 'Edit Sale' : t('sales.addSale')}
         >
-          <SaleForm onSave={handleSaveSale} onCancel={handleCloseModal} editingSale={editingSale} />
+          <SaleForm
+            onSave={handleSaveSale}
+            onCancel={handleCloseModal}
+            editingSale={editingSale}
+            initialScanMode={scanModeRequested}
+          />
         </Modal>
       )}
 
@@ -336,9 +362,11 @@ interface SaleFormProps {
   onSave: (saleData: Omit<Sale, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>) => void;
   onCancel: () => void;
   editingSale?: Sale | null;
+  /** SHELF-110: start with Scan Mode enabled (barcode scans auto-add to cart). */
+  initialScanMode?: boolean;
 }
 
-const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) => {
+const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale, initialScanMode = false }) => {
   const { t } = useI18n();
   const { state } = useAppContext();
   const { formatCurrency } = useCurrency();
@@ -346,6 +374,11 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
   const [previewImage, setPreviewImage] = useState<{ url: string; label: string } | null>(null);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scanFeedback, setScanFeedback] = useState<string | null>(null);
+  // SHELF-110: scan mode auto-adds scanned barcodes to the cart and auto
+  // disables after SCAN_MODE_TIMEOUT_MS of inactivity.
+  const [scanMode, setScanMode] = useState<boolean>(initialScanMode === true);
+  const scanInputRef = useRef<HTMLInputElement>(null);
+  const lastScanAtRef = useRef<number>(Date.now());
   const [items, setItems] = useState<Omit<SaleItem, 'productName' | 'cost'>[]>(
     () =>
       editingSale?.items.map((item) => ({
@@ -358,6 +391,27 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
   );
   const [clientId, setClientId] = useState<string | undefined>(editingSale?.clientId);
   const [errors, setErrors] = useState<{ general?: string; items?: { [key: number]: string } }>({});
+
+  // SHELF-110: scan mode auto-disables after 30s of inactivity; keep the
+  // barcode capture input focused so scanner keystrokes land immediately.
+  useEffect(() => {
+    if (!scanMode) return;
+    lastScanAtRef.current = Date.now();
+    scanInputRef.current?.focus();
+    const idleTimer = window.setInterval(() => {
+      if (Date.now() - lastScanAtRef.current > SCAN_MODE_TIMEOUT_MS) {
+        setScanMode(false);
+        const translated = t('sales.scan.modeTimeout');
+        const msg =
+          !translated || translated === 'sales.scan.modeTimeout'
+            ? 'Scan Mode desactivado por inactividad (30s)'
+            : translated;
+        setScanFeedback(msg);
+        showNotification(msg, 'info');
+      }
+    }, SCAN_MODE_IDLE_CHECK_MS);
+    return () => window.clearInterval(idleTimer);
+  }, [scanMode, t, showNotification]);
 
   const availableProducts = useMemo(() => {
     return state.products.filter((p) => p.quantity > 0 && p.isActive !== false);
@@ -376,6 +430,8 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
   };
 
   const addScannedProductToCart = (code: string) => {
+    // SHELF-110: any scan keeps scan mode alive (30s idle auto-disable).
+    lastScanAtRef.current = Date.now();
     const product = findProductByScanCode(code);
     if (!product) {
       const translated = t('sales.scan.notFound');
@@ -392,17 +448,26 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
     const selectedVariant = variants[0] || null;
     const price = selectedVariant?.price ?? product.price ?? 0;
 
+    // SHELF-110: if the product is already in the cart, increment quantity
+    // instead of adding a duplicate; the toast reports the new quantity.
+    const existingIndex = items.findIndex(
+      (item) =>
+        item.productId === product.id &&
+        (item.productVariantId || selectedVariant?.id) === (selectedVariant?.id || item.productVariantId),
+    );
+    const newQuantity = existingIndex >= 0 ? (items[existingIndex].quantity || 0) + 1 : 1;
+
     setItems((prev) => {
-      const existingIndex = prev.findIndex(
+      const dupIndex = prev.findIndex(
         (item) =>
           item.productId === product.id &&
           (item.productVariantId || selectedVariant?.id) === (selectedVariant?.id || item.productVariantId),
       );
-      if (existingIndex >= 0) {
+      if (dupIndex >= 0) {
         const next = [...prev];
-        const current = { ...next[existingIndex] };
+        const current = { ...next[dupIndex] };
         current.quantity = (current.quantity || 0) + 1;
-        next[existingIndex] = current;
+        next[dupIndex] = current;
         return next;
       }
       const newItem: Omit<SaleItem, 'productName' | 'cost'> = {
@@ -419,7 +484,9 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
 
     const translated = t('sales.scan.added');
     const okMsg =
-      !translated || translated === 'sales.scan.added' ? `Agregado: ${product.name}` : `${translated}: ${product.name}`;
+      !translated || translated === 'sales.scan.added'
+        ? `Agregado: ${product.name} (x${newQuantity})`
+        : `${translated}: ${product.name} (x${newQuantity})`;
     setScanFeedback(okMsg);
     showNotification(okMsg, 'success');
   };
@@ -620,7 +687,26 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
             <ScanBarcode size={18} aria-hidden="true" />
             {t('sales.scan.button') || t('scanner.title') || 'Escanear'}
           </button>
+          {/* SHELF-110: scan mode toggle — auto-adds scanned barcodes to the cart */}
+          <button
+            type="button"
+            data-testid="sale-scan-mode-button"
+            onClick={() => setScanMode((value) => !value)}
+            className={`flex items-center justify-center gap-2 w-full sm:w-auto border font-bold py-2.5 px-4 rounded-lg transition-all active:scale-95 text-sm min-h-[44px] ${
+              scanMode
+                ? 'bg-yellow-400/20 border-yellow-400/70 text-yellow-300'
+                : 'bg-transparent border-foreground/30 text-foreground/80 hover:bg-foreground/10'
+            }`}
+          >
+            <ScanBarcode size={18} aria-hidden="true" />
+            {t('sales.scanMode') || 'Scan Mode'}
+            <span
+              className={`inline-block w-2 h-2 rounded-full ${scanMode ? 'bg-yellow-400 animate-pulse' : 'bg-foreground/30'}`}
+              aria-hidden="true"
+            />
+          </button>
           <input
+            ref={scanInputRef}
             type="text"
             data-testid="sale-barcode-capture"
             data-barcode-capture="true"
@@ -639,6 +725,15 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale }) =>
             aria-label={t('sales.scan.placeholder') || 'Barcode'}
           />
         </div>
+        {scanMode && (
+          <p
+            className="text-xs text-yellow-300/90 bg-yellow-400/10 border border-yellow-400/30 rounded-md px-3 py-2"
+            data-testid="sale-scan-mode-banner"
+          >
+            {t('sales.scan.modeActive') ||
+              'Scan Mode activo: escanea o escribe un código y se añadirá al carrito automáticamente (se desactiva tras 30s sin actividad).'}
+          </p>
+        )}
         {scanFeedback && (
           <p className="text-xs text-foreground/70" data-testid="sale-scan-feedback">
             {scanFeedback}
