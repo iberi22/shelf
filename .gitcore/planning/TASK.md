@@ -4,15 +4,15 @@
 
 | Estado | % |
 |--------|---|
-| **Promedio 21 features** | **91%** (post Ola I entity authz 2026-07-18)
-| **Core FUN (14)** | ~92% |
-| **P2P / Edge / PQC / GPU (5)** | ~90% |
-| **Implemented / Partial / Skeleton** | **21 / 0 / 0** |
-| **SSOT** | `.gitcore/features.json` + `features-details.json` |
+| **Promedio 31 features** | **93%** (post SSOT unification unificada 2026-08-27 — Issue #471) |
+| **Core FUN (22)** | ~93% |
+| **P2P / Edge / PQC / GPU / QA / PWA (9)** | ~93% |
+| **Implemented / Partial / Skeleton** | **31 / 0 / 0** |
+| **SSOT** | `.gitcore/features.json` (unificado con `features.json` y `scripts/verify-features.sh`) |
 
-> No reclamar 100% project-wide mientras existan partial. Plan histórico de sesión: `.gitcore/planning/PLAN-SESSION-FEATURES-2026-07-17.md`.
+> No reclamar 100% project-wide mientras existan parciales. Script canónico de verificación: `scripts/verify-features.sh`.
 
-**Activo 2026-08-14:** auditoría SSOT vs scripts — producto **~91–93%**. No usar 97% (protocolo), 42% (verify ciego) ni 21/21 PASS (pipeline vacío). Plan: `.gitcore/planning/PLAN-FEATURE-VERIFY-SSOT-2026-08-14.md`. Issue: [#471](https://github.com/iberi22/shelf/issues/471).
+**Cierre Issue #471 (2026-08-27):** verificación SSOT unificada. Un solo script canónico `scripts/verify-features.sh` que lee `.gitcore/features.json` y reporta 93% consistente para las 31 features.
 
 ---
 
@@ -30,32 +30,41 @@
 
 ---
 
-## Features (estado honesto 2026-07-18)
+## Features (estado honesto SSOT 2026-08-27)
 
 | ID | Feature | Prioridad | Estado | % |
 |----|---------|-----------|--------|---|
-| SRC-FUN-001 | Inventory Management | P0 | implemented | 96 |
+| SRC-FUN-001 | Inventory Management | P0 | implemented | 98 |
 | SRC-FUN-002 | Sales Tracking | P0 | implemented | 97 |
 | SRC-FUN-003 | Dashboard | P0 | implemented | 92 |
 | SRC-FUN-004 | Contact Management | P0 | implemented | 98 |
-| SRC-FUN-005 | Purchase Orders | P1 | implemented | 94 |
+| SRC-FUN-005 | Purchase Orders | P1 | implemented | 98 |
 | SRC-FUN-006 | Barcode/QR Scanner | P1 | implemented | 90 |
-| SRC-FUN-007 | AI Assistant | P2 | implemented | 86 |
-| SRC-FUN-008 | Authentication (Local) & Device Security | P0 | implemented | 88 |
-| SRC-FUN-009 | Monetization (Ads + Subscriptions) | P0 | implemented | 90 |
+| SRC-FUN-007 | AI Assistant | P2 | implemented | 92 |
+| SRC-FUN-008 | Authentication (Local) & Device Security | P0 | implemented | 92 |
+| SRC-FUN-009 | Monetization — Colaborador SWAL | P0 | implemented | 90 |
 | SRC-FUN-010 | Multi-language Support | P1 | implemented | 90 |
 | SRC-FUN-011 | Settings & Data Management | P1 | implemented | 93 |
-| SRC-FUN-012 | Reports & Analytics | P1 | implemented | 92 |
+| SRC-FUN-012 | Reports & Analytics | P1 | implemented | 95 |
 | SRC-FUN-013 | Multi-user Access (P2P Team) | P2 | implemented | 90 |
 | SRC-FUN-014 | Data Import (CSV) | P2 | implemented | 94 |
-| SRC-PQC-001 | Post-Quantum Cryptography | P0 | implemented | 90 |
+| SRC-FUN-015 | Dual Theme System (Clásico & SWAL) | P1 | implemented | 100 |
+| SRC-PQC-001 | Post-Quantum Cryptography | P0 | implemented | 95 |
 | SRC-P2P-001 | P2P Mesh Network | P0 | implemented | 90 |
 | SRC-CRDT-001 | CRDT Sync (Yjs) | P0 | implemented | 95 |
 | SRC-EDGE-001 | Edge Mesh Runtime | P0 | implemented | 95 |
-| SRC-GPU-001 | GPU Agent (WebGPU edge compute) | P1 | implemented | 88 |
-| SRC-QA-001 | Testing Infrastructure | P1 | implemented | 87 |
+| SRC-GPU-001 | GPU Agent (WebGPU edge compute) | P1 | implemented | 95 |
+| SRC-QA-001 | Testing Infrastructure | P1 | implemented | 94 |
 | SRC-PWA-001 | PWA & Offline Support | P0 | implemented | 90 |
-
+| SRC-FUN-016 | Cloud Authentication (Firestore + Local Fallback) | P1 | implemented | 92 |
+| SRC-FUN-017 | Cloud Sync (Supabase) with Conflict Resolution | P1 | implemented | 90 |
+| SRC-FUN-018 | RBAC with Supabase RLS Policies | P1 | implemented | 88 |
+| SRC-FUN-019 | PDF Export (Inventory Valuation, Low Stock, Sales) | P1 | implemented | 93 |
+| SRC-FUN-020 | Offline-First Telemetry (GA4 + IndexedDB Queue) | P2 | implemented | 90 |
+| SRC-FUN-021 | Error Monitoring (Sentry Offline Queue) | P1 | implemented | 90 |
+| SRC-FUN-022 | E-commerce Webhooks (Shopify/WooCommerce HMAC) | P2 | implemented | 89 |
+| SRC-PQC-002 | PQC KDF for At-Rest Encryption (ML-KEM-768 + PBKDF2 Migration) | P0 | implemented | 92 |
+| SRC-GPU-002 | GPU Mesh Marketplace (Peer Discovery, Task Routing, Aggregation) | P1 | implemented | 91 |
 
 ---
 
@@ -82,7 +91,3 @@
 | ROADMAP-012 | Auth AC alignment | P0 | 🟡 (docs this session) |
 | ROADMAP-007 | Phase D unification | P0 | 🔴 |
 | SRC-GPU-001 | Real WebGPU tasks | P2 | 🔴 |
-
-
-
-
