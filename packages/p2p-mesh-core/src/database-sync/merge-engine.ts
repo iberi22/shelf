@@ -148,6 +148,77 @@ export function revertUnauthorizedPrivilegeMaps(
  * Apply a CRDT update with security gating.
  * Drops updates from untrusted peers; surgically reverts unauthorized changes.
  */
+/**
+ * Perform field-level Last-Write-Wins (LWW) merge for products when remote CRDT updates arrive.
+ */
+export function mergeProductFields(ctx: SyncContext, beforeProducts?: Map<string, unknown>): void {
+  if (!beforeProducts || beforeProducts.size === 0) return;
+  const productsMap = ctx.doc.getMap('products');
+  if (!productsMap) return;
+
+  ctx.doc.transact(() => {
+    for (const [id, prevVal] of beforeProducts.entries()) {
+      const currentVal = productsMap.get(id);
+      if (!prevVal || !currentVal || typeof prevVal !== 'object' || typeof currentVal !== 'object') {
+        continue;
+      }
+
+      const prev = prevVal as Record<string, any>;
+      const curr = currentVal as Record<string, any>;
+
+      const prevFieldTs = prev._fieldTimestamps || {};
+      const currFieldTs = curr._fieldTimestamps || {};
+
+      let needsUpdate = false;
+      const merged = { ...curr };
+      const mergedTimestamps = { ...(curr._fieldTimestamps || {}) };
+
+      const allKeys = new Set([...Object.keys(prev), ...Object.keys(curr)]);
+
+      for (const key of allKeys) {
+        if (['id', 'updatedAt', 'updatedBy', '__baseUpdatedAt', '_fieldTimestamps'].includes(key)) continue;
+
+        const valPrev = prev[key];
+        const valCurr = curr[key];
+
+        if (valPrev === undefined && valCurr === undefined) continue;
+
+        const tsPrev = prevFieldTs[key]
+          ? new Date(prevFieldTs[key]).getTime()
+          : prev.updatedAt
+            ? new Date(prev.updatedAt).getTime()
+            : 0;
+        const tsCurr = currFieldTs[key]
+          ? new Date(currFieldTs[key]).getTime()
+          : curr.updatedAt
+            ? new Date(curr.updatedAt).getTime()
+            : 0;
+
+        if (tsPrev > tsCurr) {
+          merged[key] = valPrev;
+          mergedTimestamps[key] = prevFieldTs[key] || prev.updatedAt;
+          needsUpdate = true;
+        }
+      }
+
+      if (needsUpdate) {
+        merged._fieldTimestamps = mergedTimestamps;
+        const maxTs = Math.max(
+          prev.updatedAt ? new Date(prev.updatedAt).getTime() : 0,
+          curr.updatedAt ? new Date(curr.updatedAt).getTime() : 0,
+          Date.now(),
+        );
+        merged.updatedAt = new Date(maxTs).toISOString();
+        productsMap.set(id, merged);
+      }
+    }
+  }, 'local');
+}
+
+/**
+ * Apply a CRDT update with security gating.
+ * Drops updates from untrusted peers; surgically reverts unauthorized changes.
+ */
 export function applyUpdate(ctx: SyncContext, update: Uint8Array, origin?: unknown): void {
   if (update.length === 0) return;
 
@@ -170,6 +241,7 @@ export function applyUpdate(ctx: SyncContext, update: Uint8Array, origin?: unkno
   if (reverted.length > 0) {
     logger.warn(`[SECURITY] Surgically reverted unauthorized remote changes from ${peerId} on: ${reverted.join(', ')}`);
   }
+  mergeProductFields(ctx, before.get('products'));
 }
 
 // ─── State Vector Encoding ──────────────────────────────────────────────────
