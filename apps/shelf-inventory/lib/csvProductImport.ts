@@ -67,6 +67,16 @@ export interface AtomicCsvImportResult {
   invalidRows?: CsvParseRowError[];
 }
 
+export interface TransactionalCsvImportOptions {
+  columnMapping?: (CanonicalCsvHeader | null)[];
+  doc?: { transact: (fn: () => void) => void };
+  onApply?: (products: Omit<Product, 'id'>[]) => void;
+}
+
+export interface TransactionalCsvImportResult extends AtomicCsvImportResult {
+  committed: boolean;
+}
+
 /** Post-parse validation report shown to the user *before* applying the import. */
 export interface CsvValidationReport {
   validCount: number;
@@ -353,5 +363,55 @@ export function buildCsvValidationReport(result: CsvProductParseResult): CsvVali
     invalidCount: result.invalidCount,
     totalRows: result.validCount + result.invalidCount,
     invalidRows: result.invalidRows,
+  };
+}
+
+/**
+ * Execute CSV product import with all-or-nothing transactional guarantees.
+ * If validation fails for ANY row or an exception occurs during execution,
+ * the operation is rolled back completely and nothing is committed.
+ */
+export function importCSVTransactional(
+  text: string,
+  options?: TransactionalCsvImportOptions,
+): TransactionalCsvImportResult {
+  const parsed = parseProductCsvAtomic(text, { columnMapping: options?.columnMapping });
+
+  if (!parsed.ok || parsed.products.length === 0) {
+    return {
+      ...parsed,
+      committed: false,
+    };
+  }
+
+  if (options?.onApply || options?.doc) {
+    try {
+      if (options.doc && typeof options.doc.transact === 'function') {
+        options.doc.transact(() => {
+          options.onApply?.(parsed.products);
+        });
+      } else if (options.onApply) {
+        options.onApply(parsed.products);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        ok: false,
+        products: [],
+        errors: [...parsed.errors, { line: 0, message: `Rollback executed: ${message}` }],
+        mappedHeaders: parsed.mappedHeaders,
+        abortReason: `Import execution error. Transaction rolled back: ${message}`,
+        mode: 'all-or-nothing',
+        validCount: 0,
+        invalidCount: parsed.invalidCount,
+        invalidRows: parsed.invalidRows,
+        committed: false,
+      };
+    }
+  }
+
+  return {
+    ...parsed,
+    committed: true,
   };
 }
