@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CANONICAL_CSV_HEADERS,
+  importCSVTransactional,
   mapHeaders,
   parseProductCsv,
   previewCsvHeaders,
@@ -346,5 +347,65 @@ describe('parseProductCsv', () => {
     expect(result.products).toHaveLength(100);
     expect(result.products[99].name).toBe('Product 99');
     expect(result.products[99].quantity).toBe(100);
+  });
+});
+
+// ─── importCSVTransactional (all-or-nothing rollback) ─────────
+
+describe('importCSVTransactional', () => {
+  const VALID_HEADER = 'name,sku,quantity,price,cost,imageUrl';
+
+  it('imports all products atomically when CSV is valid', () => {
+    const csv = `${VALID_HEADER}\nProducto A,SKU-A,10,100,50,\nProducto B,SKU-B,20,200,100,`;
+    let appliedProducts: any[] = [];
+    let transactCalled = false;
+
+    const mockDoc = {
+      transact: (fn: () => void) => {
+        transactCalled = true;
+        fn();
+      },
+    };
+
+    const result = importCSVTransactional(csv, {
+      doc: mockDoc,
+      onApply: (products) => {
+        appliedProducts = products;
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.committed).toBe(true);
+    expect(transactCalled).toBe(true);
+    expect(appliedProducts).toHaveLength(2);
+    expect(appliedProducts[0].name).toBe('Producto A');
+    expect(appliedProducts[1].name).toBe('Producto B');
+  });
+
+  it('executes total rollback and commits zero products when any row is invalid', () => {
+    const csv = `${VALID_HEADER}\nProducto Valid,SKU-1,10,100,50,\n,SKU-2,5,50,25,`; // Row 2 has empty name
+    let appliedProducts: any[] = [];
+    let transactCalled = false;
+
+    const mockDoc = {
+      transact: (fn: () => void) => {
+        transactCalled = true;
+        fn();
+      },
+    };
+
+    const result = importCSVTransactional(csv, {
+      doc: mockDoc,
+      onApply: (products) => {
+        appliedProducts = products;
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.committed).toBe(false);
+    expect(transactCalled).toBe(false);
+    expect(appliedProducts).toHaveLength(0);
+    expect(result.products).toHaveLength(0);
+    expect(result.abortReason).toContain('CSV import aborted');
   });
 });
