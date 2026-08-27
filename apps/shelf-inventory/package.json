@@ -24,6 +24,7 @@
     "prepare": "husky",
     "test:unit": "vitest run --config vitest.config.ts",
     "test:e2e": "playwright test",
+    "test:e2e:sync": "playwright test tests/e2e/multi-node-sync.spec.ts",
     "test:e2e:desktop": "playwright test --project=chromium",
     "test:e2e:mobile": "playwright test --project=mobile-chrome",
     "test:e2e:tablet": "playwright test --project=tablet",
