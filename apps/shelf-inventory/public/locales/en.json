@@ -11,7 +11,11 @@
     "catalog": "Catalog",
     "arqueo": "Arqueo",
     "reports": "Reports",
+    "memoryTuning": "Memory Tuning",
     "settings": "Settings"
+  },
+  "memoryTuning": {
+    "subtitle": "Tuning and optimization for Xavier agent memory to maximize retrieval efficiency and local search performance."
   },
   "common": {
     "color": "Color",
