@@ -29,12 +29,7 @@ export default defineConfig({
       reporter: ['text', 'html', 'json-summary'],
       reportsDirectory: './coverage',
       include: ['lib/**/*.ts', 'api/**/*.ts', 'utils/**/*.ts'],
-      exclude: [
-        '**/*.{spec,test}.{ts,tsx}',
-        '**/*.d.ts',
-        '**/node_modules/**',
-        'lib/cloudSync.ts',
-      ],
+      exclude: ['**/*.{spec,test}.{ts,tsx}', '**/*.d.ts', '**/node_modules/**', 'lib/cloudSync.ts'],
       thresholds: {
         lines: 60,
         functions: 60,

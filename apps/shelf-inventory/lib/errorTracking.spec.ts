@@ -32,6 +32,7 @@ vi.mock('@sentry/browser', () => browserMock);
 const VALID_DSN = 'https://abc123@ingest.us.sentry.io/1234567';
 
 type ErrorTrackingModule = typeof import('./errorTracking');
+
 import type { QueuedErrorPayload } from './errorTracking';
 
 const loadModule = (): Promise<ErrorTrackingModule> => import('./errorTracking');
@@ -41,9 +42,7 @@ function createMockIndexedDB() {
   const records = new Map<string, unknown>();
   const storeNames = new Set<string>();
 
-  const fireOnComplete = (transaction: {
-    oncomplete: (() => void) | null;
-  }) => {
+  const fireOnComplete = (transaction: { oncomplete: (() => void) | null }) => {
     queueMicrotask(() => {
       transaction.oncomplete?.();
     });
@@ -119,9 +118,7 @@ const samplePayload = (overrides: Partial<QueuedErrorPayload> = {}) => ({
   message: 'boom',
   stack: 'Error: boom\n  at fn (file.ts:1:1)',
   context: { source: 'test' },
-  breadcrumbs: [
-    { category: 'p2p', level: 'info' as const, message: 'peer connected', timestamp: 1 },
-  ],
+  breadcrumbs: [{ category: 'p2p', level: 'info' as const, message: 'peer connected', timestamp: 1 }],
   timestamp: '2026-08-26T10:00:00.000Z',
   ...overrides,
 });
@@ -183,9 +180,7 @@ describe('errorTracking', () => {
           tracesSampleRate: 1.0,
         }),
       );
-      expect(browserMock.makeBrowserOfflineTransport).toHaveBeenCalledWith(
-        browserMock.makeFetchTransport,
-      );
+      expect(browserMock.makeBrowserOfflineTransport).toHaveBeenCalledWith(browserMock.makeFetchTransport);
     });
 
     it('is idempotent across repeated calls', async () => {

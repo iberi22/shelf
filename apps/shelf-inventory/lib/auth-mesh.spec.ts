@@ -49,9 +49,7 @@ describe('AuthMeshManager.issueSession', () => {
     authMeshManager.issueSession('peer-101', 'ADMIN', ADMIN_SECRET, 3_600_000);
     expect(p2pMock.sign).toHaveBeenCalledTimes(1);
     const [payload] = p2pMock.sign.mock.calls[0] as unknown as [Uint8Array, Uint8Array];
-    expect(new TextDecoder().decode(payload)).toBe(
-      'peer-101:ADMIN:1750000000000:1750003600000',
-    );
+    expect(new TextDecoder().decode(payload)).toBe('peer-101:ADMIN:1750000000000:1750003600000');
   });
 
   it('exposes the signature as hex', () => {

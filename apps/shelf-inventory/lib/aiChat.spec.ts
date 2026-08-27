@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  AI_CHAT_RATE_LIMIT,
-  buildRateLimitHeaders,
-  resolveChatClientKey,
-  SlidingWindowRateLimiter,
-} from './aiChat';
+import { AI_CHAT_RATE_LIMIT, buildRateLimitHeaders, resolveChatClientKey, SlidingWindowRateLimiter } from './aiChat';
 
 const makeHeaders = (values: Record<string, string>): Headers => {
   const headers = new Headers();
@@ -14,8 +9,7 @@ const makeHeaders = (values: Record<string, string>): Headers => {
   return headers;
 };
 
-const makeRequest = (headers: Headers): Request =>
-  ({ headers }) as unknown as Request;
+const makeRequest = (headers: Headers): Request => ({ headers }) as unknown as Request;
 
 describe('SlidingWindowRateLimiter', () => {
   let now: number;

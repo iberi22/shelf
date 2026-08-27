@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buildPeerInviteLink,
-  buildPeerInviteMessage,
-  buildPwaInstallLink,
-} from './share-links';
+import { buildPeerInviteLink, buildPeerInviteMessage, buildPwaInstallLink } from './share-links';
 
 describe('buildPwaInstallLink', () => {
   it('builds an installable URL rooted at origin', () => {

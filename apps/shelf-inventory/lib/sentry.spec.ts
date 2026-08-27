@@ -60,12 +60,8 @@ describe('initSentry', () => {
     expect(sentryMock.init).toHaveBeenCalledTimes(1);
     expect(sentryMock.browserTracingIntegration).toHaveBeenCalled();
     expect(sentryMock.replayIntegration).toHaveBeenCalled();
-    expect(browserMock.makeBrowserOfflineTransport).toHaveBeenCalledWith(
-      browserMock.makeFetchTransport,
-    );
-    const [options] = sentryMock.init.mock.calls[0] as unknown as [
-      Record<string, unknown>,
-    ];
+    expect(browserMock.makeBrowserOfflineTransport).toHaveBeenCalledWith(browserMock.makeFetchTransport);
+    const [options] = sentryMock.init.mock.calls[0] as unknown as [Record<string, unknown>];
     expect(options.dsn).toBe('https://abc123@ingest.us.sentry.io/1234567');
     expect(options.tracesSampleRate).toBe(1.0);
   });

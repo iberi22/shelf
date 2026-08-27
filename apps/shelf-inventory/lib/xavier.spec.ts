@@ -64,9 +64,7 @@ describe('getOrCreateInstanceId / getXavierNamespace / resolveXavierPath', () =>
   });
 
   it('leaves absolute shelf paths untouched and handles the root path', () => {
-    expect(resolveXavierPath('app/shelf/instance/other/memories')).toBe(
-      'app/shelf/instance/other/memories',
-    );
+    expect(resolveXavierPath('app/shelf/instance/other/memories')).toBe('app/shelf/instance/other/memories');
     localStorage.setItem(INSTANCE_ID_STORAGE_KEY, 'inst-42-abc');
     expect(resolveXavierPath('')).toBe('app/shelf/instance/inst-42-abc');
   });
@@ -123,9 +121,12 @@ describe('xavierAdd / xavierSearch HTTP behavior', () => {
   });
 
   it('treats a non-JSON success body as ok without an id', async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => {
-      throw new Error('invalid json');
-    } });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => {
+        throw new Error('invalid json');
+      },
+    });
     await expect(xavierAdd('a', 'b')).resolves.toEqual({ ok: true });
   });
 

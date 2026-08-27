@@ -152,10 +152,7 @@ describe('getDeletedIdsFromYMapEvent', () => {
         ]),
       },
     };
-    expect(getDeletedIdsFromYMapEvent(event as unknown as Y.YMapEvent<unknown>)).toEqual([
-      'gone-1',
-      'gone-2',
-    ]);
+    expect(getDeletedIdsFromYMapEvent(event as unknown as Y.YMapEvent<unknown>)).toEqual(['gone-1', 'gone-2']);
   });
 
   it('returns an empty array when nothing was deleted', () => {

@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  decodeHandshake,
-  discoveryManager,
-  encodeHandshake,
-  type HandshakePayload,
-} from './discovery';
+import { decodeHandshake, discoveryManager, encodeHandshake, type HandshakePayload } from './discovery';
 
 const SAMPLE_PAYLOAD: HandshakePayload = {
   peerId: 'peer-42',

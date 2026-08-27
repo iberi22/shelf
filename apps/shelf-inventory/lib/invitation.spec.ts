@@ -12,7 +12,7 @@ const { p2pMock } = vi.hoisted(() => ({
 
 vi.mock('p2p-mesh-core', () => p2pMock);
 
-import { invitationManager, type Invitation } from './invitation';
+import { type Invitation, invitationManager } from './invitation';
 
 const ADMIN_SECRET = new Uint8Array([1, 1, 1, 1]);
 const ADMIN_PUBLIC = new Uint8Array([2, 2, 2, 2]);
