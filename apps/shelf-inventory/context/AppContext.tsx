@@ -36,6 +36,8 @@ import { useReactiveSales } from '../hooks/useReactiveSales';
 import { DEFAULT_INVENTORY_CONFIG, normalizeInventoryConfig } from '../lib/inventoryConfig';
 import { getProductVariants, normalizeProduct } from '../lib/productVariants';
 import { scheduleXavierInventorySync } from '../lib/xavier';
+import { cloudAuthProvider } from '../lib/cloudAuth';
+import { CloudSyncProvider } from '../lib/cloudSync';
 
 const initialState: AppState = {
   products: [],
@@ -574,6 +576,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [reducerState, rawDispatch, isLoaded] = usePersistedReducer(appReducer, initialState, 'shelfState');
   const isSyncInitialized = React.useRef(false);
   const stateRef = React.useRef<AppState>(reducerState);
+  // SHELF-208: CloudSyncProvider owns the shared Yjs doc (Supabase backup) and
+  // is created lazily once the persisted state has been loaded.
+  const cloudSyncRef = React.useRef<CloudSyncProvider | null>(null);
 
   // SHELF-103 — Unidirectional reactive pattern (CRDT-only mutations).
   // products/sales are a READ-ONLY projection of the shared Yjs doc: these
@@ -730,6 +735,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       dbSync.initWithState(stateRef.current);
       isSyncInitialized.current = true;
     }
+  }, [isLoaded]);
+
+  // SHELF-208 — Wire cloud sync (Supabase) + cloud auth (Firebase) into the app
+  // once the CRDT is hydrated so the first push contains the full inventory state.
+  // Both providers self-disable when their env vars are missing:
+  //  - CloudSyncProvider.start() runs an immediate sync when online (queued and
+  //    replayed otherwise) and registers the online/offline listeners that
+  //    flush queued pushes when connectivity returns.
+  //  - cloudAuthProvider.restoreSession() re-attaches the Firebase session and
+  //    syncLocalToCloud() performs a best-effort local→cloud backup (both no-op
+  //    without VITE_FIREBASE_CONFIG).
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!cloudSyncRef.current) {
+      cloudSyncRef.current = new CloudSyncProvider(dbSync.doc);
+    }
+    const cloudSync = cloudSyncRef.current;
+    if (cloudSync.isConfigured()) {
+      cloudSync.start();
+    }
+    if (cloudAuthProvider.isConfigured()) {
+      cloudAuthProvider.restoreSession();
+      void cloudAuthProvider.syncLocalToCloud().catch(() => {});
+    }
+    return () => {
+      cloudSync.stop();
+    };
   }, [isLoaded]);
 
   // Start Garbage Collection if Admin/Master
