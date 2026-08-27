@@ -1,12 +1,14 @@
+import { buildEventId, claimEvent } from './idempotency';
+import { parseWooOrder, parseWooProduct, type WooOrder, type WooProduct } from './parsers';
+import { processWebhookEntity } from './sync-helper';
+
 export const config = {
   runtime: 'edge',
 };
 
-async function verifyWooCommerceSignature(req: Request, secret: string): Promise<boolean> {
-  const signature = req.headers.get('X-WC-Webhook-Signature');
+async function verifyWooCommerceSignature(body: string, secret: string, signature: string | null): Promise<boolean> {
   if (!signature) return false;
 
-  const body = await req.clone().text();
   const encoder = new TextEncoder();
   const keyData = encoder.encode(secret);
   const bodyData = encoder.encode(body);
@@ -33,15 +35,14 @@ export default async function handler(req: Request) {
     return new Response('Internal Server Error', { status: 500 });
   }
 
-  const isValid = await verifyWooCommerceSignature(req, wooSecret);
-  if (!isValid) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  const topic = req.headers.get('X-WC-Webhook-Topic');
+  const signature = req.headers.get('X-WC-Webhook-Signature');
   const bodyText = await req.text();
   if (bodyText.length > 500000) {
     return new Response('Payload Too Large', { status: 413 });
+  }
+
+  if (!(await verifyWooCommerceSignature(bodyText, wooSecret, signature))) {
+    return new Response('Unauthorized', { status: 401 });
   }
 
   let body: unknown;
@@ -53,6 +54,16 @@ export default async function handler(req: Request) {
 
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return new Response('Bad Request', { status: 400 });
+  }
+
+  const topic = req.headers.get('X-WC-Webhook-Topic');
+
+  // Idempotency: retries carry an identical body → same event id → skipped.
+  // Claimed only after validation, so malformed deliveries are never marked seen.
+  const eventId = await buildEventId('woocommerce', topic, bodyText);
+  if (!claimEvent(eventId)) {
+    console.log('[webhooks:woocommerce] duplicate delivery skipped:', eventId);
+    return new Response('OK', { status: 200 });
   }
 
   const peerId = 'woocommerce-webhook-bot';
@@ -69,6 +80,3 @@ export default async function handler(req: Request) {
 
   return new Response('OK', { status: 200 });
 }
-
-import { parseWooOrder, parseWooProduct, type WooOrder, type WooProduct } from './parsers';
-import { processWebhookEntity } from './sync-helper';

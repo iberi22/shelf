@@ -3,7 +3,7 @@
   "outputDirectory": "apps/shelf-inventory/dist",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ],
