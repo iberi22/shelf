@@ -5,15 +5,15 @@
     "project_display": "Shelf Inventory Management",
     "description": "SaaS de gestión de inventario offline-first con sincronización P2P descentralizada y criptografía post-cuántica",
     "created": "2026-06-11",
-    "updated": "2026-08-24",
-    "version": "0.5.3",
-    "sdlc_phase": "wave-theme-qa",
-    "total_features": 22,
-    "features_implemented": 22,
+    "updated": "2026-08-26",
+    "version": "1.3.0",
+    "sdlc_phase": "wave-ola-post",
+    "total_features": 31,
+    "features_implemented": 31,
     "features_partial": 0,
     "features_skeleton": 0,
-    "implementation_percentage": 92,
-    "overall_progress_pct": 92,
+    "implementation_percentage": 93,
+    "overall_progress_pct": 93,
     "stack": {
       "monorepo": "pnpm + Turborepo",
       "frontend": "React 19 + Vite 8",
@@ -32,12 +32,12 @@
     "categories": {
       "FUN": {
         "name": "Funcionalidades Core",
-        "count": 15,
+        "count": 22,
         "description": "Funcionalidades core del sistema de inventario SaaS"
       },
       "PQC": {
         "name": "Post-Quantum Cryptography",
-        "count": 1,
+        "count": 2,
         "description": "Criptografía post-cuántica (ML-KEM-768, ML-DSA-65)"
       },
       "P2P": {
@@ -57,7 +57,7 @@
       },
       "GPU": {
         "name": "GPU Agent",
-        "count": 1,
+        "count": 2,
         "description": "Agentes WebGPU para procesamiento edge"
       },
       "QA": {
@@ -71,7 +71,7 @@
         "description": "Progressive Web App con soporte offline"
       }
     },
-    "implementation_notes": "Post Wave THEME: Dual-theme SWAL + Clásico complete across 47 components. Total features: 22.",
+    "implementation_notes": "Post Ola 2026-08-26: 31 features (22 base + 9 ola: cloudAuth, cloudSync, RBAC, PDF, telemetry, Sentry, webhooks, PQC-KDF, GPU-marketplace). Avg 93% (31 implemented / 0 partial). SSOT=.gitcore/features.json synched to root.",
     "status_model": {
       "skeleton": "API o package existe, comportamiento mock/placeholder",
       "unit": "Lógica local o unit tests; no E2E mesh endurecido",
@@ -79,12 +79,12 @@
       "hardened": "Authz/crypto en path de red + coverage y CI verdes"
     },
     "audit": {
-      "date": "2026-08-24",
-      "method": "Wave THEME QA audit + dual-theme E2E visual verification",
-      "simple_average_percent": 92,
+      "date": "2026-08-26",
+      "method": "Post-ola audit 2026-08-26: 15 commits (cloudAuth, telemetry, gpu-marketplace, pdfExport, sentry, webhooks, cloudSync, PQC-KDF, RBAC, FilterBar) + lib/*.ts + packages/*/package.json cross-check",
+      "simple_average_percent": 93,
       "product_core_fun_average": 93,
-      "mesh_pqc_edge_gpu_average": 90,
-      "features_ge_85": 22,
+      "mesh_pqc_edge_gpu_average": 93,
+      "features_ge_85": 31,
       "features_partial_40_84": 0,
       "features_skeleton_lt_40": 0,
       "ssot_file": ".gitcore/features.json",
@@ -103,7 +103,7 @@
       "edge_mesh_unit_tests": 214,
       "p2p_gate_e2e_local": "9/9 green",
       "session_gap_close": true,
-      "phase": "wave-theme-qa",
+      "phase": "wave-ola-post",
       "invite_authority_bootstrap": true,
       "yjs_wire": "envelope-when-ready",
       "gpu": "kernels+webgpu+cpu",
@@ -115,6 +115,40 @@
         "audited_components": 47,
         "arbitrary_hex_residuals": 0,
         "dual_theme_e2e": true
+      },
+      "overall_progress_pct": 93,
+      "wave_ola": {
+        "status": "complete",
+        "commits_audited": 15,
+        "new_libs": [
+          "cloudAuth.ts",
+          "cloudSync.ts",
+          "rbac.ts",
+          "pdfExport.ts",
+          "telemetry.ts",
+          "errorTracking.ts",
+          "webhookHandlers.ts",
+          "crypto-kdf.ts",
+          "mesh-marketplace-full.ts"
+        ],
+        "new_tests": [
+          "cloudAuth.spec.ts",
+          "cloudSync.spec.ts",
+          "rbac.spec.ts",
+          "pdfExport.spec.ts",
+          "telemetry.spec.ts",
+          "errorTracking.spec.ts",
+          "webhookHandlers.spec.ts",
+          "crypto-kdf.test.ts",
+          "mesh-marketplace-full.test.ts"
+        ],
+        "packages_versions": {
+          "p2p-mesh-core": "0.5.3",
+          "edge-mesh": "0.5.3",
+          "edge-mesh-react": "0.5.3",
+          "gpu-agent": "0.5.0",
+          "shelf-inventory": "0.5.3.07082026"
+        }
       }
     }
   },
@@ -146,8 +180,8 @@
         "Lista móvil con paginación incremental (50 por página) para inventarios de miles de productos",
         "Cantidad se actualiza automáticamente al vender"
       ],
-      "implementation_percentage": 97,
-      "progress_pct": 97,
+      "implementation_percentage": 98,
+      "progress_pct": 98,
       "maturity": "hardened",
       "evidence": [
         "apps/shelf-inventory/components/Inventory.tsx",
@@ -400,8 +434,8 @@
         "Seed recovery / restore cuenta local",
         "Multi-dispositivo de datos vía P2P o backup JSON (no cloud login)"
       ],
-      "implementation_percentage": 88,
-      "progress_pct": 88,
+      "implementation_percentage": 92,
+      "progress_pct": 92,
       "maturity": "integrated",
       "evidence": [
         "AuthContext.tsx → localAuthManager only",
@@ -541,13 +575,14 @@
         "Análisis de márgenes de ganancia",
         "Valor total de inventario"
       ],
-      "implementation_percentage": 92,
-      "progress_pct": 92,
+      "implementation_percentage": 95,
+      "progress_pct": 95,
       "maturity": "integrated",
       "evidence": [
-        "Reports.tsx (Line chart, topProducts, filters, PDF valuation)",
-        "tests/e2e/reports-export.spec.ts",
-        "tests/arqueo-catalog-reports.spec.ts"
+        "apps/shelf-inventory/components/Reports.tsx",
+        "apps/shelf-inventory/lib/pdfExport.ts",
+        "apps/shelf-inventory/lib/pdfExport.spec.ts",
+        "tests/e2e/reports-export.spec.ts"
       ],
       "gaps": []
     },
@@ -668,7 +703,7 @@
       "sdlc": "hardening",
       "priority": "P0",
       "category": "PQC",
-      "description": "ML-KEM-768 handshake + ML-DSA-65 firmas; AES-GCM at-rest (PIN/device); dual-ready YJS + EDGE_MESH_ENVELOPE app-AES; authority AES",
+      "description": "ML-KEM-768 handshake + ML-DSA-65 firmas; AES-GCM at-rest via PQC-KDF (ML-KEM-768 KEM iterations, PBKDF2 migration); dual-ready YJS + EDGE_MESH_ENVELOPE app-AES; authority AES",
       "user_story": "Como usuario, quiero que mis datos estén protegidos incluso contra computación cuántica",
       "actor": "Usuario Pro",
       "dependencies": [],
@@ -685,17 +720,18 @@
         "Cifrado en tránsito AES-GCM sobre WebRTC",
         "Integración con p2p-mesh-core para handshake seguro"
       ],
-      "implementation_percentage": 90,
-      "progress_pct": 90,
+      "implementation_percentage": 95,
+      "progress_pct": 95,
       "maturity": "hardened",
       "evidence": [
         "crypto-pqc.ts ML-KEM-768 + ML-DSA-65",
         "shouldEncryptMessage covers YJS_* and EDGE_MESH_ENVELOPE dual-ready",
-        "security.test.ts envelope dual-ready cases"
+        "security.test.ts envelope dual-ready cases",
+        "packages/p2p-mesh-core/src/crypto-kdf.ts",
+        "packages/p2p-mesh-core/tests/crypto-kdf.test.ts"
       ],
       "gaps": [
-        "At-rest AES still PBKDF2 PIN/device entropy (not PQC-derived KDF)",
-        "edge-mesh identity remains ML-DSA only"
+        "edge-mesh identity remains ML-DSA only (ML-KEM KDF now covers at-rest)"
       ]
     },
     {
@@ -922,6 +958,331 @@
       "gaps": [
         "First P2P connect needs signaling online by design"
       ]
+    },
+    {
+      "id": "SRC-FUN-016",
+      "name": "Cloud Authentication (Firestore + Local Fallback)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Abstracción de autenticación cloud con Firestore y fallback local offline-first; mantiene compatibilidad con localAuth.",
+      "user_story": "Como usuario, quiero autenticarme en la nube con fallback offline",
+      "actor": "Todos los usuarios",
+      "dependencies": [
+        "SRC-FUN-008"
+      ],
+      "technologies": [
+        "Firebase 12.17.1",
+        "Firestore",
+        "localAuth",
+        "TypeScript"
+      ],
+      "acceptance_criteria": [
+        "Login/registro vía Firestore cuando hay conexión",
+        "Fallback a localAuth offline",
+        "Sincronización de sesión al reconectar",
+        "Manejo de tokens y persistencia segura"
+      ],
+      "implementation_percentage": 92,
+      "progress_pct": 92,
+      "maturity": "integrated",
+      "evidence": [
+        "apps/shelf-inventory/lib/cloudAuth.ts",
+        "apps/shelf-inventory/lib/cloudAuth.spec.ts",
+        "apps/shelf-inventory/tests/cloudAuth.spec.ts",
+        "apps/shelf-inventory/package.json:firebase"
+      ],
+      "gaps": [
+        "Requires Firestore project config; local mode fully functional without"
+      ]
+    },
+    {
+      "id": "SRC-FUN-017",
+      "name": "Cloud Sync (Supabase) with Conflict Resolution",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Sincronización cloud a Supabase con resolución de conflictos last-write-wins y cola offline.",
+      "user_story": "Como dueño, quiero que mis datos se sincronicen a la nube con resolución de conflictos",
+      "actor": "Dueño de Negocio",
+      "dependencies": [
+        "SRC-FUN-001",
+        "SRC-FUN-002"
+      ],
+      "technologies": [
+        "Supabase",
+        "IndexedDB queue",
+        "Yjs CRDT"
+      ],
+      "acceptance_criteria": [
+        "Sync delta a Supabase cuando hay conexión",
+        "Conflictos resueltos vía timestamp/CRDT",
+        "Cola offline persistente",
+        "Reintentos con backoff"
+      ],
+      "implementation_percentage": 90,
+      "progress_pct": 90,
+      "maturity": "integrated",
+      "evidence": [
+        "apps/shelf-inventory/lib/cloudSync.ts",
+        "apps/shelf-inventory/lib/cloudSync.spec.ts",
+        "apps/shelf-inventory/.env.example"
+      ],
+      "gaps": [
+        "Requires Supabase project; offline-first remains primary"
+      ]
+    },
+    {
+      "id": "SRC-FUN-018",
+      "name": "RBAC with Supabase RLS Policies",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Abstracción RBAC con mapeo a políticas RLS de Supabase; roles admin/collaborator/vendedor.",
+      "user_story": "Como admin, quiero que los roles se respeten también en la capa cloud",
+      "actor": "Admin",
+      "dependencies": [
+        "SRC-FUN-013"
+      ],
+      "technologies": [
+        "Supabase RLS",
+        "TypeScript",
+        "P2P roles"
+      ],
+      "acceptance_criteria": [
+        "Definición de roles y permisos canónica",
+        "Generación de políticas RLS",
+        "Enforcement en operaciones cloud",
+        "Revert/deny si rol insuficiente"
+      ],
+      "implementation_percentage": 88,
+      "progress_pct": 88,
+      "maturity": "integrated",
+      "evidence": [
+        "apps/shelf-inventory/lib/rbac.ts",
+        "apps/shelf-inventory/tests/rbac.spec.ts"
+      ],
+      "gaps": [
+        "Policies need Supabase deployment to be live-enforced"
+      ]
+    },
+    {
+      "id": "SRC-FUN-019",
+      "name": "PDF Export (Inventory Valuation, Low Stock, Sales)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Exportación PDF para valuación de inventario, reporte de stock bajo y reportes de ventas vía jsPDF.",
+      "user_story": "Como dueño, quiero exportar reportes a PDF para compartir",
+      "actor": "Dueño de Negocio",
+      "dependencies": [
+        "SRC-FUN-001",
+        "SRC-FUN-012"
+      ],
+      "technologies": [
+        "jsPDF 4.2.1",
+        "jspdf-autotable 5.0.2",
+        "React"
+      ],
+      "acceptance_criteria": [
+        "PDF valuación de inventario con totales",
+        "PDF stock bajo con umbral configurable",
+        "PDF ventas con filtros por fecha",
+        "Tablas paginadas y branding"
+      ],
+      "implementation_percentage": 93,
+      "progress_pct": 93,
+      "maturity": "integrated",
+      "evidence": [
+        "apps/shelf-inventory/lib/pdfExport.ts",
+        "apps/shelf-inventory/lib/pdfExport.spec.ts",
+        "apps/shelf-inventory/package.json:jspdf"
+      ],
+      "gaps": []
+    },
+    {
+      "id": "SRC-FUN-020",
+      "name": "Offline-First Telemetry (GA4 + IndexedDB Queue)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P2",
+      "category": "FUN",
+      "description": "Telemetría GA4 offline-first con cola IndexedDB, batch flush y consent gate.",
+      "user_story": "Como producto, quiero métricas de uso sin perder eventos offline",
+      "actor": "Sistema",
+      "dependencies": [],
+      "technologies": [
+        "GA4",
+        "IndexedDB",
+        "idb",
+        "Vite env"
+      ],
+      "acceptance_criteria": [
+        "Queue persistente en IndexedDB",
+        "Flush batch cuando hay conexión",
+        "Consent/check opt-out",
+        "No bloquea render offline"
+      ],
+      "implementation_percentage": 90,
+      "progress_pct": 90,
+      "maturity": "integrated",
+      "evidence": [
+        "apps/shelf-inventory/lib/telemetry.ts",
+        "apps/shelf-inventory/lib/telemetry.spec.ts",
+        "apps/shelf-inventory/tests/telemetry.spec.ts",
+        "apps/shelf-inventory/lib/__tests__/idb-mock.ts"
+      ],
+      "gaps": [
+        "Requires VITE_GA_MEASUREMENT_ID; no-op without"
+      ]
+    },
+    {
+      "id": "SRC-FUN-021",
+      "name": "Error Monitoring (Sentry Offline Queue)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Monitoreo de errores con Sentry y cola offline; captura y reenvío cuando hay conexión.",
+      "user_story": "Como dev, quiero ver errores en producción incluso si ocurrieron offline",
+      "actor": "Desarrollador",
+      "dependencies": [],
+      "technologies": [
+        "@sentry/browser 10.70.0",
+        "@sentry/react 10.70.0",
+        "IndexedDB queue"
+      ],
+      "acceptance_criteria": [
+        "Init Sentry con DSN opcional",
+        "Cola offline de eventos",
+        "Flush al reconectar",
+        "Contexto de inventario adjunto"
+      ],
+      "implementation_percentage": 90,
+      "progress_pct": 90,
+      "maturity": "integrated",
+      "evidence": [
+        "apps/shelf-inventory/lib/errorTracking.ts",
+        "apps/shelf-inventory/tests/errorTracking.spec.ts",
+        "apps/shelf-inventory/lib/sentry.ts",
+        "apps/shelf-inventory/package.json:@sentry/browser"
+      ],
+      "gaps": [
+        "Requires Sentry DSN in env; silent no-op without"
+      ]
+    },
+    {
+      "id": "SRC-FUN-022",
+      "name": "E-commerce Webhooks (Shopify/WooCommerce HMAC)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P2",
+      "category": "FUN",
+      "description": "Handlers de webhooks Shopify/WooCommerce con verificación HMAC y parsers normalizados.",
+      "user_story": "Como dueño, quiero que pedidos de Shopify/Woo sincronicen inventario",
+      "actor": "Sistema",
+      "dependencies": [
+        "SRC-FUN-001",
+        "SRC-FUN-002"
+      ],
+      "technologies": [
+        "HMAC verification",
+        "Shopify API",
+        "WooCommerce REST"
+      ],
+      "acceptance_criteria": [
+        "Verificación HMAC SHA256",
+        "Parsers para product/order webhooks",
+        "Idempotencia por event id",
+        "Actualización de stock vía CRDT"
+      ],
+      "implementation_percentage": 89,
+      "progress_pct": 89,
+      "maturity": "integrated",
+      "evidence": [
+        "apps/shelf-inventory/lib/webhookHandlers.ts",
+        "apps/shelf-inventory/lib/webhookHandlers.spec.ts",
+        "apps/shelf-inventory/api/webhooks/parsers.ts"
+      ],
+      "gaps": [
+        "Requires Shopify/Woo credentials; no prod endpoint configured by default"
+      ]
+    },
+    {
+      "id": "SRC-PQC-002",
+      "name": "PQC KDF for At-Rest Encryption (ML-KEM-768 + PBKDF2 Migration)",
+      "status": "implemented",
+      "sdlc": "hardening",
+      "priority": "P0",
+      "category": "PQC",
+      "description": "Derivación de clave at-rest vía PQC KDF (ML-KEM-768 KEM iterations) con migración desde PBKDF2; metadata versionada.",
+      "user_story": "Como usuario, quiero que la clave at-rest sea resistente a ataques cuánticos sin perder mis datos existentes",
+      "actor": "Usuario Pro",
+      "dependencies": [
+        "SRC-PQC-001"
+      ],
+      "technologies": [
+        "@noble/post-quantum ML-KEM-768",
+        "Web Crypto AES-GCM",
+        "PBKDF2 migration"
+      ],
+      "acceptance_criteria": [
+        "KDF metadata format pbkdf2 vs pqc-kem",
+        "Derivación PQC con 100 iteraciones ML-KEM",
+        "Migración automática PBKDF2→PQC al unlock",
+        "Re-wrap de vault cifrado"
+      ],
+      "implementation_percentage": 92,
+      "progress_pct": 92,
+      "maturity": "hardened",
+      "evidence": [
+        "packages/p2p-mesh-core/src/crypto-kdf.ts",
+        "packages/p2p-mesh-core/tests/crypto-kdf.test.ts",
+        "packages/p2p-mesh-core/src/index.ts"
+      ],
+      "gaps": [
+        "Legacy PBKDF2 vaults migrate lazily on next unlock"
+      ]
+    },
+    {
+      "id": "SRC-GPU-002",
+      "name": "GPU Mesh Marketplace (Peer Discovery, Task Routing, Aggregation)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "GPU",
+      "description": "Marketplace mesh para GPU: descubrimiento de peers con capacidad, ruteo de tareas, agregación de resultados y firmas.",
+      "user_story": "Como nodo, quiero delegar cómputo a peers con GPU disponible",
+      "actor": "Nodo Edge",
+      "dependencies": [
+        "SRC-GPU-001",
+        "SRC-EDGE-001"
+      ],
+      "technologies": [
+        "WebGPU",
+        "edge-mesh",
+        "gpu-agent",
+        "PeerJS"
+      ],
+      "acceptance_criteria": [
+        "Descubrimiento de peers con capacidad GPU",
+        "Ruteo de tareas con firma ML-DSA",
+        "Agregación de resultados y reintentos",
+        "Fallback CPU si no hay peer GPU"
+      ],
+      "implementation_percentage": 91,
+      "progress_pct": 91,
+      "maturity": "integrated",
+      "evidence": [
+        "packages/gpu-agent/src/mesh-marketplace-full.ts",
+        "packages/gpu-agent/tests/mesh-marketplace-full.test.ts",
+        "packages/gpu-agent/src/index.ts"
+      ],
+      "gaps": []
     }
   ],
   "future_roadmap": [
@@ -929,15 +1290,15 @@
       "id": "ROADMAP-001",
       "name": "Error Monitoring (Sentry)",
       "priority": "P1",
-      "status": "partial",
-      "description": "lib/sentry.ts existe con offline transport; requiere DSN en prod"
+      "status": "done",
+      "description": "Sentry offline queue DONE 2026-08-26: lib/errorTracking.ts + lib/sentry.ts + IndexedDB queue"
     },
     {
       "id": "ROADMAP-002",
       "name": "User Analytics (GA4)",
       "priority": "P2",
-      "status": "pending",
-      "description": "Google Analytics 4 — placeholder env VITE_GA_MEASUREMENT_ID sin integración completa"
+      "status": "done",
+      "description": "GA4 offline-first DONE 2026-08-26: lib/telemetry.ts + IndexedDB queue (requires VITE_GA_MEASUREMENT_ID)"
     },
     {
       "id": "ROADMAP-003",
@@ -957,15 +1318,15 @@
       "id": "ROADMAP-005",
       "name": "Advanced Reporting Suite",
       "priority": "P2",
-      "status": "partial",
-      "description": "Reports UI + PDF existen; suite avanzada/export full abierta"
+      "status": "done",
+      "description": "PDF export DONE 2026-08-26: lib/pdfExport.ts (valuation, low-stock, sales) via jsPDF"
     },
     {
       "id": "ROADMAP-006",
       "name": "E-commerce Integrations",
       "priority": "P3",
-      "status": "partial",
-      "description": "Webhooks Shopify/WooCommerce scaffold en api/webhooks; no end-to-end prod"
+      "status": "done",
+      "description": "E-commerce DONE 2026-08-26: lib/webhookHandlers.ts Shopify/Woo HMAC (requires credentials)"
     },
     {
       "id": "ROADMAP-007",
