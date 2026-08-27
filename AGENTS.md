@@ -14,7 +14,7 @@
 # AGENTS.md — Guía para Agentes de Shelf
 
 **Última actualización:** 2026-07-30
-**Versión del proyecto: 0.0.1
+**Versión del proyecto: 0.0.1.1
 
 ---
 
