@@ -180,8 +180,8 @@
         "Lista móvil con paginación incremental (50 por página) para inventarios de miles de productos",
         "Cantidad se actualiza automáticamente al vender"
       ],
-      "implementation_percentage": 100,
-      "progress_pct": 100,
+      "implementation_percentage": 98,
+      "progress_pct": 98,
       "maturity": "hardened",
       "evidence": [
         "apps/shelf-inventory/components/Inventory.tsx",
@@ -189,15 +189,16 @@
         "apps/shelf-inventory/lib/inventoryConfig.ts",
         "apps/shelf-inventory/lib/productVariants.spec.ts",
         "apps/shelf-inventory/lib/inventoryConfig.spec.ts",
-        "tests/product-variants-flow.spec.ts",
-        "tests/variant-catalog.spec.ts",
-        "tests/inventory-config-catalog.spec.ts",
-        "tests/mobile-pagination.spec.ts",
-        "tests/crud-operations.spec.ts",
-        "cypress/e2e/inventory.cy.ts",
-        "apps/shelf-inventory/tests/e2e/inventory-filters.spec.ts"
+        "apps/shelf-inventory/tests/product-variants-flow.spec.ts",
+        "apps/shelf-inventory/tests/variant-catalog.spec.ts",
+        "apps/shelf-inventory/tests/inventory-config-catalog.spec.ts",
+        "apps/shelf-inventory/tests/mobile-pagination.spec.ts",
+        "apps/shelf-inventory/tests/crud-operations.spec.ts",
+        "apps/shelf-inventory/cypress/e2e/inventory.cy.ts"
       ],
-      "gaps": []
+      "gaps": [
+        "Optional multi-facet filters UI"
+      ]
     },
     {
       "id": "SRC-FUN-002",
@@ -229,9 +230,8 @@
       "maturity": "hardened",
       "evidence": [
         "apps/shelf-inventory/components/Sales.tsx",
-        "AppContext ADD_SALE → syncInventoryStockChanges",
-        "cypress/e2e/sales.cy.ts",
-        "cypress/e2e/pdf-generation.cy.ts"
+        "apps/shelf-inventory/cypress/e2e/sales.cy.ts",
+        "apps/shelf-inventory/cypress/e2e/pdf-generation.cy.ts"
       ],
       "gaps": [
         "Optional scan-to-cart in Sales"
@@ -267,8 +267,7 @@
       "maturity": "integrated",
       "evidence": [
         "apps/shelf-inventory/components/Dashboard.tsx",
-        "ProChartsTeaserCard.tsx (datos demo hardcodeados)",
-        "Reports.tsx (charts reales + top products)"
+        "apps/shelf-inventory/components/Reports.tsx"
       ],
       "gaps": []
     },
@@ -298,10 +297,10 @@
       "progress_pct": 98,
       "maturity": "hardened",
       "evidence": [
-        "ContactManagementPage.tsx",
-        "Clients.tsx / Suppliers.tsx",
-        "cypress/e2e/clients.cy.ts",
-        "cypress/e2e/suppliers.cy.ts"
+        "apps/shelf-inventory/components/ContactManagementPage.tsx",
+        "apps/shelf-inventory/components/Clients.tsx",
+        "apps/shelf-inventory/cypress/e2e/clients.cy.ts",
+        "apps/shelf-inventory/cypress/e2e/suppliers.cy.ts"
       ],
       "gaps": []
     },
@@ -334,8 +333,8 @@
       "progress_pct": 98,
       "maturity": "integrated",
       "evidence": [
-        "PurchaseOrders.tsx cancelled status",
-        "tests/purchase-orders-e2e.spec.ts receive stock"
+        "apps/shelf-inventory/components/PurchaseOrders.tsx",
+        "apps/shelf-inventory/tests/purchase-orders-e2e.spec.ts"
       ],
       "gaps": []
     },
@@ -367,9 +366,8 @@
       "progress_pct": 90,
       "maturity": "integrated",
       "evidence": [
-        "BarcodeScanner.tsx",
-        "Inventory handleScanSuccess → setSku",
-        "tests/scanner-lifecycle.spec.ts"
+        "apps/shelf-inventory/components/BarcodeScanner.tsx",
+        "apps/shelf-inventory/tests/scanner-lifecycle.spec.ts"
       ],
       "gaps": []
     },
@@ -402,9 +400,9 @@
       "progress_pct": 92,
       "maturity": "integrated",
       "evidence": [
-        "AIChat.tsx",
-        "lib/aiChatContext.spec.ts",
-        "tests/ai-chat.spec.ts (Playwright mock provider)"
+        "apps/shelf-inventory/components/AIChat.tsx",
+        "apps/shelf-inventory/lib/aiChatContext.spec.ts",
+        "apps/shelf-inventory/tests/ai-chat.spec.ts"
       ],
       "gaps": []
     },
@@ -437,10 +435,9 @@
       "progress_pct": 92,
       "maturity": "integrated",
       "evidence": [
-        "AuthContext.tsx → localAuthManager only",
-        "lib/localAuth.ts (password hash, seed, devices)",
-        "firestore.rules exists but no Firestore client",
-        "getIdToken returns dummy local-token"
+        "apps/shelf-inventory/context/AuthContext.tsx",
+        "apps/shelf-inventory/lib/localAuth.ts",
+        "apps/shelf-inventory/firestore.rules"
       ],
       "gaps": [
         "Cloud Firestore sync = ROADMAP-003"
@@ -471,11 +468,7 @@
       "implementation_percentage": 90,
       "progress_pct": 90,
       "maturity": "integrated",
-      "evidence": [
-        "SubscriptionContext simplified (isPro=true always)",
-        "No ProChartsTeaserCard, no AdSenseUnit, no Ads components",
-        "Dashboard clean without upgrade sections"
-      ],
+      "evidence": [],
       "gaps": []
     },
     {
@@ -504,9 +497,9 @@
       "progress_pct": 90,
       "maturity": "integrated",
       "evidence": [
-        "apps/shelf-inventory/locales/*.json (20 files)",
-        "I18nContext.tsx",
-        "LanguageSelector.tsx"
+        "vercel.json",
+        "apps/shelf-inventory/context/I18nContext.tsx",
+        "apps/shelf-inventory/components/LanguageSelector.tsx"
       ],
       "gaps": [
         "Secondary locales may lag EN/ES/PT"
@@ -540,10 +533,10 @@
       "progress_pct": 93,
       "maturity": "integrated",
       "evidence": [
-        "NetworkConfig.tsx (backup encrypted, restore, reset)",
-        "CurrencyContext.tsx",
-        "tests/settings-features.spec.ts",
-        "cypress/e2e/settings.cy.ts"
+        "apps/shelf-inventory/components/NetworkConfig.tsx",
+        "apps/shelf-inventory/context/CurrencyContext.tsx",
+        "apps/shelf-inventory/tests/settings-features.spec.ts",
+        "apps/shelf-inventory/cypress/e2e/settings.cy.ts"
       ],
       "gaps": []
     },
@@ -581,7 +574,7 @@
         "apps/shelf-inventory/components/Reports.tsx",
         "apps/shelf-inventory/lib/pdfExport.ts",
         "apps/shelf-inventory/lib/pdfExport.spec.ts",
-        "tests/e2e/reports-export.spec.ts"
+        "apps/shelf-inventory/tests/e2e/reports-export.spec.ts"
       ],
       "gaps": []
     },
@@ -615,10 +608,8 @@
       "progress_pct": 90,
       "maturity": "integrated",
       "evidence": [
-        "TeamMemberRole + teamRoleToP2PRole in p2p-mesh-core types",
-        "InviteMemberModal mesh roles admin|collaborator|vendedor",
-        "tests/invite-unification.spec.ts",
-        "p2p-three-node-permissions.spec.ts"
+        "apps/shelf-inventory/tests/invite-unification.spec.ts",
+        "apps/shelf-inventory/tests/p2p-three-node-permissions.spec.ts"
       ],
       "gaps": [
         "No cloud multi-tenant org isolation (by design P2P mesh)"
@@ -652,9 +643,8 @@
       "progress_pct": 94,
       "maturity": "hardened",
       "evidence": [
-        "lib/csvProductImport.ts previewCsvHeaders + columnMapping",
-        "ImportCSVModal interactive mapping UI",
-        "tests/csv-import.spec.ts"
+        "apps/shelf-inventory/lib/csvProductImport.ts",
+        "apps/shelf-inventory/tests/csv-import.spec.ts"
       ],
       "gaps": [
         "Optional all-or-nothing import rollback"
@@ -689,7 +679,7 @@
       "maturity": "hardened",
       "evidence": [
         "apps/shelf-inventory/context/ThemeContext.tsx",
-        "apps/shelf-inventory/src/styles.css",
+        "apps/shelf-inventory/styles.css",
         "apps/shelf-inventory/components/Settings.tsx",
         "apps/shelf-inventory/tests/dual-theme-visual.spec.ts"
       ],
@@ -723,9 +713,8 @@
       "progress_pct": 95,
       "maturity": "hardened",
       "evidence": [
-        "crypto-pqc.ts ML-KEM-768 + ML-DSA-65",
-        "shouldEncryptMessage covers YJS_* and EDGE_MESH_ENVELOPE dual-ready",
-        "security.test.ts envelope dual-ready cases",
+        "packages/p2p-mesh-core/src/crypto-pqc.ts",
+        "packages/p2p-mesh-core/tests/security.test.ts",
         "packages/p2p-mesh-core/src/crypto-kdf.ts",
         "packages/p2p-mesh-core/tests/crypto-kdf.test.ts"
       ],
@@ -762,9 +751,7 @@
       "progress_pct": 90,
       "maturity": "hardened",
       "evidence": [
-        "packages/p2p-mesh-core/src/p2p.ts",
-        "EdgeMeshTransportBinder (no second Peer)",
-        "multi-peer / three-node / offline E2E green"
+        "packages/p2p-mesh-core/src/p2p.ts"
       ],
       "gaps": [
         "PeerJS broker for signaling; thin core residual"
@@ -797,11 +784,7 @@
       "implementation_percentage": 95,
       "progress_pct": 95,
       "maturity": "hardened",
-      "evidence": [
-        "database-sync.ts Y.Maps + encodeStateAsUpdate",
-        "shared yDoc Phase B (AppContext + EdgeMesh)",
-        "offline-sync + conflict-resolution E2E"
-      ],
+      "evidence": [],
       "gaps": [
         "Optional further harden signed envelope requirement"
       ]
@@ -839,11 +822,10 @@
       "progress_pct": 95,
       "maturity": "integrated",
       "evidence": [
-        "packages/edge-mesh (214 unit tests)",
-        "EdgeMeshTransportBinder + usarTransport Phase C",
-        "database-sync applyUpdate entity canEdit* surgical revert",
-        "security.test.ts vendedor product block + privilege map revert",
-        "edge-mesh-sync.spec.ts"
+        "packages/edge-mesh",
+        "packages/p2p-mesh-core/src/database-sync",
+        "packages/p2p-mesh-core/tests/security.test.ts",
+        "apps/shelf-inventory/tests/edge-mesh-sync.spec.ts"
       ],
       "gaps": [
         "Maloca extract residual Phase D2 (package split deferred)",
@@ -880,8 +862,8 @@
       "progress_pct": 95,
       "maturity": "integrated",
       "evidence": [
-        "packages/gpu-agent/src/gpu-agent.ts WebGPU kernels",
-        "packages/gpu-agent/tests/gpu-agent.test.ts CPU+WebGPU mock"
+        "packages/gpu-agent/src/gpu-agent.ts",
+        "packages/gpu-agent/tests/gpu-agent.test.ts"
       ],
       "gaps": []
     },
@@ -915,9 +897,7 @@
       "progress_pct": 94,
       "maturity": "integrated",
       "evidence": [
-        "vitest.config.ts coverage thresholds 60%",
-        "test:coverage script",
-        "flaky retries audit-log/data-layer/garbage-collection"
+        "apps/shelf-inventory/vitest.config.ts"
       ],
       "gaps": []
     },
@@ -945,19 +925,17 @@
         "Persistencia en localStorage + IndexedDB",
         "Actualización automática cuando hay nueva versión"
       ],
-      "implementation_percentage": 100,
-      "progress_pct": 100,
+      "implementation_percentage": 90,
+      "progress_pct": 90,
       "maturity": "integrated",
       "evidence": [
-        "vite.config.ts VitePWA",
-        "UpdateNotification.tsx",
-        "usePersistedReducer (IDB)",
-        "cypress/e2e/pwa-offline.cy.ts",
-        "OfflineBanner.tsx",
-        "offlineQueue.ts",
-        "docs/PWA_OFFLINE.md"
+        "apps/shelf-inventory/vite.config.ts",
+        "apps/shelf-inventory/components/UpdateNotification.tsx",
+        "apps/shelf-inventory/cypress/e2e/pwa-offline.cy.ts"
       ],
-      "gaps": []
+      "gaps": [
+        "First P2P connect needs signaling online by design"
+      ]
     },
     {
       "id": "SRC-FUN-016",
@@ -991,7 +969,7 @@
         "apps/shelf-inventory/lib/cloudAuth.ts",
         "apps/shelf-inventory/lib/cloudAuth.spec.ts",
         "apps/shelf-inventory/tests/cloudAuth.spec.ts",
-        "apps/shelf-inventory/package.json:firebase"
+        "apps/shelf-inventory/package.json"
       ],
       "gaps": [
         "Requires Firestore project config; local mode fully functional without"
@@ -1100,7 +1078,7 @@
       "evidence": [
         "apps/shelf-inventory/lib/pdfExport.ts",
         "apps/shelf-inventory/lib/pdfExport.spec.ts",
-        "apps/shelf-inventory/package.json:jspdf"
+        "apps/shelf-inventory/package.json"
       ],
       "gaps": []
     },
@@ -1169,7 +1147,7 @@
         "apps/shelf-inventory/lib/errorTracking.ts",
         "apps/shelf-inventory/tests/errorTracking.spec.ts",
         "apps/shelf-inventory/lib/sentry.ts",
-        "apps/shelf-inventory/package.json:@sentry/browser"
+        "apps/shelf-inventory/package.json"
       ],
       "gaps": [
         "Requires Sentry DSN in env; silent no-op without"
