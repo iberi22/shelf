@@ -180,8 +180,8 @@
         "Lista móvil con paginación incremental (50 por página) para inventarios de miles de productos",
         "Cantidad se actualiza automáticamente al vender"
       ],
-      "implementation_percentage": 98,
-      "progress_pct": 98,
+      "implementation_percentage": 100,
+      "progress_pct": 100,
       "maturity": "hardened",
       "evidence": [
         "apps/shelf-inventory/components/Inventory.tsx",
@@ -194,11 +194,10 @@
         "tests/inventory-config-catalog.spec.ts",
         "tests/mobile-pagination.spec.ts",
         "tests/crud-operations.spec.ts",
-        "cypress/e2e/inventory.cy.ts"
+        "cypress/e2e/inventory.cy.ts",
+        "apps/shelf-inventory/tests/e2e/inventory-filters.spec.ts"
       ],
-      "gaps": [
-        "Optional multi-facet filters UI"
-      ]
+      "gaps": []
     },
     {
       "id": "SRC-FUN-002",
