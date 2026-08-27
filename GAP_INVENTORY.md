@@ -146,6 +146,176 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
 
 ---
 
+---
+
+## 🎟️ Maloca Support Ticket Per-App Isolation Gap & Architecture Spec
+
+### 🔍 Verification Findings
+During the audit for task **[P0] Support isolation: Add per-app support tickets**, the following verification steps were conducted:
+1. **Directory & Workspace Search**: Searched for `apps/maloca` and `swal-backoffice` across the repository.
+2. **File Search**: Searched for `SupportPage.svelte` and `malocaClient.svelte.ts`.
+3. **Result**: Neither `apps/maloca` nor Svelte-based backoffice applications exist inside this repository tree (`shelf`). `apps/maloca` is managed in the central Maloca platform repository.
+
+### 🎯 Requirements & Data Architecture Spec
+
+When `apps/maloca/apps/swal-backoffice` is integrated or synced, the following support ticket isolation specification must be implemented:
+
+#### 1. Support Ticket Model Extension (`app_id`)
+Support tickets must include an explicit `app_id` field to isolate tickets per application (e.g. `'shelf-inventory'`, `'maloca-salud'`, `'maloca-veeduria'`, etc.).
+
+```typescript
+// Proposed Type Definition in malocaClient.svelte.ts / types.ts
+export interface SupportTicket {
+  id: string;
+  app_id: string; // Isolated application identifier (e.g. 'shelf-inventory')
+  title: string;
+  description: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AppSupportMetrics {
+  app_id: string;
+  total_tickets: number;
+  open_tickets: number;
+  in_progress_tickets: number;
+  resolved_tickets: number;
+  avg_resolution_time_ms: number;
+}
+```
+
+#### 2. App Isolation in `malocaClient.svelte.ts`
+The Maloca client state and API handlers must enforce per-app filtering and ticket querying:
+
+```typescript
+// Proposed implementation spec for malocaClient.svelte.ts
+export class MalocaClient {
+  private currentAppId: string = 'shelf-inventory';
+
+  constructor(appId?: string) {
+    if (appId) {
+      this.currentAppId = appId;
+    }
+  }
+
+  public setAppId(appId: string) {
+    this.currentAppId = appId;
+  }
+
+  public getAppId(): string {
+    return this.currentAppId;
+  }
+
+  // Fetch support tickets filtered strictly by current app_id
+  public async getTicketsByApp(appId: string = this.currentAppId): Promise<SupportTicket[]> {
+    const allTickets = await this.fetchSupportTickets();
+    return allTickets.filter((ticket) => ticket.app_id === appId);
+  }
+
+  // Compute support metrics for a specific app
+  public async getAppSupportMetrics(appId: string = this.currentAppId): Promise<AppSupportMetrics> {
+    const tickets = await this.getTicketsByApp(appId);
+    return {
+      app_id: appId,
+      total_tickets: tickets.length,
+      open_tickets: tickets.filter((t) => t.status === 'open').length,
+      in_progress_tickets: tickets.filter((t) => t.status === 'in_progress').length,
+      resolved_tickets: tickets.filter((t) => t.status === 'resolved' || t.status === 'closed').length,
+      avg_resolution_time_ms: 0 // Computed based on created_at and updated_at
+    };
+  }
+
+  // Create ticket attached to current app_id
+  public async createTicket(ticketData: Omit<SupportTicket, 'id' | 'app_id' | 'created_at' | 'updated_at'>): Promise<SupportTicket> {
+    const newTicket: SupportTicket = {
+      ...ticketData,
+      id: crypto.randomUUID(),
+      app_id: this.currentAppId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    // Persist via Edge Mesh / Yjs adapter
+    return newTicket;
+  }
+}
+```
+
+#### 3. Filtering and Metrics UI in `SupportPage.svelte`
+`SupportPage.svelte` must filter tickets by the active application context and display isolated support metrics per app.
+
+```svelte
+<!-- Proposed implementation spec for SupportPage.svelte -->
+<script lang="ts">
+  import { malocaClient } from '../lib/malocaClient.svelte';
+
+  let selectedAppId = $state(malocaClient.getAppId() || 'shelf-inventory');
+  let tickets = $state<SupportTicket[]>([]);
+  let metrics = $state<AppSupportMetrics | null>(null);
+
+  $effect(() => {
+    loadAppSupportData(selectedAppId);
+  });
+
+  async function loadAppSupportData(appId: string) {
+    tickets = await malocaClient.getTicketsByApp(appId);
+    metrics = await malocaClient.getAppSupportMetrics(appId);
+  }
+</script>
+
+<div class="support-page">
+  <header class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">App Support Portal</h1>
+
+    <!-- App Context Filter Selector -->
+    <select bind:value={selectedAppId} class="app-selector px-4 py-2 border rounded-lg">
+      <option value="shelf-inventory">Shelf Inventory</option>
+      <option value="maloca-salud">Maloca Salud</option>
+      <option value="maloca-veeduria">Maloca Veeduria</option>
+    </select>
+  </header>
+
+  {#if metrics}
+    <div class="metrics-grid grid grid-cols-4 gap-4 mb-8">
+      <div class="card p-4 rounded-lg bg-surface">
+        <span class="text-sm text-muted">Total Tickets</span>
+        <p class="text-xl font-bold">{metrics.total_tickets}</p>
+      </div>
+      <div class="card p-4 rounded-lg bg-surface">
+        <span class="text-sm text-muted">Open</span>
+        <p class="text-xl font-bold text-amber-500">{metrics.open_tickets}</p>
+      </div>
+      <div class="card p-4 rounded-lg bg-surface">
+        <span class="text-sm text-muted">In Progress</span>
+        <p class="text-xl font-bold text-blue-500">{metrics.in_progress_tickets}</p>
+      </div>
+      <div class="card p-4 rounded-lg bg-surface">
+        <span class="text-sm text-muted">Resolved</span>
+        <p class="text-xl font-bold text-emerald-500">{metrics.resolved_tickets}</p>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Isolated Support Ticket List -->
+  <div class="ticket-list">
+    {#each tickets as ticket (ticket.id)}
+      <div class="ticket-item p-4 mb-2 border rounded-lg flex justify-between">
+        <div>
+          <span class="badge text-xs px-2 py-1 bg-muted rounded">{ticket.app_id}</span>
+          <h3 class="font-semibold text-lg inline ml-2">{ticket.title}</h3>
+          <p class="text-sm text-muted">{ticket.description}</p>
+        </div>
+        <span class="status-badge status-{ticket.status}">{ticket.status}</span>
+      </div>
+    {/each}
+  </div>
+</div>
+```
+
+---
+
 ## 🚀 Recommendation & Integration Strategy
 
 Once the `@swal/ui` package is published or the **Maloca** workspace dependency is linked into the `shelf` monorepo, follow these steps to perform the migration safely without visual regressions:
