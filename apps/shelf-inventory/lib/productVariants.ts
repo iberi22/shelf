@@ -44,7 +44,17 @@ const createId = (prefix: string) => {
       return `${prefix}_${Date.now()}_${rand}`;
     }
   }
-  return `${prefix}_${Date.now()}_${Date.now().toString(36).slice(-8)}`;
+  if (typeof crypto === 'undefined' || typeof crypto.getRandomValues !== 'function') {
+    throw new Error('Cryptographically secure ID generation is required but not supported in this environment.');
+  }
+
+  const buf = new Uint8Array(4);
+  crypto.getRandomValues(buf);
+  const rand = Array.from(buf)
+    .map((b) => b.toString(36).padStart(2, '0'))
+    .join('')
+    .substring(0, 8);
+  return `${prefix}_${Date.now()}_${rand}`;
 };
 
 const getLegacyAttributeValue = (product: Partial<Product>, label: string): string => {

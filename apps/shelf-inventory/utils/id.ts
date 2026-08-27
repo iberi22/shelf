@@ -16,5 +16,19 @@ export const generateId = (): string => {
         .substring(0, 26);
     }
   }
-  return Date.now().toString(36) + Date.now().toString(36);
+
+  // Fallback using crypto.getRandomValues if standard UUID generation is not available.
+  // We throw an error if no cryptographic API is present to ensure secure ID generation.
+  if (typeof crypto === 'undefined' || typeof crypto.getRandomValues !== 'function') {
+    throw new Error('Cryptographically secure ID generation is required but not supported in this environment.');
+  }
+
+  const buf = new Uint8Array(16);
+  crypto.getRandomValues(buf);
+  const chars = '0123456789abcdef';
+  let result = '';
+  for (let i = 0; i < 16; i++) {
+    result += chars[buf[i] % 16];
+  }
+  return result;
 };
