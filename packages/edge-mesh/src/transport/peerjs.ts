@@ -2,9 +2,9 @@ import Peer, { type DataConnection } from 'peerjs';
 import { createEnvelope, MessageDeduplicator } from '../protocol/index.js';
 import type { Envolvente, NodoId, TipoMensaje, TipoTransporte } from '../types/index.js';
 import { TIPO_MENSAJE, TIPO_TRANSPORTE } from '../types/index.js';
+import type { BroadcastChannelLike, StorageLike } from './offline-mesh.js';
+import { LocalDiscovery } from './offline-mesh.js';
 import type { ITransport, TransportEventMap } from './types.js';
-
-// ─── TYPES ─────────────────────────────────────────────────────────────────
 
 export interface PeerJSTransportOptions {
   readonly peerId: string;
@@ -14,11 +14,18 @@ export interface PeerJSTransportOptions {
   readonly key?: string;
   readonly debug?: number;
   readonly config?: RTCConfiguration;
+  readonly signalingTimeoutMs?: number;
+  readonly desactivarOfflineMesh?: boolean;
+  readonly discoveryHeartbeatMs?: number;
+  readonly discoveryExpiracionMs?: number;
+  readonly canalDescubrimiento?: string;
+  readonly claveDescubrimiento?: string;
+  readonly discoveryStorage?: StorageLike | null;
+  readonly discoveryCanalFactory?: () => BroadcastChannelLike | null;
+  readonly localDiscovery?: LocalDiscovery | null;
 }
 
 export type { TransportEventMap };
-
-// ─── PEERJS TRANSPORT ──────────────────────────────────────────────────────
 
 export class PeerJSTransport implements ITransport {
   readonly tipo: TipoTransporte = TIPO_TRANSPORTE.PEERJS;
@@ -29,11 +36,41 @@ export class PeerJSTransport implements ITransport {
   private readonly deduplicator: MessageDeduplicator;
   private conectado: boolean = false;
 
+  private readonly peerId: string;
+  private readonly signalingTimeoutMs: number;
+  private readonly desactivarOfflineMesh: boolean;
+  private readonly discoveryHeartbeatMs: number | undefined;
+  private readonly discoveryExpiracionMs: number | undefined;
+  private readonly canalDescubrimiento: string | undefined;
+  private readonly claveDescubrimiento: string | undefined;
+  private readonly discoveryStorage: StorageLike | null | undefined;
+  private readonly discoveryCanalFactory: (() => BroadcastChannelLike | null) | undefined;
+  private descubrimientoLocal: LocalDiscovery | null;
+  private readonly descubrimientoInyectado: boolean;
+
+  private modoOffline = false;
+  private timerSenalizacion: ReturnType<typeof setTimeout> | null = null;
+  private readonly peersPendientes: Set<string> = new Set();
+  private manejadorDescubrimiento: ((ev: CustomEvent<{ nodoId: NodoId; peerId: string; ts: number }>) => void) | null =
+    null;
+
   constructor(nodoId: NodoId, options: PeerJSTransportOptions) {
     this.nodoId = nodoId;
     this.eventTarget = new EventTarget();
     this.conexiones = new Map();
     this.deduplicator = new MessageDeduplicator();
+
+    this.peerId = options.peerId;
+    this.signalingTimeoutMs = options.signalingTimeoutMs ?? 5000;
+    this.desactivarOfflineMesh = options.desactivarOfflineMesh ?? false;
+    this.discoveryHeartbeatMs = options.discoveryHeartbeatMs;
+    this.discoveryExpiracionMs = options.discoveryExpiracionMs;
+    this.canalDescubrimiento = options.canalDescubrimiento;
+    this.claveDescubrimiento = options.claveDescubrimiento;
+    this.discoveryStorage = options.discoveryStorage;
+    this.discoveryCanalFactory = options.discoveryCanalFactory;
+    this.descubrimientoLocal = options.localDiscovery ?? null;
+    this.descubrimientoInyectado = options.localDiscovery !== undefined;
 
     this.peer = new Peer(options.peerId, {
       host: options.host,
@@ -45,8 +82,14 @@ export class PeerJSTransport implements ITransport {
     });
 
     this.peer.on('open', () => {
+      this.limpiarTimeoutSenalizacion();
       this.conectado = true;
       this.emit('conectado', { nodoId: this.nodoId });
+      if (this.modoOffline) {
+        this.salirModoOffline('conectado');
+      } else {
+        this.procesarPendientes();
+      }
     });
 
     this.peer.on('connection', (conn: DataConnection) => {
@@ -61,9 +104,11 @@ export class PeerJSTransport implements ITransport {
     this.peer.on('error', (error: Error) => {
       this.emit('error', { mensaje: error.message, error });
     });
-  }
 
-  // ─── EVENTOS ───────────────────────────────────────────────────────────
+    if (!this.desactivarOfflineMesh && this.signalingTimeoutMs > 0) {
+      this.iniciarTimeoutSenalizacion(this.signalingTimeoutMs);
+    }
+  }
 
   on<K extends keyof TransportEventMap>(tipo: K, handler: (ev: TransportEventMap[K]) => void): void {
     this.eventTarget.addEventListener(tipo as string, handler as EventListener);
@@ -78,75 +123,57 @@ export class PeerJSTransport implements ITransport {
     this.eventTarget.dispatchEvent(evento);
   }
 
-  // ─── CONEXION ──────────────────────────────────────────────────────────
-
   private manejarConexion(conn: DataConnection): void {
     const nodoRemoto = conn.peer as NodoId;
     this.conexiones.set(nodoRemoto, conn);
-
     conn.on('data', (datos: unknown) => {
       this.manejarDatos(datos);
     });
-
     conn.on('close', () => {
       this.conexiones.delete(nodoRemoto);
       this.emit('desconectado', { nodoId: nodoRemoto });
     });
-
     conn.on('error', (error: Error) => {
       this.emit('error', {
         mensaje: `Conexion error con ${nodoRemoto}`,
         error,
       });
     });
-
     this.emit('conectado', { nodoId: nodoRemoto });
   }
 
   private manejarDatos(datos: unknown): void {
     if (!esEnvolvente(datos)) return;
-
     if (this.deduplicator.esDuplicado(datos)) return;
-
     this.emit('mensaje', { envolvente: datos });
   }
-
-  // ─── ENVIO ─────────────────────────────────────────────────────────────
 
   async enviar(destino: NodoId, payload: unknown, tipoMensaje: string = TIPO_MENSAJE.SYNC): Promise<void> {
     const conn = this.conexiones.get(destino);
     if (conn === undefined) {
       throw new Error(`No hay conexion con el nodo ${destino}`);
     }
-
-    // If caller already built an envelope, forward as-is.
     if (esEnvolvente(payload)) {
       conn.send(payload);
       return;
     }
-
     const env = createEnvelope(tipoMensaje as TipoMensaje, this.nodoId, destino, payload);
-
     conn.send(env);
   }
 
   async transmitir(payload: unknown, tipoMensaje: string = TIPO_MENSAJE.SYNC): Promise<void> {
     const env = esEnvolvente(payload) ? payload : createEnvelope(tipoMensaje as TipoMensaje, this.nodoId, '*', payload);
-
     const promesas: Promise<void>[] = [];
     for (const conn of this.conexiones.values()) {
       promesas.push(
         new Promise<void>((resolve) => {
           try {
             conn.send(env);
-          } catch {
-            // Ignorar errores individuales en broadcast
-          }
+          } catch {}
           resolve();
         }),
       );
     }
-
     await Promise.all(promesas);
   }
 
@@ -158,10 +185,122 @@ export class PeerJSTransport implements ITransport {
     this.manejarConexion(conn);
   }
 
-  // ─── ESTADO ────────────────────────────────────────────────────────────
+  private iniciarTimeoutSenalizacion(timeoutMs: number): void {
+    this.limpiarTimeoutSenalizacion();
+    this.timerSenalizacion = setTimeout(() => {
+      this.timerSenalizacion = null;
+      if (!this.conectado) {
+        this.entrarModoOffline('timeout');
+      }
+    }, timeoutMs);
+  }
+
+  private limpiarTimeoutSenalizacion(): void {
+    if (this.timerSenalizacion !== null) {
+      clearTimeout(this.timerSenalizacion);
+      this.timerSenalizacion = null;
+    }
+  }
+
+  private entrarModoOffline(motivo: string): void {
+    if (this.modoOffline) return;
+    this.modoOffline = true;
+    this.emit('modo-offline', { nodoId: this.nodoId, offline: true, motivo });
+    if (this.descubrimientoLocal === null && !this.descubrimientoInyectado) {
+      this.descubrimientoLocal = this.crearDescubrimientoLocal();
+    }
+    const discovery = this.descubrimientoLocal;
+    if (discovery === null) return;
+    this.manejadorDescubrimiento = (ev: CustomEvent<{ nodoId: NodoId; peerId: string }>) => {
+      const { peerId } = ev.detail;
+      if (peerId === this.peerId) return;
+      if (this.conexiones.has(peerId as NodoId)) return;
+      this.emit('peer-descubierto', { nodoId: ev.detail.nodoId, peerId });
+      if (this.conectado) {
+        this.conectarRemoto(peerId).catch(() => {
+          this.peersPendientes.add(peerId);
+        });
+      } else {
+        this.peersPendientes.add(peerId);
+      }
+    };
+    try {
+      discovery.on(
+        'peer-descubierto',
+        this.manejadorDescubrimiento as unknown as (
+          ev: CustomEvent<{ nodoId: NodoId; peerId: string; ts: number }>,
+        ) => void,
+      );
+    } catch {}
+    try {
+      discovery.iniciar();
+    } catch {}
+  }
+
+  private salirModoOffline(motivo: string): void {
+    if (!this.modoOffline) return;
+    this.modoOffline = false;
+    this.emit('modo-offline', { nodoId: this.nodoId, offline: false, motivo });
+    const discovery = this.descubrimientoLocal;
+    if (discovery !== null) {
+      try {
+        if (this.manejadorDescubrimiento !== null) {
+          discovery.off(
+            'peer-descubierto',
+            this.manejadorDescubrimiento as unknown as (
+              ev: CustomEvent<{ nodoId: NodoId; peerId: string; ts: number }>,
+            ) => void,
+          );
+        }
+      } catch {}
+      try {
+        discovery.detener();
+      } catch {}
+    }
+    this.manejadorDescubrimiento = null;
+    this.procesarPendientes();
+  }
+
+  private procesarPendientes(): void {
+    if (this.peersPendientes.size === 0) return;
+    if (!this.conectado) return;
+    const pendientes = Array.from(this.peersPendientes);
+    this.peersPendientes.clear();
+    for (const pid of pendientes) {
+      if (this.conexiones.has(pid as NodoId)) continue;
+      this.conectarRemoto(pid).catch(() => {
+        this.peersPendientes.add(pid);
+      });
+    }
+  }
+
+  private crearDescubrimientoLocal(): LocalDiscovery | null {
+    try {
+      return new LocalDiscovery({
+        nodoId: this.nodoId,
+        peerId: this.peerId,
+        canalNombre: this.canalDescubrimiento,
+        claveStorage: this.claveDescubrimiento,
+        heartbeatMs: this.discoveryHeartbeatMs,
+        expiracionMs: this.discoveryExpiracionMs,
+        storage: this.discoveryStorage,
+        canalFactory: this.discoveryCanalFactory,
+      });
+    } catch {
+      return null;
+    }
+  }
 
   estaConectado(): boolean {
     return this.conectado;
+  }
+
+  esModoOffline(): boolean {
+    return this.modoOffline;
+  }
+
+  obtenerDescubrimiento(): LocalDiscovery | null {
+    return this.descubrimientoLocal;
   }
 
   obtenerConexiones(): readonly string[] {
@@ -169,17 +308,39 @@ export class PeerJSTransport implements ITransport {
   }
 
   async cerrar(): Promise<void> {
+    this.limpiarTimeoutSenalizacion();
+    if (this.modoOffline) {
+      const discovery = this.descubrimientoLocal;
+      if (discovery !== null) {
+        try {
+          if (this.manejadorDescubrimiento !== null) {
+            discovery.off(
+              'peer-descubierto',
+              this.manejadorDescubrimiento as unknown as (
+                ev: CustomEvent<{ nodoId: NodoId; peerId: string; ts: number }>,
+              ) => void,
+            );
+          }
+          discovery.detener();
+        } catch {}
+      }
+      this.manejadorDescubrimiento = null;
+    }
     for (const conn of this.conexiones.values()) {
-      conn.close();
+      try {
+        conn.close();
+      } catch {}
     }
     this.conexiones.clear();
-    this.peer.destroy();
+    try {
+      this.peer.destroy();
+    } catch {}
     this.conectado = false;
+    this.modoOffline = false;
+    this.peersPendientes.clear();
     this.deduplicator.reiniciar();
   }
 }
-
-// ─── TYPE GUARD ────────────────────────────────────────────────────────────
 
 function esEnvolvente(valor: unknown): valor is Envolvente {
   if (typeof valor !== 'object' || valor === null) return false;
