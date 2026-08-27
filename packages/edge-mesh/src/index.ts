@@ -162,6 +162,14 @@ export { SyncEngine } from './sync/engine.js';
 // ─── TRANSPORT ────────────────────────────────────────────────────────────
 export { MemoryTransport } from './transport/memory.js';
 export type {
+  BroadcastChannelLike,
+  EntradaDescubrimiento,
+  LocalDiscoveryEventMap,
+  LocalDiscoveryOptions,
+  StorageLike,
+} from './transport/offline-mesh.js';
+export { LocalDiscovery } from './transport/offline-mesh.js';
+export type {
   PeerJSTransportOptions,
   TransportEventMap,
 } from './transport/peerjs.js';

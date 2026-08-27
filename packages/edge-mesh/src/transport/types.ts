@@ -8,6 +8,15 @@ export interface TransportEventMap {
     readonly from?: NodoId;
   }>;
   error: CustomEvent<{ readonly mensaje: string; readonly error?: Error }>;
+  'modo-offline': CustomEvent<{
+    readonly nodoId: NodoId;
+    readonly offline: boolean;
+    readonly motivo?: string;
+  }>;
+  'peer-descubierto': CustomEvent<{
+    readonly nodoId: NodoId;
+    readonly peerId: string;
+  }>;
 }
 
 /**
