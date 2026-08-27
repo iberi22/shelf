@@ -153,9 +153,26 @@ export function upsertEntity<T extends EntityRecord & SyncEntityRecord>(
 
   const branchId = (item as any).branchId || (isBranchScoped(collectionName) ? activeBranchId : undefined);
 
+  const existing = yMap.get(item.id);
+  const nowTs = (item as any).updatedAt || new Date().toISOString();
+  const existingTimestamps = (existing as any)?._fieldTimestamps || {};
+  const fieldTimestamps: Record<string, string> = { ...existingTimestamps };
+
+  for (const [key, value] of Object.entries(persistableItem)) {
+    if (['id', 'updatedAt', 'updatedBy', '__baseUpdatedAt', '_fieldTimestamps'].includes(key)) continue;
+    if (existing === undefined || (existing as any)[key] !== value || !fieldTimestamps[key]) {
+      fieldTimestamps[key] = nowTs;
+    }
+  }
+
+  const persistableWithTimestamps = {
+    ...persistableItem,
+    _fieldTimestamps: fieldTimestamps,
+  };
+
   ctx.doc.transact(
     () => {
-      yMap.set(item.id, persistableItem as any);
+      yMap.set(item.id, persistableWithTimestamps as any);
     },
     { origin: 'local', branchId },
   );
