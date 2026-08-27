@@ -776,7 +776,7 @@
       "sdlc": "hardening",
       "priority": "P0",
       "category": "CRDT",
-      "description": "Sincronizaci\u00f3n CRDT Yjs con doc compartido (Phase B); ACL remota de entidades relajada",
+      "description": "Sincronizaci\u00f3n CRDT Yjs con doc compartido (Phase B); envelope firmado obligatorio para mutaciones remotas",
       "user_story": "Como usuario, quiero que los cambios se sincronicen sin conflictos entre dispositivos",
       "actor": "Usuario de Bodega",
       "dependencies": [
@@ -793,17 +793,16 @@
         "Sincronizaci\u00f3n eficiente (solo cambios delta, no datos completos)",
         "Funciona 100% offline \u2192 sync cuando hay conexi\u00f3n"
       ],
-      "implementation_percentage": 95,
-      "progress_pct": 95,
+      "implementation_percentage": 100,
+      "progress_pct": 100,
       "maturity": "hardened",
       "evidence": [
         "database-sync.ts Y.Maps + encodeStateAsUpdate",
         "shared yDoc Phase B (AppContext + EdgeMesh)",
-        "offline-sync + conflict-resolution E2E"
+        "offline-sync + conflict-resolution E2E",
+        "mandatory signed CRDT envelope verification and tests in security.test.ts"
       ],
-      "gaps": [
-        "Optional further harden signed envelope requirement"
-      ]
+      "gaps": []
     },
     {
       "id": "SRC-EDGE-001",
