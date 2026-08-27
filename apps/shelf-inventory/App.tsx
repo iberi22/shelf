@@ -5,6 +5,7 @@ import BusinessOnboarding from './components/BusinessOnboarding';
 import LandingPage from './components/LandingPage';
 import LockScreen from './components/LockScreen';
 import Notification from './components/Notification';
+import OfflineBanner from './components/OfflineBanner';
 import RecoveryApprovalModal from './components/RecoveryApprovalModal';
 import UpdateNotification from './components/UpdateNotification';
 import { AppProvider, useAppContext } from './context/AppContext';
@@ -138,6 +139,7 @@ const AppContainer = () => {
 
   return (
     <>
+      <OfflineBanner />
       <MainApp />
 
       {/* P2P recovery approval (shown on master device when a request arrives) */}
