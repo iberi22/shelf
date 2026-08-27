@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import type { Product, Sale } from '../../../packages/p2p-mesh-core/src/types';
+import type { Product, Sale } from '../../../../packages/p2p-mesh-core/src/types';
 
 export const SHELF_EDGE_NAMESPACE = 'shelf';
 
