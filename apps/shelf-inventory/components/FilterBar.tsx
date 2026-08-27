@@ -3,11 +3,11 @@ import { useEffect } from 'react';
 import { useI18n } from '../context/I18nContext';
 
 /**
- * Multi-facet filters for the Inventory table (SHELF-108).
+ * Multi-facet filters for the Inventory table (SHELF-108 / SRC-FUN-001).
  *
  * Filters compose with AND logic (intersection). Active filters are shown as
  * removable chips above the product data. Filter state is persisted in URL
- * query params so filtered views are shareable.
+ * query params so filtered views are shareable and bookmarkable.
  */
 
 export type InventoryStockStatus = 'in-stock' | 'low' | 'out';

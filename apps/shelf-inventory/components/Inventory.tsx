@@ -168,7 +168,7 @@ const Inventory: React.FC = () => {
   } = useSortableTable<Product>(activeProducts, { key: 'name', direction: 'asc' });
 
   const [filter, setFilter] = useState('');
-  // SHELF-108: active facet filters (category / status / price / supplier / dates),
+  // SHELF-108 / SRC-FUN-001: active multi-facet filters (category, status, min/max price, supplier, date range),
   // initialized from the URL query string so shared filtered views restore on load.
   const [facetFilters, setFacetFilters] = useState<InventoryFacetFilters>(() => readFacetFiltersFromUrl());
 
