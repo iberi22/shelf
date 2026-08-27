@@ -1,8 +1,8 @@
+import type { NodoId } from 'edge-mesh';
+import { EdgeMesh } from 'edge-mesh';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EvidentiaVeeduria } from '../../src/adapters/maloca-veeduria/evidentia-veeduria.js';
 import type { Contrato } from '../../src/adapters/maloca-veeduria/types.js';
-import { EdgeMesh } from 'edge-mesh';
-import type { NodoId } from 'edge-mesh';
 
 describe('EvidentiaVeeduria', () => {
   let mesh: EdgeMesh;

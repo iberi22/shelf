@@ -1,5 +1,5 @@
-import * as Y from 'yjs';
 import type { EdgeMesh } from 'edge-mesh';
+import * as Y from 'yjs';
 import type { EPSData } from './types.js';
 
 export class EPSBridge {

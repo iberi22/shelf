@@ -1,8 +1,8 @@
+import type { NodoId } from 'edge-mesh';
+import { EdgeMesh } from 'edge-mesh';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PerfilPacienteAdapter } from '../../src/adapters/maloca-salud/patient-profile.js';
 import type { PacientePerfil } from '../../src/adapters/maloca-salud/types.js';
-import { EdgeMesh } from 'edge-mesh';
-import type { NodoId } from 'edge-mesh';
 
 describe('PerfilPacienteAdapter', () => {
   let mesh: EdgeMesh;

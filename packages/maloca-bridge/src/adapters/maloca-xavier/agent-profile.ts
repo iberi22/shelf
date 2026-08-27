@@ -1,5 +1,4 @@
-import type { EdgeMesh } from 'edge-mesh';
-import type { HealthStatus, NodoId } from 'edge-mesh';
+import type { EdgeMesh, HealthStatus, NodoId } from 'edge-mesh';
 
 export interface AgentProfile {
   readonly id: NodoId;

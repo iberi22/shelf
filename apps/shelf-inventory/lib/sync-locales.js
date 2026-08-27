@@ -22,8 +22,6 @@
  * indent, unicode preserved, and a trailing newline — so diffs stay minimal.
  */
 
-'use strict';
-
 const fs = require('fs');
 const path = require('path');
 
@@ -72,16 +70,10 @@ function syncObject(baseObj, localeObj, localeCode, pruneExtras, prefix = '') {
 
   for (const [key, baseValue] of Object.entries(baseObj)) {
     const full = prefix ? `${prefix}.${key}` : key;
-    if (Object.prototype.hasOwnProperty.call(localeObj, key)) {
+    if (Object.hasOwn(localeObj, key)) {
       const localeValue = localeObj[key];
       if (isPlainObject(baseValue) && isPlainObject(localeValue)) {
-        const child = syncObject(
-          baseValue,
-          localeValue,
-          localeCode,
-          pruneExtras,
-          full,
-        );
+        const child = syncObject(baseValue, localeValue, localeCode, pruneExtras, full);
         result[key] = child.result;
         missing.push(...child.missing);
         extras.push(...child.extras);
@@ -105,7 +97,7 @@ function syncObject(baseObj, localeObj, localeCode, pruneExtras, prefix = '') {
 
   // Extras: present in the locale but absent from the base.
   for (const key of Object.keys(localeObj)) {
-    if (!Object.prototype.hasOwnProperty.call(baseObj, key)) {
+    if (!Object.hasOwn(baseObj, key)) {
       extras.push(prefix ? `${prefix}.${key}` : key);
       if (!pruneExtras) result[key] = localeObj[key];
     }
@@ -146,12 +138,7 @@ for (const file of localeFiles) {
   if (ONLY_LOCALE && localeCode !== ONLY_LOCALE) continue;
 
   const localeObj = readJson(path.join(LOCALES_DIR, file));
-  const { result, missing, extras } = syncObject(
-    base,
-    localeObj,
-    localeCode,
-    REMOVE_EXTRAS,
-  );
+  const { result, missing, extras } = syncObject(base, localeObj, localeCode, REMOVE_EXTRAS);
 
   const writeNeeded = missing.length > 0 || extras.length > 0;
   if (!CHECK_ONLY && writeNeeded) {
@@ -172,11 +159,7 @@ console.log(`Base : ${BASE_LOCALE}.json (${baseKeys.length} keys)`);
 console.log(`Dir  : ${LOCALES_DIR}`);
 console.log(LINE);
 console.log(
-  'Locale'.padEnd(8) +
-    'Keys'.padStart(6) +
-    'Missing'.padStart(9) +
-    'Extra'.padStart(7) +
-    '   Missing keys (first 5)',
+  'Locale'.padEnd(8) + 'Keys'.padStart(6) + 'Missing'.padStart(9) + 'Extra'.padStart(7) + '   Missing keys (first 5)',
 );
 console.log(LINE);
 
@@ -191,9 +174,7 @@ for (const { localeCode, total, missing, extras } of rows) {
   );
 }
 console.log(LINE);
-console.log(
-  `TOTAL: ${rows.length} locale(s) · ${totalMissing} missing key(s) · ${totalExtras} extra key(s)`,
-);
+console.log(`TOTAL: ${rows.length} locale(s) · ${totalMissing} missing key(s) · ${totalExtras} extra key(s)`);
 
 if (CHECK_ONLY && totalMissing > 0) {
   console.log('\n❌ Missing keys detected (--check mode, nothing was written).');
@@ -204,9 +185,7 @@ if (!CHECK_ONLY) {
   if (filesWritten > 0) {
     console.log(`\n✓ Filled placeholders in ${filesWritten} file(s).`);
     if (totalMissing > 0) {
-      console.log(
-        `  Find them with: grep -rn "\\[MISSING:" apps/shelf-inventory/locales/`,
-      );
+      console.log(`  Find them with: grep -rn "\\[MISSING:" apps/shelf-inventory/locales/`);
     }
   } else {
     console.log('\n✓ All locales are in sync — no files modified.');

@@ -1,5 +1,4 @@
-import type { EdgeMesh } from 'edge-mesh';
-import type { HealthStatus, NodoId } from 'edge-mesh';
+import type { EdgeMesh, HealthStatus, NodoId } from 'edge-mesh';
 import type { AgentProfile } from './agent-profile.js';
 
 export interface PromptRouteResponse {

@@ -33,11 +33,11 @@ import EdgeMeshWorkflowBridge from '../components/EdgeMeshWorkflowBridge';
 import usePersistedReducer from '../hooks/usePersistedReducer';
 import { useReactiveProducts } from '../hooks/useReactiveProducts';
 import { useReactiveSales } from '../hooks/useReactiveSales';
+import { cloudAuthProvider } from '../lib/cloudAuth';
+import { CloudSyncProvider } from '../lib/cloudSync';
 import { DEFAULT_INVENTORY_CONFIG, normalizeInventoryConfig } from '../lib/inventoryConfig';
 import { getProductVariants, normalizeProduct } from '../lib/productVariants';
 import { scheduleXavierInventorySync } from '../lib/xavier';
-import { cloudAuthProvider } from '../lib/cloudAuth';
-import { CloudSyncProvider } from '../lib/cloudSync';
 
 const initialState: AppState = {
   products: [],

@@ -1,8 +1,8 @@
+import type { NodoId } from 'edge-mesh';
+import { EdgeMesh } from 'edge-mesh';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LicitanteProfileAdapter } from '../../src/adapters/maloca-veeduria/licitante-profile.js';
 import type { PerfilLicitante } from '../../src/adapters/maloca-veeduria/types.js';
-import { EdgeMesh } from 'edge-mesh';
-import type { NodoId } from 'edge-mesh';
 
 describe('LicitanteProfileAdapter', () => {
   let mesh: EdgeMesh;

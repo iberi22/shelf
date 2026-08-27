@@ -1,6 +1,5 @@
+import type { EdgeMesh, PostQuantumIdentity } from 'edge-mesh';
 import * as Y from 'yjs';
-import type { EdgeMesh } from 'edge-mesh';
-import type { PostQuantumIdentity } from 'edge-mesh';
 import type { PacientePerfil } from './types.js';
 
 export class PerfilPacienteAdapter {

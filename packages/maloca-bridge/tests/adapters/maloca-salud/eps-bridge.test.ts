@@ -1,8 +1,8 @@
+import type { NodoId } from 'edge-mesh';
+import { EdgeMesh } from 'edge-mesh';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EPSBridge } from '../../src/adapters/maloca-salud/eps-bridge.js';
 import type { EPSData } from '../../src/adapters/maloca-salud/types.js';
-import { EdgeMesh } from 'edge-mesh';
-import type { NodoId } from 'edge-mesh';
 
 describe('EPSBridge', () => {
   let mesh: EdgeMesh;

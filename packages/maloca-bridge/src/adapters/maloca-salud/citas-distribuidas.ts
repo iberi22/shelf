@@ -1,5 +1,5 @@
-import * as Y from 'yjs';
 import type { EdgeMesh } from 'edge-mesh';
+import * as Y from 'yjs';
 import type { CitaInfo } from './types.js';
 
 export class CitaMeshAdapter {
