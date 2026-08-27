@@ -649,17 +649,15 @@
         "Validaci\u00f3n de datos importados",
         "Feedback visual del proceso de importaci\u00f3n"
       ],
-      "implementation_percentage": 94,
-      "progress_pct": 94,
+      "implementation_percentage": 100,
+      "progress_pct": 100,
       "maturity": "hardened",
       "evidence": [
         "lib/csvProductImport.ts previewCsvHeaders + columnMapping",
         "ImportCSVModal interactive mapping UI",
         "tests/csv-import.spec.ts"
       ],
-      "gaps": [
-        "Optional all-or-nothing import rollback"
-      ]
+      "gaps": []
     },
     {
       "id": "SRC-FUN-015",
