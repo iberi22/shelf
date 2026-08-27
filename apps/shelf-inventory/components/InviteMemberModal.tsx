@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
-import Modal from './Modal';
+import Modal from './ui/Modal';
 
 interface InviteMemberModalProps {
   onClose: () => void;

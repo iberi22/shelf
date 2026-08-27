@@ -1,6 +1,6 @@
 import type { ExtractedInvoiceData } from 'p2p-mesh-core';
 import React, { useState } from 'react';
-import Modal from './Modal';
+import Modal from './ui/Modal';
 
 interface InvoiceConfirmationModalProps {
   isOpen: boolean;

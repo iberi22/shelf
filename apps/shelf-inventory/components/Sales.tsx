@@ -12,7 +12,7 @@ import { useSortableTable } from '../hooks/useSortableTable';
 import { getProductVariantDisplay, getProductVariants, normalizeProduct } from '../lib/productVariants';
 import BarcodeScanner from './BarcodeScanner';
 import { InfiniteTable } from './InfiniteTable';
-import Modal from './Modal';
+import Modal from './ui/Modal';
 
 // SHELF-110: scan mode auto-disables after this inactivity window (ms).
 const SCAN_MODE_TIMEOUT_MS = 30_000;

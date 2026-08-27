@@ -1,5 +1,5 @@
 import { mount } from 'cypress/react';
-import Modal from '../../components/Modal';
+import Modal from '../../components/ui/Modal';
 import { I18nProvider } from '../../context/I18nContext';
 
 describe('Modal Component', () => {
@@ -17,8 +17,8 @@ describe('Modal Component', () => {
       </I18nProvider>,
     );
 
-    // The modal backdrop should be fixed and its top should be 0, regardless of the container's 100px margin
-    cy.get('.fixed.inset-0').then(($el) => {
+    // The modal root should be fixed and its top should be 0, regardless of the container's 100px margin
+    cy.get('.swal-modal-root').then(($el) => {
       const rect = $el[0].getBoundingClientRect();
       expect(rect.top).to.equal(0);
       expect(rect.left).to.equal(0);

@@ -5,7 +5,7 @@ import { useI18n } from '../context/I18nContext';
 import { useSortableTable } from '../hooks/useSortableTable';
 import ContactForm from './ContactForm';
 import { InfiniteTable } from './InfiniteTable';
-import Modal from './Modal';
+import Modal from './ui/Modal';
 
 type Contact = Client | Supplier;
 

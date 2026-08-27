@@ -2,7 +2,8 @@ import type React from 'react';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import Modal from './Modal';
+import Button from './ui/Button';
+import Modal from './ui/Modal';
 
 interface WelcomeModalProps {
   isOpen: boolean;
@@ -84,19 +85,12 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose }) => {
 
         {/* Get Started Button */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-          <button
-            onClick={handleGuestMode}
-            className="bg-foreground/10 border border-foreground/30 text-foreground font-bold py-3 px-8 rounded-lg hover:bg-foreground/20 transition-all active:scale-95"
-          >
+          <Button variant="secondary" size="lg" onClick={handleGuestMode}>
             {t('auth.continueAsGuest')}
-          </button>
-          <button
-            onClick={handleClose}
-            data-testid="welcome-modal-get-started-button"
-            className="bg-foreground text-surface font-bold py-3 px-8 rounded-lg hover:bg-opacity-80 transition-all transform hover:scale-105 active:scale-95"
-          >
+          </Button>
+          <Button onClick={handleClose} data-testid="welcome-modal-get-started-button" size="lg">
             {t('welcome.getStarted')}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

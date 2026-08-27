@@ -4,7 +4,7 @@ import type { ExtractedInvoiceData } from 'p2p-mesh-core';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalOCR } from '../hooks/useLocalOCR';
 import useLocalStorage from '../hooks/useLocalStorage';
-import Modal from './Modal';
+import Modal from './ui/Modal';
 
 const CAPTURE_CANVAS_ID = 'invoice-capture-canvas';
 

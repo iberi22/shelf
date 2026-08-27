@@ -7,7 +7,7 @@ import { useUI } from '../context/UIContext';
 import { useSortableTable } from '../hooks/useSortableTable';
 import { getProductVariantDisplay, getProductVariants, normalizeProduct } from '../lib/productVariants';
 import { InfiniteTable } from './InfiniteTable';
-import Modal from './Modal';
+import Modal from './ui/Modal';
 
 const PurchaseOrders: React.FC = () => {
   const { state, dispatch } = useAppContext();

@@ -21,8 +21,8 @@ import { telemetry } from '../lib/telemetry';
 import BarcodeScanner from './BarcodeScanner';
 import FilterBar, { type InventoryFacetFilters, type InventoryStockStatus, readFacetFiltersFromUrl } from './FilterBar';
 import { InfiniteTable } from './InfiniteTable';
-import Modal from './Modal';
 import PhotoVariantPicker from './PhotoVariantPicker';
+import Modal from './ui/Modal';
 
 const isValidHexColor = (color: string): boolean => /^#[0-9a-f]{6}$/i.test(color);
 
@@ -858,7 +858,7 @@ const Inventory: React.FC = () => {
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           title={editingProduct ? t('inventory.editProduct') : t('inventory.addProduct')}
-          size="wide"
+          size="lg"
         >
           <ProductForm product={editingProduct} onSave={handleSaveProduct} onCancel={handleCloseModal} />
         </Modal>

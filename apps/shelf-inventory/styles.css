@@ -1,4 +1,5 @@
-@import './src/styles/swal-tokens.css';
+@import '@swal/ui/tokens';
+@import './src/styles/swal-components.css';
 @import "tailwindcss";
 
 @theme {
