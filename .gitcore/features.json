@@ -225,18 +225,18 @@
         "Historial de ventas con fecha, productos y total",
         "C\u00e1lculo autom\u00e1tico de revenue y profit por venta"
       ],
-      "implementation_percentage": 97,
-      "progress_pct": 97,
+      "implementation_percentage": 100,
+      "progress_pct": 100,
       "maturity": "hardened",
       "evidence": [
         "apps/shelf-inventory/components/Sales.tsx",
+        "apps/shelf-inventory/lib/productLookup.ts",
+        "apps/shelf-inventory/tests/e2e/sales-scan.spec.ts",
         "AppContext ADD_SALE \u2192 syncInventoryStockChanges",
         "cypress/e2e/sales.cy.ts",
         "cypress/e2e/pdf-generation.cy.ts"
       ],
-      "gaps": [
-        "Optional scan-to-cart in Sales"
-      ]
+      "gaps": []
     },
     {
       "id": "SRC-FUN-003",
