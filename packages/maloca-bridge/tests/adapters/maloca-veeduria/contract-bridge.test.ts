@@ -1,8 +1,8 @@
 import type { NodoId } from 'edge-mesh';
 import { EdgeMesh } from 'edge-mesh';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ContractBridge } from '../../src/adapters/maloca-veeduria/contract-bridge.js';
-import type { Contrato, PerfilLicitante } from '../../src/adapters/maloca-veeduria/types.js';
+import { ContractBridge } from '../../../src/adapters/maloca-veeduria/contract-bridge.js';
+import type { Contrato, PerfilLicitante } from '../../../src/adapters/maloca-veeduria/types.js';
 
 describe('ContractBridge', () => {
   let mesh: EdgeMesh;

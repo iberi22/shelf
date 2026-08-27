@@ -295,4 +295,31 @@ describe('SyncEngine signed envelope enforcement (SHELF-111)', () => {
     expect(result.operacionesRecibidas).toBe(1);
     expect(result.operacionesRechazadas).toBe(0);
   });
+
+  it('enforces requireSignedEnvelopes as true by default when omitted from config', async () => {
+    const engineDefault = new SyncEngine({
+      docId,
+      opLog: oplog,
+      signedEnvelopeEnforcementStartMs: Date.now() - 10 * 24 * 60 * 60 * 1000,
+      signedEnvelopeGracePeriodMs: GRACE_MS,
+    });
+
+    const rechazoSpy = vi.fn();
+    engineDefault.on('envelopeRechazado', rechazoSpy);
+
+    const result = await engineDefault.sincronizar(
+      peerId,
+      async () => {},
+      async () => [unsignedOp(1)],
+    );
+
+    expect(result.exito).toBe(true);
+    expect(result.operacionesRecibidas).toBe(0);
+    expect(result.operacionesRechazadas).toBe(1);
+    expect(rechazoSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: expect.objectContaining({ motivo: 'firma-ausente', secuencia: 1 }),
+      }),
+    );
+  });
 });

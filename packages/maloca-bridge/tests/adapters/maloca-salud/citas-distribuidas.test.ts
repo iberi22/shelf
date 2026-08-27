@@ -1,8 +1,8 @@
 import type { NodoId } from 'edge-mesh';
 import { EdgeMesh } from 'edge-mesh';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { CitaMeshAdapter } from '../../src/adapters/maloca-salud/citas-distribuidas.js';
-import type { CitaInfo } from '../../src/adapters/maloca-salud/types.js';
+import { CitaMeshAdapter } from '../../../src/adapters/maloca-salud/citas-distribuidas.js';
+import type { CitaInfo } from '../../../src/adapters/maloca-salud/types.js';
 
 describe('CitaMeshAdapter', () => {
   let mesh: EdgeMesh;

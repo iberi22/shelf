@@ -818,19 +818,18 @@
         "Revoca cambios CRDT no autorizados via security origin",
         "React bindings via edge-mesh-react"
       ],
-      "implementation_percentage": 95,
-      "progress_pct": 95,
-      "maturity": "integrated",
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened",
       "evidence": [
         "packages/edge-mesh",
+        "packages/maloca-bridge",
+        "docs/ADR-maloca-split.md",
         "packages/p2p-mesh-core/src/database-sync",
         "packages/p2p-mesh-core/tests/security.test.ts",
         "apps/shelf-inventory/tests/edge-mesh-sync.spec.ts"
       ],
-      "gaps": [
-        "Maloca extract residual Phase D2 (package split deferred)",
-        "requireSignedEnvelopes still optional on edge-mesh path"
-      ]
+      "gaps": []
     },
     {
       "id": "SRC-GPU-001",
