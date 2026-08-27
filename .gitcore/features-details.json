@@ -531,7 +531,7 @@
     {
       "id": "SRC-CRDT-001",
       "name": "CRDT Sync (Yjs)",
-      "implementation_percentage": 95,
+      "implementation_percentage": 100,
       "status": "implemented",
       "maturity": "hardened",
       "priority": "P0",
@@ -543,7 +543,8 @@
       "tests": [
         "apps/shelf-inventory/tests/p2p-conflict-resolution.spec.ts",
         "apps/shelf-inventory/tests/offline-sync.spec.ts",
-        "packages/edge-mesh/tests/sync/shared-ydoc.test.ts"
+        "packages/edge-mesh/tests/sync/shared-ydoc.test.ts",
+        "packages/p2p-mesh-core/tests/security.test.ts"
       ],
       "acceptance_met": {
         "yjs_maps": true,

@@ -1,4 +1,5 @@
 import type { ImportStrategy } from 'p2p-mesh-core';
+import { dbSync } from 'p2p-mesh-core';
 import type React from 'react';
 import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
@@ -7,7 +8,8 @@ import { useUI } from '../context/UIContext';
 import {
   CANONICAL_CSV_HEADERS,
   type CanonicalCsvHeader,
-  parseProductCsvAtomic,
+  importCSVTransactional,
+  parseProductCsv,
   previewCsvHeaders,
 } from '../lib/csvProductImport';
 import Modal from './ui/Modal';
@@ -22,6 +24,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
   const { dispatch } = useAppContext();
   const [file, setFile] = useState<File | null>(null);
   const [strategy, setStrategy] = useState<ImportStrategy>('skip');
+  const [transactional, setTransactional] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(false);
   const [rowErrors, setRowErrors] = useState<string[]>([]);
 
@@ -90,25 +93,48 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
     setRowErrors([]);
 
     try {
-      const result = parseProductCsvAtomic(csvText, { columnMapping: userMapping });
+      if (transactional) {
+        const result = importCSVTransactional(csvText, {
+          columnMapping: userMapping,
+          doc: dbSync?.doc,
+          onApply: (products) => {
+            dispatch({ type: 'IMPORT_PRODUCTS', payload: { products, strategy } });
+          },
+        });
 
-      if (!result.ok) {
-        setRowErrors(result.errors.slice(0, 8).map((e) => `L${e.line}: ${e.message}`));
-        const msg =
-          result.abortReason ||
-          result.errors[0]?.message ||
-          t('settings.import.invalidHeaderError') ||
-          'Import aborted — nothing was imported.';
-        showNotification(t('settings.import.rollback') || `Importación fallida, cambios revertidos: ${msg}`, 'error');
-        return;
+        if (!result.ok || !result.committed) {
+          setRowErrors(result.errors.slice(0, 8).map((e) => `L${e.line}: ${e.message}`));
+          const msg =
+            result.abortReason ||
+            result.errors[0]?.message ||
+            t('settings.import.invalidHeaderError') ||
+            'Import aborted — nothing was imported.';
+          showNotification(t('settings.import.rollback') || `Importación fallida, cambios revertidos: ${msg}`, 'error');
+          return;
+        }
+
+        showNotification(
+          t('settings.import.success', { count: result.products.length }) ||
+            `Imported ${result.products.length} products`,
+          'success',
+        );
+      } else {
+        const parsed = parseProductCsv(csvText, { columnMapping: userMapping, mode: 'import-valid-rows' });
+        if (parsed.errors.length > 0) {
+          setRowErrors(parsed.errors.slice(0, 8).map((e) => `L${e.line}: ${e.message}`));
+        }
+        if (parsed.products.length > 0) {
+          dispatch({ type: 'IMPORT_PRODUCTS', payload: { products: parsed.products, strategy } });
+          showNotification(
+            t('settings.import.success', { count: parsed.products.length }) ||
+              `Imported ${parsed.products.length} products`,
+            'success',
+          );
+        } else {
+          showNotification(t('settings.import.invalidHeaderError') || 'No valid products found to import.', 'error');
+          return;
+        }
       }
-
-      dispatch({ type: 'IMPORT_PRODUCTS', payload: { products: result.products, strategy } });
-      showNotification(
-        t('settings.import.success', { count: result.products.length }) ||
-          `Imported ${result.products.length} products`,
-        'success',
-      );
       onClose();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -222,6 +248,25 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose }) => {
               {t('settings.import.strategyUpdate')}
             </label>
           </div>
+        </div>
+
+        <div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer text-foreground">
+            <input
+              type="checkbox"
+              data-testid="import-csv-transactional-toggle"
+              checked={transactional}
+              onChange={(e) => setTransactional(e.target.checked)}
+              className="form-checkbox bg-background border-foreground/50 text-yellow-400 focus:ring-yellow-400 rounded"
+            />
+            <span className="font-medium">
+              {t('settings.import.transactionalMode') || 'Modo Transaccional (All-or-Nothing / Rollback)'}
+            </span>
+          </label>
+          <p className="text-xs text-foreground/60 mt-1">
+            {t('settings.import.transactionalDesc') ||
+              'Si alguna fila contiene errores, la importación se cancela por completo y no se guardará ningún producto.'}
+          </p>
         </div>
 
         {rowErrors.length > 0 && (

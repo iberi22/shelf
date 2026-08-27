@@ -1,5 +1,5 @@
 import json, sys
-sys.path.insert(0, __import__("os").path.dirname(__import__("os").path.abspath(__file__)))
+sys.path.insert(0, "/app/.gitcore/scripts/lib")
 from load_lenient import load_lenient
 d = load_lenient(sys.argv[1])
 for f in d.get("features", []):
