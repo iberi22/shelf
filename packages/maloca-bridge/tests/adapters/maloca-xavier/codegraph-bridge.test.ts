@@ -1,7 +1,7 @@
 import type { NodoId } from 'edge-mesh';
 import { EdgeMesh } from 'edge-mesh';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CodeGraphAdapter } from '../../src/adapters/maloca-xavier/codegraph-bridge.js';
+import { CodeGraphAdapter } from '../../../src/adapters/maloca-xavier/codegraph-bridge.js';
 
 vi.mock('../../../src/transport/peerjs.js');
 vi.mock('idb', () => ({

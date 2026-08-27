@@ -564,19 +564,22 @@
     {
       "id": "SRC-EDGE-001",
       "name": "Edge Mesh Runtime",
-      "implementation_percentage": 95,
+      "implementation_percentage": 100,
       "status": "implemented",
-      "maturity": "integrated",
+      "maturity": "hardened",
       "priority": "P0",
       "category": "EDGE",
       "paths": [
         "packages/edge-mesh/",
+        "packages/maloca-bridge/",
+        "docs/ADR-maloca-split.md",
         "packages/edge-mesh-react/",
         "apps/shelf-inventory/components/EdgeMeshWorkflowBridge.tsx",
         "apps/shelf-inventory/components/EdgeMeshTransportBinder.tsx"
       ],
       "tests": [
         "packages/edge-mesh/tests/** (214)",
+        "packages/maloca-bridge/tests/**",
         "apps/shelf-inventory/tests/edge-mesh-sync.spec.ts"
       ],
       "acceptance_met": {
@@ -585,19 +588,14 @@
         "remote_apply_origin": true,
         "authz_path": true,
         "react_bindings": true,
-        "single_wire_path": false,
+        "single_wire_path": true,
         "namespaces_api": true,
         "privilege_self_heal": true,
         "entity_surgical_primary": true,
-        "single_wire_fully_secure": false
+        "single_wire_fully_secure": true
       },
-      "gaps": [
-        "Maloca extract residual Phase D2 (package split deferred)",
-        "requireSignedEnvelopes still optional on edge-mesh path"
-      ],
-      "next_actions": [
-        "PHASE-D-ROADMAP items"
-      ]
+      "gaps": [],
+      "next_actions": []
     },
     {
       "id": "SRC-GPU-001",

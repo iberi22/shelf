@@ -13,12 +13,12 @@ This document details the performance benchmarks and fallback mechanisms of the 
 
 | Numeric Task Type | Backend | Mean Latency (ms) | p95 Latency (ms) | Throughput (ops/sec) |
 | :--- | :--- | :---: | :---: | :---: |
-| `vector-sum` | **CPU** | 0.558 ms | 0.712 ms | 1792.2 ops/s |
-| `dot-product` | **CPU** | 1.087 ms | 1.720 ms | 920.2 ops/s |
-| `matrix-scale` | **CPU** | 0.858 ms | 1.435 ms | 1166.2 ops/s |
-| `vector-sum` | **WEBGPU** | 1.075 ms | 1.768 ms | 930.0 ops/s |
-| `dot-product` | **WEBGPU** | 2.074 ms | 3.760 ms | 482.3 ops/s |
-| `matrix-scale` | **WEBGPU** | 1.281 ms | 1.963 ms | 780.6 ops/s |
+| `vector-sum` | **CPU** | 0.560 ms | 0.927 ms | 1785.6 ops/s |
+| `dot-product` | **CPU** | 1.065 ms | 1.569 ms | 938.7 ops/s |
+| `matrix-scale` | **CPU** | 0.820 ms | 1.243 ms | 1219.6 ops/s |
+| `vector-sum` | **WEBGPU** | 1.165 ms | 2.687 ms | 858.0 ops/s |
+| `dot-product` | **WEBGPU** | 2.221 ms | 4.353 ms | 450.3 ops/s |
+| `matrix-scale` | **WEBGPU** | 1.238 ms | 1.686 ms | 808.0 ops/s |
 
 ## Core Edge Cases & Failover Strategies Verified
 
@@ -26,4 +26,4 @@ This document details the performance benchmarks and fallback mechanisms of the 
 2. **Device Disconnection (Device Lost):** If an active WebGPU device context is destroyed or lost (e.g. driver crashes or unplugged external GPU), the agent catches the `.lost` promise event, invalidates the device cache, and gracefully fails back to CPU execution so no user request is dropped.
 3. **Insufficient GPU Memory (OOM):** If buffer allocations or memory resources are exhausted during WebGPU operations, the exceptions are caught at the kernel invocation layer, returning control to the CPU fallback immediately.
 
-*Generated automatically on: 2026-08-27T03:46:23.770Z*
+*Generated automatically on: 2026-08-27T17:07:29.104Z*

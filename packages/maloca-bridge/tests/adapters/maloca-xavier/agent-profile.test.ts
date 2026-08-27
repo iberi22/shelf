@@ -1,7 +1,7 @@
 import type { NodoId } from 'edge-mesh';
 import { EdgeMesh } from 'edge-mesh';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type AgentProfile, AgentProfileAdapter } from '../../src/adapters/maloca-xavier/agent-profile.js';
+import { type AgentProfile, AgentProfileAdapter } from '../../../src/adapters/maloca-xavier/agent-profile.js';
 
 vi.mock('../../../src/transport/peerjs.js');
 vi.mock('idb', () => ({
