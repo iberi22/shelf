@@ -9,6 +9,7 @@ import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import { useSortableTable } from '../hooks/useSortableTable';
+import { lookupProductByBarcodeOrSku } from '../lib/productLookup';
 import { getProductVariantDisplay, getProductVariants, normalizeProduct } from '../lib/productVariants';
 import BarcodeScanner from './BarcodeScanner';
 import { InfiniteTable } from './InfiniteTable';
@@ -417,23 +418,11 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale, init
     return state.products.filter((p) => p.quantity > 0 && p.isActive !== false);
   }, [state.products]);
 
-  const findProductByScanCode = (code: string): Product | null => {
-    const normalized = code.trim().toLowerCase();
-    if (!normalized) return null;
-    const match = state.products.find(
-      (p) =>
-        p.isActive !== false &&
-        p.quantity > 0 &&
-        ((p.sku || '').trim().toLowerCase() === normalized || p.id.trim().toLowerCase() === normalized),
-    );
-    return match ? normalizeProduct(match) : null;
-  };
-
   const addScannedProductToCart = (code: string) => {
     // SHELF-110: any scan keeps scan mode alive (30s idle auto-disable).
     lastScanAtRef.current = Date.now();
-    const product = findProductByScanCode(code);
-    if (!product) {
+    const match = lookupProductByBarcodeOrSku(state.products, code);
+    if (!match) {
       const translated = t('sales.scan.notFound');
       const msg =
         !translated || translated === 'sales.scan.notFound'
@@ -444,8 +433,9 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSave, onCancel, editingSale, init
       return;
     }
 
+    const { product, variant: matchedVariant } = match;
     const variants = getProductVariants(product);
-    const selectedVariant = variants[0] || null;
+    const selectedVariant = matchedVariant || variants[0] || null;
     const price = selectedVariant?.price ?? product.price ?? 0;
 
     // SHELF-110: if the product is already in the cart, increment quantity
