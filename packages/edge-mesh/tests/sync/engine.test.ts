@@ -153,3 +153,146 @@ describe('SyncEngine Module', () => {
     expect(engine.estaSincronizando()).toBe(false);
   });
 });
+
+describe('SyncEngine signed envelope enforcement (SHELF-111)', () => {
+  let oplog: OpLog;
+  const docId = 'test-doc-signed';
+  const peerId = 'peer-1' as NodoId;
+  const GRACE_MS = 7 * 24 * 60 * 60 * 1000;
+
+  beforeEach(() => {
+    oplog = new OpLog({ docId });
+  });
+
+  function unsignedOp(secuencia = 1) {
+    return {
+      id: `remote:${secuencia}`,
+      tipo: 't1',
+      datos: { val: secuencia },
+      timestamp: Date.now(),
+      autor: peerId,
+      secuencia,
+    };
+  }
+
+  it('rejects unsigned envelopes after the grace period when enforcement is on', async () => {
+    const engineG = new SyncEngine({
+      docId,
+      opLog: oplog,
+      requireSignedEnvelopes: true,
+      // Enforcement started 10 days ago → 7-day grace already expired.
+      signedEnvelopeEnforcementStartMs: Date.now() - 10 * 24 * 60 * 60 * 1000,
+      signedEnvelopeGracePeriodMs: GRACE_MS,
+    });
+
+    const rechazoSpy = vi.fn();
+    engineG.on('envelopeRechazado', rechazoSpy);
+
+    const result = await engineG.sincronizar(
+      peerId,
+      async () => {},
+      async () => [unsignedOp(1)],
+    );
+
+    expect(result.exito).toBe(true);
+    expect(result.operacionesRecibidas).toBe(0);
+    expect(result.operacionesRechazadas).toBe(1);
+    expect(oplog.obtenerUltimaSecuencia()).toBe(0);
+    expect(rechazoSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: expect.objectContaining({ motivo: 'firma-ausente', secuencia: 1 }),
+      }),
+    );
+  });
+
+  it('accepts signed envelopes when enforcement is on', async () => {
+    const engineS = new SyncEngine({
+      docId,
+      opLog: oplog,
+      requireSignedEnvelopes: true,
+      signedEnvelopeEnforcementStartMs: 0, // grace expired
+    });
+
+    const signedOp = {
+      ...unsignedOp(1),
+      firma: 'firma-mldsa-65-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    };
+
+    const result = await engineS.sincronizar(
+      peerId,
+      async () => {},
+      async () => [signedOp],
+    );
+
+    expect(result.exito).toBe(true);
+    expect(result.operacionesRecibidas).toBe(1);
+    expect(result.operacionesRechazadas).toBe(0);
+    expect(oplog.obtenerUltimaSecuencia()).toBe(1);
+  });
+
+  it('allows unsigned envelopes during the grace period but logs a warning', async () => {
+    const engineG = new SyncEngine({
+      docId,
+      opLog: oplog,
+      requireSignedEnvelopes: true,
+      signedEnvelopeEnforcementStartMs: Date.now(), // grace starts now
+      signedEnvelopeGracePeriodMs: GRACE_MS,
+    });
+
+    const warnSpy = vi.fn();
+    engineG.on('envelopeSinFirma', warnSpy);
+
+    const result = await engineG.sincronizar(
+      peerId,
+      async () => {},
+      async () => [unsignedOp(1)],
+    );
+
+    expect(result.exito).toBe(true);
+    expect(result.operacionesRecibidas).toBe(1);
+    expect(result.operacionesRechazadas).toBe(0);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: expect.objectContaining({ secuencia: 1, autor: peerId }),
+      }),
+    );
+  });
+
+  it('rejects operations whose signature fails verificarFirma', async () => {
+    const engineV = new SyncEngine({
+      docId,
+      opLog: oplog,
+      requireSignedEnvelopes: true,
+      verificarFirma: (op) => (op as { firma: string }).firma === 'firma-valida',
+    });
+
+    const resultadoMal = await engineV.sincronizar(
+      peerId,
+      async () => {},
+      async () => [{ ...unsignedOp(1), firma: 'firma-invalida' }],
+    );
+    expect(resultadoMal.operacionesRecibidas).toBe(0);
+    expect(resultadoMal.operacionesRechazadas).toBe(1);
+
+    const resultadoBien = await engineV.sincronizar(
+      peerId,
+      async () => {},
+      async () => [{ ...unsignedOp(2), firma: 'firma-valida' }],
+    );
+    expect(resultadoBien.operacionesRecibidas).toBe(1);
+    expect(resultadoBien.operacionesRechazadas).toBe(0);
+  });
+
+  it('does not gate incoming operations when requireSignedEnvelopes is false', async () => {
+    const engineF = new SyncEngine({ docId, opLog: oplog, requireSignedEnvelopes: false });
+
+    const result = await engineF.sincronizar(
+      peerId,
+      async () => {},
+      async () => [unsignedOp(1)],
+    );
+
+    expect(result.operacionesRecibidas).toBe(1);
+    expect(result.operacionesRechazadas).toBe(0);
+  });
+});

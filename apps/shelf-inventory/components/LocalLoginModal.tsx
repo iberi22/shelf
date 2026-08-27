@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
+import Button from './ui/Button';
+import Input from './ui/Input';
 
 interface LocalLoginModalProps {
   onClose: () => void;
@@ -53,29 +55,22 @@ const LocalLoginModal: React.FC<LocalLoginModalProps> = ({ onClose, onSwitchToSi
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1 text-foreground">{t('auth.email')}</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 bg-surface border border-foreground/30 rounded-md text-foreground"
-              placeholder="your@email.com"
-              disabled={loading}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-foreground">{t('auth.password')}</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 bg-surface border border-foreground/30 rounded-md text-foreground"
-              placeholder="••••••••"
-              disabled={loading}
-            />
-          </div>
+          <Input
+            label={t('auth.email')}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            disabled={loading}
+          />
+          <Input
+            label={t('auth.password')}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            disabled={loading}
+          />
 
           {error && (
             <div className="bg-red-900/30 border border-red-600/50 rounded-lg p-3">
@@ -83,13 +78,9 @@ const LocalLoginModal: React.FC<LocalLoginModalProps> = ({ onClose, onSwitchToSi
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <Button type="submit" fullWidth loading={loading} disabled={loading}>
             {loading ? t('auth.loggingIn') : t('auth.login')}
-          </button>
+          </Button>
         </form>
 
         {onSwitchToRecovery && (

@@ -33,7 +33,7 @@ export type MockProduct = Partial<Product>;
 export type MockPeer = Partial<PeerInfo>;
 
 export function createMockProduct(overrides: MockProduct): Product {
-  const id = overrides.id || `prod_${Math.random().toString(36).substring(2, 11)}`;
+  const id = overrides.id || `prod_${crypto.randomUUID().replace(/-/g, '').slice(0, 9)}`;
   return {
     id,
     name: 'Test Product',
@@ -48,7 +48,7 @@ export function createMockProduct(overrides: MockProduct): Product {
 }
 
 export function createMockPeer(overrides: MockPeer): PeerInfo {
-  const id = overrides.id || `peer_${Math.random().toString(36).substring(2, 11)}`;
+  const id = overrides.id || `peer_${crypto.randomUUID().replace(/-/g, '').slice(0, 9)}`;
   return {
     id,
     role: 'collaborator',

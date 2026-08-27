@@ -17,7 +17,7 @@ describe('ThemeContext', () => {
     const { getByTestId } = render(
       <ThemeProvider>
         <TestComponent />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     expect(getByTestId('theme').textContent).toBe('classic');
@@ -35,7 +35,7 @@ describe('ThemeContext', () => {
     const { getByTestId } = render(
       <ThemeProvider>
         <TestComponent />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     expect(getByTestId('theme').textContent).toBe('swal');
@@ -53,7 +53,7 @@ describe('ThemeContext', () => {
     const { getByTestId } = render(
       <ThemeProvider>
         <TestComponent />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     expect(getByTestId('theme').textContent).toBe('classic');
@@ -79,7 +79,7 @@ describe('ThemeContext', () => {
     const { getByTestId } = render(
       <ThemeProvider>
         <TestComponent />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     // Switch to swal

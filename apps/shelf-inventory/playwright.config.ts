@@ -82,6 +82,10 @@ export default defineConfig({
       env: {
         VITE_SKIP_LANDING: 'true',
         VITE_TEST_MODE: 'true',
+        // Telemetry E2E: fake GA4 credentials so the app POSTs to the
+        // Measurement Protocol endpoint, which tests intercept via page.route.
+        VITE_GA4_MEASUREMENT_ID: 'G-TEST',
+        VITE_GA4_API_SECRET: 'test-secret',
       },
     },
     {

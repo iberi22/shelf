@@ -1,0 +1,292 @@
+{
+  "metadata": {
+    "protocol_version": "3.8.0",
+    "project": "worldexams",
+    "project_display": "WorldExams Platform",
+    "description": "Plataforma global de exámenes y certificaciones en línea",
+    "created": "2026-06-11",
+    "updated": "2026-08-26",
+    "version": "1.0.0",
+    "sdlc_phase": "release-v1.0.0",
+    "total_features": 14,
+    "features_implemented": 14,
+    "features_partial": 0,
+    "features_skeleton": 0,
+    "implementation_percentage": 100,
+    "overall_progress_pct": 100,
+    "status_model": {
+      "skeleton": "API o package existe, comportamiento mock/placeholder",
+      "unit": "Lógica local o unit tests",
+      "integrated": "Integrado en app y con tests funcionales",
+      "hardened": "Authz/crypto en path de red + coverage y CI verdes"
+    }
+  },
+  "features": [
+    {
+      "id": "WE-FUN-001",
+      "name": "User Authentication & Registration",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Registro e inicio de sesión seguro para estudiantes y administradores",
+      "user_story": "Como estudiante, quiero registrarme e iniciar sesión para acceder a mis exámenes",
+      "actor": "Estudiante",
+      "acceptance_criteria": [
+        "Registro de usuario con validación de correo",
+        "Inicio de sesión seguro con JWT / token",
+        "Recuperación de contraseña"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened"
+    },
+    {
+      "id": "WE-FUN-002",
+      "name": "Exam Catalog & Search",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Catálogo de exámenes con búsqueda y filtros por categoría",
+      "user_story": "Como usuario, quiero explorar el catálogo de exámenes disponibles",
+      "actor": "Estudiante",
+      "acceptance_criteria": [
+        "Listado paginado de exámenes",
+        "Búsqueda por título y palabras clave",
+        "Filtros por categoría y nivel"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened"
+    },
+    {
+      "id": "WE-FUN-003",
+      "name": "Exam Taking Engine",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Motor interactivo de rendición de exámenes con temporizador y navegación entre preguntas",
+      "user_story": "Como estudiante, quiero responder un examen con tiempo límite e interfaz intuitiva",
+      "actor": "Estudiante",
+      "acceptance_criteria": [
+        "Renderizado de preguntas de opción múltiple",
+        "Temporizador en tiempo real",
+        "Auto-guardado de respuestas"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened"
+    },
+    {
+      "id": "WE-FUN-004",
+      "name": "Automated Grading",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Calificación automática instantánea al finalizar un examen",
+      "user_story": "Como estudiante, quiero ver mi puntaje e informe de resultados de inmediato al finalizar",
+      "actor": "Estudiante",
+      "acceptance_criteria": [
+        "Cálculo automático de puntaje y porcentaje",
+        "Desglose de respuestas correctas e incorrectas",
+        "Determinación de aprobado/reprobado"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened"
+    },
+    {
+      "id": "WE-FUN-005",
+      "name": "Certificate Generation (PDF)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Generación e impresión de certificados PDF validados digitalmente al aprobar",
+      "user_story": "Como estudiante graduado, quiero descargar mi certificado de aprobación en PDF",
+      "actor": "Estudiante",
+      "acceptance_criteria": [
+        "Plantilla dinámica de certificado con nombre del estudiante",
+        "Código QR / hash de verificación de autenticidad",
+        "Descarga directa en PDF"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened"
+    },
+    {
+      "id": "WE-FUN-006",
+      "name": "Exam Creator & Admin Dashboard",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Panel de administración para crear, editar y gestionar banco de preguntas y exámenes",
+      "user_story": "Como administrador, quiero crear y editar exámenes y preguntas",
+      "actor": "Administrador",
+      "acceptance_criteria": [
+        "Editor de exámenes y asignación de puntajes",
+        "Banco de preguntas reutilizable",
+        "Gestión de visibilidad y estado del examen"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened"
+    },
+    {
+      "id": "WE-FUN-007",
+      "name": "Student Performance Analytics",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Estadísticas y gráficos del historial de rendición e progreso de estudiantes",
+      "user_story": "Como estudiante, quiero revisar mis métricas de progreso a lo largo del tiempo",
+      "actor": "Estudiante",
+      "acceptance_criteria": [
+        "Gráficos de evolución de puntajes",
+        "Historial completo de intentos",
+        "Métricas de fortalezas y áreas a mejorar"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "integrated"
+    },
+    {
+      "id": "WE-FUN-008",
+      "name": "Proctoring & Anti-Cheat Measures",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Supervisión básica anti-fraude durante la prueba (detección de cambio de pestaña/foco)",
+      "user_story": "Como administrador, quiero prevenir conductas indebidas durante los exámenes",
+      "actor": "Sistema",
+      "acceptance_criteria": [
+        "Detección de eventos blur/visibilitychange",
+        "Registro de advertencias por intento de copia",
+        "Cierre automático por infracciones repetidas"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened"
+    },
+    {
+      "id": "WE-FUN-009",
+      "name": "Payment & Enrollment",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Inscripción y pago de exámenes arancelados",
+      "user_story": "Como estudiante, quiero inscribirme a un examen pagado de forma segura",
+      "actor": "Estudiante",
+      "acceptance_criteria": [
+        "Integración de pasarela de pago",
+        "Confirmación de inscripción inmediata",
+        "Emisión de recibo"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "integrated"
+    },
+    {
+      "id": "WE-FUN-010",
+      "name": "Multi-language & i18n",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Soporte multi-idioma para la interfaz de exámenes y plataforma",
+      "user_story": "Como usuario global, quiero cambiar el idioma de la plataforma",
+      "actor": "Todos los usuarios",
+      "acceptance_criteria": [
+        "Selector de idioma (ES, EN, PT)",
+        "Traducción dinámica de textos",
+        "Persistencia de idioma"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened"
+    },
+    {
+      "id": "WE-FUN-011",
+      "name": "Offline Draft Mode & Sync",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P1",
+      "category": "FUN",
+      "description": "Soporte offline para continuar exámenes ante pérdidas temporales de conexión",
+      "user_story": "Como estudiante con conexión inestable, quiero que mis respuestas no se pierdan si se cae el internet",
+      "actor": "Estudiante",
+      "acceptance_criteria": [
+        "Almacenamiento local de respuestas en IndexedDB/localStorage",
+        "Sincronización automática al recuperar conexión",
+        "Indicador de estado de conexión"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened"
+    },
+    {
+      "id": "WE-FUN-012",
+      "name": "Role-Based Access Control (RBAC)",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P0",
+      "category": "FUN",
+      "description": "Control de acceso por roles (Estudiante, Profesor, Admin)",
+      "user_story": "Como administrador, quiero restringir accesos según los roles de usuario",
+      "actor": "Administrador",
+      "acceptance_criteria": [
+        "Definición de permisos por rol",
+        "Protección de rutas frontend y backend",
+        "Auditoría de cambios de permisos"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened"
+    },
+    {
+      "id": "WE-FUN-013",
+      "name": "Notification System",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P2",
+      "category": "FUN",
+      "description": "Sistema de notificaciones por email y en plataforma para fechas de examen y resultados",
+      "user_story": "Como estudiante, quiero recibir recordatorios sobre mis próximos exámenes",
+      "actor": "Estudiante",
+      "acceptance_criteria": [
+        "Notificación de confirmación de inscripción",
+        "Recordatorio pre-examen",
+        "Notificación de resultados publicados"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "integrated"
+    },
+    {
+      "id": "WE-FUN-014",
+      "name": "Audit Logging & Reporting",
+      "status": "implemented",
+      "sdlc": "production",
+      "priority": "P2",
+      "category": "FUN",
+      "description": "Registro de auditoría de actividad de usuarios y reportes globales",
+      "user_story": "Como administrador, quiero ver logs de auditoría de actividad relevante en la plataforma",
+      "actor": "Administrador",
+      "acceptance_criteria": [
+        "Registro persistente de eventos clave",
+        "Filtros por fecha, usuario y tipo de evento",
+        "Exportación de logs de auditoría"
+      ],
+      "implementation_percentage": 100,
+      "progress_pct": 100,
+      "maturity": "hardened"
+    }
+  ]
+}

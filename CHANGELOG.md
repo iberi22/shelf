@@ -1,211 +1,73 @@
 # Changelog
 
-All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+All notable changes to the Shelf project will be documented in this file.
 
-### [0.5.3.07082026](https://github.com/iberi22/shelf/compare/v0.5.0...v0.5.3.07082026) (2026-08-07)
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### Features
-* **ci:** add Cypress Component Testing job to GitHub Actions ([#446](https://github.com/iberi22/shelf/pull/446))
-* **test:** add production smoke spec (post-deploy verification, `PLAYWRIGHT_BASE_URL`) ([#449](https://github.com/iberi22/shelf/pull/449))
+---
 
-### Bug Fixes
-* **p2p-core:** trigger Yjs catch-up sync on connection open — root fix for async delivery race, with idempotent state-vector cache ([#448](https://github.com/iberi22/shelf/pull/448))
-* **e2e:** stabilize P2P specs with bidirectional connection waits (`isPeerConnected` polls + `requestCrdtSync` + settle) ([#453](https://github.com/iberi22/shelf/pull/453))
-* **edge-mesh:** remove dead `node:crypto` dependency (encrypted-plugin) + add Biome/lint-staged to root — pre-commit hook functional ([#447](https://github.com/iberi22/shelf/pull/447))
-* **security:** gate test hooks (`_dbSyncForTest`/`_p2pManagerForTest`) behind `VITE_TEST_MODE` — no test hooks in production builds
-* **gitcore:** reconcile `features.json` with reality — verify-pipeline gate green (21/21) ([#450](https://github.com/iberi22/shelf/pull/450))
+## [0.0.1] - 2026-08-26
 
-### Chores
-* **ci:** bump actions (checkout@v7, pnpm/action-setup@v6, actions/cache@v6) ([#443](https://github.com/iberi22/shelf/pull/443), [#444](https://github.com/iberi22/shelf/pull/444), [#445](https://github.com/iberi22/shelf/pull/445))
-* **ci:** use `/build` ramdisk for cargo verify + local paths in pipeline scripts
-* **gitignore:** stop tracking generated test screenshots
-* **release:** bump to 0.5.3.07082026 (DDMMYYYY)
+### First Public Release (v0.0.1)
 
-### [0.5.0](https://github.com/iberi22/shelf/compare/v0.4.0...v0.5.0) (2026-07-30)
+Decentralized, offline-first inventory management and POS platform with post-quantum cryptography, P2P mesh CRDT synchronization, and edge compute capabilities. Includes 31 fully implemented features (93% overall project implementation coverage).
 
-### Features
-* **ai:** implement proxy backend (/api/ai/chat, /api/chat) for DeepSeek v4 Flash via OpenRouter
-* **core:** eliminate Pro version subscription paywalls for universal free access
-* **qa:** add headless mobile and tablet E2E test suite (`tests/responsive-devices.spec.ts`)
-* **ci:** harden `.husky/pre-push` with build, package unit tests, and responsive mobile/tablet E2E checks
-* **deploy:** align root `vercel.json` headers and SPA rewrites with `/api` symlink for reliable Vercel Serverless Function deployments
+---
 
-### Bug Fixes
-* **edge-mesh:** replace `node:crypto` with Web Crypto API in evidentia.ts — browser-universal Merkle hashing (`crypto.subtle.digest`, async API, golden tests) ([#442](https://github.com/iberi22/shelf/pull/442))
-* **security:** HMAC signature verification in constant time (timing attack) — webhooks + JWT ([#435](https://github.com/iberi22/shelf/pull/435))
-* **security:** fix XSS vulnerability in Catalog image rendering ([#434](https://github.com/iberi22/shelf/pull/434))
-* **e2e:** set es-ES locale in Playwright config — fixes ~10 consistent i18n test failures (mobile-landing, onboarding-settings, crud, variant)
-* **e2e:** stabilize P2P sync specs (multi-peer, integrity-conflict) with explicit roles + `requestFullSync` catch-up
-* **e2e:** bilingual selectors (settings-mobile-layout, invite-unification)
+### 🚀 Wave 2 (Ola 2) Additions & Enhancements
 
-### [0.4.0](https://github.com/iberi22/shelf/compare/v0.3.0...v0.4.0) (2026-07-14)
+#### Added
+- **Cloud Authentication Integration (`cloudAuth.ts`):** Added Firestore cloud authentication fallback with seamless local fallback (`localAuth`) for resilient offline-first authentication (`SRC-FUN-016`).
+- **Cloud Synchronization (`cloudSync.ts`):** Implemented optional Supabase cloud sync with Last-Write-Wins (LWW) conflict resolution and persistent IndexedDB offline write queue (`SRC-FUN-017`).
+- **Supabase RBAC & RLS (`rbac.ts`):** Integrated Role-Based Access Control mapping Admin, Collaborator, and Vendedor roles directly to Supabase Row Level Security (RLS) policies (`SRC-FUN-018`).
+- **PDF Export Suite (`pdfExport.ts`):** Built PDF export utilities using `jsPDF` and `jspdf-autotable` supporting inventory valuation, low-stock reports, and filtered sales reports (`SRC-FUN-019`).
+- **Offline Telemetry Pipeline (`telemetry.ts`):** Added privacy-focused GA4 telemetry with IndexedDB event queuing, batch flushing on reconnect, and explicit user consent gating (`SRC-FUN-020`).
+- **Sentry Error Tracking (`errorTracking.ts` / `sentry.ts`):** Integrated Sentry monitoring with offline error event queuing and background flushing when network status restores (`SRC-FUN-021`).
+- **E-Commerce Webhooks (`webhookHandlers.ts`):** Developed webhook handlers for Shopify and WooCommerce with HMAC SHA-256 signature verification, idempotent event parsing, and CRDT stock update triggers (`SRC-FUN-022`).
+- **PQC At-Rest Vault Key Derivation (`crypto-kdf.ts`):** Introduced post-quantum KDF using 100 ML-KEM-768 key encapsulation iterations with automatic PBKDF2 vault migration upon unlock (`SRC-PQC-002`).
+- **GPU Mesh Marketplace (`mesh-marketplace-full.ts`):** Expanded WebGPU capabilities with peer discovery, ML-DSA-signed task routing, result aggregation, fan-out execution, and CPU fallback routing (`SRC-GPU-002`).
 
+#### Security & Infrastructure
+- Enforced constant-time comparison algorithms across hash and signature verification routines to eliminate timing vulnerabilities.
+- Applied root-level `pnpm.overrides` for high/critical production and dev dependencies, backed by CI `audit-gate` automated checks.
+- Added comprehensive unit test coverage for all new Ola 2 modules (`cloudAuth.spec.ts`, `cloudSync.spec.ts`, `rbac.spec.ts`, `pdfExport.spec.ts`, `telemetry.spec.ts`, `errorTracking.spec.ts`, `webhookHandlers.spec.ts`, `crypto-kdf.test.ts`, `mesh-marketplace-full.test.ts`).
 
-### Bug Fixes
+---
 
-* **ui:** remove pull-to-refresh hard reload, bump workspace version ([ccc49e7](https://github.com/iberi22/shelf/commit/ccc49e709ce2e9990c51735d9b0b3facdaf367a6))
+### 🛡️ Wave 1 (Ola 1) Foundations
 
-### [0.3.0](https://github.com/iberi22/shelf/compare/v0.2.0...v0.3.0) (2026-07-14)
+#### Core Inventory & POS Capabilities
+- **Product & Variant Catalog (`SRC-FUN-001`):** Complete product CRUD with SKU, price, cost, stock, image, and customizable variant matrices (colors, sizes, versions).
+- **Sales Tracking (`SRC-FUN-002`):** POS sales execution with automatic stock reduction, revenue calculation, and historical logs.
+- **Analytics Dashboard & Reports (`SRC-FUN-003`, `SRC-FUN-012`):** Real-time key metrics display and Chart.js integration for sales over time.
+- **Unified Contact Management (`SRC-FUN-004`):** Shared `ContactManagementPage` component eliminating code duplication across client and supplier CRUD.
+- **Purchase Orders (`SRC-FUN-005`):** Supplier purchase order tracking with automatic stock increment upon receiving inventory.
+- **Barcode & QR Scanner (`SRC-FUN-006`):** Device camera scanning utilizing `html5-qrcode` for instant SKU filling.
+- **AI Inventory Assistant (`SRC-FUN-007`):** Natural language assistant proxying DeepSeek v4 Flash via OpenRouter for contextual business insights.
+- **Local Authentication & Security (`SRC-FUN-008`):** Offline-first local auth with PBKDF2 password hashing, WebAuthn PIN/biometrics, authorized device management, and seed recovery.
+- **Colaborador SWAL Monetization (`SRC-FUN-009`):** Completely free local feature availability without forced subscription gates or ad units.
+- **20-Language i18n (`SRC-FUN-010`):** Full UI localization support across 20 languages with dynamic locale loading.
+- **Settings & Data Management (`SRC-FUN-011`):** User preferences (currency, threshold), AES-encrypted JSON backup/restore, and data reset.
+- **P2P Team Access (`SRC-FUN-013`):** Team invitations via deep link, PeerPermissions matrix, and organizational role enforcement.
+- **CSV Data Import (`SRC-FUN-014`):** CSV upload with column alias matching, row validation, and template generator.
+- **Dual-Theme System (`SRC-FUN-015`):** Runtime toggle between Classic and SWAL Edge-Hive visual themes with semantic token CSS variables.
 
+#### P2P Mesh, Post-Quantum & Edge Compute
+- **Post-Quantum Cryptography (`SRC-PQC-001`):** ML-KEM-768 key encapsulation exchange and ML-DSA-65 digital signatures via `@noble/post-quantum`.
+- **P2P Mesh Network (`SRC-P2P-001`):** WebRTC mesh transport via PeerJS with decentralized topology routing (`@shelf/p2p-mesh-core`).
+- **CRDT Delta Sync (`SRC-CRDT-001`):** State replication powered by Yjs for eventual consistency across offline peers.
+- **Edge Mesh Runtime (`SRC-EDGE-001`):** Reusable `@shelf/edge-mesh` package providing Yjs namespace scoping, remote origin tracking (`remote`, `peerId`), and surgical authorization revert.
+- **WebGPU Edge Compute (`SRC-GPU-001`):** Edge compute kernels (`vector-sum`, `dot-product`, `matrix-scale`) executed via WGSL shaders with CPU fallbacks (`@shelf/gpu-agent`).
+- **Testing Infrastructure (`SRC-QA-001`):** Playwright E2E suite, Cypress component/E2E suite, Vitest unit suite, and Husky pre-commit hooks.
+- **PWA & Offline-First (`SRC-PWA-001`):** Service worker caching via `vite-plugin-pwa` / Workbox and dual persistence (localStorage + IndexedDB).
 
-### Bug Fixes
+---
 
-* **pwa:** prevent update notification freeze due to hanging dynamic import ([ec76f6c](https://github.com/iberi22/shelf/commit/ec76f6c80bdd6886c9f482e71e9f391e84a1e13d))
-* **ui:** robust pull to refresh with internal scroll support and flex layout fix ([3abb7e3](https://github.com/iberi22/shelf/commit/3abb7e3d4f7c130a4f87acbf9daef90636074b8a))
+### 📦 Monorepo Package Versions (v0.0.1 Release)
 
-### [0.2.0](https://github.com/iberi22/shelf/compare/v0.1.0...v0.2.0) (2026-07-14)
-
-
-### Bug Fixes
-
-* **ui:** prevent pull to refresh from shifting fixed bottom nav ([e68d174](https://github.com/iberi22/shelf/commit/e68d17431fd957a06addb249508f2c3b9f33dd66))
-
-### [0.1.0](https://github.com/iberi22/shelf/compare/v0.0.0...v0.1.0) (2026-07-14)
-
-
-### Bug Fixes
-
-* **ui:** mobile scroll blocked by pull to refresh component ([4af6fd0](https://github.com/iberi22/shelf/commit/4af6fd05af9c09d5be0efb898679dd1b285a283e))
-
-## 0.0.0 (2026-07-14)
-
-
-### Features
-
-* 100% offline AI with WebLLM, OCR improvements, guest auth ([#92](https://github.com/iberi22/shelf/issues/92)) ([405a68d](https://github.com/iberi22/shelf/commit/405a68d9024482acfa8208c1139dd7ac419764a6))
-* add branch selector UI to Sidebar ([d374354](https://github.com/iberi22/shelf/commit/d3743548ece0b8957041e7754195543dc21c66b8))
-* add consolidated multi-branch inventory report ([fa5f379](https://github.com/iberi22/shelf/commit/fa5f37962a8041e6b312d3f12244e5bc397fef89))
-* add CRUD section for Sucursales/Bodegas management ([10f4019](https://github.com/iberi22/shelf/commit/10f401964af28d80e4b0d7b17b50f815ea598e0d))
-* add E2E test for product persistence after reload ([913f4cd](https://github.com/iberi22/shelf/commit/913f4cd18b66ae99673a63ea7c3f1076403ce9c5))
-* Add E2E tests for all application flows ([f67e31f](https://github.com/iberi22/shelf/commit/f67e31ffeb6ef64c4b0f6021e60de46011751b60))
-* Add E2E tests for inventory creation and download ([dcaab84](https://github.com/iberi22/shelf/commit/dcaab84c989c309b88eb91c05af1946f3b814784))
-* Add manual data merge resolution system for admin ([e7a9d65](https://github.com/iberi22/shelf/commit/e7a9d6575d2076948705bc2fa12f63f251b4e3ac))
-* add peer connection history and host failover status UI ([4429099](https://github.com/iberi22/shelf/commit/44290996771d2cf12abfc24359a61f4c6a8d16c3))
-* add Portuguese localization and metadata for Shelf app ([fae42ad](https://github.com/iberi22/shelf/commit/fae42ad169e0363f6167cc378d30df9099eb2d29))
-* Agregar selector de idioma con dropdown ([8aacbe5](https://github.com/iberi22/shelf/commit/8aacbe571cab51e538b6b8759dd579ea10eec992))
-* AI privacy improvements, SHA-256 PIN hashing, API key toggles ([#94](https://github.com/iberi22/shelf/issues/94)) ([f18a241](https://github.com/iberi22/shelf/commit/f18a24133ff85260bd5cbd0a2d38355881e87037))
-* **ai:** enhance AI context with variants, audit logs and app language support, add help modal ([d888a04](https://github.com/iberi22/shelf/commit/d888a04f97b0695725594dd61fb09d1525782278))
-* **app:** migrate shelf application to monorepo workspace ([922ce6f](https://github.com/iberi22/shelf/commit/922ce6fdb1b8d01734d9c4e7980098d6120c13e1))
-* **branches:** Add CRUD section for Sucursales/Bodegas in Settings ([#231](https://github.com/iberi22/shelf/issues/231)) ([ff5cc32](https://github.com/iberi22/shelf/commit/ff5cc326bd07ecc71352ec0bc49d7a50f70a5b64))
-* code review profundo + E2E tests (variants, PDF, PWA offline) + CLAW-REVIEW.md ([47c112e](https://github.com/iberi22/shelf/commit/47c112e66d897e240a521a750235a4186bca1caf))
-* configure AdSense via env variables and upgrade Tailwind to v4 ([5ebfaeb](https://github.com/iberi22/shelf/commit/5ebfaeb0436769a34f42091c6d3868323afcb48f))
-* **context:** AppContext manage activeBranch state globally ([77e9dc3](https://github.com/iberi22/shelf/commit/77e9dc3a334e594283120a40aa208ed4d0b4cc22))
-* **core:** add pull to refresh, setup changelog and fix vercel commit hash ([25f65ed](https://github.com/iberi22/shelf/commit/25f65edfb95ff616fc17f6da95acbfa1f5f49d38))
-* **core:** extract p2p engine into reusable package ([c593277](https://github.com/iberi22/shelf/commit/c593277cddd0618d86f639681d9c413ea7d9902a))
-* create edge-mesh core library with modular architecture ([#142](https://github.com/iberi22/shelf/issues/142)) ([61bca65](https://github.com/iberi22/shelf/commit/61bca653af9ed3b7937ee028db9a994fe204fb08))
-* **edge-mesh:** implement CrdtSyncLayer with handshake and reliable delivery ([709e803](https://github.com/iberi22/shelf/commit/709e803c088eee7fc3c354a690ca8fa070f3b9e8))
-* **edge-mesh:** implement Identity module with Ed25519 signing ([89d4ae4](https://github.com/iberi22/shelf/commit/89d4ae425d6ef7aee2a67ae587c4a30fc17b9082))
-* **edge-mesh:** implement OpLog with deduplication and compaction ([26cc3b5](https://github.com/iberi22/shelf/commit/26cc3b5ddec4dd9da6a892c497c7f08752f633a4))
-* **edge-mesh:** implement SnapshotManager for state recovery ([e4af1ed](https://github.com/iberi22/shelf/commit/e4af1ed80a2ba7797d1b9dce9d71192a65e50d3f))
-* **gitcore:** integrate features.json and update dependencies ([5a1d8b8](https://github.com/iberi22/shelf/commit/5a1d8b863fc30ebd16a1bc3c66dc634b4465b3bd))
-* implement capability-based authorization for edge-mesh ([8976d25](https://github.com/iberi22/shelf/commit/8976d25c7d8d2644cd102fc7cffbe63d97e12aab))
-* implement CloudSyncManager for Supabase integration ([15ff5d2](https://github.com/iberi22/shelf/commit/15ff5d27a4d0f701f184c6b73532c97163cf3515))
-* implement distributed P2P backend with post-quantum security and CRDT synchronization ([f092405](https://github.com/iberi22/shelf/commit/f09240551cf7149138fe1b64160e1380590e7f0d))
-* implement local OCR with Tesseract.js as offline alternative ([e927b5c](https://github.com/iberi22/shelf/commit/e927b5c3d0614f02a3b9f218ff4d74bd091c6bee))
-* implement local-only guest mode without Firebase ([88f0181](https://github.com/iberi22/shelf/commit/88f018189628d945b092ee13515ba95f3335c498))
-* implement Multi-User Authorization Backend (RBAC) ([74ca6d1](https://github.com/iberi22/shelf/commit/74ca6d1fb0cca0e5b6ea8a9df8cf539e5a2a483b))
-* implement OCR invoice scanning & accounting (Arqueo feature) ([e08870e](https://github.com/iberi22/shelf/commit/e08870e4f93be7bdd31c38a62251ba8a1faf0878))
-* implement P2P sync, roles, audit logs, and soft delete ([#89](https://github.com/iberi22/shelf/issues/89)) ([806c5d9](https://github.com/iberi22/shelf/commit/806c5d96fa9832de5e28360edb209747ff82fb14))
-* implement p2p synchronization logic and add update notification component for inventory system ([75a00c9](https://github.com/iberi22/shelf/commit/75a00c96b04e5404bf6c3d42ad593d40c9621606))
-* implement P2P synchronization manager with CRDT-based state updates and role-based permissions management ([43ac5f7](https://github.com/iberi22/shelf/commit/43ac5f7abfa602aaf7212e50a2290cdcd9cab41f))
-* Implement P2P synchronization robustness, tracking, security and GC ([d8bde38](https://github.com/iberi22/shelf/commit/d8bde3895d4fa7d4087269f431c99be66cc76855))
-* implement PQC sync and WebAuthn security for P2P ([aceea2f](https://github.com/iberi22/shelf/commit/aceea2f7caf79376cd004babfeda6e7c32415cf6))
-* implement Pro Tier PDF reporting engine ([00e8b2a](https://github.com/iberi22/shelf/commit/00e8b2a4c5b3193a220a82d73bf833649c3b730b))
-* improve P2P sync responsiveness and WhatsApp share link ([7ea7111](https://github.com/iberi22/shelf/commit/7ea71118865eab9d18967266c69fb60a45f47f30))
-* improve tablet responsiveness across all modules ([5470efe](https://github.com/iberi22/shelf/commit/5470efe154f2c0ead7251833c2f390cee20cd2f5))
-* integrate GA4 with offline queue telemetry ([da4bb20](https://github.com/iberi22/shelf/commit/da4bb20b055f179145d111ec0fca390667f30ecd))
-* integrate Local AI inference with WebLLM for StockBot ([7363507](https://github.com/iberi22/shelf/commit/73635078bdc81d472f7174111b57b3eb57ec6725))
-* Integrate Sentry Error Monitoring with Offline Queue ([7a34ea0](https://github.com/iberi22/shelf/commit/7a34ea027ed1288e3f1ce8a83cd335c3c7a3cdfb))
-* **inventory:** fix biome and typescript errors in E2E tests and inventory ([7d938f9](https://github.com/iberi22/shelf/commit/7d938f9fb0e82f958f6d4aec8e840f4cf88528d1))
-* **inventory:** refine product configuration flow ([ac890ad](https://github.com/iberi22/shelf/commit/ac890ad14be2e9bb215c94266871ee451b8e3cd7))
-* Mejoras de i18n y accesibilidad ([cc716de](https://github.com/iberi22/shelf/commit/cc716de327b3303c3903da4bac0e2bd009fcc3df))
-* multi-layered AI inference (Gemini Nano, WebLLM fallback, User Keys) for full offline/online resilience ([a20c8a6](https://github.com/iberi22/shelf/commit/a20c8a64d13a3fbc4af33183dedadeb715762456))
-* **p2p:** add branchId isolation in database-sync for multi-tenant sync ([91a4ab3](https://github.com/iberi22/shelf/commit/91a4ab3d04885bc0b3da7c540bbef8918bb79180))
-* **p2p:** admin candidacy CRUD with voting ([3cce83e](https://github.com/iberi22/shelf/commit/3cce83e5f0ae7c14883f4e9c5f0d2e07d8127f11))
-* **p2p:** automatic host failover when main host offline ([fcd4771](https://github.com/iberi22/shelf/commit/fcd4771d488e9213e16c5d3970c12cc5e30e46c7))
-* **p2p:** connection history tracking for P2P nodes ([2b1ecc4](https://github.com/iberi22/shelf/commit/2b1ecc4652d85d851bb9d09433d585021fd5ddec))
-* **p2p:** Filtered sync by branch interests ([#235](https://github.com/iberi22/shelf/issues/235)) ([bbe1a26](https://github.com/iberi22/shelf/commit/bbe1a268c56383bc9f5c4fdcf06de6df0ebdb699))
-* PWA ready with unlimited invoice generation, local storage persistence, and biome linting ([af3da2c](https://github.com/iberi22/shelf/commit/af3da2c4ed230e657f518893c2fcde913e13cd51))
-* redesign ProductForm for multi-color/multi-measure native support ([05e86bd](https://github.com/iberi22/shelf/commit/05e86bdb4560a78316485058a20b1ee73018ce2e))
-* Rediseno ProductForm multi-color/multi-measure nativo ([bd31e95](https://github.com/iberi22/shelf/commit/bd31e958089b3f3b571ef96d29ea3ea8c9238a86))
-* refactor Arqueo storage to global state and sync ([c09d535](https://github.com/iberi22/shelf/commit/c09d5356a13e4c6927ff9c49136dd3a68f3306bb))
-* **reports:** Add consolidated multi-branch inventory report ([#232](https://github.com/iberi22/shelf/issues/232)) ([2edeb56](https://github.com/iberi22/shelf/commit/2edeb56b24bfc328a1e75e17fdf43e9485be97ca))
-* responsive tables and cards, add e2e mock data seeder ([fc88ce6](https://github.com/iberi22/shelf/commit/fc88ce66a7aa718688bf091166f1f2423ccc7e74))
-* **sales:** UPDATE_SALE/DELETE_SALE, auto stock decrement with clamp, QR peer invite ([7232b84](https://github.com/iberi22/shelf/commit/7232b84e2bfc8813b92d7e3afe2495c82b6f24a3))
-* **shelf-inventory:** integrate consensus module for admin elections and polish UI ([7c914b8](https://github.com/iberi22/shelf/commit/7c914b89a21a7c227ff11013e51908d4620ad8ae))
-* show app version and commit hash in sidebar ([e8e824d](https://github.com/iberi22/shelf/commit/e8e824d2918424305dd4b3a471ea28fdf816e6cd))
-* **ui:** Add branch selector UI to Sidebar ([#233](https://github.com/iberi22/shelf/issues/233)) ([c4ec234](https://github.com/iberi22/shelf/commit/c4ec2347f3a9ed0af679fd18675b012d78c89abf))
-* **ui:** admin election UI in Settings ([#249](https://github.com/iberi22/shelf/issues/249)) ([d6e4a93](https://github.com/iberi22/shelf/commit/d6e4a9368c397d58ff2b88841515d90659d42b32))
-* unlock pro features, integrate local AI (Gemini Nano/Ollama) and app lock screen ([eac2764](https://github.com/iberi22/shelf/commit/eac2764c2f3a656d797ef0fe168171c35bea0e2d))
-* **wake-lock:** mover Nodo Keep-Alive al panel principal del P2P Sync Manager ([bd92398](https://github.com/iberi22/shelf/commit/bd923988ca23575b10d7c64f0569c559285664e7))
-* wire edge mesh into shelf workflow ([92b36a0](https://github.com/iberi22/shelf/commit/92b36a02b74fb3aa981a943974225ebbac517ccd))
-
-
-### Bug Fixes
-
-* **#267:** Sidebar nav-items conditional render per viewport ([1c49826](https://github.com/iberi22/shelf/commit/1c498268b4eb93b18236344fd2f360821f4017e6)), closes [#267](https://github.com/iberi22/shelf/issues/267)
-* align Jules tests with actual API (OpLog compact, applyLocalChange, validations) ([5f49ecf](https://github.com/iberi22/shelf/commit/5f49ecf711be7d3fe6ed77c839b223d5f82d2c53))
-* **audit:** bump overrides smol-toml@^1.6.1 dompurify@^3.4.11 js-yaml@^4.2.0 — 0 vulns in production ([f2323fb](https://github.com/iberi22/shelf/commit/f2323fbb1209acfa3773b5708c1f1a04b3ba6120))
-* **catalog:** replace document.write with safe iframe.srcdoc approach ([3520061](https://github.com/iberi22/shelf/commit/35200614bb9e2b5931ab3b80960491eb6b6ef0f6))
-* cerrar tag button correctamente (era /span residual) ([b05945e](https://github.com/iberi22/shelf/commit/b05945ea4f2c446509832f9c7c6c690f067dc38e))
-* **ci:** pre-push build only shelf-inventory, not docs ([528e464](https://github.com/iberi22/shelf/commit/528e4643469b62a6d110749afb00a5965a713688))
-* complete AdSense injection and fix AuthContext types ([409b1bc](https://github.com/iberi22/shelf/commit/409b1bc064eebbdee5f9ca938b2e0f7d775936be))
-* Correct Gemini model version and resolve Biome schema conflict ([e3c75d8](https://github.com/iberi22/shelf/commit/e3c75d8cbb1f383fd21886177728c44de6880f1f))
-* **edge-mesh:** implement formal ack/retry in CrdtSyncLayer ([3901ccb](https://github.com/iberi22/shelf/commit/3901ccba95a28be5e2be97ec158a36de160873e9))
-* force rollup 4.59.0 via overrides (security GHSA-mw96-cpmx-2vgc) ([d397226](https://github.com/iberi22/shelf/commit/d39722678bfb79345556638f98c16da5971a021a))
-* locale encoding and remove github links ([7fbb745](https://github.com/iberi22/shelf/commit/7fbb745d759aa8905b4fa1eb026eb354be1afdbe))
-* Mejorar detección de idioma del navegador ([3ca9b05](https://github.com/iberi22/shelf/commit/3ca9b05815941e05517b5de71503ac30e61fb916))
-* migrate p2p-mesh-core to use edge-mesh createCrdtSyncLayer ([f1bc5c4](https://github.com/iberi22/shelf/commit/f1bc5c4413c263e77c0f9ed328a2e1ee5ab548db))
-* **Modal:** responsive width and scroll on mobile ([779b251](https://github.com/iberi22/shelf/commit/779b25124d07c50b87011e08322239c47ea5e40e))
-* npm audit fix --force - resolve critical jspdf, high serialize-javascript, firebase-admin vulnerabilities ([7a7e35a](https://github.com/iberi22/shelf/commit/7a7e35afa7e01a5cd410906247d46ab8a1a12d4c))
-* **p2p,ui:** persist peerId in localStorage and remove infinite scroll from AuditLogViewer ([9ba1c2b](https://github.com/iberi22/shelf/commit/9ba1c2bac351f07376abdc40dcb97335bff38350))
-* **p2p:** [#118](https://github.com/iberi22/shelf/issues/118) isReady guard, [#123](https://github.com/iberi22/shelf/issues/123) backoff+ping/pong+GC+logging ([c8ee4b3](https://github.com/iberi22/shelf/commit/c8ee4b3770d6d060b56029adbe749edea9a215b5))
-* **p2p:** double-handled YJS_UPDATE + false positive expulsion ([#121](https://github.com/iberi22/shelf/issues/121), [#119](https://github.com/iberi22/shelf/issues/119)) ([07f6b12](https://github.com/iberi22/shelf/commit/07f6b120c249cd58f00786adeac9ecf81386b4b2))
-* **p2p:** gracefully disconnect peer on reload and retry on unavailable-id to preserve persistence ([35fc8a5](https://github.com/iberi22/shelf/commit/35fc8a5f4dc804967e2d5cb0aab3804e83ac8a1a))
-* **p2p:** handle unavailable-id to prevent getting stuck if old connection lingers ([08d1962](https://github.com/iberi22/shelf/commit/08d196260fc5d151a663d405bb75a7d8c185d476))
-* **p2p:** maintain admin role in offline mode and add E2E tests for settings and p2p sync UI ([352760a](https://github.com/iberi22/shelf/commit/352760a9c6cefa1334bc31ea6c51d52e2e28c1d7))
-* post-merge type fixes (existingRecord, GovernanceProposal re-export, unknown types) ([446e2b6](https://github.com/iberi22/shelf/commit/446e2b6ac6518cb580c0c784a7670c0ab4e59ce1))
-* **pwa:** stop forced app reloads during product creation by changing registerType to prompt and increasing update check interval ([540fd23](https://github.com/iberi22/shelf/commit/540fd237f89a1d5a391c087e8afe7b35c94ca9ea))
-* remove auto-reload and prevent sync modal from blocking work ([855825a](https://github.com/iberi22/shelf/commit/855825a8be5536082c6ab53e29b8231f032c7b20))
-* remove unused driveError variable blocking build ([7c98062](https://github.com/iberi22/shelf/commit/7c98062e5e51fe6db448064ce43533174fc3c35a))
-* remove unused TeamMember import ([472efe1](https://github.com/iberi22/shelf/commit/472efe1dd1111b0be90cb35b328db706f15afc4f))
-* replace any with concrete types in p2p-helpers.ts ([3280f7d](https://github.com/iberi22/shelf/commit/3280f7d8d19f3e615b57be449c7f5e79f240b504))
-* resolve 89 Dependabot vulns via pnpm overrides and updates ([2ff133f](https://github.com/iberi22/shelf/commit/2ff133ff96f9dd2dd24c7e2e7b4e5076e109e1ab))
-* resolve all biome lint errors and warnings ([1693a7f](https://github.com/iberi22/shelf/commit/1693a7f94061ec3eeeeb6532c11346598126e7e7))
-* resolve landing page map error by adding governance translations ([e9ef754](https://github.com/iberi22/shelf/commit/e9ef75493c9c19b5c8bde133208f754a6fb74a40))
-* resolve post-merge type errors (duplicate isActive, unused import, null/undefined) ([fa8d2b5](https://github.com/iberi22/shelf/commit/fa8d2b54ef886c1d65ddd9dbe53f70d0efa4d2c1))
-* resolve security vulnerabilities (npm audit fix) ([9956f8b](https://github.com/iberi22/shelf/commit/9956f8bb21d6774177f703b67c3f2cdd3f577299))
-* resolve TypeScript build errors ([09b8399](https://github.com/iberi22/shelf/commit/09b8399e51e075aff622efd14ada4e237c030be7))
-* responsive mobile + Arqueo refactor + vercel config ([c268000](https://github.com/iberi22/shelf/commit/c26800060d4d8075985a465bebad832326f88d9e))
-* **responsive:** all remaining components - grids, tables, forms, modals, typography for mobile viewport ([6e83049](https://github.com/iberi22/shelf/commit/6e8304906593672df7f8a9c72c4bfb03a263cf67))
-* restore pnpm overrides with corrected undici version (6.x instead of 7.x for vercel compat) ([d38a852](https://github.com/iberi22/shelf/commit/d38a8520228c8f30567091880815d28ce404dfbd))
-* restore SHA-256 PIN hashing and security logic accidentally reverted in merge [#92](https://github.com/iberi22/shelf/issues/92) ([db19dde](https://github.com/iberi22/shelf/commit/db19dde19dc88dccf78bf5a2fa6f95399665f459))
-* restore vite.config.ts UTF-8 encoding (was UTF-16 corrupt from Jules) + install rollup-plugin-visualizer dep ([e5ed0ec](https://github.com/iberi22/shelf/commit/e5ed0ec3d2a5c4ae9e2a971be8d811b24c49c430))
-* **review:** console.log, promises catch, non-null assertions ([547a302](https://github.com/iberi22/shelf/commit/547a302b65f31fec0829167ad64499261609add8))
-* **review:** create type declarations for gapi/ai, remove [@ts-expect-error](https://github.com/ts-expect-error) ([d0c8590](https://github.com/iberi22/shelf/commit/d0c85905748afd2a5ea27150bdd912ee202f9a79))
-* **review:** fix getTimestamp typing, finalize AppContext.tsx ([444304a](https://github.com/iberi22/shelf/commit/444304a8d90b1629aca3f23134d89cd40babaa41))
-* **review:** global types + edge mesh message typing ([0306b32](https://github.com/iberi22/shelf/commit/0306b32b6e867dc62aa7e01a5835a4bb103ba0c6))
-* **review:** label empty tests for jules, fix non-null assertions ([1f24622](https://github.com/iberi22/shelf/commit/1f246223fcf950da030986d9cd28a65792958be6))
-* **review:** replace as any with type guards + helpers in AppContext.tsx ([3820646](https://github.com/iberi22/shelf/commit/382064694e31ca97d8c3cf6f51368df972ae6018))
-* **review:** replace as any with type guards + helpers in AppContext.tsx ([3dc7b8d](https://github.com/iberi22/shelf/commit/3dc7b8d4764d8d485657c3c36dfec6b1b26687bc))
-* tablas responsive fluidas sin min-width fijo ([77b14ee](https://github.com/iberi22/shelf/commit/77b14ee4bef1223a6fbd48311f402ef2cd35d451))
-* **tests:** fix arqueo test for default pro context, fix inventory CSV test ([e6e5169](https://github.com/iberi22/shelf/commit/e6e5169d5eb697667e4221a1da617b3c6db5f463))
-* **tests:** fix e2e tests for responsive nav with duplicate data-testid ([813da32](https://github.com/iberi22/shelf/commit/813da32b5dfde133986331b1d7d5a62b255b6dd2))
-* **tests:** replace corrupt UTF-16 test files with UTF-8 corrected versions + add variant-catalog.spec.ts ([b879b68](https://github.com/iberi22/shelf/commit/b879b686f6b8a520ca7412fd7c86f8ad15d8c745))
-* **tests:** use .last() for nav-item selectors to handle responsive dual nav ([0a91994](https://github.com/iberi22/shelf/commit/0a91994710bbb72d3a555f426e435a76138682f0))
-* **ui:** responsive - arqueo touch-friendly buttons ([31918e1](https://github.com/iberi22/shelf/commit/31918e10f5e3a087bee6ee0b4741c25f109f2e15))
-* **ui:** responsive - contacts card view + catalog grid + touch-friendly inputs ([579aff5](https://github.com/iberi22/shelf/commit/579aff5223f8dd84dc71f65acbf32eadc8ce1915))
-* **ui:** responsive - dashboard touch-friendly buttons ([997bf7f](https://github.com/iberi22/shelf/commit/997bf7f05cf25c1e67516133edb140b10550b286))
-* **ui:** responsive - inventory + sales mobile card views ([71e828c](https://github.com/iberi22/shelf/commit/71e828c819d3ec9467ba1c7965ef24d80f96ba56))
-* **ui:** responsive - modal responsive max-width ([5695d27](https://github.com/iberi22/shelf/commit/5695d271c43f22cdd2097d3c6032da7bd644b405))
-* **ui:** responsive - purchase orders card view + touch-friendly form ([570cd17](https://github.com/iberi22/shelf/commit/570cd178a41837ad2c7c205cd1c52ea71334b29a))
-* **ui:** responsive - reports touch-friendly inputs and buttons ([4b086bc](https://github.com/iberi22/shelf/commit/4b086bcd0fcee897e9966e062bb4ccea5ee7dce1))
-* **ui:** responsive - settings touch-friendly inputs and buttons ([1be2ac6](https://github.com/iberi22/shelf/commit/1be2ac653ab7b02c0d1b09254889dd46a8d8c528))
-* **ui:** responsive - sidebar mobile drawer + touch-friendly nav ([ee8ff19](https://github.com/iberi22/shelf/commit/ee8ff198373a5fa8e664e411b602f619938bcc9d))
-* **ui:** responsive - table visible with scroll, cards only on sm breakpoint ([45059cf](https://github.com/iberi22/shelf/commit/45059cf1650dc83aecd70515edc78e74abe7193f))
-* update pnpm-lock.yaml and fix vercel cache headers ([890364f](https://github.com/iberi22/shelf/commit/890364f76c3341211cc86ea79f6132cd23d42c8b))
-* update rollup to 4.59.0 (security GHSA-mw96-cpmx-2vgc) ([2dbf0ad](https://github.com/iberi22/shelf/commit/2dbf0ad5b9d054cbed9d18c5c0d710a0b4a0063b))
-* **vercel:** explicit pnpm installCommand and buildCommand in vercel.json ([cbeb510](https://github.com/iberi22/shelf/commit/cbeb510a3a1dd4d9dd923e96307a779b6f24e270))
-* **vercel:** remove explicit build commands, let auto-detect pnpm ([dfc5c88](https://github.com/iberi22/shelf/commit/dfc5c88f74b032a4c9b0fe8d33e9d8a21588f3e1))
-* **vercel:** use pnpm instead of npm for install/build commands ([e57a21e](https://github.com/iberi22/shelf/commit/e57a21e3a1e283502b57d64dad6da35bfa23f477))
-* workspace yaml single package ([cffb7b5](https://github.com/iberi22/shelf/commit/cffb7b5e0ffbb304274c4ea501bfb672048e93db))
+- `apps/shelf-inventory`: `0.5.3.07082026`
+- `packages/p2p-mesh-core`: `0.5.3`
+- `packages/edge-mesh`: `0.5.3`
+- `packages/edge-mesh-react`: `0.5.3`
+- `packages/gpu-agent`: `0.5.0`

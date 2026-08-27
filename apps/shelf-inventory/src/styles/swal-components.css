@@ -1,0 +1,277 @@
+/* ═══════════════════════════════════════════════════════════════
+   SWAL Components — ports React de @swal/ui (SHELF-212)
+   Button / Input / Modal portados fielmente de los .svelte originales
+   (mismas clases y mismos tokens --swal-*, cero dependencias).
+   Fuente: @swal/ui v0.2.0 (github.com/iberi22/swal-ui)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Button ─── */
+.swal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--swal-font);
+    font-weight: 500;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--swal-transition-fast);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.swal-btn:active:not(.busy) {
+    transform: scale(0.98);
+}
+
+.swal-btn.busy {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.swal-btn.full {
+    width: 100%;
+}
+
+/* Variantes */
+.swal-btn.primary {
+    background: var(--swal-accent);
+    color: #fff;
+    box-shadow: var(--swal-shadow-sm);
+}
+
+.swal-btn.primary:hover:not(.busy) {
+    background: var(--swal-accent-hover);
+}
+
+.swal-btn.orange {
+    background: var(--swal-accent-orange);
+    color: #fff;
+    box-shadow: var(--swal-shadow-sm);
+}
+
+.swal-btn.orange:hover:not(.busy) {
+    opacity: 0.9;
+}
+
+.swal-btn.secondary {
+    background: var(--swal-surface);
+    color: var(--swal-text);
+    border-color: var(--swal-border);
+}
+
+.swal-btn.secondary:hover:not(.busy) {
+    background: var(--swal-surface-hover);
+}
+
+.swal-btn.ghost {
+    background: transparent;
+    color: var(--swal-text-secondary);
+}
+
+.swal-btn.ghost:hover:not(.busy) {
+    background: var(--swal-surface-hover);
+}
+
+.swal-btn.danger {
+    background: var(--swal-danger);
+    color: #fff;
+}
+
+.swal-btn.danger:hover:not(.busy) {
+    opacity: 0.9;
+}
+
+/* Tamaños */
+.swal-btn.sm {
+    height: 32px;
+    padding: 0 12px;
+    font-size: var(--swal-font-size-xs);
+    border-radius: 6px;
+}
+
+.swal-btn.md {
+    height: 40px;
+    padding: 0 16px;
+    font-size: var(--swal-font-size-sm);
+    border-radius: var(--swal-radius);
+}
+
+.swal-btn.lg {
+    height: 48px;
+    padding: 0 24px;
+    font-size: var(--swal-font-size);
+    border-radius: var(--swal-radius);
+}
+
+.swal-btn .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: swal-spin 0.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .swal-btn .spinner {
+        animation: none;
+        border-top-color: transparent;
+    }
+    .swal-btn:active:not(.busy) {
+        transform: none;
+    }
+}
+
+/* ─── Input ─── */
+.swal-label {
+    display: block;
+    font-family: var(--swal-font);
+    font-size: var(--swal-font-size-xs);
+    font-weight: 500;
+    color: var(--swal-text-secondary);
+    margin-bottom: 6px;
+}
+
+.swal-input {
+    width: 100%;
+    background: var(--swal-surface);
+    border: 1px solid var(--swal-border);
+    border-radius: var(--swal-radius);
+    padding: var(--swal-space-2) var(--swal-space-3);
+    font-size: var(--swal-font-size-sm);
+    font-family: var(--swal-font);
+    color: var(--swal-text);
+    outline: none;
+    transition:
+        border-color var(--swal-transition-fast),
+        box-shadow var(--swal-transition-fast);
+}
+
+.swal-input::placeholder {
+    color: var(--swal-text-muted);
+}
+
+.swal-input:focus {
+    border-color: var(--swal-accent);
+    box-shadow: 0 0 0 1px var(--swal-accent-muted);
+}
+
+.swal-input.has-error {
+    border-color: var(--swal-danger);
+}
+
+.swal-error {
+    font-family: var(--swal-font);
+    font-size: var(--swal-font-size-xs);
+    color: var(--swal-danger);
+    margin-top: 4px;
+}
+
+/* ─── Modal ─── */
+.swal-modal-root {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--swal-space-4);
+}
+
+.swal-modal-root .backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--swal-overlay);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: none;
+    cursor: default;
+}
+
+.swal-modal-root .modal {
+    position: relative;
+    width: 100%;
+    background: var(--swal-elevated);
+    border: 1px solid var(--swal-border-light);
+    border-radius: var(--swal-radius-lg);
+    box-shadow: var(--swal-shadow-lg);
+    overflow: hidden;
+}
+
+.swal-modal-root .modal.sm {
+    max-width: 28rem;
+}
+
+.swal-modal-root .modal.md {
+    max-width: 32rem;
+}
+
+.swal-modal-root .modal.lg {
+    max-width: 36rem;
+}
+
+.swal-modal-root .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--swal-space-4) var(--swal-space-6);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(15, 23, 42, 0.5);
+}
+
+.swal-modal-root .header-title {
+    display: flex;
+    align-items: center;
+    gap: var(--swal-space-3);
+}
+
+.swal-modal-root .header-title h3 {
+    font-family: var(--swal-font);
+    font-size: var(--swal-font-size-lg);
+    font-weight: 700;
+    color: var(--swal-text);
+    letter-spacing: -0.025em;
+    margin: 0;
+}
+
+.swal-modal-root .close-btn {
+    color: var(--swal-text-muted);
+    padding: 4px;
+    border-radius: var(--swal-radius-sm);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all var(--swal-transition-fast);
+    display: inline-flex;
+}
+
+.swal-modal-root .close-btn:hover {
+    color: var(--swal-text);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.swal-modal-root .body {
+    padding: var(--swal-space-6);
+    max-height: 80vh;
+    overflow-y: auto;
+    color: var(--swal-text);
+    font-family: var(--swal-font);
+}
+
+.swal-modal-root .edge {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+    pointer-events: none;
+}
+
+.swal-modal-root .edge.top {
+    top: 0;
+}
+
+.swal-modal-root .edge.bottom {
+    bottom: 0;
+}

@@ -1,3 +1,4 @@
+import { fromHex, verify } from '../crypto-pqc';
 import type { P2PRole, PeerPermissions } from '../types';
 import { logger } from '../utils/logger';
 import type { ConnectionEvent, EntityRecord, LinkedNodeRecord, SyncContext } from './types';
@@ -6,6 +7,38 @@ import type { ConnectionEvent, EntityRecord, LinkedNodeRecord, SyncContext } fro
 
 /** Security origin used when surgically reverting unauthorized remote keys. */
 export const SECURITY_REVERT_ORIGIN = 'p2p-security-revert';
+
+// ─── Admin claim verification (SHELF-104) ───────────────────────────────────
+
+/** Canonical message prefix for ML-DSA admin-claim signatures. */
+export const ADMIN_CLAIM_PREFIX = 'shelf:admin-claim:';
+
+/** Build the canonical bytes a peer signs to prove an admin claim. */
+export function buildAdminClaimMessage(senderPeerId: string): Uint8Array {
+  return new TextEncoder().encode(`${ADMIN_CLAIM_PREFIX}${senderPeerId}`);
+}
+
+/**
+ * Verify an ML-DSA-65 admin-claim signature.
+ *
+ * The claim binds `senderPeerId` to a DSA public key: the signature must be
+ * produced by the same key that completed the PQC handshake and that is
+ * registered in the CRDT `linkedNodes` record. Any missing/malformed input
+ * fails closed.
+ */
+export function verifyAdminClaim(
+  senderPeerId: string,
+  signature: string | null | undefined,
+  publicKey: string | null | undefined,
+): boolean {
+  if (!senderPeerId || !signature || !publicKey) return false;
+  try {
+    return verify(fromHex(signature), buildAdminClaimMessage(senderPeerId), fromHex(publicKey));
+  } catch (err) {
+    logger.warn(`[SECURITY] Admin claim verification error for ${senderPeerId}`, err);
+    return false;
+  }
+}
 
 /** Common local Yjs origins that should never be treated as remote. */
 const LOCAL_ORIGINS = new Set(['local', 'shelf-edge-workflow', 'shelf-edge-security-revert', 'shelf-edge-e2e']);
@@ -115,6 +148,25 @@ export function getDefaultPermissions(role: P2PRole = 'collaborator'): PeerPermi
     };
   }
 
+  // SHELF-105: 'readonly' is a fully locked-down role (no writes anywhere).
+  if (role === 'readonly') {
+    return {
+      canViewProducts: true,
+      canEditProducts: false,
+      canViewSales: true,
+      canEditSales: false,
+      canViewClients: true,
+      canEditClients: false,
+      canViewSuppliers: false,
+      canEditSuppliers: false,
+      canViewPurchaseOrders: false,
+      canEditPurchaseOrders: false,
+      canViewReports: false,
+      canViewArqueo: false,
+      canViewDashboard: false,
+    };
+  }
+
   if (role === 'vendedor') {
     return {
       canViewProducts: true,
@@ -186,11 +238,15 @@ export function getEffectivePeerConfig(
   const node = ctx.linkedNodes.get(peerId);
   const ephem = ctx.ephemeralNodes.get(peerId);
   const isVerified = ephem?.status === 'verified';
+  // SHELF-105: disconnected peers can never resolve to admin, even when their
+  // key was previously verified.
+  const isOffline = ephem?.status === 'offline';
   const isMasterPeer = isAuthorityPeer(peerId, ctx.metadata, ctx.linkedNodes) || !!node?.isMaster;
 
   if (!node) {
+    const metadataRole = (ctx.metadata.get('role') || 'collaborator') as P2PRole;
     return {
-      role: (ctx.metadata.get('role') || 'collaborator') as P2PRole,
+      role: isOffline && metadataRole === 'admin' ? ('readonly' as P2PRole) : metadataRole,
       permissions: undefined,
       isMaster: isMasterPeer && (peerId === ctx.localPeerId || isVerified),
     };
@@ -200,7 +256,7 @@ export function getEffectivePeerConfig(
   const canAssumePrivilegedRole =
     peerId === ctx.localPeerId || (isVerified && ephem?.dsaPublicKey === node.dsaPublicKey);
 
-  if (isMasterPeer && canAssumePrivilegedRole) {
+  if (isMasterPeer && canAssumePrivilegedRole && !isOffline) {
     return {
       role: 'admin' as P2PRole,
       permissions: node.permissions,
@@ -209,7 +265,12 @@ export function getEffectivePeerConfig(
   }
 
   const rawRole = node.role || 'collaborator';
-  const effectiveRole = rawRole === 'admin' && !canAssumePrivilegedRole ? 'collaborator' : rawRole;
+  const effectiveRole: P2PRole =
+    rawRole === 'admin' && isOffline
+      ? 'readonly'
+      : rawRole === 'admin' && !canAssumePrivilegedRole
+        ? 'collaborator'
+        : rawRole;
 
   const defaults = getDefaultPermissions(effectiveRole as P2PRole);
   const explicit = node.permissions;

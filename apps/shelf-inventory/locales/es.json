@@ -11,7 +11,11 @@
     "catalog": "Catálogo",
     "arqueo": "Arqueo",
     "reports": "Reportes",
+    "memoryTuning": "Ajuste de Memoria",
     "settings": "Configuración"
+  },
+  "memoryTuning": {
+    "subtitle": "Ajuste y optimización de memoria agentica Xavier para maximizar eficiencia y velocidad de búsqueda local."
   },
   "common": {
     "color": "Color",

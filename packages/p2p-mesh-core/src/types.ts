@@ -58,6 +58,42 @@ export interface Product extends BaseEntity {
   variants?: ProductVariant[];
 }
 
+function isNonEmptyString(value: string | undefined): value is string {
+  return value !== undefined && value.trim().length > 0;
+}
+
+function mergeUnique(base: string[], extra?: string): string[] {
+  if (!isNonEmptyString(extra)) return [...base];
+  const value = extra.trim();
+  return base.includes(value) ? [...base] : [...base, value];
+}
+
+/**
+ * Type guard that detects products still carrying data in the deprecated
+ * singular fields (color / material) while the plural arrays
+ * (colors / materials) are empty.
+ */
+export function isLegacyProduct(product: Product): boolean {
+  const legacyColor = isNonEmptyString(product.color) && !(product.colors && product.colors.length > 0);
+  const legacyMaterial = isNonEmptyString(product.material) && !(product.materials && product.materials.length > 0);
+  return legacyColor || legacyMaterial;
+}
+
+/**
+ * Migration helper that moves deprecated singular color / material values
+ * into their plural arrays, deduplicating and preserving order.
+ */
+export function migrateToPlural(product: Product): Product {
+  const hasLegacyColor = isNonEmptyString(product.color);
+  const hasLegacyMaterial = isNonEmptyString(product.material);
+  if (!hasLegacyColor && !hasLegacyMaterial) return product;
+
+  const colors = mergeUnique(product.colors ?? [], product.color);
+  const materials = mergeUnique(product.materials ?? [], product.material);
+
+  const { color: _deprecatedColor, material: _deprecatedMaterial, ...rest } = product;
+  return { ...rest, colors, materials };
+}
 export interface ProductVariant extends BaseEntity {
   label?: string;
   sku?: string;
@@ -136,7 +172,7 @@ export interface User {
 
 export type UserRole = 'owner' | 'admin' | 'member';
 
-export type P2PRole = 'admin' | 'collaborator' | 'vendedor' | 'custom';
+export type P2PRole = 'admin' | 'collaborator' | 'vendedor' | 'custom' | 'readonly';
 
 export type TeamMemberRole = 'owner' | P2PRole | 'member';
 

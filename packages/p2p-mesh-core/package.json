@@ -1,6 +1,6 @@
 {
   "name": "p2p-mesh-core",
-  "version": "0.5.3",
+  "version": "0.0.1",
   "type": "module",
   "private": true,
   "main": "dist/index.js",

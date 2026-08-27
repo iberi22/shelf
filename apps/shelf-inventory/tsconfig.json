@@ -13,7 +13,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
 
     /* Linting */
     "strict": true,
@@ -37,6 +37,7 @@
     "hooks/**/*.tsx",
     "lib/**/*.ts",
     "lib/**/*.tsx",
+    "api/**/*.ts",
     "src/**/*.d.ts",
     "types/**/*.d.ts"
   ],

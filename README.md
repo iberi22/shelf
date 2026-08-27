@@ -1,167 +1,180 @@
-# Shelf Ecosystem
+# Shelf
 
-Shelf is a decentralized, offline-first inventory and point-of-sale platform. The repository is a pnpm workspace managed with Turborepo and is organized around reusable local-first packages plus the main React inventory app.
+Decentralized, offline-first inventory management and point-of-sale (POS) platform with post-quantum cryptography.
+
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Version](https://img.shields.io/badge/version-0.0.1-green.svg)](https://github.com/iberi22/shelf/releases/tag/v0.0.1)
+
+---
+
+## Overview
+
+**Shelf** is an offline-first, peer-to-peer (P2P) inventory and POS solution built for high reliability in environments with unstable or zero internet connectivity. By combining WebRTC mesh networks, CRDT conflict-free synchronization, post-quantum cryptography (NIST ML-KEM-768 & ML-DSA-65), and edge GPU acceleration, Shelf operates completely autonomously on local devices while enabling seamless real-time synchronization when peers connect.
+
+---
+
+## Key Features
+
+### Core POS & Inventory Management
+- **Complete Product Catalog & Variants:** Comprehensive CRUD operations for products with SKUs, pricing, costs, stock levels, images, and customizable variant attributes (colors, sizes, models/versions).
+- **Sales Tracking & Automated Inventory Decrement:** Point-of-sale workflow that automatically decrements stock levels, computes revenue and profits, and logs transaction histories.
+- **Purchase Orders & Supplier Workflows:** Create purchase orders for suppliers; marking orders as received automatically updates inventory stock levels.
+- **Unified Contact Management:** Integrated management of clients and suppliers with standardized CRUD interfaces.
+- **Real-Time Analytics Dashboard & Reports:** Customizable business metrics, profit margin analytics, total inventory valuation, and sales graphs powered by Chart.js.
+- **Barcode & QR Code Scanner:** Integrated device camera scanner supporting QR codes, EAN, UPC, and Code128 barcodes for instant SKU lookup and input.
+- **CSV Data Import:** Flexible CSV importer with interactive column header mapping, line-by-line validation, and downloadable template support.
+- **PDF Export Suite:** Generate and download branded PDF reports for inventory valuation, low stock alerts, and historical sales using `jsPDF`.
+- **AI Inventory Assistant:** Context-aware natural language assistant powered by DeepSeek v4 Flash for inventory insights and sales queries.
+
+### Decentralized P2P Mesh & Conflict-Free Sync
+- **P2P Mesh Networking (`@shelf/p2p-mesh-core`):** Fully decentralized WebRTC mesh network powered by PeerJS for peer discovery and topology routing without relying on central database servers.
+- **CRDT Sync with Yjs (`@shelf/edge-mesh`):** State replication using Yjs Conflict-Free Replicated Data Types for delta synchronization and eventual consistency across offline-first peers.
+- **Edge Mesh Runtime & Authz (`@shelf/edge-mesh`):** Reusable P2P browser runtime managing Yjs namespaces, remote origin tracking (`remote`, `peerId`), and surgical authorization revert mechanisms for unauthorized mutations.
+- **P2P Team Access & Role Enforcement:** Local team management supporting Admin, Collaborator, and Vendedor roles enforced at UI and network data layer.
+
+### Security & Post-Quantum Cryptography
+- **NIST Post-Quantum Cryptography:** Standardized post-quantum key exchange via **ML-KEM-768** and digital signatures via **ML-DSA-65** (`@noble/post-quantum`).
+- **PQC At-Rest Vault Derivation (PQC KDF):** Key derivation for encrypted local storage using ML-KEM-768 KEM iterations, with seamless automatic migration from legacy PBKDF2 vaults.
+- **Signed CRDT Envelopes:** Cryptographically signed envelope transport (`EDGE_MESH_ENVELOPE`) ensuring payload integrity and peer authentication.
+- **Local-First Authentication & Device Security:** Secure device-bound local authentication (`localAuth`) with PIN/biometric app locks (WebAuthn), authorized device management, and seed recovery phrase backup.
+
+### Edge Compute & Integrations
+- **WebGPU Agent & Mesh Marketplace (`@shelf/gpu-agent`):** Local numeric compute kernels (vector-sum, dot-product, matrix-scale) using WGSL shaders with CPU fallback, plus peer capacity discovery, task routing, and result aggregation.
+- **Cloud Auth & Sync Fallback:** Optional cloud sync to Supabase (with Last-Write-Wins conflict resolution) and cloud authentication via Firestore, designed as non-blocking fallbacks to offline-first operation.
+- **E-Commerce Webhook Handlers:** HMAC SHA-256 verified webhooks for Shopify and WooCommerce for real-time external inventory synchronization.
+- **Offline Telemetry & Error Tracking:** Privacy-respecting GA4 telemetry and Sentry error monitoring backed by persistent IndexedDB offline queues.
+
+### UX, i18n & PWA
+- **Dual Theme System:** Dynamic runtime switching between **Classic** theme and **SWAL Edge-Hive** theme, powered by semantic CSS variables and Tailwind CSS v4.
+- **20-Language Internationalization (i18n):** Multi-language UI support with runtime locale loading and persistence.
+- **PWA & Offline Availability:** Progressive Web App equipped with Service Worker caching (`vite-plugin-pwa` / Workbox) and dual storage (localStorage + IndexedDB).
+- **Colaborador SWAL Monetization Model:** All core POS features remain 100% free locally without forced subscriptions or intrusive ads.
+
+---
+
+## Architecture Overview
+
+```
+┌───────────────────────────────────────────────────────────────────┐
+│                       Application Layer                           │
+│     React 19 UI  │  Context API  │  localStorage / IndexedDB     │
+└─────────────────────────────────┬─────────────────────────────────┘
+                                  │
+┌─────────────────────────────────▼─────────────────────────────────┐
+│                      Edge Mesh Runtime Layer                      │
+│     @shelf/edge-mesh (Yjs CRDT, PeerJS Transport, Security Guard) │
+│     @shelf/edge-mesh-react (React Bindings)                       │
+│     @shelf/gpu-agent (WebGPU Compute & Mesh Marketplace)          │
+└─────────────────────────────────┬─────────────────────────────────┘
+                                  │
+┌─────────────────────────────────▼─────────────────────────────────┐
+│                       Legacy / Core P2P Layer                     │
+│     @shelf/p2p-mesh-core (WebRTC Mesh, Yjs Sync, Admin Engine)    │
+└─────────────────────────────────┬─────────────────────────────────┘
+                                  │
+┌─────────────────────────────────▼─────────────────────────────────┐
+│                 Post-Quantum Security Layer                       │
+│     ML-KEM-768 (Key Exchange)   │   ML-DSA-65 (Digital Signatures) │
+│     AES-256-GCM (Payload Encryption)                              │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+For detailed architectural specifications, data flow diagrams, and API references, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+---
+
+## Tech Stack
+
+| Component | Technology |
+|---|---|
+| **Frontend Framework** | React 19.1, Vite 8.2, TypeScript 6 |
+| **Styling & UI** | Tailwind CSS 4, PostCSS, Biome |
+| **Monorepo & Build** | pnpm 9+, Turborepo 2 |
+| **P2P & CRDT** | PeerJS (WebRTC), Yjs (CRDT) |
+| **Post-Quantum Security** | ML-KEM-768, ML-DSA-65 (`@noble/post-quantum`), AES-256-GCM |
+| **Edge Compute** | WebGPU (WGSL compute shaders), CPU fallback |
+| **Cloud (Optional)** | Supabase (Cloud Sync), Firestore (Cloud Auth) |
+| **Analytics & Errors** | GA4 (Offline IDB Queue), Sentry (Offline Queue) |
+| **PDF Generation** | jsPDF, jspdf-autotable |
+| **Testing** | Vitest (Unit), Playwright (E2E), Cypress (Component/E2E), Biome (Linting) |
+
+---
+
+## Quick Start
+
+### Prerequisites
+- **Node.js**: `^18.18.0` or `>=20.0.0`
+- **pnpm**: `>=9.0.0`
+
+### Installation & Development
+
+```bash
+# Clone repository
+git clone https://github.com/iberi22/shelf.git
+cd shelf
+
+# Install dependencies across monorepo
+pnpm install
+
+# Start development server
+pnpm dev
+
+# Build all packages and applications
+pnpm build
+
+# Execute test suite (unit & E2E)
+pnpm test
+
+# Run Biome linter and formatter
+pnpm lint
+pnpm format
+```
+
+---
 
 ## Monorepo Structure
 
-| Path | Purpose |
-| --- | --- |
-| `apps/shelf-inventory` | Main React/Vite inventory application |
-| `apps/docs` | VitePress documentation site |
-| `packages/p2p-mesh-core` | Core P2P synchronization engine, roles, and permissions |
-| `packages/edge-mesh` | High-performance P2P sync runtime using Yjs and PeerJS |
-| `packages/edge-mesh-react` | React hooks and providers for Edge Mesh |
-| `packages/gpu-agent` | WebGPU-powered agent integration |
-
-## Edge Mesh Runtime
-
-> **SWAL:** Pro features require an **active SWAL node** (without traditional payment gateways). Multi-store instances are **mesh-isolated** by default (`instance_id`). See [`docs/SWAL_NODE_AND_PLANS.md`](docs/SWAL_NODE_AND_PLANS.md).
-
-`@shelf/edge-mesh` (prefer monorepo canonical `edge-mesh/`) powers browser-to-browser interaction in Shelf.
-
-Current implementation:
-
-- creates reusable P2P nodes over pluggable transports;
-- wraps Yjs documents into named namespaces;
-- broadcasts local CRDT updates as encoded deltas;
-- applies incoming remote updates with `{ type: 'remote', peerId }`;
-- avoids re-broadcast loops for remote-origin updates;
-- lets Shelf authorize remote mutations before they enter app state;
-- reverts unauthorized remote CRDT changes with a dedicated security origin;
-- exposes a localhost-only Playwright harness for deterministic E2E tests;
-- keeps WebGPU agent execution as an extension point for future edge-local workflows.
-
-### Usage Examples
-
-#### P2P Node API
-
-Use the node API when you need typed application messages and peer lifecycle events.
-
-```ts
-import {
-  InMemoryStorage,
-  PeerJSTransport,
-  createEdgeMeshNode,
-} from '@shelf/edge-mesh';
-
-const node = await createEdgeMeshNode({
-  peerId: 'store-admin-01',
-  transport: new PeerJSTransport(),
-  storage: new InMemoryStorage(),
-});
-
-await node.start();
-await node.connect('warehouse-tablet-02');
-
-node.on('peer:connected', (peerId) => {
-  console.info('peer connected', peerId);
-});
-
-node.on('message', ({ type, payload, sourcePeerId }) => {
-  console.info('message', type, sourcePeerId, payload);
-});
-
-await node.broadcast({
-  type: 'inventory:ping',
-  payload: { at: Date.now() },
-});
+```
+shelf/
+├── apps/
+│   ├── shelf-inventory/       # Primary React 19 / Vite 8 PWA POS Application
+│   └── docs/                  # VitePress documentation site
+├── packages/
+│   ├── edge-mesh/             # Reusable P2P runtime (Yjs CRDT, WebRTC, Authz)
+│   ├── edge-mesh-react/       # React hooks and provider for edge-mesh
+│   ├── p2p-mesh-core/         # Core P2P engine (PQC, roles, database sync)
+│   ├── gpu-agent/             # WebGPU compute kernels & Mesh GPU marketplace
+│   ├── swal-ui/               # Shared UI component library
+│   └── maloca-bridge/         # Maloca protocol integration adapters
+├── docs/                      # Technical documentation & Architecture specs
+│   ├── ARCHITECTURE.md        # Comprehensive Architecture & API Documentation
+│   └── SRS/                   # Software Requirements Specifications
+└── .github/workflows/         # CI/CD pipeline automation
 ```
 
-#### CRDT Namespace API
+---
 
-Use `EdgeMesh` when a workflow needs shared mutable state. Each namespace owns a Yjs document and can contain any number of Yjs maps, arrays, or custom shared types.
+## Contributing
 
-```ts
-import { EdgeMesh, type Transport } from '@shelf/edge-mesh';
+We welcome contributions to Shelf! Please follow these guidelines:
 
-const transport: Transport = createTransportSomewhere();
-const mesh = new EdgeMesh({
-  localPeerId: 'store-admin-01',
-  transport,
-});
+1. **Review Standards:** Check [CONTRIBUTING.md](CONTRIBUTING.md) and [CLA.md](CLA.md) before submitting code.
+2. **Code Quality:** Ensure all changes pass Biome formatting (`pnpm format`) and linting (`pnpm lint`).
+3. **Testing:** Write unit tests for new library utilities and E2E Playwright/Cypress tests for UI flows. Run `pnpm test` locally to verify.
+4. **Security:** Never commit plain secrets, credentials, or private keys. Rely on Web Crypto and PQC utilities provided in `@shelf/p2p-mesh-core` and `@shelf/edge-mesh`.
 
-const shelf = mesh.getNamespace('shelf');
-const products = shelf.doc.getMap('products');
+---
 
-shelf.doc.transact(() => {
-  products.set('sku-001', {
-    id: 'sku-001',
-    name: 'USB Cable',
-    quantity: 12,
-    updatedBy: 'store-admin-01',
-  });
-}, 'local-workflow');
+## Documentation Links
 
-const update = shelf.getUpdate();
-```
+- [Architecture & API Reference](docs/ARCHITECTURE.md)
+- [Feature Registry & Metrics](features.json)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Security Policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
 
-The detailed package documentation is in [`packages/edge-mesh/README.md`](packages/edge-mesh/README.md).
+---
 
-## Prerequisites
+## License
 
-- Node.js 20 or newer for the workspace.
-- pnpm 9 or newer.
-- A local PeerServer on port `9000` when running local P2P/Edge Mesh E2E tests.
-
-## Install
-
-```bash
-pnpm install
-```
-
-## Development
-
-Run the workspace dev tasks:
-
-```bash
-pnpm run dev
-```
-
-Run the inventory app directly:
-
-```bash
-pnpm --dir apps/shelf-inventory dev
-```
-
-## Build
-
-```bash
-pnpm build
-```
-
-## Tests
-
-Core Edge Mesh tests:
-
-```bash
-pnpm --dir packages/edge-mesh test
-```
-
-Focused synchronization/security E2E tests:
-
-```bash
-PLAYWRIGHT_BASE_URL=http://127.0.0.1:5187 pnpm --dir apps/shelf-inventory exec playwright test tests/edge-mesh-sync.spec.ts tests/security-sync.spec.ts tests/p2p-sync.spec.ts --project=chromium --reporter=list --config=playwright.config.ts --workers=1
-```
-
-## Technical Documentation
-
-The technical documentation lives in `apps/docs`.
-
-## GitCore
-
-Shelf uses GitCore (v3.6.0) for architecture governance, feature tracking, and SDLC workflow.
-
-| File | Purpose |
-| --- | --- |
-| `.gitcore/ARCHITECTURE.md` | Project architecture, stack, patterns, layers |
-| `.gitcore/features.json` | Feature registry (21 features, ~91% real — 21 implemented / 0 partial) |
-| `.gitcore/AGENT_INDEX.md` | Agent labels (jules, opencode, gemini, claude) |
-| `.gitcore/SDLC_WORKFLOW.md` | Development lifecycle workflow |
-| `.gitcore/CORTEX_INTEGRATION.md` | SWAL neural core integration |
-| `.gitcore/SRC_CONFIG.md` | SRC document configuration |
-| `.gitcore/planning/PLANNING.md` | Sprint planning |
-| `.gitcore/planning/TASK.md` | Active task tracking |
-
-## CI and Deployment
-
-GitHub Actions runs lint/build jobs when hosted runners are available. Vercel deploys previews and `main`.
+This project is licensed under the **AGPL-3.0-only** License — see the [LICENSE](LICENSE) file for details.

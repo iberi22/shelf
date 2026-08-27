@@ -3,7 +3,7 @@ import { dbSync } from 'p2p-mesh-core';
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
-import Modal from './Modal';
+import Modal from './ui/Modal';
 
 interface MergeResolutionModalProps {
   isOpen: boolean;

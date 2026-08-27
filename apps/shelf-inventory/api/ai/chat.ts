@@ -1,3 +1,5 @@
+import { aiChatRateLimiter, buildRateLimitHeaders, type RateLimitResult, resolveChatClientKey } from '../../lib/aiChat';
+
 export const config = {
   runtime: 'edge',
 };
@@ -8,36 +10,13 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-// Simple token bucket rate limiter for the edge runtime
-const rateLimitCache = new Map<string, { tokens: number; lastRefill: number }>();
-const RATE_LIMIT_MAX_TOKENS = 10;
-const RATE_LIMIT_REFILL_RATE = 10000; // 1 token every 10 seconds
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  let bucket = rateLimitCache.get(ip);
-  if (!bucket) {
-    bucket = { tokens: RATE_LIMIT_MAX_TOKENS, lastRefill: now };
-    rateLimitCache.set(ip, bucket);
-  } else {
-    const elapsed = now - bucket.lastRefill;
-    if (elapsed > 0) {
-      const tokensToAdd = elapsed / RATE_LIMIT_REFILL_RATE;
-      bucket.tokens = Math.min(RATE_LIMIT_MAX_TOKENS, bucket.tokens + tokensToAdd);
-      bucket.lastRefill = now;
-    }
-  }
-
-  if (bucket.tokens >= 1) {
-    bucket.tokens -= 1;
-    return true;
-  }
-  return false;
-}
-
 export default async function handler(req: Request): Promise<Response> {
+  // Preflight: never consumes rate-limit quota, only reports the current budget.
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: CORS_HEADERS });
+    return new Response(null, {
+      status: 200,
+      headers: { ...CORS_HEADERS, ...buildRateLimitHeaders(aiChatRateLimiter.peek(resolveChatClientKey(req))) },
+    });
   }
 
   if (req.method !== 'POST') {
@@ -47,13 +26,31 @@ export default async function handler(req: Request): Promise<Response> {
     });
   }
 
-  // 1. Rate Limiting
-  const ip = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || 'unknown';
-  if (!checkRateLimit(ip)) {
-    return new Response(JSON.stringify({ error: 'Too Many Requests' }), {
-      status: 429,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    });
+  // 1. Sliding-window rate limiting (SHELF-106): 30 req/min per user
+  //    (localAuth session token via Authorization: Bearer, falling back to IP).
+  const clientKey = resolveChatClientKey(req);
+  const rateLimit: RateLimitResult = aiChatRateLimiter.check(clientKey);
+  // Every response carries X-RateLimit-Limit / X-RateLimit-Remaining / X-RateLimit-Reset.
+  const baseHeaders: Record<string, string> = {
+    ...CORS_HEADERS,
+    ...buildRateLimitHeaders(rateLimit),
+  };
+
+  if (!rateLimit.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: 'Too Many Requests',
+        retryAfter: rateLimit.retryAfterSeconds,
+      }),
+      {
+        status: 429,
+        headers: {
+          ...baseHeaders,
+          'Content-Type': 'application/json',
+          'Retry-After': String(rateLimit.retryAfterSeconds),
+        },
+      },
+    );
   }
 
   // 2. Payload size cap (e.g., 50KB)
@@ -61,7 +58,7 @@ export default async function handler(req: Request): Promise<Response> {
   if (contentLength && parseInt(contentLength, 10) > 50000) {
     return new Response(JSON.stringify({ error: 'Payload Too Large' }), {
       status: 413,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      headers: { ...baseHeaders, 'Content-Type': 'application/json' },
     });
   }
 
@@ -74,7 +71,7 @@ export default async function handler(req: Request): Promise<Response> {
       }),
       {
         status: 503,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        headers: { ...baseHeaders, 'Content-Type': 'application/json' },
       },
     );
   }
@@ -84,7 +81,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (bodyText.length > 50000) {
       return new Response(JSON.stringify({ error: 'Payload Too Large' }), {
         status: 413,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        headers: { ...baseHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -93,7 +90,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (!body || typeof body !== 'object') {
       return new Response(JSON.stringify({ error: 'Bad Request: Invalid JSON body' }), {
         status: 400,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        headers: { ...baseHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -101,7 +98,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (!body.messages && !body.prompt) {
       return new Response(JSON.stringify({ error: 'Bad Request: Missing messages or prompt' }), {
         status: 400,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        headers: { ...baseHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -109,7 +106,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (body.prompt && typeof body.prompt === 'string' && body.prompt.length > 20000) {
       return new Response(JSON.stringify({ error: 'Bad Request: Prompt too long' }), {
         status: 400,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        headers: { ...baseHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -148,7 +145,7 @@ export default async function handler(req: Request): Promise<Response> {
       console.error('OpenRouter API error:', response.status, errorText);
       return new Response(JSON.stringify({ error: 'Service Error' }), {
         status: response.status,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        headers: { ...baseHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -170,7 +167,7 @@ export default async function handler(req: Request): Promise<Response> {
       }),
       {
         status: 200,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        headers: { ...baseHeaders, 'Content-Type': 'application/json' },
       },
     );
   } catch (error) {
@@ -181,7 +178,7 @@ export default async function handler(req: Request): Promise<Response> {
       }),
       {
         status: 500,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        headers: { ...baseHeaders, 'Content-Type': 'application/json' },
       },
     );
   }

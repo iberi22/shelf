@@ -14,7 +14,7 @@ import { isBiometricsSupported } from '../lib/webauthn';
 import CollapsibleCard from './CollapsibleCard';
 import ImportCSVModal from './ImportCSVModal';
 import InviteMemberModal from './InviteMemberModal';
-import LanguageSelector from './LanguageSelector';
+import LanguageConfig from './LanguageConfig';
 
 const CURRENCIES = [
   { code: 'USD', nameKey: 'settings.currency.currencies.USD' },
@@ -199,18 +199,7 @@ const NetworkConfig: React.FC = () => {
         icon={<Languages className="h-5 w-5" />}
         testId="settings-general-card"
       >
-        <div className="flex flex-col gap-3 rounded-md border border-foreground/10 bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
-              <Languages className="h-4 w-4 text-accent-green" aria-hidden="true" />
-              {t('settings.language') || t('common.language') || 'Language'}
-            </div>
-            <p className="mt-1 text-xs text-foreground/60">{t('settings.languageDescription')}</p>
-          </div>
-          <div className="self-start sm:self-center" data-testid="settings-language-selector">
-            <LanguageSelector direction="down" />
-          </div>
-        </div>
+        <LanguageConfig />
         <div className="mt-4">
           <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-foreground/90">
             {t('settings.lowStockThreshold')}

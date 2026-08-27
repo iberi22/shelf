@@ -31,6 +31,10 @@ import React, {
 import EdgeMeshTransportBinder from '../components/EdgeMeshTransportBinder';
 import EdgeMeshWorkflowBridge from '../components/EdgeMeshWorkflowBridge';
 import usePersistedReducer from '../hooks/usePersistedReducer';
+import { useReactiveProducts } from '../hooks/useReactiveProducts';
+import { useReactiveSales } from '../hooks/useReactiveSales';
+import { cloudAuthProvider } from '../lib/cloudAuth';
+import { CloudSyncProvider } from '../lib/cloudSync';
 import { DEFAULT_INVENTORY_CONFIG, normalizeInventoryConfig } from '../lib/inventoryConfig';
 import { getProductVariants, normalizeProduct } from '../lib/productVariants';
 import { scheduleXavierInventorySync } from '../lib/xavier';
@@ -569,9 +573,44 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, rawDispatch, isLoaded] = usePersistedReducer(appReducer, initialState, 'shelfState');
+  const [reducerState, rawDispatch, isLoaded] = usePersistedReducer(appReducer, initialState, 'shelfState');
   const isSyncInitialized = React.useRef(false);
-  const stateRef = React.useRef(state);
+  const stateRef = React.useRef<AppState>(reducerState);
+  // SHELF-208: CloudSyncProvider owns the shared Yjs doc (Supabase backup) and
+  // is created lazily once the persisted state has been loaded.
+  const cloudSyncRef = React.useRef<CloudSyncProvider | null>(null);
+
+  // SHELF-103 — Unidirectional reactive pattern (CRDT-only mutations).
+  // products/sales are a READ-ONLY projection of the shared Yjs doc: these
+  // hooks subscribe directly to the dbSync CRDT maps, so any local or remote
+  // mutation applied to the CRDT (dispatch → dbSync → Yjs map) reflects
+  // instantly. No component sets these collections via setState directly.
+  const reactiveProducts = useReactiveProducts();
+  const reactiveSales = useReactiveSales();
+
+  // Once the CRDT has produced data for a collection, trust the reactive
+  // projection unconditionally (also when the map is later emptied). Before
+  // hydration / `dbSync.initWithState`, fall back to the reducer projection
+  // to avoid an empty-list flash on app start.
+  const reactiveProductsReady = React.useRef(false);
+  const reactiveSalesReady = React.useRef(false);
+  useEffect(() => {
+    if (!reactiveProductsReady.current && reactiveProducts.length > 0) {
+      reactiveProductsReady.current = true;
+    }
+    if (!reactiveSalesReady.current && reactiveSales.length > 0) {
+      reactiveSalesReady.current = true;
+    }
+  }, [reactiveProducts, reactiveSales]);
+
+  const state: AppState = useMemo(() => {
+    if (!isLoaded) return reducerState;
+    const products =
+      reactiveProductsReady.current || reactiveProducts.length > 0 ? reactiveProducts : reducerState.products;
+    const sales = reactiveSalesReady.current || reactiveSales.length > 0 ? reactiveSales : reducerState.sales;
+    if (products === reducerState.products && sales === reducerState.sales) return reducerState;
+    return { ...reducerState, products, sales };
+  }, [isLoaded, reducerState, reactiveProducts, reactiveSales]);
 
   // Keep stateRef in sync for the dispatch closure
   useEffect(() => {
@@ -696,6 +735,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       dbSync.initWithState(stateRef.current);
       isSyncInitialized.current = true;
     }
+  }, [isLoaded]);
+
+  // SHELF-208 — Wire cloud sync (Supabase) + cloud auth (Firebase) into the app
+  // once the CRDT is hydrated so the first push contains the full inventory state.
+  // Both providers self-disable when their env vars are missing:
+  //  - CloudSyncProvider.start() runs an immediate sync when online (queued and
+  //    replayed otherwise) and registers the online/offline listeners that
+  //    flush queued pushes when connectivity returns.
+  //  - cloudAuthProvider.restoreSession() re-attaches the Firebase session and
+  //    syncLocalToCloud() performs a best-effort local→cloud backup (both no-op
+  //    without VITE_FIREBASE_CONFIG).
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!cloudSyncRef.current) {
+      cloudSyncRef.current = new CloudSyncProvider(dbSync.doc);
+    }
+    const cloudSync = cloudSyncRef.current;
+    if (cloudSync.isConfigured()) {
+      cloudSync.start();
+    }
+    if (cloudAuthProvider.isConfigured()) {
+      cloudAuthProvider.restoreSession();
+      void cloudAuthProvider.syncLocalToCloud().catch(() => {});
+    }
+    return () => {
+      cloudSync.stop();
+    };
   }, [isLoaded]);
 
   // Start Garbage Collection if Admin/Master

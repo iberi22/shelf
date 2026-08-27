@@ -10,7 +10,7 @@ import {
   parseProductCsvAtomic,
   previewCsvHeaders,
 } from '../lib/csvProductImport';
-import Modal from './Modal';
+import Modal from './ui/Modal';
 
 interface ImportCSVModalProps {
   onClose: () => void;

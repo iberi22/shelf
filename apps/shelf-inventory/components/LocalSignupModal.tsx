@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
+import Button from './ui/Button';
+import Input from './ui/Input';
 
 interface LocalSignupModalProps {
   onClose: () => void;
@@ -120,17 +122,9 @@ const LocalSignupModal: React.FC<LocalSignupModalProps> = ({ onClose, onSwitchTo
             </label>
           </div>
 
-          <button
-            onClick={handleConfirmSeed}
-            disabled={!seedConfirmed}
-            className={`w-full font-bold py-3 px-4 rounded-lg transition-all ${
-              seedConfirmed
-                ? 'bg-foreground text-surface hover:bg-opacity-80'
-                : 'bg-foreground/20 text-foreground/40 cursor-not-allowed'
-            }`}
-          >
+          <Button fullWidth disabled={!seedConfirmed} onClick={handleConfirmSeed}>
             ✓ I've Saved My Seed - Continue
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -151,42 +145,33 @@ const LocalSignupModal: React.FC<LocalSignupModalProps> = ({ onClose, onSwitchTo
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label={t('auth.email')}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            disabled={loading}
+          />
           <div>
-            <label className="block text-sm font-medium mb-1 text-foreground">{t('auth.email')}</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 bg-surface border border-foreground/30 rounded-md text-foreground"
-              placeholder="your@email.com"
-              disabled={loading}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-foreground">{t('auth.password')}</label>
-            <input
+            <Input
+              label={t('auth.password')}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 bg-surface border border-foreground/30 rounded-md text-foreground"
               placeholder="••••••••"
               disabled={loading}
             />
             <p className="text-xs text-foreground/50 mt-1">Minimum 6 characters</p>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-foreground">{t('auth.confirmPassword')}</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full p-2 bg-surface border border-foreground/30 rounded-md text-foreground"
-              placeholder="••••••••"
-              disabled={loading}
-            />
-          </div>
+          <Input
+            label={t('auth.confirmPassword')}
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="••••••••"
+            disabled={loading}
+          />
 
           {error && (
             <div className="bg-red-900/30 border border-red-600/50 rounded-lg p-3">
@@ -194,13 +179,9 @@ const LocalSignupModal: React.FC<LocalSignupModalProps> = ({ onClose, onSwitchTo
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-foreground text-surface font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <Button type="submit" fullWidth loading={loading} disabled={loading}>
             {loading ? t('auth.creatingAccount') : t('auth.createAccount')}
-          </button>
+          </Button>
         </form>
 
         <div className="mt-4 text-center space-y-3">

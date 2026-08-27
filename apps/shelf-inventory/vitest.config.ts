@@ -10,7 +10,13 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./test-setup.ts'],
-    include: ['lib/**/*.{spec,test}.{ts,tsx}', 'api/**/*.{spec,test}.{ts,tsx}', 'utils/**/*.{spec,test}.{ts,tsx}', 'context/**/*.{spec,test}.{ts,tsx}'],
+    include: [
+      'lib/**/*.{spec,test}.{ts,tsx}',
+      'api/**/*.{spec,test}.{ts,tsx}',
+      'utils/**/*.{spec,test}.{ts,tsx}',
+      'context/**/*.{spec,test}.{ts,tsx}',
+      'hooks/**/*.{spec,test}.{ts,tsx}',
+    ],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
@@ -23,19 +29,7 @@ export default defineConfig({
       reporter: ['text', 'html', 'json-summary'],
       reportsDirectory: './coverage',
       include: ['lib/**/*.ts', 'api/**/*.ts', 'utils/**/*.ts'],
-      exclude: [
-        '**/*.{spec,test}.{ts,tsx}',
-        '**/*.d.ts',
-        '**/node_modules/**',
-        'lib/sentry.ts',
-        'lib/discovery.ts',
-        'lib/edge-mesh-workflow.ts',
-        'lib/invitation.ts',
-        'lib/share-links.ts',
-        'lib/webauthn.ts',
-        'lib/auth-mesh.ts',
-        'lib/imageCompression.ts',
-      ],
+      exclude: ['**/*.{spec,test}.{ts,tsx}', '**/*.d.ts', '**/node_modules/**', 'lib/cloudSync.ts'],
       thresholds: {
         lines: 60,
         functions: 60,

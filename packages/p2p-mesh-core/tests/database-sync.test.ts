@@ -288,8 +288,18 @@ describe('DatabaseSyncManager lifecycle sync', () => {
 		sync.setInventoryConfig(newConfig as any);
 		expect(sync.getInventoryConfig()?.lowStockThreshold).not.toBe(99);
 
-		// Attempt unauthorized master reassignment
+		// Self-designation is allowed: a node may (re)claim mastership of its
+		// own view (real admin after invite/restore, or explicit operator choice).
 		sync.setMasterPeerId('node-b');
+		expect(sync.getMasterPeerId()).toBe('node-b');
+
+		// A master may delegate authority: node-b (now master) appoints 'host'.
+		sync.setMasterPeerId('host');
+		expect(sync.getMasterPeerId()).toBe('host');
+
+		// Attempt unauthorized master reassignment to a FOREIGN peer over an
+		// established foreign master: still blocked (hijack attempt).
+		sync.setMasterPeerId('node-c');
 		expect(sync.getMasterPeerId()).toBe('host');
 
 		// Attempt unauthorized peer removal

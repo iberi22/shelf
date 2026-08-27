@@ -6,6 +6,7 @@ vi.mock('../sync-helper', () => ({
   processWebhookEntity: vi.fn().mockResolvedValue(new Uint8Array()),
 }));
 
+import { resetIdempotencyCache } from '../idempotency';
 import handler from '../shopify';
 import { processWebhookEntity } from '../sync-helper';
 
@@ -108,7 +109,6 @@ describe('Shopify webhook handler', () => {
     expect(res.status).toBe(200);
   });
 
-
   // ── Payload limits and validation ───────────────────────────────────
   it('returns 413 when content-length exceeds 500KB', async () => {
     const req = makeShopifyRequest({});
@@ -140,7 +140,6 @@ describe('Shopify webhook handler', () => {
     const res = await handler(req);
     expect(res.status).toBe(400);
   });
-
 
   it('returns 400 for array JSON body', async () => {
     const req = makeShopifyRequest({});
@@ -289,5 +288,36 @@ describe('Shopify webhook handler', () => {
     const res = await handler(req);
     expect(res.status).toBe(200);
     expect(processWebhookEntity).not.toHaveBeenCalled();
+  });
+});
+
+// ── Idempotency (duplicate delivery dedupe by event id) ──────────────
+describe('idempotency', () => {
+  beforeEach(() => {
+    resetIdempotencyCache();
+    vi.mocked(processWebhookEntity).mockClear();
+  });
+
+  it('dedupes identical deliveries (same body → same event id)', async () => {
+    const product = { id: 424242, title: 'Dedupe', status: 'active', images: [], variants: [] };
+    const first = await handler(makeShopifyRequest(product, { topic: 'products/update' }));
+    expect(first.status).toBe(200);
+    expect(processWebhookEntity).toHaveBeenCalledTimes(1);
+
+    vi.mocked(processWebhookEntity).mockClear();
+    const second = await handler(makeShopifyRequest(product, { topic: 'products/update' }));
+    expect(second.status).toBe(200);
+    expect(processWebhookEntity).not.toHaveBeenCalled();
+  });
+
+  it('processes a distinct payload for the same entity (not deduped)', async () => {
+    const base = { id: 515151, title: 'V1', status: 'active', images: [], variants: [] };
+    await handler(makeShopifyRequest(base, { topic: 'products/update' }));
+    expect(processWebhookEntity).toHaveBeenCalledTimes(1);
+
+    vi.mocked(processWebhookEntity).mockClear();
+    const updated = { ...base, title: 'V2' };
+    await handler(makeShopifyRequest(updated, { topic: 'products/update' }));
+    expect(processWebhookEntity).toHaveBeenCalledTimes(1);
   });
 });

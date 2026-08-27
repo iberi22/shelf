@@ -6,6 +6,7 @@ vi.mock('../sync-helper', () => ({
   processWebhookEntity: vi.fn().mockResolvedValue(new Uint8Array()),
 }));
 
+import { resetIdempotencyCache } from '../idempotency';
 import { processWebhookEntity } from '../sync-helper';
 import handler from '../woocommerce';
 
@@ -137,7 +138,6 @@ describe('WooCommerce webhook handler', () => {
     expect(res.status).toBe(200);
   });
 
-
   // ── Payload limits and validation ───────────────────────────────────
   it('returns 413 when content-length exceeds 500KB', async () => {
     const req = makeWooRequest({});
@@ -167,7 +167,6 @@ describe('WooCommerce webhook handler', () => {
     const res = await handler(req);
     expect(res.status).toBe(400);
   });
-
 
   it('returns 400 for array JSON body', async () => {
     const req = makeWooRequest({});
@@ -306,5 +305,54 @@ describe('WooCommerce webhook handler', () => {
     const res = await handler(req);
     expect(res.status).toBe(200);
     expect(processWebhookEntity).not.toHaveBeenCalled();
+  });
+});
+
+// ── Idempotency (duplicate delivery dedupe by event id) ──────────────
+describe('idempotency', () => {
+  beforeEach(() => {
+    resetIdempotencyCache();
+    vi.mocked(processWebhookEntity).mockClear();
+  });
+
+  it('dedupes identical deliveries (same body → same event id)', async () => {
+    const product = {
+      id: 424242,
+      name: 'Dedupe',
+      sku: 'SKU-D',
+      price: '9.99',
+      stock_quantity: 5,
+      status: 'publish',
+      images: [],
+      variations: [],
+    };
+    const first = await handler(makeWooRequest(product, { topic: 'product.updated' }));
+    expect(first.status).toBe(200);
+    expect(processWebhookEntity).toHaveBeenCalledTimes(1);
+
+    vi.mocked(processWebhookEntity).mockClear();
+    const second = await handler(makeWooRequest(product, { topic: 'product.updated' }));
+    expect(second.status).toBe(200);
+    expect(processWebhookEntity).not.toHaveBeenCalled();
+  });
+
+  it('processes a distinct payload for the same entity (not deduped)', async () => {
+    const base = {
+      id: 515151,
+      name: 'V1',
+      sku: 'SKU-V',
+      price: '1.00',
+      stock_quantity: 1,
+      status: 'publish',
+      images: [],
+      variations: [],
+    };
+    await handler(makeWooRequest(base, { topic: 'product.updated' }));
+    expect(processWebhookEntity).toHaveBeenCalledTimes(1);
+
+    vi.mocked(processWebhookEntity).mockClear();
+    const updated = { ...base, name: 'V2' };
+    await handler(makeWooRequest(updated, { topic: 'product.updated' }));
+    expect(processWebhookEntity).toHaveBeenCalledTimes(1);
   });
 });

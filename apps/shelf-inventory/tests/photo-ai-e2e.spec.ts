@@ -12,7 +12,7 @@ async function createProductWithVariants(page: any, productName: string) {
   await expect(page.getByTestId('product-form')).toBeVisible();
 
   await page.getByTestId('product-name-input').fill(productName);
-  await page.getByTestId('product-sku-input').fill(`VPP-${Math.floor(Math.random() * 100000)}`);
+  await page.getByTestId('product-sku-input').fill(`VPP-${crypto.getRandomValues(new Uint32Array(1))[0] % 100000}`);
   await page.getByTestId('product-price-input').fill('150');
   await page.getByTestId('product-cost-input').fill('75');
 
@@ -265,7 +265,7 @@ test.describe('Photo-to-Variants + AI Assistant E2E Coverage', () => {
     await expect(sendBtn).toBeDisabled();
 
     // Verify loading indicator is displayed
-    await expect(page.locator('.animate-pulse')).toBeVisible();
+    await expect(page.locator('.animate-pulse').first()).toBeVisible();
   });
 
   test('10. AI Chat: Shows message bubbles for user and model', async ({ page }) => {
