@@ -6,6 +6,7 @@ import Catalog from './components/Catalog';
 import Clients from './components/Clients';
 import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
+import MemoryTuningPage from './components/MemoryTuningPage';
 import P2PSyncStatusHeader from './components/P2PSyncStatusHeader';
 import PullToRefresh from './components/PullToRefresh';
 import PurchaseOrders from './components/PurchaseOrders';
@@ -84,6 +85,8 @@ const MainApp: React.FC = () => {
         return isEnabled('SRC-FUN-007') && canView(p?.canViewArqueo) ? <Arqueo /> : <AccessDenied />;
       case 'nav.reports':
         return isEnabled('SRC-FUN-012') && canView(p?.canViewReports) ? <Reports /> : <AccessDenied />;
+      case 'nav.memoryTuning':
+        return <MemoryTuningPage />;
       case 'nav.settings':
         return <Settings />;
       default:

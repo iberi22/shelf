@@ -10,5 +10,6 @@ export const NAV_ITEMS: NavItem[] = [
   { nameKey: 'nav.catalog', icon: '📖' },
   { nameKey: 'nav.arqueo', icon: '📋' },
   { nameKey: 'nav.reports', icon: '📈' },
+  { nameKey: 'nav.memoryTuning', icon: '🧠' },
   { nameKey: 'nav.settings', icon: '⚙️' },
 ];
