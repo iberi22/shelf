@@ -41,6 +41,7 @@
  *   create policy "cloud sync read"   on cloud_sync for select to anon using (true);
  */
 import * as Y from 'yjs';
+import { generateSecureId } from './id';
 
 export const CLOUD_SYNC_ORIGIN = 'cloud';
 /** Auto-sync cadence: 5 minutes. */
@@ -145,11 +146,11 @@ function getOrCreateUserId(): string {
   try {
     const stored = globalThis.localStorage?.getItem(USER_ID_KEY);
     if (stored) return stored;
-    const generated = `user-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    const generated = `user-${Date.now().toString(36)}-${generateSecureId().slice(0, 8)}`;
     globalThis.localStorage?.setItem(USER_ID_KEY, generated);
     return generated;
   } catch {
-    return `user-${Math.random().toString(36).slice(2, 12)}`;
+    return `user-${generateSecureId().slice(0, 10)}`;
   }
 }
 

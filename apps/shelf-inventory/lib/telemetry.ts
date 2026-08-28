@@ -17,6 +17,7 @@
  */
 
 import { localAuthManager } from './localAuth';
+import { generateSecureId } from './id';
 
 export interface TelemetryEvent {
   name: string;
@@ -397,8 +398,7 @@ export class TelemetryProvider {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
       return `${crypto.randomUUID().replace(/-/g, '')}.${Date.now()}`;
     }
-    const rand = () => Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
-    return `${rand()}.${Date.now()}`;
+    return `${generateSecureId().replace(/-/g, '')}.${Date.now()}`;
   }
 
   /** Current signed-in user id from localAuth, when available. */

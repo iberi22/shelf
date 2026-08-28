@@ -1,5 +1,6 @@
 import { makeBrowserOfflineTransport, makeFetchTransport } from '@sentry/browser';
 import * as Sentry from '@sentry/react';
+import { generateSecureId } from './id';
 
 /**
  * Sentry error tracking for shelf-inventory (offline-first).
@@ -142,7 +143,7 @@ export function clearBreadcrumbs(): void {
 }
 
 function makeId(): string {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${Date.now().toString(36)}-${generateSecureId().slice(0, 8)}`;
 }
 
 function isOnline(): boolean {

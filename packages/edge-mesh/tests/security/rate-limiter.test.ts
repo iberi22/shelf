@@ -130,7 +130,7 @@ describe('TokenBucketRateLimiter and Security Rate Limiting', () => {
     authRateLimiter.reset(clientIp);
 
     const fakeFirma = new Uint8Array(3309).fill(0);
-    const fakePublicKey = new Uint8Array(1760).fill(0);
+    const fakePublicKey = new Uint8Array(1952).fill(0);
 
     // Auth login allows 5 burst tokens.
     // Note: since fake credentials will fail authentication, loginWithPQC returns null,
