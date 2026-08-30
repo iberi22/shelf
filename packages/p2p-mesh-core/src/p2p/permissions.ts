@@ -4,6 +4,7 @@
  * Pure functions extracted from P2PManager. Each takes explicit
  * parameters instead of reading `this` — the class delegates to these.
  */
+import { generateUUID } from '../crypto';
 import { dbSync } from '../database-sync';
 import { verifyAdminClaim } from '../database-sync/authority-checks';
 import type { P2PRole } from '../types';
@@ -22,7 +23,7 @@ type AuditEntryInput = {
 function writeAuditEntry({ action, peerId, details }: AuditEntryInput): void {
   try {
     dbSync.upsertEntity('auditLogs', {
-      id: `p2p-${action.toLowerCase().replace(/_/g, '-')}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      id: `p2p-${action.toLowerCase().replace(/_/g, '-')}-${generateUUID()}`,
       timestamp: new Date().toISOString(),
       peerId,
       action,
