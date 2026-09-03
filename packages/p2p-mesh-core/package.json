@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@noble/post-quantum": "^0.7.0",
+    "@noble/post-quantum": "^0.7.1",
     "edge-mesh": "workspace:*",
     "peerjs": "^1.5.5",
     "y-protocols": "^1.0.7",
