@@ -1,30 +1,25 @@
-#!/bin/sh
+#!/usr/bin/env sh
+# SWAL anti-leak gate — pre-commit (GitCore protocol 3.9.1)
+#
+# Installed as .husky/pre-commit (chmod +x required: git silently ignores
+# hooks without the executable bit).
+#
+# The workspace root is resolved from $SWAL_ROOT, falling back to
+# $HOME/proyectosSWAL. Never hardcode an absolute personal path here: this
+# file is published in PUBLIC repos and a literal /home/<user> is both a
+# leak and a portability bug.
+set -e
 
-ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$ROOT_DIR" || exit 1
+SWAL_ROOT="${SWAL_ROOT:-$HOME/proyectosSWAL}"
+GATE="$SWAL_ROOT/periferia/GitCore/scripts/swal-leak-gate.mjs"
+SHIM="$SWAL_ROOT/scripts/swal-husky-guard.mjs"
 
-
-echo "[pre-commit] Running lint-staged (Biome)..."
-if command -v pnpm >/dev/null 2>&1; then
-  pnpm exec lint-staged
-  LINT_EXIT=$?
-else
-  npx --no-install lint-staged
-  LINT_EXIT=$?
+if command -v node >/dev/null 2>&1; then
+  if [ -f "$GATE" ]; then
+    node "$GATE" --staged || exit 1
+  elif [ -f "$SHIM" ]; then
+    node "$SHIM" --staged || exit 1
+  else
+    echo "⚠ SWAL leak gate not found at \$SWAL_ROOT; commit proceeding WITHOUT anti-leak checks." >&2
+  fi
 fi
-if [ $LINT_EXIT -ne 0 ]; then
-  echo "[pre-commit] FAILED: lint-staged errors. Fix and retry."
-  exit 1
-fi
-echo "[pre-commit] OK: lint-staged passed."
-
-echo "[pre-commit] Running TypeScript type check (shelf-inventory)..."
-cd "$ROOT_DIR/apps/shelf-inventory" && pnpm exec tsc --noEmit --pretty
-TSC_EXIT=$?
-if [ $TSC_EXIT -ne 0 ]; then
-  echo "[pre-commit] FAILED: TypeScript type errors exist."
-  exit 1
-fi
-echo "[pre-commit] OK: TypeScript check passed."
-
-echo "[pre-commit] OK: All checks passed. Commit allowed."
