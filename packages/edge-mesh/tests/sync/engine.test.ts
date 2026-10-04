@@ -28,6 +28,7 @@ describe('SyncEngine Module', () => {
           timestamp: Date.now(),
           autor: peerId,
           secuencia: 2,
+          firma: 'firma-valida',
         },
       ];
 
@@ -55,6 +56,7 @@ describe('SyncEngine Module', () => {
           timestamp: Date.now(),
           autor: peerId,
           secuencia: 2,
+          firma: 'firma-valida',
         },
       ];
 
@@ -94,6 +96,7 @@ describe('SyncEngine Module', () => {
           timestamp: Date.now(),
           autor: peerId,
           secuencia: 1,
+          firma: 'firma-valida',
         },
       ];
 
