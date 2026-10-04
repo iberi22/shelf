@@ -3,6 +3,44 @@ import type { Envolvente, NodoId, ParPublico, TipoMensaje } from '../types/index
 import { TIPO_MENSAJE } from '../types/index.js';
 import { secureRandomString } from './utils.js';
 
+// ─── ENCRYPTION LAYER (re-exported) ────────────────────────────────────────
+//
+// `cifrarPayload` / `abrirPayload` / `iniciarSesionCifrada` and the
+// `GuardiaReplay` anti-replay guard live in `./crypto.ts`. They are re-exported
+// here so the protocol module stays the single import surface for callers, and
+// so `canonicalEnvelopeBytes` keeps its exact current definition: a sealed
+// payload is signed as the ciphertext it is, and existing signatures over
+// plaintext payloads continue to verify byte-for-byte.
+
+export type {
+  ClavesSesion,
+  Direccion,
+  HandshakeSesion,
+  MedicionOverhead,
+  PayloadCifrado,
+  SesionCifrada,
+} from './crypto.js';
+export {
+  abrirPayload,
+  aceptarSesionCifrada,
+  BYTES_CIPHERTEXT_KEM_768,
+  cifrarPayload,
+  cifrarYSiguiente,
+  DIRECCION,
+  derivarClavesSesion,
+  derivarNonce,
+  ErrorPayloadCifrado,
+  ErrorReplayDetectado,
+  ErrorReusoDeNonce,
+  esEnvolventeCifrado,
+  GuardiaReplay,
+  iniciarSesionCifrada,
+  marcarEnviado,
+  medirOverhead,
+  rotarSesion,
+  VERSION_PAYLOAD_CIFRADO,
+} from './crypto.js';
+
 // ─── ENVELOPE CREATION ─────────────────────────────────────────────────────
 
 let contadorGlobal = 0;

@@ -25,7 +25,15 @@ import { SyncEngine } from './sync/engine.js';
 import { MemoryTransport } from './transport/memory.js';
 import { PeerJSTransport, type PeerJSTransportOptions } from './transport/peerjs.js';
 import type { ITransport } from './transport/types.js';
-import type { EdgeMeshConfig, EdgeMeshEventMap, Envolvente, NodoId, ParPublico, TipoMensaje } from './types/index.js';
+import type {
+  EdgeMeshConfig,
+  EdgeMeshEventMap,
+  Envolvente,
+  NodoId,
+  ParPublico,
+  PayloadSnapshot,
+  TipoMensaje,
+} from './types/index.js';
 import { TIPO_MENSAJE } from './types/index.js';
 
 // ─── YJS ADAPTER ───────────────────────────────────────────────────────────
@@ -99,6 +107,41 @@ export class YjsAdapter {
 }
 
 // ─── EDGE MESH ─────────────────────────────────────────────────────────────
+
+/**
+ * Envelope types that mutate local state and therefore MUST carry a valid
+ * ML-DSA-65 signature from a peer whose public key is already registered.
+ *
+ * The gate is allow-list on purpose: a type that is not listed here is either
+ * identity-bound inside its own handler (HEARTBEAT, GOVERNANCE) or carries no
+ * state at all. SNAPSHOT used to be missing from this list, which let any
+ * unsigned peer overwrite a snapshot and bump its version.
+ */
+const TIPOS_CON_FIRMA_OBLIGATORIA: ReadonlySet<string> = new Set<string>([
+  TIPO_MENSAJE.SYNC,
+  TIPO_MENSAJE.AUTHZ,
+  TIPO_MENSAJE.SNAPSHOT,
+  TIPO_MENSAJE.NAMESPACE,
+]);
+
+/** True when the envelope claims a node identity that must equal its origin. */
+function reclamaSuPropiaIdentidad(payload: unknown, env: Envolvente): boolean {
+  if (!esObjeto(payload)) return true;
+  for (const claim of [payload.nodoId, payload.peerId, payload.nodoOrigen]) {
+    if (typeof claim === 'string' && claim !== env.origen) return false;
+  }
+  return true;
+}
+
+/** Every remote payload must clear this: `typeof null === 'object'`. */
+function esObjeto(valor: unknown): valor is Record<string, unknown> {
+  return typeof valor === 'object' && valor !== null;
+}
+
+/** A non-empty string, i.e. something safe to use as an id or storage key. */
+function esTexto(valor: unknown): valor is string {
+  return typeof valor === 'string' && valor.length > 0;
+}
 
 export class EdgeMesh {
   readonly config: EdgeMeshConfig;
@@ -382,20 +425,38 @@ export class EdgeMesh {
   }
 
   private async procesarMensaje(env: unknown): Promise<void> {
+    // validateEnvelope dereferences fields without a null/undefined guard, so the
+    // transport (which types its payload as `unknown`) can crash the receive path
+    // with a bare `undefined`. Guard here rather than in protocol/index.ts.
+    if (typeof env !== 'object' || env === null) return;
     if (!validateEnvelope(env as never)) return;
     const envolvente = env as Envolvente;
 
+    // An envelope that claims to be FROM us is a self-replay, never a peer message.
+    if (envolvente.origen === this.config.nodoId) return;
+
     if (this.deduplicator.esDuplicado(envolvente)) return;
 
-    // Signature gate for sensitive message types
-    if (
-      this.requireSignedEnvelopes &&
-      (envolvente.tipo === TIPO_MENSAJE.SYNC || envolvente.tipo === TIPO_MENSAJE.AUTHZ)
-    ) {
-      const ok = await this.verificarFirmaEnvelope(envolvente);
-      if (!ok) {
+    // Signature gate: every state-mutating type needs a valid signature from a
+    // peer whose public key is registered here. An unregistered origin has no
+    // key to verify against, so it is rejected as an unknown peer.
+    if (this.requireSignedEnvelopes) {
+      if (TIPOS_CON_FIRMA_OBLIGATORIA.has(envolvente.tipo)) {
+        const ok = await this.verificarFirmaEnvelope(envolvente);
+        if (!ok) {
+          this.emit('error', {
+            mensaje: `Firma invalida o ausente de ${envolvente.origen} (${envolvente.tipo})`,
+          });
+          return;
+        }
+      }
+
+      // Identity binding: a peer may not speak on behalf of a third node.
+      // HEARTBEAT/GOVERNANCE are not in the signed list, so this is the only
+      // thing stopping an attacker from forging presence or votes as another node.
+      if (!reclamaSuPropiaIdentidad(envolvente.payload, envolvente)) {
         this.emit('error', {
-          mensaje: `Firma invalida o ausente de ${envolvente.origen} (${envolvente.tipo})`,
+          mensaje: `Identidad ajena en envelope de ${envolvente.origen} (${envolvente.tipo})`,
         });
         return;
       }
@@ -450,16 +511,11 @@ export class EdgeMesh {
   }
 
   private async procesarSync(env: Envolvente): Promise<void> {
-    const payload = env.payload as {
-      docId?: string;
-      datos?: unknown;
-      clock?: number;
-      namespace?: string;
-    };
-    if (payload === undefined || typeof payload !== 'object') return;
+    if (!esObjeto(env.payload)) return;
+    const payload = env.payload as { datos?: unknown; clock?: number; namespace?: string };
 
-    const docId = payload.docId;
-    if (docId === undefined) return;
+    const docId = env.payload.docId;
+    if (!esTexto(docId)) return;
 
     const namespace = payload.namespace ?? this.defaultSyncNamespace;
 
@@ -497,78 +553,94 @@ export class EdgeMesh {
   }
 
   private async procesarSnapshot(env: Envolvente): Promise<void> {
-    const snapshot = env.payload as {
-      docId: string;
-      version: number;
-      datos: Uint8Array;
-      nodosConfirmados: readonly NodoId[];
-    };
+    // A snapshot REPLACES the whole document. A malformed one must not reach
+    // SnapshotManager: `datos` is persisted verbatim, and a missing docId would
+    // be used as a storage key.
+    if (!esObjeto(env.payload)) return;
+    const { docId, version, datos, nodosConfirmados } = env.payload as Partial<PayloadSnapshot>;
+    if (!esTexto(docId)) return;
+    if (typeof version !== 'number' || !Number.isFinite(version)) return;
+    if (!Array.isArray(nodosConfirmados)) return;
 
-    const snapManager = this.snapshots.get(snapshot.docId);
+    const bytes = this.decodeSyncBytes(datos);
+    if (!bytes || bytes.length === 0) return;
+
+    const snapManager = this.snapshots.get(docId);
     if (snapManager !== undefined) {
       await snapManager.recibirSnapshot({
-        docId: snapshot.docId,
-        version: snapshot.version,
-        datos: snapshot.datos,
-        nodosConfirmados: snapshot.nodosConfirmados,
+        docId,
+        version,
+        datos: bytes,
+        nodosConfirmados: nodosConfirmados.filter(esTexto) as NodoId[],
       });
     }
   }
 
   private async procesarGovernance(env: Envolvente): Promise<void> {
-    const payload = env.payload as {
-      accion: string;
-      propuesta: string;
-      voto: unknown;
-    };
-
-    if (payload.accion === 'votar' && payload.voto !== undefined) {
-      this.governance.votar(payload.propuesta, payload.voto as never);
+    if (!esObjeto(env.payload)) return;
+    const { accion, propuesta, voto } = env.payload as { accion?: unknown; propuesta?: unknown; voto?: unknown };
+    if (accion !== 'votar' || voto === undefined) return;
+    if (!esObjeto(voto) || voto.nodoId !== env.origen) {
+      this.emit('error', {
+        mensaje: `Voto con identidad ajena: envelope de ${env.origen} vota como ${String(
+          esObjeto(voto) ? voto.nodoId : voto,
+        )}`,
+      });
+      return;
     }
+    if (!esTexto(voto.voto) || typeof voto.peso !== 'number' || !Number.isFinite(voto.peso)) return;
+
+    this.governance.votar(esTexto(propuesta) ? propuesta : '', voto as never);
   }
 
   private async procesarAuthz(env: Envolvente): Promise<void> {
-    const payload = env.payload as {
-      accion: string;
-      espacio: string;
-      sujeto: NodoId;
-      capacidad: string;
-    };
+    if (!esObjeto(env.payload)) return;
+    const { accion, espacio, sujeto, capacidad } = env.payload as Partial<Record<string, unknown>>;
+    if (!esTexto(espacio) || !esTexto(capacidad) || !esTexto(sujeto)) return;
 
-    // Never accept unauthenticated remote capability grants
+    // Never accept unauthenticated remote capability grants.
     if (this.requireAuthz) {
-      const isAdmin = this.authorizer.verificarCapacidad(payload.espacio, env.origen, CAPACIDAD_ESTANDAR.ADMIN);
+      const isAdmin = this.authorizer.verificarCapacidad(espacio, env.origen, CAPACIDAD_ESTANDAR.ADMIN);
       const signedOk = !this.requireSignedEnvelopes || (await this.verificarFirmaEnvelope(env));
 
       if (!isAdmin || !signedOk) {
-        // Even without requireSignedEnvelopes, still require admin capability
-        // for remote grants when requireAuthz is on.
-        if (!isAdmin) {
-          this.emit('error', {
-            mensaje: `AUTHZ denegado: ${env.origen} no es admin de ${payload.espacio}`,
-          });
-          return;
-        }
+        this.emit('error', {
+          mensaje: `AUTHZ denegado: ${env.origen} no es admin de ${espacio}`,
+        });
+        return;
       }
     }
 
-    if (payload.accion === 'conceder') {
-      this.authorizer.concederCapacidad(payload.espacio, payload.sujeto, payload.capacidad);
+    if (accion === 'conceder') {
+      this.authorizer.concederCapacidad(espacio, sujeto as NodoId, capacidad);
     }
   }
 
   private async procesarNamespace(env: Envolvente): Promise<void> {
-    const payload = env.payload as {
-      accion: string;
-      espacio: string;
-      nodoId: NodoId;
+    if (!esObjeto(env.payload)) return;
+    const {
+      accion,
+      espacio: nombre,
+      nodoId,
+    } = env.payload as {
+      accion?: unknown;
+      espacio?: unknown;
+      nodoId?: unknown;
     };
+    if (accion !== 'unir' || !esTexto(nombre) || !esTexto(nodoId)) return;
 
-    if (payload.accion === 'unir') {
-      const espacio = this.namespaces.obtenerEspacioPorNombre(payload.espacio);
-      if (espacio !== null) {
-        this.namespaces.unirNodo(espacio.id, payload.nodoId);
-      }
+    // Joining on behalf of another node is membership forgery: an attacker
+    // would place a victim inside a space it never asked to enter.
+    if (nodoId !== env.origen) {
+      this.emit('error', {
+        mensaje: `NAMESPACE denegado: ${env.origen} intenta unir a ${nodoId}`,
+      });
+      return;
+    }
+
+    const espacio = this.namespaces.obtenerEspacioPorNombre(nombre);
+    if (espacio !== null) {
+      this.namespaces.unirNodo(espacio.id, nodoId as NodoId);
     }
   }
 

@@ -9,10 +9,16 @@
 // se hace via el broker PeerJS.
 
 import type { EdgeMesh } from '../edge-mesh.js';
+// Type-only import: MeshManager must not pull karma.ts into its runtime graph.
+// The wire format is structurally checked below; every security rule (signature,
+// self-endorsement, delta ceiling, idempotency) belongs to KarmaManager and is
+// enforced by calling its public API, never by re-implementing it here.
+import type { MotivoRechazo } from '../maloca/karma.js';
+import type { TransaccionKarma } from '../maloca/types.js';
 import { createEnvelope } from '../protocol/index.js';
 import { generarNonce } from '../protocol/utils.js';
 import { TokenBucketRateLimiter } from '../security/rate-limiter.js';
-import type { NodoId } from '../types/index.js';
+import type { NodoId, ParPublico } from '../types/index.js';
 import { TIPO_MENSAJE } from '../types/index.js';
 
 // ─── CONST OBJECT PATTERNS ────────────────────────────────────────────────
@@ -80,6 +86,14 @@ export interface MeshEventMap {
     readonly via: NodoId;
   }>;
   gossipRecibido: CustomEvent<{ readonly mensaje: GossipMessage }>;
+  /** A remote endorsement survived signature verification and moved a score. */
+  karmaRecibido: CustomEvent<{ readonly tx: TransaccionKarma; readonly desde: NodoId }>;
+  /** A remote endorsement was refused. `motivo` is KarmaManager's own verdict. */
+  karmaRechazado: CustomEvent<{
+    readonly txId: string | null;
+    readonly motivo: MotivoRechazo | 'payload_malformado';
+    readonly desde: NodoId;
+  }>;
   meshSaludActualizada: CustomEvent<{
     readonly peersActivos: number;
     readonly peersTotales: number;
@@ -95,6 +109,110 @@ export interface MeshEventMap {
   }>;
 }
 
+// ─── KARMA OVER GOSSIP ─────────────────────────────────────────────────────
+
+/**
+ * The karma engine a MeshManager replicates into, expressed as the narrow slice of
+ * KarmaManager this layer is allowed to use.
+ *
+ * Structural on purpose: `mesh/index.ts` must not depend on the karma runtime
+ * graph, and a hand-written stand-in must not be able to satisfy it and silently
+ * skip validation. `aplicarTransaccion` is the ONLY method that may move a score,
+ * which is what makes "gossip is a carrier, not an authority" enforceable.
+ */
+export interface ConsumidorKarma {
+  /**
+   * The one entry point that may move a score. Returns null when applied (and when
+   * the transaction is a duplicate `tx.id`, by design), or the refusal reason.
+   */
+  readonly aplicarTransaccion: (tx: TransaccionKarma) => Promise<MotivoRechazo | null>;
+  /**
+   * Registers a key the node already trusts (e.g. from the EdgeMesh peer
+   * registry). Optional: a consumer that resolves keys itself needs not expose it.
+   */
+  readonly registrarClavePublica?: (nodoId: NodoId, parPublico: ParPublico) => void;
+}
+
+/** Named options for the MeshManager constructor. */
+export interface MeshManagerOpciones {
+  /**
+   * Karma engine to replicate remote endorsements into. Omit for a mesh that only
+   * carries gossip for other purposes.
+   */
+  readonly consumidorKarma?: ConsumidorKarma;
+}
+
+/**
+ * Accepts either the karma consumer itself or a named-options bag, so the common
+ * pairing stays a two-argument call while adding a second option later is not a
+ * breaking change.
+ */
+function resolverConsumidorKarma(arg: ConsumidorKarma | MeshManagerOpciones | undefined): ConsumidorKarma | undefined {
+  if (arg === undefined) return undefined;
+  if ('aplicarTransaccion' in arg) return arg;
+  return arg.consumidorKarma;
+}
+
+/**
+ * Payload MeshManager gossips to carry an endorsement. Wire-versioned so a
+ * future change to the transaction format is distinguishable on the wire.
+ */
+export const PAYLOAD_KARMA_TIPO = 'karma:tx' as const;
+
+/**
+ * Rehydrates and structurally validates an endorsement that arrived over the wire.
+ *
+ * It deliberately checks ONLY the shape needed to survive transport
+ * (Uint8Array signatures come back as ArrayBuffer or plain number arrays in the
+ * wild) and to hand something well-typed to KarmaManager.
+ *
+ * It is NOT a security check. Nothing here is trusted: it does not inspect the
+ * signature, `emisor`, `sujeto` or `delta` semantics. Those verdicts belong to
+ * KarmaManager.aplicarTransaccion, which is the only path a remote transaction
+ * may take.
+ */
+function normalizarTransaccionKarma(valor: unknown): TransaccionKarma | null {
+  if (typeof valor !== 'object' || valor === null) return null;
+  const p = valor as Partial<TransaccionKarma>;
+
+  if (typeof p.id !== 'string' || p.id.length === 0) return null;
+  if (typeof p.emisor !== 'string' || p.emisor.length === 0) return null;
+  if (typeof p.sujeto !== 'string' || p.sujeto.length === 0) return null;
+  // Only "is it a number at all". Range and sign are KarmaManager's rules.
+  if (typeof p.delta !== 'number' || !Number.isFinite(p.delta)) return null;
+
+  const firma = normalizarFirma(p.firma);
+  if (firma === null) return null;
+
+  return {
+    id: p.id,
+    tipo: typeof p.tipo === 'string' ? p.tipo : '',
+    proyecto: typeof p.proyecto === 'string' ? p.proyecto : '',
+    sujeto: p.sujeto,
+    delta: p.delta,
+    razon: typeof p.razon === 'string' ? p.razon : '',
+    emisor: p.emisor,
+    timestamp: typeof p.timestamp === 'number' && Number.isFinite(p.timestamp) ? p.timestamp : 0,
+    firma,
+  };
+}
+
+/**
+ * Rehydrates a signature that arrived as an ArrayBuffer or as a plain number
+ * array (JSON round-trip) back into the Uint8Array KarmaManager.verify expects.
+ * A transport that mangled it beyond recognition yields null and is refused.
+ */
+function normalizarFirma(firma: unknown): Uint8Array | null {
+  if (firma instanceof Uint8Array) return firma.length > 0 ? firma : null;
+  if (firma instanceof ArrayBuffer) return firma.byteLength > 0 ? new Uint8Array(firma) : null;
+  if (Array.isArray(firma)) {
+    if (firma.length === 0) return null;
+    if (!firma.every((b) => typeof b === 'number' && Number.isInteger(b) && b >= 0 && b <= 255)) return null;
+    return new Uint8Array(firma as number[]);
+  }
+  return null;
+}
+
 // ─── MESH MANAGER ─────────────────────────────────────────────────────────
 
 export class MeshManager extends EventTarget {
@@ -108,18 +226,34 @@ export class MeshManager extends EventTarget {
     maxTokens: 200,
   });
   private readonly namespacePeers: Map<string, Set<NodoId>>;
+  /**
+   * Karma engine to replicate into. Absent means this MeshManager is a pure
+   * carrier (chat/sync only) and remote endorsements are ignored rather than
+   * validated with a stand-in.
+   */
+  private consumidorKarma?: ConsumidorKarma;
+  /** In-flight karma applications, so callers can await propagation instead of sleeping. */
+  private readonly karmaEnCurso: Set<Promise<unknown>> = new Set();
   private activo: boolean = false;
   private intervalos: {
     heartbeat?: ReturnType<typeof setInterval>;
     limpieza?: ReturnType<typeof setInterval>;
   } = {};
 
-  constructor(config: Partial<MeshConfig> & { nodoId: NodoId }, edgeMesh: EdgeMesh) {
+  constructor(config: Partial<MeshConfig> & { nodoId: NodoId }, edgeMesh: EdgeMesh, consumidorKarma?: ConsumidorKarma);
+  constructor(config: Partial<MeshConfig> & { nodoId: NodoId }, edgeMesh: EdgeMesh, opciones?: MeshManagerOpciones);
+  constructor(
+    config: Partial<MeshConfig> & { nodoId: NodoId },
+    edgeMesh: EdgeMesh,
+    consumidorOrOpciones?: ConsumidorKarma | MeshManagerOpciones,
+  ) {
     super();
     this.edgeMesh = edgeMesh;
     this.peers = new Map();
     this.gossipsVistos = new Set();
     this.namespacePeers = new Map();
+
+    this.consumidorKarma = resolverConsumidorKarma(consumidorOrOpciones);
 
     this.config = {
       nodoId: config.nodoId,
@@ -380,6 +514,130 @@ export class MeshManager extends EventTarget {
 
   // ─── PROCESAR GOSSIP ─────────────────────────────────────────────────
 
+  /**
+   * THE REPUTATION REPLICATION PATH.
+   *
+   * ─── WHY THIS HOOK EXISTS ────────────────────────────────────────────────
+   *
+   * Until now `KarmaManager` wrote endorsements to `karma:emit` in the LOCAL
+   * OpLog and stopped there, while `procesarGossip` — the only thing in the repo
+   * that could have carried them to a peer — was never invoked by anyone. Two
+   * honest observers of the same endorsement therefore held different scores.
+   *
+   * ─── TRUST MODEL: GOSSIP IS A CARRIER, NOT AN AUTHORITY ─────────────────
+   *
+   * A gossip payload is attacker-controlled data. It can be replayed, forged,
+   * re-signed by a colluding peer, or sent by a node that has never been
+   * endorsed by anyone. So this method NEVER writes to an OpLog and NEVER
+   * touches a score itself. It does exactly one thing with the payload: hand it
+   * to `ConsumidorKarma.aplicarTransaccion`, which is KarmaManager's own public
+   * entry point. That method is the single place where the ML-DSA-65 signature
+   * is verified against the ISSUER's registered key, self-endorsement is
+   * refused, the delta ceiling is enforced and replay of the same `tx.id` is
+   * idempotent. Re-implementing any of that here would create a second,
+   * weaker validator — which is exactly the bug this path is meant to close.
+   *
+   * Consequently a peer can NEVER inject karma into a node that has not signed
+   * an endorsement: without a valid signature from a key the node trusts, the
+   * transaction is refused and no score moves.
+   *
+   * Public key trust is deliberately NOT sourced from the gossip payload (that
+   * would let any peer vouch for any other). The only keys ever registered from
+   * here are the ones the EdgeMesh already authenticated at peer handshake,
+   * read via `obtenerClavePublica`.
+   *
+   * ─── KNOWN LIMITATION — BEST EFFORT, NOT CONSENSUS (UNRESOLVED) ─────────
+   *
+   * Gossip is best-effort. TTL, the token-bucket rate limiter, offline peers and
+   * fan-out selection all mean an endorsement CAN BE LOST: a physician who is
+   * offline when the endorsement is gossipped never learns it was endorsed. This
+   * layer therefore makes reputation a SIGNAL that propagates opportunistically,
+   * NOT an authoritative ledger. Two nodes can legitimately hold different
+   * scores for the same subject, and no amount of retrying inside this layer
+   * fixes that — it is a convergence problem, not a transport problem.
+   *
+   * The fix is a real reconciliation protocol and is DELIBERATELY NOT
+   * IMPLEMENTED HERE. Candidate directions, none of them chosen yet:
+   *   (a) OpLog anti-entropy: periodic exchange of `karma:emit` entries keyed by
+   *       `tx.id`, applied through `aplicarTransaccion` (idempotency makes
+   *       replays free), so a returning node catches up.
+   *   (b) Quorum/Byzantine agreement on deltas, so a score is only credited once
+   *       a supermajority of peers has independently seen the endorsement.
+   *   (c) Explicit conflict surfacing: expose divergence (set of `tx.id`s) so an
+   *       operator can see two honest nodes disagree rather than silently trusting
+   *       whichever gossip arrived first.
+   * Whichever is chosen, the invariants must stay: karma never grants access, and
+   * only a signed endorsement can move a score. Until then, consumers must treat
+   * a karma number as an unverified hint — never as a credential.
+   *
+   * @returns the rejection reason, or null when the transaction was applied (or
+   *          was an already-applied duplicate, which KarmaManager folds into
+   *          `null` by design).
+   */
+  async aplicarKarmaRemoto(tx: TransaccionKarma, desde: NodoId): Promise<MotivoRechazo | 'payload_malformado' | null> {
+    const consumidor = this.consumidorKarma;
+    if (consumidor === undefined) {
+      // No consumer wired: the mesh stays a dumb carrier. Nothing is applied, so
+      // a MeshManager used for chat/sync cannot accidentally grow a karma engine.
+      return null;
+    }
+
+    // Bridge peer keys the mesh already authenticated at handshake into the karma
+    // engine. Never a key taken from the payload.
+    if (consumidor.registrarClavePublica !== undefined) {
+      const clave = this.obtenerClavePublicaDePeer(tx.emisor);
+      if (clave !== undefined) {
+        // Called as a method, never detached: KarmaManager's registry lives on its
+        // own instance and a bare reference would lose `this` and throw.
+        consumidor.registrarClavePublica(tx.emisor, clave);
+      }
+    }
+
+    const motivo = await consumidor.aplicarTransaccion(tx);
+    if (motivo !== null) {
+      this.dispatchEvent(new CustomEvent('karmaRechazado', { detail: { txId: tx.id, motivo, desde } }));
+      return motivo;
+    }
+
+    this.dispatchEvent(new CustomEvent('karmaRecibido', { detail: { tx, desde } }));
+    return null;
+  }
+
+  /** Reads a peer's public key from the EdgeMesh registry (handshake-verified). */
+  private obtenerClavePublicaDePeer(nodoId: NodoId): ParPublico | undefined {
+    const registros = this.edgeMesh as unknown as { obtenerClavePublica?: (id: NodoId) => ParPublico | undefined };
+    if (typeof registros.obtenerClavePublica !== 'function') return undefined;
+    try {
+      return registros.obtenerClavePublica(nodoId);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Gossips an endorsement to the mesh. Callers hand this the transaction object
+   * returned by `KarmaManager.emit`, signature included — a transaction without a
+   * signature is useless to every peer, and KarmaManager already guarantees it
+   * cannot be produced.
+   */
+  async transmitirKarma(tx: TransaccionKarma, namespace?: string): Promise<void> {
+    await this.transmitirConGossip(namespace ?? this.config.namespacePorDefecto, {
+      tipo: PAYLOAD_KARMA_TIPO,
+      tx,
+    });
+  }
+
+  /**
+   * Resolves once every karma transaction currently being applied has settled.
+   * Tests and gateways use it instead of sleeping; the mesh itself never awaits
+   * gossip application on the hot path.
+   */
+  async esperarPropagacionKarma(): Promise<void> {
+    while (this.karmaEnCurso.size > 0) {
+      await Promise.allSettled(Array.from(this.karmaEnCurso));
+    }
+  }
+
   procesarGossip(mensaje: GossipMessage): void {
     // Verificar TTL
     if (mensaje.ttl <= 0) return;
@@ -409,6 +667,11 @@ export class MeshManager extends EventTarget {
       // Pero procesamos si el payload es relevante
     }
 
+    // Reputation replication: route the endorsement through KarmaManager. Fired
+    // without awaiting so gossip forwarding stays fast; errors are contained and
+    // surfaced as `karmaRechazado` by aplicarKarmaRemoto.
+    this.enrutarKarmaDeGossip(mensaje);
+
     this.dispatchEvent(new CustomEvent('gossipRecibido', { detail: { mensaje } }));
 
     // Re-propagar con TTL reducido
@@ -430,6 +693,40 @@ export class MeshManager extends EventTarget {
         void this.reenviarGossip(peerId, mensajeReenviado);
       }
     }
+  }
+
+  /**
+   * Extracts an endorsement from a gossip payload and applies it through the
+   * karma engine. Anything that is not recognisably an endorsement is ignored:
+   * other payload kinds (maloca events, plugin discovery) are none of our
+   * business and are left to the `gossipRecibido` listeners.
+   */
+  private enrutarKarmaDeGossip(mensaje: GossipMessage): void {
+    const consumidor = this.consumidorKarma;
+    if (consumidor === undefined) return;
+
+    const payload = mensaje.payload as { tipo?: unknown; tx?: unknown } | null;
+    if (payload === null || typeof payload !== 'object') return;
+    if (payload.tipo !== PAYLOAD_KARMA_TIPO) return;
+
+    const tx = normalizarTransaccionKarma(payload.tx);
+    if (tx === null) {
+      const tarea = (async () => {
+        this.dispatchEvent(
+          new CustomEvent('karmaRechazado', {
+            detail: { txId: null, motivo: 'payload_malformado', desde: mensaje.origen },
+          }),
+        );
+      })();
+      this.karmaEnCurso.add(tarea);
+      void tarea.finally(() => this.karmaEnCurso.delete(tarea));
+      return;
+    }
+
+    const desde = mensaje.ruta.length > 0 ? mensaje.ruta[mensaje.ruta.length - 1] : mensaje.origen;
+    const tarea = this.aplicarKarmaRemoto(tx, desde);
+    this.karmaEnCurso.add(tarea);
+    void tarea.catch(() => null).finally(() => this.karmaEnCurso.delete(tarea));
   }
 
   private async reenviarGossip(peerId: NodoId, mensaje: GossipMessage): Promise<void> {

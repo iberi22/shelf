@@ -21,6 +21,8 @@
     "format": "biome format --write ."
   },
   "dependencies": {
+    "@noble/ciphers": "2.3.0",
+    "@noble/hashes": "2.3.0",
     "@noble/post-quantum": "^0.7.0",
     "events": "^3.3.0",
     "idb": "^8.0.0",
