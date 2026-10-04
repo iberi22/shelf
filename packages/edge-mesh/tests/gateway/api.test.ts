@@ -30,7 +30,11 @@ describe('MalocaGatewayAPI', () => {
   it('should return karma data', async () => {
     const karma = await api.getKarma('node-1');
     expect(karma.nodoId).toBe('node-1');
-    expect(karma.karma).toBeGreaterThan(0);
+    // A node with no validated endorsement history scores ZERO. This used to assert
+    // `toBeGreaterThan(0)`, which encoded the old hardcoded base-100: the gateway handed out
+    // reputation that no transaction ever backed. A reputation that appears from nowhere is
+    // exactly what a network of verified physicians cannot have.
+    expect(karma.karma).toBe(0);
   });
 
   it('should list active plugins', async () => {
