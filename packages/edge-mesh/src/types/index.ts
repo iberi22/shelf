@@ -4,7 +4,7 @@ export const TIPO_MENSAJE = {
   SYNC: 'sync',
   ACK: 'ack',
   HEARTBEAT: 'heartbeat',
-  HALLazGO: 'hallazgo',
+  HALLAZGO: 'hallazgo',
   VOTACION: 'votacion',
   SNAPSHOT: 'snapshot',
   OP_LOG: 'op_log',
@@ -13,6 +13,19 @@ export const TIPO_MENSAJE = {
   GOVERNANCE: 'governance',
   IDENTITY: 'identity',
   ERROR: 'error',
+  // ── MEDICAL LAYER (docs/medico/protocolo.md §7) ──
+  //
+  // Credential traffic is deliberately NOT routed through AUTHZ: an authz grant
+  // is *local capability* state, while a credential is a *replicated claim*.
+  // Conflating the two makes both unauditable — a grant can be revoked without
+  // touching the record that replicated it, and a record looks revocable when
+  // it is not.
+  /** Presentation, request and response of a `CredencialMedica`. */
+  CREDENCIAL: 'credencial',
+  /** Peer endorsement (`Aval`) and its revocation. */
+  AVAL: 'aval',
+  /** Country registry snapshot, hash-addressed. */
+  REGISTRO: 'registro',
   // SHELF-112: GPU mesh marketplace messages (handled by GpuMeshMarketplace extension)
   GPU_CAPACITY: 'gpu_capacity',
   GPU_TASK_REQUEST: 'gpu_task_request',
