@@ -144,7 +144,10 @@ describe('Gateway API reads the real karma engine', () => {
 
     await many(20, 60, 'banda-legendary');
     expect((await api.getKarma(selfId)).reputacion).toBe('legendary');
-  });
+    // 86 endorsements, each one a real ML-DSA-65 signature. Post-quantum signing is not cheap, and
+    // the suite grew past the point where this fit inside the default 5 s budget. Scoped here rather
+    // than by raising the global timeout, which would only hide slow tests elsewhere.
+  }, 20_000);
 
   it('flags that reputation never grants access (medical mesh invariant)', async () => {
     const result = await api.getKarma(selfId);

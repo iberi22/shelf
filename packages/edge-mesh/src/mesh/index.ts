@@ -94,6 +94,19 @@ export interface MeshEventMap {
     readonly motivo: MotivoRechazo | 'payload_malformado';
     readonly desde: NodoId;
   }>;
+  /**
+   * THIS NODE'S VIEW OF A PHYSICIAN'S REPUTATION WAS STALE.
+   *
+   * Fired when a remote endorsement MOVED a local score, which is only possible
+   * when this node had never seen that `tx.id` before: the local score for the
+   * subject was therefore different from the issuer's, and this transaction is
+   * the proof. Two honest nodes were displaying different reputations for the
+   * same doctor and nothing said so.
+   *
+   * Detection only. Nothing is reconciled, nothing is rewritten, the OpLog is
+   * untouched — this event is how the divergence stops being invisible.
+   */
+  karmaDivergente: CustomEvent<DetalleDivergenciaKarma>;
   meshSaludActualizada: CustomEvent<{
     readonly peersActivos: number;
     readonly peersTotales: number;
@@ -112,6 +125,59 @@ export interface MeshEventMap {
 // ─── KARMA OVER GOSSIP ─────────────────────────────────────────────────────
 
 /**
+ * Why this node's local score was stale when a remote endorsement arrived.
+ *
+ * A single-member union on purpose. `aval_tardio` is the ONLY situation this
+ * layer can prove: the endorsement was new to this node and it moved the score.
+ * A redelivered duplicate that was already applied moves nothing and is NOT
+ * divergence — it is gossip doing its job — so it emits nothing at all. Widening
+ * this union is reserved for the reconciliation phase.
+ */
+export type MotivoDivergenciaKarma = 'aval_tardio';
+
+/**
+ * Everything an operator needs to see that two honest nodes disagreed about a
+ * doctor's reputation.
+ *
+ * `scoreLocalAntes` is what this node was displaying before the endorsement
+ * landed — i.e. the number a clinician would have read and been wrong by
+ * `delta`. `scoreLocalDespues` is what it displays now. The difference is the
+ * endorsement named in `txId`, carried by `desde`.
+ */
+export interface DetalleDivergenciaKarma {
+  /** The physician whose reputation the two nodes valued differently. */
+  readonly sujeto: NodoId;
+  /** The endorsement that exposed the divergence. */
+  readonly txId: string;
+  /** Who signed that endorsement — the node whose view is now the one we copied. */
+  readonly emisor: NodoId;
+  /** The node that relayed it to us. */
+  readonly desde: NodoId;
+  /** The endorsement's weight. */
+  readonly delta: number;
+  /** What this node displayed before. */
+  readonly scoreLocalAntes: number;
+  /** What this node displays after applying it. */
+  readonly scoreLocalDespues: number;
+  /**
+   * `aval_tardio`: the endorsement was new to this node, so its score was stale —
+   * the divergence this whole mechanism exists to surface. A redelivered
+   * duplicate does not appear here at all: it moved nothing, so there is nothing
+   * to reconcile.
+   */
+  readonly motivo: MotivoDivergenciaKarma;
+}
+
+/**
+ * How many divergence records {@link MeshManager.obtenerDivergencias} keeps.
+ *
+ * Bounded for the same reason `gossipsVistos` is: this is a diagnostic tail, not
+ * a ledger, and an unbounded map fed by remote peers is a memory-growth bug.
+ * Reconciliation, when it comes, will own durable state — not this.
+ */
+export const MAX_DIVERGENCIAS_REGISTRADAS = 256 as const;
+
+/**
  * The karma engine a MeshManager replicates into, expressed as the narrow slice of
  * KarmaManager this layer is allowed to use.
  *
@@ -126,6 +192,21 @@ export interface ConsumidorKarma {
    * the transaction is a duplicate `tx.id`, by design), or the refusal reason.
    */
   readonly aplicarTransaccion: (tx: TransaccionKarma) => Promise<MotivoRechazo | null>;
+  /**
+   * Reads a node's current score. This is KarmaManager's own `getScore`,
+   * referenced under its real name rather than a Spanish alias, precisely so the
+   * structural check at the constructor boundary proves the engine can actually
+   * be observed.
+   *
+   * REQUIRED, not optional, and that is the point of this change. Divergence
+   * detection is only possible if the carrier can read the number it is
+   * correcting; an optional reader would let a consumer opt straight back into
+   * silently stale reputation, which is the defect being closed. Fail at compile
+   * time rather than fail quietly at runtime.
+   *
+   * Read-only: this layer never writes a score, only observes one.
+   */
+  readonly getScore: (nodoId: NodoId) => number;
   /**
    * Registers a key the node already trusts (e.g. from the EdgeMesh peer
    * registry). Optional: a consumer that resolves keys itself needs not expose it.
@@ -234,6 +315,25 @@ export class MeshManager extends EventTarget {
   private consumidorKarma?: ConsumidorKarma;
   /** In-flight karma applications, so callers can await propagation instead of sleeping. */
   private readonly karmaEnCurso: Set<Promise<unknown>> = new Set();
+  /**
+   * Diagnostic tail of observed reputation divergence, newest last, bounded by
+   * {@link MAX_DIVERGENCIAS_REGISTRADAS}.
+   *
+   * Bounded and IN MEMORY ONLY, deliberately. This is not a ledger and it must
+   * not become one: writing divergence records to the OpLog would be the first
+   * step of reconciliation, which is explicitly a later phase. Losing this tail
+   * on restart is the accepted cost of "make it visible now, reconcile later".
+   */
+  private readonly divergencias: DetalleDivergenciaKarma[] = [];
+  /**
+   * Serialises karma applications so each one's before/after score reading
+   * brackets exactly its own application. See
+   * {@link MeshManager.encolarAplicacionKarma} for why that matters.
+   *
+   * Resolved chain, never rejected: one link catches its own failure, so a single
+   * throwing endorsement cannot stall every endorsement queued behind it.
+   */
+  private colaKarma: Promise<unknown> = Promise.resolve();
   private activo: boolean = false;
   private intervalos: {
     heartbeat?: ReturnType<typeof setInterval>;
@@ -307,6 +407,10 @@ export class MeshManager extends EventTarget {
     this.peers.clear();
     this.gossipsVistos.clear();
     this.namespacePeers.clear();
+    // Divergences go too. `detener` returns the mesh to a clean slate, and the
+    // tail describes a session of traffic: keeping stale divergence records next
+    // to a restarted node would make an operator read them as current state.
+    this.divergencias.length = 0;
   }
 
   // ─── GESTION DE PEERS ────────────────────────────────────────────────
@@ -556,6 +660,21 @@ export class MeshManager extends EventTarget {
    * scores for the same subject, and no amount of retrying inside this layer
    * fixes that — it is a convergence problem, not a transport problem.
    *
+   * ─── WHAT THIS METHOD NOW DOES ABOUT IT: DETECTS, DOES NOT FIX ──────────
+   *
+   * Before this change the layer applied the endorsement and moved on, so the
+   * score corrected itself silently and no operator ever learned that two honest
+   * nodes had been displaying different reputations for the same doctor. It now
+   * reads the score immediately before and after the application and, when the
+   * endorsement moved it, emits `karmaDivergente` naming the subject, the stale
+   * figure, the new one, and the endorsement responsible.
+   *
+   * THE CORRECTION IS STILL THE ENGINE'S. This layer reads scores and reports
+   * them; KarmaManager alone decides what a score is. And nothing is reconciled:
+   * no OpLog write, no re-ordering, no retraction, no attempt to make the peers
+   * agree. Making them agree is the next phase and needs quorum/anti-entropy
+   * design that does not belong in a carrier.
+   *
    * The fix is a real reconciliation protocol and is DELIBERATELY NOT
    * IMPLEMENTED HERE. Candidate directions, none of them chosen yet:
    *   (a) OpLog anti-entropy: periodic exchange of `karma:emit` entries keyed by
@@ -565,7 +684,9 @@ export class MeshManager extends EventTarget {
    *       a supermajority of peers has independently seen the endorsement.
    *   (c) Explicit conflict surfacing: expose divergence (set of `tx.id`s) so an
    *       operator can see two honest nodes disagree rather than silently trusting
-   *       whichever gossip arrived first.
+   *       whichever gossip arrived first. ← this phase: the `karmaDivergente`
+   *       event and {@link MeshManager.obtenerDivergencias} are (c), scoped to
+   *       what gossip arrival alone can prove.
    * Whichever is chosen, the invariants must stay: karma never grants access, and
    * only a signed endorsement can move a score. Until then, consumers must treat
    * a karma number as an unverified hint — never as a credential.
@@ -593,6 +714,12 @@ export class MeshManager extends EventTarget {
       }
     }
 
+    // Read the score we are about to move, BEFORE the application. A throw here
+    // must not skip the endorsement: a detection layer that can veto reputation is
+    // exactly the authority this file refuses to be. So the reading is isolated
+    // and its absence only costs visibility, never the endorsement.
+    const scoreAntes = this.leerScoreSiPuede(consumidor, tx.sujeto);
+
     const motivo = await consumidor.aplicarTransaccion(tx);
     if (motivo !== null) {
       this.dispatchEvent(new CustomEvent('karmaRechazado', { detail: { txId: tx.id, motivo, desde } }));
@@ -600,7 +727,76 @@ export class MeshManager extends EventTarget {
     }
 
     this.dispatchEvent(new CustomEvent('karmaRecibido', { detail: { tx, desde } }));
+
+    // ─── DIVERGENCE DETECTION ──────────────────────────────────────────
+    //
+    // The endorsement was accepted. If the subject's score MOVED, this node had
+    // never seen this `tx.id` before — KarmaManager folds a duplicate into `null`
+    // without touching the score — so our view was stale by exactly `delta` and
+    // the divergence is now fact rather than a suspicion. A duplicate leaves the
+    // score untouched and emits nothing, which is what keeps the event meaningful.
+    //
+    // Deterministic by construction, not by heuristic: no threshold, no clock, no
+    // window. The same set of endorsements in the same order always yields the
+    // same events, and two nodes that saw the same set in a different order are
+    // exactly the case this reports.
+    if (scoreAntes !== null) {
+      const scoreDespues = this.leerScoreSiPuede(consumidor, tx.sujeto);
+      if (scoreDespues !== null && scoreDespues !== scoreAntes) {
+        this.registrarDivergencia({
+          sujeto: tx.sujeto,
+          txId: tx.id,
+          emisor: tx.emisor,
+          desde,
+          delta: tx.delta,
+          scoreLocalAntes: scoreAntes,
+          scoreLocalDespues: scoreDespues,
+          motivo: 'aval_tardio',
+        });
+      }
+    }
+
     return null;
+  }
+
+  /**
+   * Reads a score, converting any consumer misbehaviour into "unknown".
+   *
+   * Returns `null` — never a fabricated `0` — so that a broken reader is
+   * indistinguishable from an absent one. Inventing a zero here would make the
+   * divergence report claim a move that never happened, which is worse than
+   * staying quiet: an operator cannot tell a real discrepancy from a made-up one.
+   */
+  private leerScoreSiPuede(consumidor: ConsumidorKarma, nodoId: NodoId): number | null {
+    try {
+      const score = consumidor.getScore(nodoId);
+      return typeof score === 'number' && Number.isFinite(score) ? score : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Records a divergence and announces it.
+   *
+   * Both halves matter and they serve different readers: the event reaches
+   * whoever is watching the mesh live, while {@link MeshManager.obtenerDivergencias}
+   * lets an operator discover AFTER THE FACT that two nodes disagreed — including
+   * divergences that happened while nobody was listening. An event alone would
+   * still let divergence disappear silently at the exact moment it mattered.
+   *
+   * `karmaRecibido` is dispatched first, so a listener that reacts to a new score
+   * is guaranteed to already have the divergence record.
+   */
+  private registrarDivergencia(detalle: DetalleDivergenciaKarma): void {
+    this.divergencias.push(detalle);
+    // Drop the oldest records rather than growing without bound. Losing the
+    // oldest divergences is strictly better than unbounded memory growth driven
+    // by remote input; the OpLog — not this tail — is where durable history lives.
+    if (this.divergencias.length > MAX_DIVERGENCIAS_REGISTRADAS) {
+      this.divergencias.splice(0, this.divergencias.length - MAX_DIVERGENCIAS_REGISTRADAS);
+    }
+    this.dispatchEvent(new CustomEvent('karmaDivergente', { detail: detalle }));
   }
 
   /** Reads a peer's public key from the EdgeMesh registry (handshake-verified). */
@@ -724,9 +920,37 @@ export class MeshManager extends EventTarget {
     }
 
     const desde = mensaje.ruta.length > 0 ? mensaje.ruta[mensaje.ruta.length - 1] : mensaje.origen;
-    const tarea = this.aplicarKarmaRemoto(tx, desde);
+    this.encolarAplicacionKarma(tx, desde);
+  }
+
+  /**
+   * Applies endorsements ONE AT A TIME, in arrival order.
+   *
+   * Why the queue, given that gossip is deliberately not awaited on the hot path:
+   * `aplicarKarmaRemoto` reads the score before the application and again after
+   * it, with an `await` in between (the signature check is a real PQC operation).
+   * Without serialisation, several gossips processed in the same tick each read
+   * the SAME "before" score and each applied on top of it — so the recorded
+   * `scoreLocalAntes` would be the value from before the whole batch rather than
+   * the value the node was actually displaying when that endorsement landed.
+   * The event would still fire, but it would describe a score nobody ever saw,
+   * which is exactly the kind of quietly-wrong number this phase exists to stop
+   * publishing.
+   *
+   * The queue keeps arrival order intact (`.then` on the previous task), so the
+   * sequence is deterministic and identical on every node that saw the same
+   * gossips in the same order. It does not change the order-independent outcome
+   * either: KarmaManager sums deltas, so the FINAL score is the same regardless —
+   * the queue makes the intermediate reporting truthful, not the total different.
+   *
+   * Failures do not stall the queue: each link swallows its own rejection, so one
+   * poisoned endorsement cannot block every endorsement behind it.
+   */
+  private encolarAplicacionKarma(tx: TransaccionKarma, desde: NodoId): void {
+    const tarea = this.colaKarma.then(() => this.aplicarKarmaRemoto(tx, desde)).catch(() => null);
+    this.colaKarma = tarea;
     this.karmaEnCurso.add(tarea);
-    void tarea.catch(() => null).finally(() => this.karmaEnCurso.delete(tarea));
+    void tarea.finally(() => this.karmaEnCurso.delete(tarea));
   }
 
   private async reenviarGossip(peerId: NodoId, mensaje: GossipMessage): Promise<void> {
@@ -824,6 +1048,25 @@ export class MeshManager extends EventTarget {
 
   obtenerPeersConectados(): readonly NodoId[] {
     return Array.from(this.peers.keys());
+  }
+
+  /**
+   * Divergences this node has observed, oldest first, bounded by
+   * {@link MAX_DIVERGENCIAS_REGISTRADAS}.
+   *
+   * The answer to "does my network agree with me?" — the question a v1 divergence
+   * budget cannot answer by itself, since the whole cost of the model is that
+   * the score MIGHT have been wrong.
+   *
+   * Returns a copy: the tail is internal bookkeeping and handing out a live
+   * reference would let a caller mutate detection state from outside.
+   *
+   * Empty means "no divergence observed SINCE THIS PROCESS STARTED", not "the
+   * network agrees". It is not a proof of consensus, and nothing here should be
+   * presented to a clinician as one.
+   */
+  obtenerDivergencias(): readonly DetalleDivergenciaKarma[] {
+    return [...this.divergencias];
   }
 
   obtenerPeersActivos(): readonly NodoId[] {
