@@ -155,7 +155,7 @@ jobs:
         working-directory: apps/shelf-inventory
       - name: Upload Cypress artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: cypress-ct-results
           path: |
@@ -206,7 +206,7 @@ jobs:
           CI: true
       - name: Upload test results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-test-results-mobile
           path: |
@@ -214,7 +214,7 @@ jobs:
           retention-days: 14
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-report-mobile
           path: |
