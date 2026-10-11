@@ -6,7 +6,32 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+const args = process.argv.slice(2);
+const isCheck = args.includes("--check");
+const isWrite = args.includes("--write");
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+function safeWriteFileSync(filePath, content) {
+  if (isCheck) {
+    if (fs.existsSync(filePath)) {
+      const currentContent = fs.readFileSync(filePath, "utf8");
+      if (currentContent !== content) {
+        console.error(`Drift detected in ${filePath}`);
+        process.exit(1);
+      }
+    } else {
+      console.error(`Drift detected: ${filePath} does not exist`);
+      process.exit(1);
+    }
+  }
+
+  if (isWrite) {
+    fs.writeFileSync(filePath, content);
+  } else if (!isCheck) {
+    console.warn(`Skipping write to ${filePath} (use --write to apply changes)`);
+  }
+}
 const ssot = JSON.parse(fs.readFileSync(path.join(root, ".gitcore/features.json"), "utf8"));
 
 const statusLabel = (s) =>
@@ -69,7 +94,7 @@ ${ssot.features
 - Claims corrected this audit: ${(a.claims_debunked || []).join(" · ")}
 `;
 
-fs.writeFileSync(path.join(root, "apps/shelf-inventory/FEATURES_STATUS.md"), featuresStatus);
+safeWriteFileSync(path.join(root, "apps/shelf-inventory/FEATURES_STATUS.md"), featuresStatus);
 
 // --- docs/src/index.md tables ---
 const indexPath = path.join(root, "docs/src/index.md");
@@ -122,7 +147,7 @@ if (/## Non-Functional/.test(index)) {
   );
 }
 
-fs.writeFileSync(indexPath, index);
+safeWriteFileSync(indexPath, index);
 
 // --- docs/src/REQUIREMENTS.md ---
 const reqPath = path.join(root, "docs/src/REQUIREMENTS.md");
@@ -176,7 +201,7 @@ for (const f of ssot.features.filter((x) => x.category === "FUN")) {
 }
 req = req.replace(/## SRC-FUN-008: Authentication & Cloud Sync/, "## SRC-FUN-008: Authentication (Local) & Device Security");
 req = req.replace(/## SRC-FUN-013: Multi-user Access \(Pyme Plan\)/, "## SRC-FUN-013: Multi-user Access (P2P Team)");
-fs.writeFileSync(reqPath, req);
+safeWriteFileSync(reqPath, req);
 
 // --- docs/src/NON-FUNCTIONAL.md summary if present ---
 const nfPath = path.join(root, "docs/src/NON-FUNCTIONAL.md");
@@ -210,7 +235,7 @@ ${ssot.features
       `> Honest audit ${m.updated}: non-functional (PQC/P2P/CRDT/EDGE/GPU) avg ~${a.mesh_pqc_edge_gpu_average}%. Project avg ~${m.implementation_percentage}%. SSOT: \`.gitcore/features.json\`.`,
     );
   }
-  fs.writeFileSync(nfPath, nf);
+  safeWriteFileSync(nfPath, nf);
 }
 
 // --- .gitcore/planning/TASK.md executive + table ---
@@ -247,7 +272,7 @@ task = task.replace(
   /\| G \| QA CI hardened → 100% \| .*/,
   `| G | QA CI hardened + honest SSOT audit | ✅ |`,
 );
-fs.writeFileSync(taskPath, task);
+safeWriteFileSync(taskPath, task);
 
 // --- per-SRC docs Implementation % if present ---
 const funDir = path.join(root, "docs/src/features");
@@ -276,7 +301,7 @@ for (const f of ssot.features) {
       `> **Audit ${m.updated}:** ${f.implementation_percentage}% · ${f.status} · maturity \`${f.maturity}\`. SSOT: \`.gitcore/features.json\`.`,
     );
   }
-  fs.writeFileSync(p, body);
+  safeWriteFileSync(p, body);
 }
 
 console.log(

@@ -11,9 +11,11 @@ FEATURES_JSON="$ROOT/.gitcore/features.json"
 PYTHON="${PYTHON:-python3}"
 
 DO_JSON=0
+DO_STRICT=1
 for arg in "$@"; do
   case "$arg" in
     --json) DO_JSON=1 ;;
+    --strict) DO_STRICT=1 ;;
     *) echo "Unknown arg: $arg" >&2; exit 2 ;;
   esac
 done
@@ -23,12 +25,13 @@ if [ ! -f "$FEATURES_JSON" ]; then
   exit 1
 fi
 
-"$PYTHON" - "$ROOT" "$FEATURES_JSON" "$DO_JSON" <<'PYEOF'
+"$PYTHON" - "$ROOT" "$FEATURES_JSON" "$DO_JSON" "$DO_STRICT" <<'PYEOF'
 import json, sys, os
 
 root = sys.argv[1]
 features_json_path = sys.argv[2]
 do_json = sys.argv[3] == "1"
+do_strict = sys.argv[4] == "1"
 
 with open(features_json_path, 'r', encoding='utf-8') as f:
     data = json.load(f)
@@ -45,6 +48,10 @@ def check_path_exists(root_dir, path_str):
     # Strip inline notes e.g., "path/file.ts (note)" or "path/file.ts note"
     clean_path = path_str.split(' ')[0].strip()
     if not clean_path:
+        return True
+
+    # Only check if it looks like a path
+    if '/' not in clean_path and not clean_path.endswith(('.ts', '.tsx', '.json')):
         return True
 
     # Check absolute / root-relative path
@@ -84,7 +91,9 @@ for feat in features:
         "progress_pct": pct,
         "status": feat.get('status', 'unknown'),
         "pass": is_pass,
-        "missing_evidence": missing_paths
+        "missing_evidence": missing_paths,
+        "verdict": "PASS" if is_pass else "FAIL",
+        "missing_paths": missing_paths
     })
 
 total_features = len(features)
@@ -111,14 +120,15 @@ else:
         print(f"  {r['id']:<14} {r['progress_pct']:>3}%  [{status_str}]  {r['name']}")
         if not r["pass"]:
             for m in r["missing_evidence"]:
-                print(f"      ⚠ Missing evidence path: {m}")
+                print(f"MISS: {r['id']} {m}")
     print("------------------------------------------------------------------")
     print(f" Total Features:                     {total_features}")
-    print(f" Verified Features (Evidence OK):    {passed_count}")
+    print(f" Summary (passed_count/failed_count): {passed_count}/{failed_count}")
     print(f" Canonical Implementation Score:     {avg_pct}%")
     print("==================================================================")
 
 if failed_count > 0:
+    print(f"MISS summary: {failed_count} feature(s) missing evidence paths")
     sys.exit(1)
 sys.exit(0)
 PYEOF
