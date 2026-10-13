@@ -28,6 +28,7 @@ describe('SyncEngine Module', () => {
           timestamp: Date.now(),
           autor: peerId,
           secuencia: 2,
+          firma: 'firma-mldsa-65-valida',
         },
       ];
 
@@ -55,6 +56,7 @@ describe('SyncEngine Module', () => {
           timestamp: Date.now(),
           autor: peerId,
           secuencia: 2,
+          firma: 'firma-mldsa-65-valida',
         },
       ];
 
@@ -86,7 +88,7 @@ describe('SyncEngine Module', () => {
       await oplog.append('local', {}, 'local' as NodoId); // seq 1
 
       // Remote sends op with same or lower sequence than local
-      const remoteOps = [
+      const remoteOps: Operacion[] = [
         {
           id: 'remote:1',
           tipo: 't1',
@@ -94,6 +96,7 @@ describe('SyncEngine Module', () => {
           timestamp: Date.now(),
           autor: peerId,
           secuencia: 1,
+          firma: 'firma-mldsa-65-valida',
         },
       ];
 

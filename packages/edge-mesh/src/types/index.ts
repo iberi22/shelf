@@ -169,6 +169,7 @@ export interface Operacion {
   readonly timestamp: number;
   readonly autor: NodoId;
   readonly secuencia: number;
+  readonly firma?: string;
 }
 
 // ─── GOVERANCE ─────────────────────────────────────────────────────────────
