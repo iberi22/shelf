@@ -28,9 +28,7 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
 
   test.beforeAll(async ({ browser }) => {
     // Launch 8 browser contexts representing 8 nodes in the same room
-    contexts = await Promise.all(
-      Array.from({ length: 8 }, () => browser.newContext())
-    );
+    contexts = await Promise.all(Array.from({ length: 8 }, () => browser.newContext()));
 
     for (const ctx of contexts) {
       addOverlayBlocker(ctx);
@@ -64,8 +62,8 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
           const p2p = (window as any)._p2pManagerForTest;
           const keyBytes = p2p?.dsaKeyPair?.publicKey;
           return keyBytes ? Array.from(keyBytes, (b: number) => b.toString(16).padStart(2, '0')).join('') : null;
-        })
-      )
+        }),
+      ),
     );
 
     // Connect Nodes 2..8 to Node-1
@@ -87,13 +85,13 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
               dbSync.updateLinkedNode(
                 id,
                 { role, isMaster, dsaPublicKey: dsaKeys[idx], permissions: fullPermissions },
-                masterId
+                masterId,
               );
               dbSync.updateEphemeralNode(id, { status: 'verified', dsaPublicKey: dsaKeys[idx] });
             });
           }
         },
-        { masterId: peerIds[0], peerIds, dsaKeys, fullPermissions: fullProductPermissions }
+        { masterId: peerIds[0], peerIds, dsaKeys, fullPermissions: fullProductPermissions },
       );
     }
 
@@ -111,7 +109,7 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
             payload: { targetPeerId, role: 'collaborator', permissions: fullPermissions },
           });
         },
-        { targetPeerId: peerIds[i], fullPermissions: fullProductPermissions }
+        { targetPeerId: peerIds[i], fullPermissions: fullProductPermissions },
       );
     }
 
@@ -153,7 +151,7 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
           });
         }
       },
-      { peerId: peerIds[0] }
+      { peerId: peerIds[0] },
     );
 
     // Assert all 8 nodes have 100 active products within 30 seconds
@@ -161,9 +159,11 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
       .poll(
         async () => {
           for (const p of pages) {
-            await p.evaluate(() => {
-              (window as any)._p2pManagerForTest?.requestFullSync?.();
-            }).catch(() => {});
+            await p
+              .evaluate(() => {
+                (window as any)._p2pManagerForTest?.requestFullSync?.();
+              })
+              .catch(() => {});
           }
 
           const counts = await Promise.all(
@@ -171,15 +171,13 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
               p.evaluate(() => {
                 const dbSync = (window as any)._dbSyncForTest;
                 const state = dbSync?.getState();
-                return (
-                  state?.products?.filter((item: any) => item.isActive !== false)?.length || 0
-                );
-              })
-            )
+                return state?.products?.filter((item: any) => item.isActive !== false)?.length || 0;
+              }),
+            ),
           );
           return counts;
         },
-        { timeout: 30000, intervals: [500, 1000, 2000] }
+        { timeout: 30000, intervals: [500, 1000, 2000] },
       )
       .toEqual([100, 100, 100, 100, 100, 100, 100, 100]);
 
@@ -211,23 +209,25 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
             updatedBy: peerId,
           });
         },
-        { peerId: peerIds[0], id: prodId, name: prodName }
+        { peerId: peerIds[0], id: prodId, name: prodName },
       );
 
       // Poll Node-8 (pages[7]) until product is received
       await expect
         .poll(
           async () => {
-            await pages[7].evaluate(() => {
-              (window as any)._p2pManagerForTest?.requestFullSync?.();
-            }).catch(() => {});
+            await pages[7]
+              .evaluate(() => {
+                (window as any)._p2pManagerForTest?.requestFullSync?.();
+              })
+              .catch(() => {});
             return pages[7].evaluate((id) => {
               const dbSync = (window as any)._dbSyncForTest;
               const state = dbSync?.getState();
               return state?.products?.some((p: any) => p.id === id);
             }, prodId);
           },
-          { timeout: 10000, intervals: [100, 200, 500] }
+          { timeout: 10000, intervals: [100, 200, 500] },
         )
         .toBe(true);
 
@@ -246,9 +246,11 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
       .poll(
         async () => {
           for (const p of pages) {
-            await p.evaluate(() => {
-              (window as any)._p2pManagerForTest?.requestFullSync?.();
-            }).catch(() => {});
+            await p
+              .evaluate(() => {
+                (window as any)._p2pManagerForTest?.requestFullSync?.();
+              })
+              .catch(() => {});
           }
 
           const counts = await Promise.all(
@@ -256,15 +258,13 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
               p.evaluate(() => {
                 const dbSync = (window as any)._dbSyncForTest;
                 const state = dbSync?.getState();
-                return (
-                  state?.products?.filter((item: any) => item.isActive !== false)?.length || 0
-                );
-              })
-            )
+                return state?.products?.filter((item: any) => item.isActive !== false)?.length || 0;
+              }),
+            ),
           );
           return counts;
         },
-        { timeout: 15000, intervals: [500, 1000] }
+        { timeout: 15000, intervals: [500, 1000] },
       )
       .toEqual([100, 100, 100, 100, 100, 100, 100, 100]);
 
@@ -292,7 +292,7 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
             });
           }
         },
-        { peerId: peerIds[nodeIndex], prefix, count }
+        { peerId: peerIds[nodeIndex], prefix, count },
       );
     };
 
@@ -308,9 +308,11 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
       .poll(
         async () => {
           for (const p of pages) {
-            await p.evaluate(() => {
-              (window as any)._p2pManagerForTest?.requestFullSync?.();
-            }).catch(() => {});
+            await p
+              .evaluate(() => {
+                (window as any)._p2pManagerForTest?.requestFullSync?.();
+              })
+              .catch(() => {});
           }
 
           const counts = await Promise.all(
@@ -318,15 +320,13 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
               p.evaluate(() => {
                 const dbSync = (window as any)._dbSyncForTest;
                 const state = dbSync?.getState();
-                return (
-                  state?.products?.filter((item: any) => item.isActive !== false)?.length || 0
-                );
-              })
-            )
+                return state?.products?.filter((item: any) => item.isActive !== false)?.length || 0;
+              }),
+            ),
           );
           return counts;
         },
-        { timeout: 30000, intervals: [500, 1000, 2000] }
+        { timeout: 30000, intervals: [500, 1000, 2000] },
       )
       .toEqual([200, 200, 200, 200, 200, 200, 200, 200]);
   });
@@ -383,7 +383,7 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
           });
         }
       },
-      { peerId: peerIds[0] }
+      { peerId: peerIds[0] },
     );
 
     // Verify remaining 5 connected nodes (pages[0..4]) reach 210 products
@@ -391,9 +391,11 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
       .poll(
         async () => {
           for (let i = 0; i < 5; i++) {
-            await pages[i].evaluate(() => {
-              (window as any)._p2pManagerForTest?.requestFullSync?.();
-            }).catch(() => {});
+            await pages[i]
+              .evaluate(() => {
+                (window as any)._p2pManagerForTest?.requestFullSync?.();
+              })
+              .catch(() => {});
           }
 
           const counts = await Promise.all(
@@ -401,15 +403,13 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
               p.evaluate(() => {
                 const dbSync = (window as any)._dbSyncForTest;
                 const state = dbSync?.getState();
-                return (
-                  state?.products?.filter((item: any) => item.isActive !== false)?.length || 0
-                );
-              })
-            )
+                return state?.products?.filter((item: any) => item.isActive !== false)?.length || 0;
+              }),
+            ),
           );
           return counts;
         },
-        { timeout: 20000, intervals: [500, 1000] }
+        { timeout: 20000, intervals: [500, 1000] },
       )
       .toEqual([210, 210, 210, 210, 210]);
 
@@ -419,11 +419,9 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
         p.evaluate(() => {
           const dbSync = (window as any)._dbSyncForTest;
           const state = dbSync?.getState();
-          return (
-            state?.products?.filter((item: any) => item.isActive !== false)?.length || 0
-          );
-        })
-      )
+          return state?.products?.filter((item: any) => item.isActive !== false)?.length || 0;
+        }),
+      ),
     );
     expect(disconnectedCounts).toEqual([200, 200, 200]);
 
@@ -451,9 +449,11 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
       .poll(
         async () => {
           for (const p of pages) {
-            await p.evaluate(() => {
-              (window as any)._p2pManagerForTest?.requestFullSync?.();
-            }).catch(() => {});
+            await p
+              .evaluate(() => {
+                (window as any)._p2pManagerForTest?.requestFullSync?.();
+              })
+              .catch(() => {});
           }
 
           const counts = await Promise.all(
@@ -461,15 +461,13 @@ test.describe('Mesh stress test — 8 nodes, 100 products, sync latency', () => 
               p.evaluate(() => {
                 const dbSync = (window as any)._dbSyncForTest;
                 const state = dbSync?.getState();
-                return (
-                  state?.products?.filter((item: any) => item.isActive !== false)?.length || 0
-                );
-              })
-            )
+                return state?.products?.filter((item: any) => item.isActive !== false)?.length || 0;
+              }),
+            ),
           );
           return counts;
         },
-        { timeout: 30000, intervals: [500, 1000, 2000] }
+        { timeout: 30000, intervals: [500, 1000, 2000] },
       )
       .toEqual([210, 210, 210, 210, 210, 210, 210, 210]);
   });

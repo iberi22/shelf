@@ -31,7 +31,7 @@ export default defineConfig({
             '--allow-loopback-in-peer-connection',
             '--disable-features=WebRtcHideLocalIpsWithMdns',
             '--no-sandbox',
-          '--js-flags=--expose-gc',
+            '--js-flags=--expose-gc',
           ],
         },
       },
