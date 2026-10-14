@@ -1,4 +1,4 @@
-import type { Product, ProductVariant } from 'p2p-mesh-core';
+import type { Product, ProductVariant } from '../domain/types';
 import { describe, expect, it } from 'vitest';
 import type { VariantDraft } from './productVariants';
 import {

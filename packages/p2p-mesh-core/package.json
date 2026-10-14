@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@swal/inventory-core": "workspace:*",
     "@noble/post-quantum": "^0.7.0",
     "edge-mesh": "workspace:*",
     "peerjs": "^1.5.5",

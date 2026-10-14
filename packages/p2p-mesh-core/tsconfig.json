@@ -13,6 +13,9 @@
     "declarationMap": true,
     "sourceMap": true
   },
+  "references": [
+    { "path": "../inventory-core" }
+  ],
   "include": ["src/**/*"],
   "exclude": ["src/**/__tests__/**", "src/**/*.test.ts", "src/**/*.spec.ts"]
 }

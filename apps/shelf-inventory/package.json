@@ -50,6 +50,7 @@
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^1.33.0",
     "p2p-mesh-core": "workspace:*",
+    "@swal/inventory-core": "workspace:*",
     "peerjs": "^1.5.5",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
