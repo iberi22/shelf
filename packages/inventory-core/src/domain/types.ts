@@ -1,8 +1,10 @@
+export type P2PRoleName = 'admin' | 'collaborator' | 'vendedor' | 'custom' | 'readonly';
+
 export interface BaseEntity {
   id: string;
   isActive: boolean;
   updatedBy: string; // Peer ID
-  updatedByRole?: any; // P2PRole fallback to avoid cyclic dependency
+  updatedByRole?: P2PRoleName; // Matches P2PRole in p2p-mesh-core to avoid cyclic dependency
   updatedAt: string; // ISO String
   signature?: string; // Cryptographic signature of the entity state
 }
