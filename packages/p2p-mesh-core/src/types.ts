@@ -1,17 +1,26 @@
+export type {
+  BaseEntity,
+  Branch,
+  Client,
+  InventoryColorOption,
+  InventoryConfig,
+  InventoryFieldDefinition,
+  InventoryFieldType,
+  Product,
+  ProductChangeHistoryEntry,
+  ProductVariant,
+  PurchaseOrder,
+  PurchaseOrderItem,
+  Sale,
+  SaleItem,
+  Supplier,
+} from '@swal/inventory-core';
+
 // types.ts
 
 export interface NavItem {
   nameKey: string;
   icon: string;
-}
-
-export interface BaseEntity {
-  id: string;
-  isActive: boolean;
-  updatedBy: string; // Peer ID
-  updatedByRole?: P2PRole; // Role of the peer that updated
-  updatedAt: string; // ISO String
-  signature?: string; // Cryptographic signature of the entity state
 }
 
 export interface EntityEditProposal {
@@ -23,39 +32,6 @@ export interface EntityEditProposal {
   peerId: string;
   timestamp: string;
   status: 'pending' | 'approved' | 'rejected';
-}
-
-export interface Branch extends BaseEntity {
-  name: string; // 'Bodega Central', 'Sucursal Norte'
-  address?: string;
-  type?: 'sucursal' | 'bodega';
-  isActive: boolean;
-  createdAt: number; // timestamp
-}
-
-export interface Product extends BaseEntity {
-  name: string;
-  sku?: string;
-  branchId?: string;
-  branchName?: string;
-  quantity: number;
-  price: number;
-  cost: number;
-  imageUrl?: string;
-  reservations?: Record<string, number>;
-  /** @deprecated Use colors[] for multiple colors */
-  color?: string;
-  colors?: string[];
-  dimensions?: string;
-  sizes?: string[];
-  capacity?: string;
-  material?: string;
-  /** @deprecated Use materials[] for multiple materials */
-  materials?: string[];
-  customFields?: Record<string, string>;
-  supplierId?: string;
-  variantAttributes?: string[];
-  variants?: ProductVariant[];
 }
 
 function isNonEmptyString(value: string | undefined): value is string {
@@ -73,7 +49,7 @@ function mergeUnique(base: string[], extra?: string): string[] {
  * singular fields (color / material) while the plural arrays
  * (colors / materials) are empty.
  */
-export function isLegacyProduct(product: Product): boolean {
+export function isLegacyProduct(product: import('@swal/inventory-core').Product): boolean {
   const legacyColor = isNonEmptyString(product.color) && !(product.colors && product.colors.length > 0);
   const legacyMaterial = isNonEmptyString(product.material) && !(product.materials && product.materials.length > 0);
   return legacyColor || legacyMaterial;
@@ -83,7 +59,7 @@ export function isLegacyProduct(product: Product): boolean {
  * Migration helper that moves deprecated singular color / material values
  * into their plural arrays, deduplicating and preserving order.
  */
-export function migrateToPlural(product: Product): Product {
+export function migrateToPlural(product: import('@swal/inventory-core').Product): import('@swal/inventory-core').Product {
   const hasLegacyColor = isNonEmptyString(product.color);
   const hasLegacyMaterial = isNonEmptyString(product.material);
   if (!hasLegacyColor && !hasLegacyMaterial) return product;
@@ -94,75 +70,6 @@ export function migrateToPlural(product: Product): Product {
   const { color: _deprecatedColor, material: _deprecatedMaterial, ...rest } = product;
   return { ...rest, colors, materials };
 }
-export interface ProductVariant extends BaseEntity {
-  label?: string;
-  sku?: string;
-  quantity: number;
-  price: number;
-  cost: number;
-  imageUrl?: string;
-  attributes: Record<string, string>;
-  reservations?: Record<string, number>;
-}
-
-export interface ProductChangeHistoryEntry extends BaseEntity {
-  productId: string;
-  snapshot: Product;
-  sourceAction: string;
-}
-
-export interface SaleItem {
-  productId: string;
-  productVariantId?: string;
-  productName: string;
-  quantity: number;
-  price: number; // price per unit at the time of sale
-  cost: number; // cost per unit at the time of sale
-  supplierId?: string;
-  variantLabel?: string;
-}
-
-export interface Sale extends BaseEntity {
-  date: string; // ISO string or similar
-  items: SaleItem[];
-  totalPrice: number;
-  profit: number;
-  clientId?: string;
-  clientName?: string;
-  branchId?: string;
-}
-
-export interface Client extends BaseEntity {
-  name: string;
-  phone: string;
-  email?: string;
-}
-
-export interface Supplier extends BaseEntity {
-  name: string;
-  phone: string;
-  email?: string;
-}
-
-export interface PurchaseOrderItem {
-  productId: string;
-  productVariantId?: string;
-  productName: string;
-  quantity: number;
-  cost: number;
-  variantLabel?: string;
-}
-
-export interface PurchaseOrder extends BaseEntity {
-  supplierId: string;
-  supplierName: string;
-  items: PurchaseOrderItem[];
-  status: 'pending' | 'received' | 'cancelled';
-  orderDate: string; // YYYY-MM-DD
-  receivedDate?: string; // YYYY-MM-DD
-  branchId?: string;
-}
-
 export interface User {
   uid: string;
   email: string | null;
@@ -237,32 +144,32 @@ export interface StatCardData {
 }
 
 export interface AppState {
-  products: Product[];
-  sales: Sale[];
-  clients: Client[];
-  suppliers: Supplier[];
-  purchaseOrders: PurchaseOrder[];
+  products: import('@swal/inventory-core').Product[];
+  sales: import('@swal/inventory-core').Sale[];
+  clients: import('@swal/inventory-core').Client[];
+  suppliers: import('@swal/inventory-core').Supplier[];
+  purchaseOrders: import('@swal/inventory-core').PurchaseOrder[];
   auditLogs: AuditEntry[];
   peers: PeerInfo[];
   teamMembers: TeamMember[];
-  inventoryConfig: InventoryConfig;
+  inventoryConfig: import('@swal/inventory-core').InventoryConfig;
   localPeerId: string | null;
   role: P2PRole;
   permissions?: PeerPermissions;
   arqueoSessions: ArqueoSession[];
   ocrResults: InvoiceOCRResult[];
-  branches: Branch[];
+  branches: import('@swal/inventory-core').Branch[];
   activeBranch?: string;
   activeBranchId?: string;
   isExpelled?: boolean;
   pendingEdits: EntityEditProposal[];
-  productChangeHistory: ProductChangeHistoryEntry[];
+  productChangeHistory: import('@swal/inventory-core').ProductChangeHistoryEntry[];
 }
 
 export type ImportStrategy = 'skip' | 'update';
 
 export interface ImportProductsPayload {
-  products: Omit<Product, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>[];
+  products: Omit<import('@swal/inventory-core').Product, 'id' | 'isActive' | 'updatedBy' | 'updatedAt'>[];
   strategy: ImportStrategy;
 }
 
@@ -291,7 +198,7 @@ export interface ExtractedInvoiceData {
   total?: number;
 }
 
-export interface InvoiceOCRResult extends BaseEntity {
+export type InvoiceOCRResult = import('@swal/inventory-core').BaseEntity & {
   imageUrl: string; // Base64 or Firebase Storage URL
   extractedData: ExtractedInvoiceData;
   rawOCRText?: string; // Full OCR text for debugging
@@ -299,7 +206,7 @@ export interface InvoiceOCRResult extends BaseEntity {
   createdAt: string;
   appliedToPurchaseOrderId?: string;
   userId?: string;
-}
+};
 
 export interface ScannedInvoice {
   id: string;
@@ -309,41 +216,10 @@ export interface ScannedInvoice {
   appliedAt?: string;
 }
 
-export interface ArqueoSession extends BaseEntity {
+export type ArqueoSession = import('@swal/inventory-core').BaseEntity & {
   createdAt: string;
   invoices: ScannedInvoice[];
   createdProducts: string[]; // Product IDs created from invoices
   status: 'open' | 'closed';
-}
+};
 
-export type InventoryFieldType =
-  | 'text'
-  | 'color'
-  | 'measure'
-  | 'material'
-  | 'multiColor'
-  | 'multiMeasure'
-  | 'multiMaterial';
-
-export interface InventoryFieldDefinition {
-  id: string;
-  key: string;
-  label: string;
-  type: InventoryFieldType;
-}
-
-export interface InventoryColorOption {
-  name: string;
-  hex: string;
-}
-
-export interface InventoryConfig {
-  variantAttributes: string[];
-  fields: InventoryFieldDefinition[];
-  measureOptions: string[];
-  colorOptions: InventoryColorOption[];
-  materialOptions: string[];
-  autoApplyProductUpdates: boolean;
-  productHistoryLimit: number;
-  useEdgeMeshSync: boolean;
-}
