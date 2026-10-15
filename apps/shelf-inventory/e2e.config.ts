@@ -1,5 +1,5 @@
-import type { E2EConfig } from 'e2e';
 import { web } from '@e2e-dev/web';
+import type { E2EConfig } from 'e2e';
 
 export default {
   tests: ['e2e-ta/**/*.e2e.ts', '!e2e-ta/findings/**'],
