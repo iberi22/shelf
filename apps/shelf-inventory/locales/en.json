@@ -4,6 +4,7 @@
   "nav": {
     "summary": "Summary",
     "inventory": "Inventory",
+    "bodegas": "Warehouses",
     "sales": "Sales",
     "clients": "Clients",
     "suppliers": "Suppliers",
