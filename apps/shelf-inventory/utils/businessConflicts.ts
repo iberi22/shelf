@@ -1,4 +1,4 @@
 export {
   type BusinessConflict,
-  detectBusinessConflicts
+  detectBusinessConflicts,
 } from '@swal/inventory-core';
