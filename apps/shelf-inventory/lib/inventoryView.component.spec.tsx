@@ -1,12 +1,16 @@
-import { render, screen, cleanup, fireEvent, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { InventoryView } from '../components/inventory/InventoryView';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { InventoryConfig, Product } from 'p2p-mesh-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { InventoryView, type InventoryViewProps } from '../components/inventory/InventoryView';
+import { DEFAULT_INVENTORY_CONFIG } from './inventoryConfig';
 
 vi.mock('../context/I18nContext', () => ({
-  useI18n: () => ({ t: (k: string, options?: any) => {
-    if (k === 'inventory.showingCount') return `${options.shown} of ${options.total}`;
-    return k;
-  }}),
+  useI18n: () => ({
+    t: (k: string, options?: any) => {
+      if (k === 'inventory.showingCount') return `${options.shown} of ${options.total}`;
+      return k;
+    },
+  }),
 }));
 
 describe('InventoryView component', () => {
@@ -20,24 +24,26 @@ describe('InventoryView component', () => {
   });
 
   it('renders correctly with default fields when custom fields are missing (Blocker 1)', () => {
-    const config = {
-      fields: [{ key: 'category', label: 'Category', type: 'text' as const }],
-      columns: [],
-      categories: [],
+    const config: InventoryConfig = {
+      ...DEFAULT_INVENTORY_CONFIG,
+      fields: [{ id: 'field-category', key: 'category', label: 'Category', type: 'text' }],
     };
 
-    const product = {
+    const product: Product = {
       id: 'p1',
       name: 'Product 1',
       sku: 'SKU1',
       price: 10,
+      cost: 5,
       quantity: 5,
-      supplierId: 's1',
+      isActive: true,
+      updatedBy: 'peer-1',
       updatedAt: new Date().toISOString(),
+      supplierId: 's1',
       customFields: {},
     };
 
-    const props = {
+    const props: InventoryViewProps = {
       products: [product],
       config,
       formatMoney: (v: number) => `$${v}`,
@@ -53,21 +59,23 @@ describe('InventoryView component', () => {
   });
 
   it('resets mobile pagination on search filter change (Blocker 3)', async () => {
-    const config = {
+    const config: InventoryConfig = {
+      ...DEFAULT_INVENTORY_CONFIG,
       fields: [],
-      columns: [],
-      categories: [],
     };
 
     // Generate 150 products
-    const products = Array.from({ length: 150 }).map((_, i) => ({
+    const products: Product[] = Array.from({ length: 150 }).map((_, i) => ({
       id: `p${i}`,
       name: `Test Product ${i}`,
       sku: `SKU${i}`,
       price: 10,
+      cost: 5,
       quantity: 5,
-      supplierId: 's1',
+      isActive: true,
+      updatedBy: 'peer-1',
       updatedAt: new Date().toISOString(),
+      supplierId: 's1',
       customFields: {},
     }));
 
@@ -76,6 +84,7 @@ describe('InventoryView component', () => {
     class MockIntersectionObserver implements IntersectionObserver {
       root: Element | null = null;
       rootMargin: string = '';
+      scrollMargin: string = '0px';
       thresholds: ReadonlyArray<number> = [];
 
       constructor(callback: IntersectionObserverCallback) {
@@ -85,12 +94,14 @@ describe('InventoryView component', () => {
       observe() {}
       unobserve() {}
       disconnect() {}
-      takeRecords() { return []; }
+      takeRecords() {
+        return [];
+      }
     }
 
     globalThis.IntersectionObserver = MockIntersectionObserver;
 
-    const props = {
+    const props: InventoryViewProps = {
       products,
       config,
       formatMoney: (v: number) => `$${v}`,

@@ -383,9 +383,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                       className="inline-block w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white/20 flex-shrink-0"
                       style={{
                         backgroundColor: isValidHexColor(
-                            getInventoryFieldValue(product, colorField || DEFAULT_INVENTORY_CONFIG.fields[0]),
+                          getInventoryFieldValue(product, colorField || DEFAULT_INVENTORY_CONFIG.fields[0]),
                         )
-                            ? getInventoryFieldValue(product, colorField || DEFAULT_INVENTORY_CONFIG.fields[0])
+                          ? getInventoryFieldValue(product, colorField || DEFAULT_INVENTORY_CONFIG.fields[0])
                           : '#808080',
                       }}
                     ></span>

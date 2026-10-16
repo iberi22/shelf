@@ -1,8 +1,8 @@
-import { render, screen, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as AppContextMod from '../context/AppContext';
-import Inventory from '../components/Inventory';
+import { cleanup, render, screen } from '@testing-library/react';
 import React from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import Inventory from '../components/Inventory';
+import * as AppContextMod from '../context/AppContext';
 
 vi.mock('../context/I18nContext', () => ({
   useI18n: () => ({ t: (k: string) => k }),
@@ -26,23 +26,23 @@ vi.mock('../components/inventory/InventoryView', () => ({
 }));
 
 vi.mock('../components/BarcodeScanner', () => ({
-  default: () => <div data-testid="mock-barcode-scanner" />
+  default: () => <div data-testid="mock-barcode-scanner" />,
 }));
 
 vi.mock('../components/PhotoVariantPicker', () => ({
-  default: () => <div data-testid="mock-photo-variant-picker" />
+  default: () => <div data-testid="mock-photo-variant-picker" />,
 }));
 
 vi.mock('../components/ui/Modal', () => ({
-  default: ({ children }: { children: React.ReactNode }) => <div data-testid="mock-modal">{children}</div>
+  default: ({ children }: { children: React.ReactNode }) => <div data-testid="mock-modal">{children}</div>,
 }));
 
 vi.mock('../components/ProductModal', () => ({
-  ProductModal: () => <div data-testid="mock-product-modal" />
+  ProductModal: () => <div data-testid="mock-product-modal" />,
 }));
 
 vi.mock('../components/ProductDetailModal', () => ({
-  ProductDetailModal: () => <div data-testid="mock-product-detail-modal" />
+  ProductDetailModal: () => <div data-testid="mock-product-detail-modal" />,
 }));
 
 describe('Inventory container', () => {
@@ -98,7 +98,7 @@ describe('Inventory container', () => {
       },
       dispatch: vi.fn(),
       getDbSync: () => ({ getArray: () => ({ toArray: () => [] }) }),
-    } as unknown as AppContextMod.AppContextType);
+    } as unknown as ReturnType<typeof AppContextMod.useAppContext>);
 
     render(<Inventory />);
 
@@ -118,7 +118,7 @@ describe('Inventory container', () => {
       },
       dispatch: vi.fn(),
       getDbSync: () => ({ getArray: () => ({ toArray: () => [] }) }),
-    } as unknown as AppContextMod.AppContextType);
+    } as unknown as ReturnType<typeof AppContextMod.useAppContext>);
 
     render(<Inventory />);
 
@@ -138,7 +138,7 @@ describe('Inventory container', () => {
       },
       dispatch: vi.fn(),
       getDbSync: () => ({ getArray: () => ({ toArray: () => [] }) }),
-    } as unknown as AppContextMod.AppContextType);
+    } as unknown as ReturnType<typeof AppContextMod.useAppContext>);
 
     render(<Inventory />);
 
