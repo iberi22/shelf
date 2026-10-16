@@ -3,7 +3,7 @@ import type { InventoryConfig, Product } from 'p2p-mesh-core';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSortableTable } from '../../hooks/useSortableTable';
-import { getInventoryFieldValue } from '../../lib/inventoryConfig';
+import { DEFAULT_INVENTORY_CONFIG, getInventoryFieldValue } from '../../lib/inventoryConfig';
 import { extractCategories, selectVisibleProducts } from '../../lib/inventoryView';
 import { summarizeVariantValues } from '../../lib/productVariants';
 import FilterBar, { type InventoryFacetFilters, readFacetFiltersFromUrl } from '../FilterBar';
@@ -80,9 +80,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const mobileSentinelRef = useRef<HTMLDivElement>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset mobile limit on filter change
   useEffect(() => {
     setMobileVisibleCount(MOBILE_PAGE_SIZE);
-  }, []);
+  }, [filter]);
 
   const handleSort: typeof requestSort = (key) => {
     setMobileVisibleCount(MOBILE_PAGE_SIZE);
@@ -373,23 +374,23 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               </td>
               <td className="p-2 md:p-4 whitespace-nowrap text-white font-medium">{formatMoney(product.price)}</td>
               <td className="p-2 md:p-4">
-                {getInventoryFieldValue(product, colorField || config.fields[0]) ? (
+                {getInventoryFieldValue(product, colorField || DEFAULT_INVENTORY_CONFIG.fields[0]) ? (
                   <span
-                    title={getInventoryFieldValue(product, colorField || config.fields[0])}
+                    title={getInventoryFieldValue(product, colorField || DEFAULT_INVENTORY_CONFIG.fields[0])}
                     className="inline-flex items-center gap-2"
                   >
                     <span
                       className="inline-block w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white/20 flex-shrink-0"
                       style={{
                         backgroundColor: isValidHexColor(
-                          getInventoryFieldValue(product, colorField || config.fields[0]),
+                          getInventoryFieldValue(product, colorField || DEFAULT_INVENTORY_CONFIG.fields[0]),
                         )
-                          ? getInventoryFieldValue(product, colorField || config.fields[0])
+                          ? getInventoryFieldValue(product, colorField || DEFAULT_INVENTORY_CONFIG.fields[0])
                           : '#808080',
                       }}
                     ></span>
                     <span className="truncate max-w-[50px] md:max-w-[60px] hidden lg:inline text-neutral-300">
-                      {getInventoryFieldValue(product, colorField || config.fields[0])}
+                      {getInventoryFieldValue(product, colorField || DEFAULT_INVENTORY_CONFIG.fields[0])}
                     </span>
                   </span>
                 ) : (
@@ -398,25 +399,25 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               </td>
               <td
                 className="p-2 md:p-4 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell text-neutral-300"
-                title={getInventoryFieldValue(product, dimensionsField || config.fields[1])}
+                title={getInventoryFieldValue(product, dimensionsField || DEFAULT_INVENTORY_CONFIG.fields[1])}
               >
-                {getInventoryFieldValue(product, dimensionsField || config.fields[1]) || (
+                {getInventoryFieldValue(product, dimensionsField || DEFAULT_INVENTORY_CONFIG.fields[1]) || (
                   <span className="text-neutral-600">-</span>
                 )}
               </td>
               <td
                 className="p-2 md:p-4 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell text-neutral-300"
-                title={getInventoryFieldValue(product, capacityField || config.fields[2])}
+                title={getInventoryFieldValue(product, capacityField || DEFAULT_INVENTORY_CONFIG.fields[2])}
               >
-                {getInventoryFieldValue(product, capacityField || config.fields[2]) || (
+                {getInventoryFieldValue(product, capacityField || DEFAULT_INVENTORY_CONFIG.fields[2]) || (
                   <span className="text-neutral-600">-</span>
                 )}
               </td>
               <td
                 className="p-2 md:p-4 max-w-[55px] md:max-w-[65px] truncate hidden xl:table-cell text-neutral-300"
-                title={getInventoryFieldValue(product, materialField || config.fields[3])}
+                title={getInventoryFieldValue(product, materialField || DEFAULT_INVENTORY_CONFIG.fields[3])}
               >
-                {getInventoryFieldValue(product, materialField || config.fields[3]) || (
+                {getInventoryFieldValue(product, materialField || DEFAULT_INVENTORY_CONFIG.fields[3]) || (
                   <span className="text-neutral-600">-</span>
                 )}
               </td>

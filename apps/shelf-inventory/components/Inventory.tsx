@@ -284,7 +284,7 @@ const Inventory: React.FC = () => {
       <InventoryView
         products={activeProducts}
         config={inventoryConfig}
-        readOnly={false}
+        readOnly={!canEdit}
         formatMoney={formatCurrency}
         t={t}
         lowStockThreshold={lowStockThreshold}
