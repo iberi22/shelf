@@ -87,7 +87,7 @@ function usePersistedReducer<T extends Record<string, any>, A extends { type: st
 
     // Expose for E2E tests
     if (typeof window !== 'undefined') {
-      ((window as unknown) as { _shelfStateForTest: any })._shelfStateForTest = state;
+      (window as unknown as { _shelfStateForTest: any })._shelfStateForTest = state;
     }
   }, [state, isLoaded, localStorageKey, storage]);
 

@@ -10,11 +10,15 @@ vi.mock('./persistStorage', async (importOriginal) => {
   return {
     ...actual,
     createIdbPersistStorage: vi.fn(() => {
-      let memoryStore: Record<string, string> = {};
+      const memoryStore: Record<string, string> = {};
       return {
         load: async (key: string) => memoryStore[key] || null,
-        save: async (key: string, value: string) => { memoryStore[key] = value; },
-        remove: async (key: string) => { delete memoryStore[key]; },
+        save: async (key: string, value: string) => {
+          memoryStore[key] = value;
+        },
+        remove: async (key: string) => {
+          delete memoryStore[key];
+        },
       };
     }),
   };
@@ -25,14 +29,12 @@ describe('usePersistedReducer', () => {
     // Clear mock calls to be sure we count accurately.
     vi.mocked(persistStorage.createIdbPersistStorage).mockClear();
 
-    const dummyReducer = (state: { count: number }, action: { type: string }) => state;
+    const dummyReducer = (state: { count: number }, _action: { type: string }) => state;
     const initialState = { count: 0 };
     const localStorageKey = 'test-key';
 
     // renderHook without passing an explicit storage option.
-    const { rerender } = renderHook(() =>
-      usePersistedReducer(dummyReducer, initialState, localStorageKey)
-    );
+    const { rerender } = renderHook(() => usePersistedReducer(dummyReducer, initialState, localStorageKey));
 
     // Re-render multiple times.
     rerender();
@@ -41,6 +43,6 @@ describe('usePersistedReducer', () => {
     // Verify that the default storage is instantiated precisely once, at module scope.
     // However since the module was already evaluated, it might be 0, but since the test runner resets mocks we might get 1 if imported dynamically
     // Let's assert it's NOT called more than 1 times
-    expect(persistStorage.createIdbPersistStorage.mock.calls.length).toBeLessThanOrEqual(1);
+    expect(vi.mocked(persistStorage.createIdbPersistStorage).mock.calls.length).toBeLessThanOrEqual(1);
   });
 });

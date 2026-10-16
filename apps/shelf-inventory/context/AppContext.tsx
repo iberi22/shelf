@@ -417,6 +417,7 @@ export const AppProvider: React.FC<{ children: ReactNode; storage?: PersistStora
             currentState.products,
             oldSale.items || [],
             1,
+            sync,
           );
           syncInventoryStockChanges(currentState, adjustedProducts, saleP.items || [], -1, sync);
         }
@@ -569,7 +570,7 @@ export const AppProvider: React.FC<{ children: ReactNode; storage?: PersistStora
         }
       }
     },
-    [rawDispatch, isLoaded, sync.upsertEntity, sync.setInventoryConfig, sync.deleteEntity],
+    [rawDispatch, isLoaded, sync],
   );
 
   return (

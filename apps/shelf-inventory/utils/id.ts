@@ -1,3 +1,1 @@
-export {
-  generateId
-} from '@swal/inventory-core';
+export { generateId } from '@swal/inventory-core';

@@ -1,8 +1,8 @@
 export {
-  DEFAULT_INVENTORY_CONFIG,
-  normalizeInventoryFieldKey,
-  normalizeInventoryConfig,
   createInventoryField,
+  DEFAULT_INVENTORY_CONFIG,
   getInventoryFieldValue,
-  setInventoryFieldValue
+  normalizeInventoryConfig,
+  normalizeInventoryFieldKey,
+  setInventoryFieldValue,
 } from '@swal/inventory-core';
