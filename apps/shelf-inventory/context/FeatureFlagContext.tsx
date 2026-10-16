@@ -6,7 +6,7 @@ export interface Feature {
   id: string;
   name: string;
   status: 'draft' | 'approved' | 'implemented' | 'validated';
-  sdlc: string;
+  sdlc?: string;
   priority: string;
   category: string;
   description: string;

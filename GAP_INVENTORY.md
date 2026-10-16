@@ -2,6 +2,13 @@
 
 ## 📋 Executive Summary
 
+> **Estado medido (2026-10-15).** Este informe describe la brecha de consolidación de UI; su análisis de
+> disponibilidad de `@swal/ui` quedó desactualizado (ver más abajo). La fuente de verdad de features es
+> [`.gitcore/features.json`](../.gitcore/features.json): 41 features medidas (16 `implemented` / 20 `partial` /
+> 3 `in_progress` / 1 `planned` / 1 `out_of_scope`) y 669 unit tests verdes. La migración de UI sigue
+> **pendiente y sin verificar** (no hay tests ejecutados para ella): la feature `SRC-UI-001` está en
+> `partial` 40%.
+
 As part of the **SWAL Core Consolidation Initiative (Sprint JULES-004)**, the architectural directive set by Xavier establishes that **ALL projects must use unified core packages** (`@swal/ui` for UI components, `Xavier` for memory, and `edge-mesh` for P2P networking), ensuring that only the specific business model differs across applications.
 
 This report presents a thorough audit of the local UI components and raw Tailwind styling currently used in the `shelf-inventory` application, identifying duplicate interfaces that are ripe for migration to the unified `@swal/ui` core package, as well as the technical specifications and complete implementation blueprints for the missing **Maloca Platform Blog Module** (`apps/maloca/apps/swal-backoffice`).
@@ -17,6 +24,13 @@ Because `@swal/ui` is not currently published on the public npm registry nor ava
 ## 🔍 The Gap Analysis
 
 ### Verification Findings
+
+> **Actualización 2026-10-15:** el punto 3 ya no aplica. `packages/swal-ui` **existe** en este repo
+> (`src/components/{Button,Input,Modal}.tsx`, React) y `apps/shelf-inventory/package.json` declara la
+> dependencia `@swal/ui`. Sin embargo, **ningún componente la importa**: la app usa ports locales en
+> `apps/shelf-inventory/components/ui/` (marcados `SHELF-212`) y `ProGate.tsx`/`@swal/ui` quedan sin
+> consumir. Por tanto la migración descrita en este documento sigue sin ejecutarse.
+
 During the initial step of this sprint, the following checks were performed to locate and attempt installation of `@swal/ui`:
 1. **npm Registry Check**: `npm info @swal/ui` and `pnpm info @swal/ui` returned `E404 Not Found`.
 2. **Lockfile & Package Check**: Searched `pnpm-lock.yaml` and root `package.json` configurations; no references to `@swal/*` packages exist.
@@ -24,6 +38,10 @@ During the initial step of this sprint, the following checks were performed to l
 
 ### Root Cause
 `@swal/ui` is hosted in the centralized Platform workspace **Maloca** under `maloca/packages/@swal/ui`. Since the `shelf` repository is currently a standalone project decoupled from the central Maloca platform shell, the package cannot be resolved locally or fetched from a public package registry.
+
+> **Actualización 2026-10-15:** esta causa raíz quedó obsoleta. El repo ya incluye un paquete local
+> `packages/swal-ui` (React) declarado como dependencia de `shelf-inventory`; lo que falta es consumirlo
+> (la app mantiene ports locales en `components/ui/`).
 
 ---
 

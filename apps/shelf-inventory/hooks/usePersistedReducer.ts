@@ -7,6 +7,8 @@ import {
   wrapPersistedState,
 } from './persistStorage';
 
+const defaultPersistStorage = createIdbPersistStorage();
+
 function usePersistedReducer<T extends Record<string, any>, A extends { type: string; payload?: any }>(
   reducer: (state: T, action: A) => T,
   initialState: T,
@@ -16,7 +18,7 @@ function usePersistedReducer<T extends Record<string, any>, A extends { type: st
   const [state, dispatch] = useReducer(reducer, initialState);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const storage = options?.storage || createIdbPersistStorage();
+  const storage = options?.storage ?? defaultPersistStorage;
 
   // Load asynchronously
   useEffect(() => {
@@ -85,7 +87,7 @@ function usePersistedReducer<T extends Record<string, any>, A extends { type: st
 
     // Expose for E2E tests
     if (typeof window !== 'undefined') {
-      (window as any)._shelfStateForTest = state;
+      (window as unknown as { _shelfStateForTest: any })._shelfStateForTest = state;
     }
   }, [state, isLoaded, localStorageKey, storage]);
 
