@@ -23,12 +23,12 @@
   },
   "dependencies": {
     "edge-mesh": "workspace:*",
-    "yjs": "^13.6.32"
+    "yjs": "^13.6.33"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.10",
-    "@types/node": "^26.2.0",
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "^26.6.5",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.4"
   }
 }
