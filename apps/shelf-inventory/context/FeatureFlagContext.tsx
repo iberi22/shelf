@@ -5,7 +5,7 @@ import defaultFeaturesJson from '../../../.gitcore/features.json';
 export interface Feature {
   id: string;
   name: string;
-  status: 'draft' | 'approved' | 'implemented' | 'validated';
+  status: 'draft' | 'approved' | 'implemented' | 'validated' | 'partial' | 'in_progress' | 'planned' | 'out_of_scope';
   sdlc?: string;
   priority: string;
   category: string;
@@ -42,6 +42,13 @@ interface FeatureFlagContextType {
 }
 
 const FeatureFlagContext = createContext<FeatureFlagContextType | undefined>(undefined);
+
+/**
+ * Statuses that make a feature visible at runtime. Feature flags gate navigation
+ * (MainApp/Sidebar), not build completeness, so every feature that is actually
+ * available to the user must be listed here.
+ */
+export const ENABLED_FEATURE_STATUSES: readonly Feature['status'][] = ['implemented', 'validated', 'partial'];
 
 export const FeatureFlagProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [features, setFeatures] = useState<Feature[]>(defaultFeaturesJson.features as Feature[]);
@@ -96,7 +103,9 @@ export const FeatureFlagProvider: React.FC<{ children: React.ReactNode }> = ({ c
       // 2. Fall back to feature.json status
       const feature = features.find((f) => f.id === id);
       if (!feature) return false;
-      return feature.status === 'implemented' || feature.status === 'validated';
+      // `partial` features are shipped and usable at runtime (see #571), so they
+      // gate navigation on like fully implemented ones.
+      return ENABLED_FEATURE_STATUSES.includes(feature.status);
     },
     [features, overrides],
   );
