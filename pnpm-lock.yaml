@@ -70,7 +70,7 @@ importers:
     dependencies:
       '@google/genai':
         specifier: ^2.18.0
-        version: 2.19.0(@modelcontextprotocol/sdk@1.30.0(zod@4.6.1))
+        version: 2.19.0(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))
       '@mlc-ai/web-llm':
         specifier: ^0.2.83
         version: 0.2.84
@@ -11163,14 +11163,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@google/genai@2.19.0(@modelcontextprotocol/sdk@1.30.0(zod@4.6.1))':
+  '@google/genai@2.19.0(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))':
     dependencies:
       google-auth-library: 10.9.1
       p-retry: 4.6.2
       protobufjs: 7.6.5
       ws: 8.21.3
     optionalDependencies:
-      '@modelcontextprotocol/sdk': 1.30.0(zod@4.6.1)
+      '@modelcontextprotocol/sdk': 1.30.0(zod@4.4.3)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -11434,29 +11434,6 @@ snapshots:
       zod-to-json-schema: 3.25.2(zod@4.4.3)
     transitivePeerDependencies:
       - supports-color
-
-  '@modelcontextprotocol/sdk@1.30.0(zod@4.6.1)':
-    dependencies:
-      '@hono/node-server': 2.1.1(hono@4.13.4)
-      ajv: 8.20.0
-      ajv-formats: 3.0.1(ajv@8.20.0)
-      content-type: 1.0.5
-      cors: 2.8.6
-      cross-spawn: 7.0.6
-      eventsource: 3.0.7
-      eventsource-parser: 3.1.1
-      express: 5.2.1
-      express-rate-limit: 8.6.2(express@5.2.1)
-      hono: 4.13.4
-      jose: 6.2.10
-      json-schema-typed: 8.0.2
-      pkce-challenge: 5.0.1
-      raw-body: 3.0.2
-      zod: 4.6.1
-      zod-to-json-schema: 3.25.2(zod@4.6.1)
-    transitivePeerDependencies:
-      - supports-color
-    optional: true
 
   '@modelcontextprotocol/server@2.3.0':
     dependencies:
@@ -19226,11 +19203,6 @@ snapshots:
   zod-to-json-schema@3.25.2(zod@4.4.3):
     dependencies:
       zod: 4.4.3
-
-  zod-to-json-schema@3.25.2(zod@4.6.1):
-    dependencies:
-      zod: 4.6.1
-    optional: true
 
   zod@3.22.4: {}
 

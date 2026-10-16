@@ -58,18 +58,17 @@ test.describe('Smoke tests for shelf-inventory', () => {
     await screen.getByTestId('product-quantity-input').fill('25');
     await screen.getByTestId('save-product-button').tap();
 
-    // Verify update
-    await expect(screen.getByRole('cell', { name: editProductName }).first()).toBeVisible({ timeout: 15000 });
+    // The edited quantity (25) is shown in the product's row after saving.
+    const updatedRow = screen.getByRole('row').filter({ hasText: editProductName });
+    await expect(updatedRow.getByRole('cell', '25')).toHaveText('25', { timeout: 15000 });
 
     // Reload
     await browser.reload();
 
-    // Verify persistence
-    // Wait for the app to load first
+    // The edited quantity (25) survived the reload.
     await screen.getByTestId('nav-item-nav.inventory').tap();
-
-    // Check quantity - we'll just check if the product is still there
-    await expect(screen.getByRole('cell', { name: editProductName }).first()).toBeVisible({ timeout: 15000 });
+    const persistedRow = screen.getByRole('row').filter({ hasText: editProductName });
+    await expect(persistedRow.getByRole('cell', '25')).toHaveText('25', { timeout: 15000 });
   });
 
   test('delete the product', async ({ app, screen, browser }) => {
@@ -103,7 +102,7 @@ test.describe('Smoke tests for shelf-inventory', () => {
     await expect(screen.getByTestId('settings-data-card')).toBeVisible({ timeout: 15000 });
   });
 
-  test('offline: after first load the app still renders with the network blocked', async ({ app, screen, browser }) => {
+  test('offline indicator reacts to the browser offline/online events', async ({ app, screen, browser }) => {
     await browser.addInitScript(() => {
       const now = new Date().toISOString();
       localStorage.setItem(
@@ -140,11 +139,28 @@ test.describe('Smoke tests for shelf-inventory', () => {
     });
 
     await app.open('/?testMode=true');
-    await browser.evaluate(() => window.dispatchEvent(new Event('offline')));
+    await expect(screen.getByTestId('nav-item-nav.inventory')).toBeVisible({ timeout: 15000 });
 
-    // Use testid offline-indicator
+    // This journey only dispatches the browser `offline`/`online` events. It does
+    // NOT cut the network: real offline behaviour is covered by the repo's
+    // Playwright specs (see README).
+    // Re-dispatch until the app has mounted its window listeners.
+    await expect
+      .poll(
+        async () => {
+          await browser.evaluate(() => window.dispatchEvent(new Event('offline')));
+          return screen.getByTestId('offline-banner').count();
+        },
+        { timeout: 15000, message: 'offline-banner did not appear after the offline event' },
+      )
+      .toBeGreaterThan(0);
     await expect(screen.getByTestId('offline-indicator')).toBeVisible({ timeout: 15000 });
 
+    // The offline UX recovers when the browser reports it is online again.
+    await browser.evaluate(() => window.dispatchEvent(new Event('online')));
+    await expect(screen.getByTestId('offline-banner')).toBeHidden({ timeout: 15000 });
+
+    // The locally seeded inventory still renders.
     await screen.getByTestId('nav-item-nav.inventory').tap();
     await expect(screen.getByRole('cell', { name: 'Offline Local Product' }).first()).toBeVisible({ timeout: 15000 });
   });
