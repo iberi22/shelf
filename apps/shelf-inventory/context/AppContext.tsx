@@ -48,7 +48,8 @@ export const AppProvider: React.FC<{ children: ReactNode; storage?: PersistStora
   storage,
   sync = dbSync,
 }) => {
-  const [reducerState, rawDispatch, isLoaded] = usePersistedReducer(appReducer, initialState, 'shelfState', {
+  const boundReducer = React.useCallback((s: AppState, a: Action) => appReducer(s, a, sync), [sync]);
+  const [reducerState, rawDispatch, isLoaded] = usePersistedReducer(boundReducer, initialState, 'shelfState', {
     storage,
   });
   const isSyncInitialized = React.useRef(false);
@@ -62,8 +63,8 @@ export const AppProvider: React.FC<{ children: ReactNode; storage?: PersistStora
   // hooks subscribe directly to the sync CRDT maps, so any local or remote
   // mutation applied to the CRDT (dispatch → sync → Yjs map) reflects
   // instantly. No component sets these collections via setState directly.
-  const reactiveProducts = useReactiveProducts();
-  const reactiveSales = useReactiveSales();
+  const reactiveProducts = useReactiveProducts({ doc: sync.doc });
+  const reactiveSales = useReactiveSales({ doc: sync.doc });
 
   // Once the CRDT has produced data for a collection, trust the reactive
   // projection unconditionally (also when the map is later emptied). Before
@@ -406,7 +407,7 @@ export const AppProvider: React.FC<{ children: ReactNode; storage?: PersistStora
         const saleP = p as Sale;
         const salePayload = enrich(currentState, saleP);
         sync.upsertEntity('sales', salePayload);
-        syncInventoryStockChanges(currentState, currentState.products, saleP.items || [], -1);
+        syncInventoryStockChanges(currentState, currentState.products, saleP.items || [], -1, sync);
       } else if (typeStr === 'UPDATE_SALE') {
         const saleP = p as Sale;
         const oldSale = currentState.sales.find((sale) => sale.id === saleP.id);
@@ -417,14 +418,14 @@ export const AppProvider: React.FC<{ children: ReactNode; storage?: PersistStora
             oldSale.items || [],
             1,
           );
-          syncInventoryStockChanges(currentState, adjustedProducts, saleP.items || [], -1);
+          syncInventoryStockChanges(currentState, adjustedProducts, saleP.items || [], -1, sync);
         }
         sync.upsertEntity('sales', enrich(currentState, saleP));
       } else if (typeStr === 'DELETE_SALE') {
         const saleId = p as string;
         const deletedSale = currentState.sales.find((sale) => sale.id === saleId);
         if (deletedSale) {
-          syncInventoryStockChanges(currentState, currentState.products, deletedSale.items || [], 1);
+          syncInventoryStockChanges(currentState, currentState.products, deletedSale.items || [], 1, sync);
         }
         const sale = currentState.sales.find((s) => s.id === saleId);
         if (sale) {
@@ -439,7 +440,7 @@ export const AppProvider: React.FC<{ children: ReactNode; storage?: PersistStora
         const poP = p as PurchaseOrder;
         const oldPO = currentState.purchaseOrders.find((po) => po.id === poP.id);
         if (oldPO?.status === 'pending' && poP.status === 'received') {
-          syncInventoryStockChanges(currentState, currentState.products, poP.items || [], 1);
+          syncInventoryStockChanges(currentState, currentState.products, poP.items || [], 1, sync);
         }
         sync.upsertEntity('purchaseOrders', enrich(currentState, poP));
       } else if (typeStr === 'ADD_TEAM_MEMBER' || typeStr === 'UPDATE_TEAM_MEMBER') {
@@ -521,7 +522,7 @@ export const AppProvider: React.FC<{ children: ReactNode; storage?: PersistStora
                       updatedAt: new Date().toISOString(),
                       updatedBy: currentState.localPeerId || 'local',
                       updatedByRole: currentState.role || 'collaborator',
-                      branchId: (addUpdateP as any).branchId || undefined,
+                      branchId: (addUpdateP as { branchId?: string }).branchId || undefined,
                     };
               sync.upsertEntity(collection, syncPayload as Parameters<typeof dbSync.upsertEntity>[1]);
               break;

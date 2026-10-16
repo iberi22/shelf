@@ -1,15 +1,17 @@
-import { describe, expect, it } from 'vitest';
-import { appReducer, initialState } from './appReducer';
+import { describe, expect, it, vi } from 'vitest';
+import { dbSync } from 'p2p-mesh-core';
+import type { AppState, Product } from 'p2p-mesh-core';
+import { appReducer, initialState, syncInventoryStockChanges, type AppSync } from './appReducer';
 
 describe('appReducer', () => {
   it('RESET_DATA returns initialState', () => {
-    const modifiedState = { ...initialState, localPeerId: '123' } as any;
+    const modifiedState = { ...initialState, localPeerId: '123' } as unknown as AppState;
     const nextState = appReducer(modifiedState, { type: 'RESET_DATA' });
     expect(nextState).toEqual(initialState);
   });
 
   it('unknown action returns same state', () => {
-    const modifiedState = { ...initialState, localPeerId: '123' } as any;
+    const modifiedState = { ...initialState, localPeerId: '123' } as unknown as AppState;
     // @ts-expect-error testing invalid action
     const nextState = appReducer(modifiedState, { type: 'UNKNOWN_ACTION' });
     expect(nextState).toBe(modifiedState);
@@ -27,7 +29,7 @@ describe('appReducer', () => {
   });
 
   it('RESTORE_STATE merges payload with initialState', () => {
-    const payload = { localPeerId: 'abc' } as any;
+    const payload = { localPeerId: 'abc' } as unknown as AppState;
     const nextState = appReducer(initialState, { type: 'RESTORE_STATE', payload });
     expect(nextState.localPeerId).toBe('abc');
     expect(nextState.role).toBe(initialState.role); // Keeps other default values
@@ -41,3 +43,34 @@ describe('appReducer', () => {
     expect(nullState.activeBranchId).toBeUndefined();
   });
 });
+
+  describe('Sync Injection', () => {
+    it('syncInventoryStockChanges uses injected sync instead of global dbSync', () => {
+      const fakeSync = { upsertEntity: vi.fn() } as unknown as AppSync;
+      const globalSpy = vi.spyOn(dbSync, 'upsertEntity');
+      const baseProducts = [{ id: 'p1', productId: 'p1', variants: [{ id: 'v1', quantity: 10 }] }] as unknown as Product[];
+      const items = [{ productId: 'p1', quantity: 2 }];
+
+      syncInventoryStockChanges(initialState, baseProducts, items, -1, fakeSync);
+
+      expect(fakeSync.upsertEntity).toHaveBeenCalledWith('products', expect.anything());
+      expect(globalSpy).not.toHaveBeenCalled();
+      globalSpy.mockRestore();
+    });
+
+    it('SET_ACTIVE_BRANCH writes to injected sync', () => {
+      const fakeSync = { activeBranchId: undefined } as unknown as AppSync;
+      const nextState = appReducer(initialState, { type: 'SET_ACTIVE_BRANCH', payload: 'b1' }, fakeSync);
+      expect(fakeSync.activeBranchId).toBe('b1');
+    });
+
+    it('SET_ROLE uses injected sync for authority check', () => {
+      const fakeSync = { isLocalAuthority: vi.fn(() => false) } as unknown as AppSync;
+      const collaboratorState = { ...initialState, role: 'collaborator' } as unknown as AppState;
+
+      const nextState = appReducer(collaboratorState, { type: 'SET_ROLE', payload: 'admin' }, fakeSync);
+
+      expect(fakeSync.isLocalAuthority).toHaveBeenCalled();
+      expect(nextState.role).toBe('collaborator'); // Should not change if not local authority
+    });
+  });

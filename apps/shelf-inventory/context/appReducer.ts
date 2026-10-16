@@ -108,7 +108,7 @@ export const createAuditEntryFromAction = (state: AppState, action: Action): Aud
   let details: unknown;
 
   if (typeStr.includes('IMPORT') || typeStr.includes('BATCH')) {
-    details = (action as any).payload;
+    details = (action as { payload: any }).payload;
   } else if (typeStr.startsWith('UPDATE_') && hasPayloadWithId(action)) {
     const typeMap: Record<string, keyof AppState> = {
       UPDATE_PRODUCT: 'products',
@@ -122,7 +122,7 @@ export const createAuditEntryFromAction = (state: AppState, action: Action): Aud
     const stateKey = typeMap[typeStr as keyof typeof typeMap];
     if (stateKey) {
       const collection = getCollection(state, stateKey) as Array<Record<string, unknown>>;
-      const oldItem = collection.find((i) => i.id === (action.payload as any).id);
+      const oldItem = collection.find((i) => i.id === (action.payload as { id: string }).id);
       if (oldItem && 'id' in oldItem) {
         const diff: Record<string, { old: unknown; new: unknown }> = {};
         const payload = action.payload as Record<string, unknown>;
@@ -140,11 +140,11 @@ export const createAuditEntryFromAction = (state: AppState, action: Action): Aud
       details = { payload: action.payload };
     }
   } else if (typeStr.startsWith('ADD_') || typeStr.startsWith('DELETE_')) {
-    details = { payload: (action as any).payload };
+    details = { payload: (action as { payload: any }).payload };
   }
 
   const entityId = hasPayloadWithId(action)
-    ? (action.payload as any).id
+    ? (action.payload as { id: string }).id
     : hasStringPayload(action)
       ? action.payload
       : undefined;
@@ -286,11 +286,14 @@ const updateInventoryQuantity = (
   return [...products.slice(0, index), enrich(state, nextProduct), ...products.slice(index + 1)];
 };
 
+export type AppSync = typeof dbSync;
+
 export const syncInventoryStockChanges = (
   state: AppState,
   baseProducts: Product[],
   items: Array<{ productId: string; productVariantId?: string; quantity: number }>,
   direction: 1 | -1,
+  sync: AppSync = dbSync,
 ) => {
   let nextProducts = [...baseProducts];
   const touchedProductIds = new Set<string>();
@@ -309,7 +312,7 @@ export const syncInventoryStockChanges = (
   for (const productId of touchedProductIds) {
     const nextProduct = nextProducts.find((product) => product.id === productId);
     if (nextProduct) {
-      dbSync.upsertEntity('products', nextProduct);
+      sync.upsertEntity('products', nextProduct);
     }
   }
 
@@ -338,7 +341,7 @@ export const mergeCollections = <T extends { id: string }>(local: T[], remote: T
   return Array.from(map.values());
 };
 
-export const appReducer = (state: AppState, action: Action): AppState => {
+export const appReducer = (state: AppState, action: Action, sync: AppSync = dbSync): AppState => {
   switch (action.type) {
     case 'ADD_PRODUCT':
     case 'UPDATE_PRODUCT':
@@ -378,7 +381,7 @@ export const appReducer = (state: AppState, action: Action): AppState => {
       return { ...state, peers: action.payload };
 
     case 'SET_ROLE':
-      if (action.payload === 'admin' && !dbSync.isLocalAuthority()) {
+      if (action.payload === 'admin' && !sync.isLocalAuthority()) {
         return state;
       }
       return { ...state, role: action.payload };
@@ -407,7 +410,7 @@ export const appReducer = (state: AppState, action: Action): AppState => {
     case 'UPDATE_PEER_CONFIG': {
       const { targetPeerId, role, permissions } = action.payload;
       if (targetPeerId === state.localPeerId) {
-        const normalizedRole = role === 'admin' && !dbSync.isLocalAuthority() ? 'collaborator' : role;
+        const normalizedRole = role === 'admin' && !sync.isLocalAuthority() ? 'collaborator' : role;
         return {
           ...state,
           role: normalizedRole,
@@ -516,7 +519,7 @@ export const appReducer = (state: AppState, action: Action): AppState => {
     }
 
     case 'SET_ACTIVE_BRANCH':
-      dbSync.activeBranchId = action.payload || undefined;
+      sync.activeBranchId = action.payload || undefined;
       return { ...state, activeBranch: action.payload || undefined, activeBranchId: action.payload || undefined };
 
     case 'RESTORE_STATE':
