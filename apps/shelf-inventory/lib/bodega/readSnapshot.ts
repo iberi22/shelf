@@ -68,7 +68,10 @@ export async function openBodegaSnapshot(input: string | ArrayBuffer, passphrase
 
     const cryptoSubtle = globalThis.crypto.subtle;
 
-    const baseKey = await cryptoSubtle.importKey('raw', passphraseBuffer as BufferSource, 'PBKDF2', false, ['deriveKey', 'deriveBits']);
+    const baseKey = await cryptoSubtle.importKey('raw', passphraseBuffer as BufferSource, 'PBKDF2', false, [
+      'deriveKey',
+      'deriveBits',
+    ]);
 
     const derivedBits = await cryptoSubtle.deriveBits(
       {
@@ -97,8 +100,18 @@ export async function openBodegaSnapshot(input: string | ArrayBuffer, passphrase
       const fizeData = encoder.encode(`${BODEGA_ENC_FORMAT}|${parsed.salt}|${parsed.iv}`);
       const garaData = encoder.encode(`${BODEGA_ENC_FORMAT}|${parsed.salt}`);
 
-      const validFize = await cryptoSubtle.verify('HMAC', hmacKey, checkBytes as BufferSource, fizeData as BufferSource);
-      const validGara = await cryptoSubtle.verify('HMAC', hmacKey, checkBytes as BufferSource, garaData as BufferSource);
+      const validFize = await cryptoSubtle.verify(
+        'HMAC',
+        hmacKey,
+        checkBytes as BufferSource,
+        fizeData as BufferSource,
+      );
+      const validGara = await cryptoSubtle.verify(
+        'HMAC',
+        hmacKey,
+        checkBytes as BufferSource,
+        garaData as BufferSource,
+      );
 
       if (!validFize && !validGara) {
         throw new BodegaFormatError('clave', 'Invalid passphrase (check failed)');
@@ -107,7 +120,11 @@ export async function openBodegaSnapshot(input: string | ArrayBuffer, passphrase
     }
 
     try {
-      decryptedBuffer = await cryptoSubtle.decrypt({ name: 'AES-GCM', iv: ivBuffer as BufferSource }, aesKey, ciphertextBuffer as BufferSource);
+      decryptedBuffer = await cryptoSubtle.decrypt(
+        { name: 'AES-GCM', iv: ivBuffer as BufferSource },
+        aesKey,
+        ciphertextBuffer as BufferSource,
+      );
     } catch {
       if (validCheck) {
         throw new BodegaFormatError('alterado', 'Decryption failed (altered)');

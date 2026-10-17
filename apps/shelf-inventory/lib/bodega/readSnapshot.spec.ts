@@ -132,8 +132,8 @@ describe('bodega/readSnapshot', () => {
     const missingQty = { ...validPlain, movements: [{ id: '1', itemId: '1', kind: 'use', qty: null, at: '' }] };
     await expect(openBodegaSnapshot(JSON.stringify(missingQty))).rejects.toHaveProperty('code', 'formato');
 
-    const infQty = { ...validPlain, movements: [{ id: '1', itemId: '1', kind: 'use', qty: Infinity, at: '' }] };
-    await expect(openBodegaSnapshot(JSON.stringify(infQty))).rejects.toHaveProperty('code', 'formato');
+    const infQtyJson = `{"format":"swal-inventory-export/v1","source":{"appId":"shelf","instanceId":"123","schemaVersion":1,"exportedAt":"2026-10-16T00:00:00Z"},"currency":"COP","locations":[{"id":"loc1","name":"Main","type":"bodega"}],"items":[{"id":"item1","name":"Apples","quantity":100,"minStock":10,"cost":50,"price":100}],"movements":[{"id":"1","itemId":"1","kind":"use","qty":1e999,"at":""}]}`;
+    await expect(openBodegaSnapshot(infQtyJson)).rejects.toHaveProperty('code', 'formato');
   });
 
   it('throws formato if movement is present but not an array', async () => {
@@ -312,6 +312,30 @@ describe('bodega/readSnapshot', () => {
 
       const badBase64 = { ...encryptedDataRawNoCheck, iv: 'not-base64!' };
       await expect(openBodegaSnapshot(JSON.stringify(badBase64), passphrase)).rejects.toHaveProperty('code', 'formato');
+
+      const nonStringCiphertext = { ...encryptedDataRawNoCheck, ciphertext: 123 };
+      await expect(openBodegaSnapshot(JSON.stringify(nonStringCiphertext), passphrase)).rejects.toHaveProperty(
+        'code',
+        'formato',
+      );
+
+      const badBase64Salt = { ...encryptedDataRawNoCheck, salt: 'not-base64!' };
+      await expect(openBodegaSnapshot(JSON.stringify(badBase64Salt), passphrase)).rejects.toHaveProperty(
+        'code',
+        'formato',
+      );
+
+      const badBase64Ciphertext = { ...encryptedDataRawNoCheck, ciphertext: 'not-base64!' };
+      await expect(openBodegaSnapshot(JSON.stringify(badBase64Ciphertext), passphrase)).rejects.toHaveProperty(
+        'code',
+        'formato',
+      );
+
+      const badBase64Check = { ...encryptedDataRawFize, check: 'not-base64!' };
+      await expect(openBodegaSnapshot(JSON.stringify(badBase64Check), passphrase)).rejects.toHaveProperty(
+        'code',
+        'formato',
+      );
     });
   });
 });
