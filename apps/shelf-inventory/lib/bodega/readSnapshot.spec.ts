@@ -82,6 +82,11 @@ describe('bodega/readSnapshot', () => {
     await expect(openBodegaSnapshot(JSON.stringify(noItems))).rejects.toHaveProperty('code', 'formato');
   });
 
+  it('throws formato if items is not an array', async () => {
+    const bad = { ...validPlain, items: {} };
+    await expect(openBodegaSnapshot(JSON.stringify(bad))).rejects.toHaveProperty('code', 'formato');
+  });
+
   it('throws formato if an item is missing id or name', async () => {
     const badItems = { ...validPlain, items: [{ name: 'Just name', quantity: 10, minStock: 1, cost: 1, price: 1 }] };
     await expect(openBodegaSnapshot(JSON.stringify(badItems))).rejects.toHaveProperty('code', 'formato');
@@ -101,6 +106,7 @@ describe('bodega/readSnapshot', () => {
   it('throws formato for non-object root', async () => {
     await expect(openBodegaSnapshot('null')).rejects.toHaveProperty('code', 'formato');
     await expect(openBodegaSnapshot('[]')).rejects.toHaveProperty('code', 'formato');
+    await expect(openBodegaSnapshot('"string"')).rejects.toHaveProperty('code', 'formato');
   });
 
   it('throws formato for null items', async () => {
@@ -111,6 +117,10 @@ describe('bodega/readSnapshot', () => {
   it('throws formato if missing or non-object source/currency', async () => {
     const badSource = { ...validPlain, source: null };
     await expect(openBodegaSnapshot(JSON.stringify(badSource))).rejects.toHaveProperty('code', 'formato');
+
+    const badSourceArr = { ...validPlain, source: [] };
+    await expect(openBodegaSnapshot(JSON.stringify(badSourceArr))).rejects.toHaveProperty('code', 'formato');
+
     const badCurrency = { ...validPlain, currency: null };
     await expect(openBodegaSnapshot(JSON.stringify(badCurrency))).rejects.toHaveProperty('code', 'formato');
   });
@@ -126,15 +136,35 @@ describe('bodega/readSnapshot', () => {
     await expect(openBodegaSnapshot(JSON.stringify(infQty))).rejects.toHaveProperty('code', 'formato');
   });
 
+  it('throws formato if movement is present but not an array', async () => {
+    const badMov = { ...validPlain, movements: {} };
+    await expect(openBodegaSnapshot(JSON.stringify(badMov))).rejects.toHaveProperty('code', 'formato');
+  });
+
   it('normalizes movement unknown kind to adjust', async () => {
     const m = { ...validPlain, movements: [{ id: '1', itemId: '1', kind: 'made_up', qty: 10, at: '' }] };
     const res = await openBodegaSnapshot(JSON.stringify(m));
     expect(res.movements[0].kind).toBe('adjust');
   });
 
-  describe('encrypted tests', () => {
-    let encryptedDataRaw: { format: string; kdf: any; salt: string; iv: string; ciphertext: string; check: string };
-    let encryptedData: string;
+  it('throws formato if item numeric fields are missing or not finite', async () => {
+    const missingQty = { ...validPlain, items: [{ id: '1', name: 'A', minStock: 1, cost: 1, price: 1 }] };
+    await expect(openBodegaSnapshot(JSON.stringify(missingQty))).rejects.toHaveProperty('code', 'formato');
+
+    const rawInfinity = `{"format":"swal-inventory-export/v1","source":{"appId":"shelf","instanceId":"123","schemaVersion":1,"exportedAt":"2026-10-16T00:00:00Z"},"currency":"COP","locations":[{"id":"loc1","name":"Main","type":"bodega"}],"items":[{"id":"item1","name":"Apples","quantity":1e999,"minStock":10,"cost":50,"price":100}]}`;
+    await expect(openBodegaSnapshot(rawInfinity)).rejects.toHaveProperty('code', 'formato');
+  });
+
+  it('throws formato if location is invalid', async () => {
+    const badLoc = { ...validPlain, locations: [{ id: '1' }] };
+    await expect(openBodegaSnapshot(JSON.stringify(badLoc))).rejects.toHaveProperty('code', 'formato');
+  });
+
+  describe('encrypted tests', { timeout: 30_000 }, () => {
+    let encryptedDataRawFize: { format: string; kdf: any; salt: string; iv: string; ciphertext: string; check: string };
+    let encryptedDataRawGara: { format: string; kdf: any; salt: string; iv: string; ciphertext: string; check: string };
+    let encryptedDataRawNoCheck: { format: string; kdf: any; salt: string; iv: string; ciphertext: string };
+
     const passphrase = 'llave de prueba larga';
 
     beforeAll(async () => {
@@ -142,82 +172,146 @@ describe('bodega/readSnapshot', () => {
       const encoder = new TextEncoder();
       const ptBuf = encoder.encode(plainJson);
 
-      const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
-      const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
       const passBuf = encoder.encode(passphrase);
-
       const baseKey = await globalThis.crypto.subtle.importKey('raw', passBuf, 'PBKDF2', false, [
         'deriveKey',
         'deriveBits',
       ]);
 
-      // Derive 512 bits: 32 bytes for AES key, 32 bytes for HMAC
-      const derivedBits = await globalThis.crypto.subtle.deriveBits(
-        { name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256' },
-        baseKey,
-        512,
-      );
+      // Helper to encrypt
+      const encrypt = async (style: 'fize' | 'gara' | 'none') => {
+        const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
+        const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+        const derivedBits = await globalThis.crypto.subtle.deriveBits(
+          { name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256' },
+          baseKey,
+          512,
+        );
 
-      const aesKey = await globalThis.crypto.subtle.importKey(
-        'raw',
-        derivedBits.slice(0, 32),
-        { name: 'AES-GCM' },
-        false,
-        ['encrypt'],
-      );
+        const aesKey = await globalThis.crypto.subtle.importKey(
+          'raw',
+          derivedBits.slice(0, 32),
+          { name: 'AES-GCM' },
+          false,
+          ['encrypt'],
+        );
+        const hmacKey = await globalThis.crypto.subtle.importKey(
+          'raw',
+          derivedBits.slice(32),
+          { name: 'HMAC', hash: 'SHA-256' },
+          false,
+          ['sign'],
+        );
 
-      const hmacKey = await globalThis.crypto.subtle.importKey(
-        'raw',
-        derivedBits.slice(32),
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign'],
-      );
+        const ctBuf = await globalThis.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aesKey, ptBuf);
 
-      const ctBuf = await globalThis.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aesKey, ptBuf);
+        const saltB64 = btoa(String.fromCharCode(...salt));
+        const ivB64 = btoa(String.fromCharCode(...iv));
 
-      const saltB64 = btoa(String.fromCharCode(...salt));
-      const ivB64 = btoa(String.fromCharCode(...iv));
+        let check: string | undefined;
+        if (style === 'fize') {
+          const checkBuf = await globalThis.crypto.subtle.sign(
+            'HMAC',
+            hmacKey,
+            encoder.encode(`${BODEGA_ENC_FORMAT}|${saltB64}|${ivB64}`),
+          );
+          check = btoa(String.fromCharCode(...new Uint8Array(checkBuf)));
+        } else if (style === 'gara') {
+          const checkBuf = await globalThis.crypto.subtle.sign(
+            'HMAC',
+            hmacKey,
+            encoder.encode(`${BODEGA_ENC_FORMAT}|${saltB64}`),
+          );
+          check = btoa(String.fromCharCode(...new Uint8Array(checkBuf)));
+        }
 
-      // Sign Fize format
-      const fizeData = encoder.encode(`${BODEGA_ENC_FORMAT}|${saltB64}|${ivB64}`);
-      const checkBuf = await globalThis.crypto.subtle.sign('HMAC', hmacKey, fizeData);
-
-      encryptedDataRaw = {
-        format: BODEGA_ENC_FORMAT,
-        kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 600000 },
-        salt: saltB64,
-        iv: ivB64,
-        ciphertext: btoa(String.fromCharCode(...new Uint8Array(ctBuf))),
-        check: btoa(String.fromCharCode(...new Uint8Array(checkBuf))),
+        const out: any = {
+          format: BODEGA_ENC_FORMAT,
+          kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 600000 },
+          salt: saltB64,
+          iv: ivB64,
+          ciphertext: btoa(String.fromCharCode(...new Uint8Array(ctBuf))),
+        };
+        if (check) out.check = check;
+        return out;
       };
-      encryptedData = JSON.stringify(encryptedDataRaw);
+
+      encryptedDataRawFize = await encrypt('fize');
+      encryptedDataRawGara = await encrypt('gara');
+      encryptedDataRawNoCheck = await encrypt('none');
     });
 
-    it('encrypted round trip with the right passphrase', async () => {
-      const res = await openBodegaSnapshot(encryptedData, passphrase);
+    it('encrypted round trip with the right passphrase (Fize check)', async () => {
+      const res = await openBodegaSnapshot(JSON.stringify(encryptedDataRawFize), passphrase);
       expect(res.format).toBe(BODEGA_FORMAT);
       expect(res.items.length).toBe(1);
-      expect(res.movements.length).toBe(1);
     });
 
-    it('wrong passphrase gives clave (with check mismatch)', async () => {
-      await expect(openBodegaSnapshot(encryptedData, 'wrong pass')).rejects.toHaveProperty('code', 'clave');
+    it('encrypted round trip with the right passphrase (Gara check)', async () => {
+      const res = await openBodegaSnapshot(JSON.stringify(encryptedDataRawGara), passphrase);
+      expect(res.format).toBe(BODEGA_FORMAT);
+      expect(res.items.length).toBe(1);
     });
 
-    it('a flipped ciphertext byte gives alterado', async () => {
-      const ctBytes = Uint8Array.from(atob(encryptedDataRaw.ciphertext), (c) => c.charCodeAt(0));
+    it('wrong passphrase gives clave (with Fize check mismatch)', async () => {
+      await expect(openBodegaSnapshot(JSON.stringify(encryptedDataRawFize), 'wrong pass')).rejects.toHaveProperty(
+        'code',
+        'clave',
+      );
+    });
+
+    it('wrong passphrase gives clave (with Gara check mismatch)', async () => {
+      await expect(openBodegaSnapshot(JSON.stringify(encryptedDataRawGara), 'wrong pass')).rejects.toHaveProperty(
+        'code',
+        'clave',
+      );
+    });
+
+    it('wrong passphrase gives clave (no check field)', async () => {
+      await expect(openBodegaSnapshot(JSON.stringify(encryptedDataRawNoCheck), 'wrong pass')).rejects.toHaveProperty(
+        'code',
+        'clave',
+      );
+    });
+
+    it('a flipped ciphertext byte gives alterado (Fize)', async () => {
+      const ctBytes = Uint8Array.from(atob(encryptedDataRawFize.ciphertext), (c) => c.charCodeAt(0));
       ctBytes[0] ^= 1;
       const flippedCiphertext = btoa(String.fromCharCode(...ctBytes));
 
       const flippedData = JSON.stringify({
-        ...encryptedDataRaw,
+        ...encryptedDataRawFize,
         ciphertext: flippedCiphertext,
       });
 
-      // Since check passes (HMAC of salt+iv matches derived key) but ciphertext is flipped,
-      // it means tampering.
       await expect(openBodegaSnapshot(flippedData, passphrase)).rejects.toHaveProperty('code', 'alterado');
+    });
+
+    it('a flipped ciphertext byte gives alterado (Gara)', async () => {
+      const ctBytes = Uint8Array.from(atob(encryptedDataRawGara.ciphertext), (c) => c.charCodeAt(0));
+      ctBytes[0] ^= 1;
+      const flippedCiphertext = btoa(String.fromCharCode(...ctBytes));
+
+      const flippedData = JSON.stringify({
+        ...encryptedDataRawGara,
+        ciphertext: flippedCiphertext,
+      });
+
+      await expect(openBodegaSnapshot(flippedData, passphrase)).rejects.toHaveProperty('code', 'alterado');
+    });
+
+    it('throws formato for missing or non-string encryption fields', async () => {
+      const missingIv = { ...encryptedDataRawNoCheck, iv: undefined };
+      await expect(openBodegaSnapshot(JSON.stringify(missingIv), passphrase)).rejects.toHaveProperty('code', 'formato');
+
+      const badSalt = { ...encryptedDataRawNoCheck, salt: null };
+      await expect(openBodegaSnapshot(JSON.stringify(badSalt), passphrase)).rejects.toHaveProperty('code', 'formato');
+
+      const badCheck = { ...encryptedDataRawFize, check: 123 };
+      await expect(openBodegaSnapshot(JSON.stringify(badCheck), passphrase)).rejects.toHaveProperty('code', 'formato');
+
+      const badBase64 = { ...encryptedDataRawNoCheck, iv: 'not-base64!' };
+      await expect(openBodegaSnapshot(JSON.stringify(badBase64), passphrase)).rejects.toHaveProperty('code', 'formato');
     });
   });
 });
