@@ -1,7 +1,6 @@
-import type { Product } from 'p2p-mesh-core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { BodegaItem, BodegaSnapshot } from './contract';
-import { type BodegaReadModel, bodegaProductId, lowStockCount, toReadModel } from './toProducts';
+import { bodegaProductId, lowStockCount, toReadModel } from './toProducts';
 
 describe('toProducts', () => {
   afterEach(() => {
@@ -101,22 +100,33 @@ describe('toProducts', () => {
     expect(result.unmapped).toBe(1);
   });
 
-  it('8. lowStockCount reuses getStockStatus to count low stock items', () => {
-    const model: BodegaReadModel = {
-      products: [
-        { quantity: 2 } as unknown as Product, // low stock (<= 5)
-        { quantity: 10 } as unknown as Product, // in-stock
-        { quantity: 0 } as unknown as Product, // out
-        { quantity: 4 } as unknown as Product, // low stock
-      ],
-      locations: [],
-      currency: 'USD',
-      source: { appId: 'fize', instanceId: 'inst-1', exportedAt: '' },
-      unmapped: 0,
-    };
+  it('8. lowStockCount reuses getStockStatus to count low stock items', async () => {
+    const items = [
+      createValidItem({ id: 'i1', quantity: 2 }), // low stock
+      createValidItem({ id: 'i2', quantity: 10 }), // in-stock
+      createValidItem({ id: 'i3', quantity: 0 }), // out
+      createValidItem({ id: 'i4', quantity: 4 }), // low stock
+    ];
+    const snapshot = createSnapshot(items);
+    const result = toReadModel(snapshot);
 
-    const count = lowStockCount(model, 5);
+    const count = lowStockCount(result, 5);
     expect(count).toBe(2);
+
+    // Ensure it matches array filter equivalent logic
+    const { getStockStatus } = await import('../inventoryView');
+    const manualCount = result.products.filter((p) => getStockStatus(p, 5) === 'low').length;
+    expect(count).toBe(manualCount);
+
+    // General structural assertions missing in previous tests
+    expect(result.currency).toBe('USD');
+    expect(result.source.instanceId).toBe('inst-1');
+    expect(result.locations).toHaveLength(1);
+    expect(result.locations[0].id).toBe('loc-1');
+    expect(result.products[0].quantity).toBe(2);
+    expect(result.products[1].quantity).toBe(10);
+    expect(result.products[2].quantity).toBe(0);
+    expect(result.products[3].quantity).toBe(4);
   });
 
   it('9. toReadModel avoids id collisions between different apps with same item id', () => {
@@ -137,13 +147,19 @@ describe('toProducts', () => {
   });
 
   it('10. toReadModel processes a mixed snapshot and maintains pure behavior with no localStorage access', () => {
-    const spy = vi.spyOn(Storage.prototype, 'getItem');
+    const spyGet = vi.spyOn(Storage.prototype, 'getItem');
+    const spySet = vi.spyOn(Storage.prototype, 'setItem');
+    const spyRemove = vi.spyOn(Storage.prototype, 'removeItem');
 
     const validItem = createValidItem({ id: 'valid-1', name: 'Valid' });
-    const invalidNameItem = createValidItem({ id: 'invalid-2', name: '' });
+    const invalidNameItem = createValidItem({ id: 'invalid-2', name: '   ' });
     const validItem2 = createValidItem({ id: 'valid-3', name: 'Valid 2' });
 
     const snapshot = createSnapshot([validItem, invalidNameItem, validItem2]);
+    // Freeze to ensure it is not mutated
+    Object.freeze(snapshot);
+    Object.freeze(snapshot.items);
+
     const result = toReadModel(snapshot);
 
     expect(result.products).toHaveLength(2);
@@ -151,6 +167,45 @@ describe('toProducts', () => {
     expect(result.products[0].id).toBe('ext:fize:valid-1');
     expect(result.products[1].id).toBe('ext:fize:valid-3');
 
-    expect(spy).not.toHaveBeenCalled();
+    expect(spyGet).not.toHaveBeenCalled();
+    expect(spySet).not.toHaveBeenCalled();
+    expect(spyRemove).not.toHaveBeenCalled();
+  });
+
+  it('11. toReadModel ignores non-string sku and unit, and converts object customFields to strings safely', () => {
+    const item = createValidItem({
+      sku: 42 as unknown as string,
+      unit: { value: 'kg' } as unknown as string,
+      minStock: undefined,
+      customFields: 'abc' as unknown as Record<string, string>,
+    });
+    const item2 = createValidItem({
+      id: 'item-2',
+      customFields: { num: 123, obj: { a: 1 } } as unknown as Record<string, string>,
+    });
+
+    const snapshot = createSnapshot([item, item2]);
+    const result = toReadModel(snapshot);
+
+    expect(result.products[0].sku).toBeUndefined();
+    expect(result.products[0].customFields?.unit).toBeUndefined();
+    // 'abc' is string, not an object, so it should be ignored for customFields mapping
+    expect(result.products[0].customFields).toBeUndefined();
+
+    // The second item should have stringified values from the object
+    expect(result.products[1].customFields?.num).toBe('123');
+    expect(result.products[1].customFields?.obj).toBe('[object Object]');
+  });
+
+  it('12. toReadModel increments unmapped for duplicate item IDs in the same snapshot', () => {
+    const item1 = createValidItem({ id: 'dup-1', name: 'A' });
+    const item2 = createValidItem({ id: 'dup-1', name: 'B' });
+
+    const snapshot = createSnapshot([item1, item2]);
+    const result = toReadModel(snapshot);
+
+    expect(result.products).toHaveLength(1);
+    expect(result.products[0].name).toBe('A');
+    expect(result.unmapped).toBe(1);
   });
 });

@@ -30,30 +30,48 @@ export function toReadModel(snapshot: BodegaSnapshot): BodegaReadModel {
     type: loc.type,
   }));
 
+  const seenIds = new Set<string>();
+
   for (const item of items) {
-    if (!item.id || !item.name) {
+    const trimmedName = typeof item.name === 'string' ? item.name.trim() : '';
+    if (!item.id || !trimmedName) {
       unmapped++;
       continue;
     }
 
+    if (seenIds.has(item.id)) {
+      unmapped++;
+      continue;
+    }
+    seenIds.add(item.id);
+
     const productId = bodegaProductId(source.appId, item.id);
 
-    const customFields: Record<string, string> = { ...item.customFields };
-    if (item.unit !== undefined) {
-      customFields.unit = String(item.unit);
+    const customFields: Record<string, string> = {};
+    if (item.customFields && typeof item.customFields === 'object' && !Array.isArray(item.customFields)) {
+      for (const [k, v] of Object.entries(item.customFields)) {
+        customFields[k] = String(v);
+      }
+    }
+    if (typeof item.unit === 'string') {
+      customFields.unit = item.unit;
     }
     if (item.minStock !== undefined) {
       customFields.minStock = String(item.minStock);
     }
 
+    const branchId = typeof item.locationId === 'string' ? item.locationId : undefined;
+    const branchName = branchId ? locations.find((l) => l.id === branchId)?.name : undefined;
+
     const product: Product = {
       id: productId,
-      name: item.name,
-      sku: item.sku,
-      branchId: item.locationId,
-      quantity: item.quantity,
-      price: item.price ?? 0,
-      cost: item.cost ?? 0,
+      name: trimmedName,
+      sku: typeof item.sku === 'string' ? item.sku : undefined,
+      branchId: branchId,
+      branchName: branchName,
+      quantity: typeof item.quantity === 'number' ? item.quantity : 0,
+      price: Number.isFinite(item.price) ? item.price : 0,
+      cost: Number.isFinite(item.cost) ? item.cost : 0,
       customFields: Object.keys(customFields).length > 0 ? customFields : undefined,
       isActive: true,
       updatedBy: `bodega:${source.appId}`,
