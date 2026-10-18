@@ -208,4 +208,30 @@ describe('toProducts', () => {
     expect(result.products[0].name).toBe('A');
     expect(result.unmapped).toBe(1);
   });
+
+  it('13. toReadModel passes through sku, price, cost, trims name, and resolves branchName', () => {
+    const item = createValidItem({
+      id: 'i1',
+      sku: 'S-1',
+      price: 4,
+      cost: 2,
+      locationId: 'loc-1',
+      name: '  Pad  ',
+      minStock: undefined,
+      customFields: ['z'] as unknown as Record<string, string>,
+    });
+
+    const snapshot = createSnapshot([item]);
+    const result = toReadModel(snapshot);
+
+    expect(result.products).toHaveLength(1);
+    const p = result.products[0];
+
+    expect(p.sku).toBe('S-1');
+    expect(p.price).toBe(4);
+    expect(p.cost).toBe(2);
+    expect(p.branchName).toBe('Main Bodega');
+    expect(p.name).toBe('Pad');
+    expect(p.customFields).toBeUndefined(); // Array ignored
+  });
 });
