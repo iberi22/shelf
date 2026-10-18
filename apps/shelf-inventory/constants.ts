@@ -12,4 +12,5 @@ export const NAV_ITEMS: NavItem[] = [
   { nameKey: 'nav.reports', icon: '📈' },
   { nameKey: 'nav.memoryTuning', icon: '🧠' },
   { nameKey: 'nav.settings', icon: '⚙️' },
+  { nameKey: 'nav.bodegas', icon: '🏷️' },
 ];

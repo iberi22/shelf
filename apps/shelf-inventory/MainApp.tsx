@@ -14,6 +14,7 @@ import Reports from './components/Reports';
 import Sales from './components/Sales';
 import Settings from './components/Settings';
 import Sidebar, { MobileBottomNav } from './components/Sidebar';
+import BodegaPage from './components/BodegaPage';
 import Suppliers from './components/Suppliers';
 import { useAppContext } from './context/AppContext';
 import { useI18n } from './context/I18nContext';
@@ -89,6 +90,8 @@ const MainApp: React.FC = () => {
         return <MemoryTuningPage />;
       case 'nav.settings':
         return <Settings />;
+      case 'nav.bodegas':
+        return <BodegaPage />;
       default:
         return canView(p?.canViewDashboard) ? <Dashboard /> : <AccessDenied />;
     }
