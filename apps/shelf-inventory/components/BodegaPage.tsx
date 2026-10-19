@@ -5,6 +5,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { BodegaFormatError } from '../lib/bodega/contract';
+import { isBodegaFileTooLarge } from '../lib/bodega/fileLimit';
 import { openBodegaSnapshot } from '../lib/bodega/readSnapshot';
 import { type BodegaReadModel, toReadModel } from '../lib/bodega/toProducts';
 import { DEFAULT_INVENTORY_CONFIG, normalizeInventoryConfig } from '../lib/inventoryConfig';
@@ -25,7 +26,7 @@ const BodegaPage: React.FC = () => {
     if (!selectedFile) return;
     try {
       setError(null);
-      if (selectedFile.size > 5 * 1024 * 1024) {
+      if (isBodegaFileTooLarge(selectedFile.size)) {
         throw new Error(t('bodega.fileTooLarge') || 'El archivo supera el tamaño máximo permitido (5 MB).');
       }
       const text = await selectedFile.text();

@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { NAV_ITEMS } from '../constants';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
-
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
+import { BODEGA_FEATURE_FLAG, canViewBodega } from '../lib/bodega/access';
 import GlobalSearch from './GlobalSearch';
 
 const NavIcon = ({ nameKey, className = 'w-5 h-5' }: { nameKey: string; className?: string }) => {
@@ -262,6 +262,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
     if (item.nameKey === 'nav.sales' && !isEnabled('SRC-FUN-002')) return false;
     if (item.nameKey === 'nav.clients' && !isEnabled('SRC-FUN-004')) return false;
     if (item.nameKey === 'nav.suppliers' && !isEnabled('SRC-FUN-004')) return false;
+    // Bodega: combined feature-flag + permission gate (mirrors the MainApp route).
+    if (
+      item.nameKey === 'nav.bodegas' &&
+      !canViewBodega({ role: state.role, permissions: state.permissions, flagEnabled: isEnabled(BODEGA_FEATURE_FLAG) })
+    )
+      return false;
 
     // Permissions Gating
     const p = state.permissions;
@@ -552,6 +558,12 @@ export const MobileBottomNav: React.FC<{ activeComponent: string; setActiveCompo
     if (item.nameKey === 'nav.sales' && !isEnabled('SRC-FUN-002')) return false;
     if (item.nameKey === 'nav.clients' && !isEnabled('SRC-FUN-004')) return false;
     if (item.nameKey === 'nav.suppliers' && !isEnabled('SRC-FUN-004')) return false;
+    // Bodega: combined feature-flag + permission gate (mirrors the MainApp route).
+    if (
+      item.nameKey === 'nav.bodegas' &&
+      !canViewBodega({ role: state.role, permissions: state.permissions, flagEnabled: isEnabled(BODEGA_FEATURE_FLAG) })
+    )
+      return false;
 
     // Permissions Gating
     const p = state.permissions;

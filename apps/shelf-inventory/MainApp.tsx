@@ -18,8 +18,8 @@ import Sidebar, { MobileBottomNav } from './components/Sidebar';
 import Suppliers from './components/Suppliers';
 import { useAppContext } from './context/AppContext';
 import { useI18n } from './context/I18nContext';
-
 import { useFeatureFlags } from './hooks/useFeatureFlags';
+import { BODEGA_FEATURE_FLAG, canViewBodega } from './lib/bodega/access';
 
 const AccessDenied = () => {
   const { t } = useI18n();
@@ -91,7 +91,11 @@ const MainApp: React.FC = () => {
       case 'nav.settings':
         return <Settings />;
       case 'nav.bodegas':
-        return canView(p?.canViewProducts) ? <BodegaPage /> : <AccessDenied />;
+        return canViewBodega({ role: state.role, permissions: p, flagEnabled: isEnabled(BODEGA_FEATURE_FLAG) }) ? (
+          <BodegaPage />
+        ) : (
+          <AccessDenied />
+        );
       default:
         return canView(p?.canViewDashboard) ? <Dashboard /> : <AccessDenied />;
     }
