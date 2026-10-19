@@ -154,6 +154,24 @@ export async function openBodegaSnapshot(input: string | ArrayBuffer, passphrase
     throw new BodegaFormatError('formato', 'source missing or not an object');
   }
 
+  const allowedAppIds: readonly string[] = ['fize', 'gara-g', 'shelf'];
+  if (typeof parsed.source.appId !== 'string' || !allowedAppIds.includes(parsed.source.appId)) {
+    throw new BodegaFormatError('formato', 'source.appId missing or invalid');
+  }
+
+  if (typeof parsed.source.instanceId !== 'string' || parsed.source.instanceId.trim() === '') {
+    throw new BodegaFormatError('formato', 'source.instanceId missing or empty');
+  }
+
+  const iso8601FullRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+  if (
+    typeof parsed.source.exportedAt !== 'string' ||
+    !iso8601FullRegex.test(parsed.source.exportedAt) ||
+    Number.isNaN(Date.parse(parsed.source.exportedAt))
+  ) {
+    throw new BodegaFormatError('formato', 'source.exportedAt missing or invalid ISO 8601 date-time');
+  }
+
   if (!parsed.currency || typeof parsed.currency !== 'string') {
     throw new BodegaFormatError('formato', 'currency missing or invalid');
   }
