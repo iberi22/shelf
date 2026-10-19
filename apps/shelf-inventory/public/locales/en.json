@@ -12,7 +12,8 @@
     "arqueo": "Arqueo",
     "reports": "Reports",
     "memoryTuning": "Memory Tuning",
-    "settings": "Settings"
+    "settings": "Settings",
+    "bodegas": "Warehouses"
   },
   "memoryTuning": {
     "subtitle": "Tuning and optimization for Xavier agent memory to maximize retrieval efficiency and local search performance."
@@ -53,7 +54,8 @@
     "done": "Done",
     "accessDenied": "Access Denied",
     "accessDeniedDescription": "You do not have permission to view this section.",
-    "language": "Language"
+    "language": "Language",
+    "clear": "Clear"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -686,5 +688,21 @@
       "services": "Services",
       "general": "General"
     }
+  },
+  "bodega": {
+    "description": "Load an inventory snapshot file (.json or .enc.json) to view it. Shelf data is not modified on this screen.",
+    "fileAriaLabel": "Warehouse snapshot file",
+    "passphraseAriaLabel": "Decryption passphrase (optional)",
+    "passphrasePlaceholder": "Passphrase (optional)",
+    "loadButton": "Load",
+    "fileTooLarge": "File exceeds the maximum allowed size (5 MB).",
+    "invalidFormat": "The file is not a valid warehouse format.",
+    "invalidKey": "Passphrase is incorrect or required.",
+    "alteredFile": "The file has been altered or is corrupted.",
+    "unexpectedError": "Unexpected error reading the file.",
+    "source": "Source:",
+    "date": "Date:",
+    "currency": "Currency:",
+    "unmapped": "Unmapped:"
   }
 }

@@ -1,13 +1,11 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
 import useLocalStorage from '../hooks/useLocalStorage';
-import { BodegaFormatError } from '../lib/bodega/contract';
-import { isBodegaFileTooLarge } from '../lib/bodega/fileLimit';
-import { openBodegaSnapshot } from '../lib/bodega/readSnapshot';
-import { type BodegaReadModel, toReadModel } from '../lib/bodega/toProducts';
+import { type BodegaLoadErrorCode, loadBodegaFile } from '../lib/bodega/loadFile';
+import type { BodegaReadModel } from '../lib/bodega/toProducts';
 import { DEFAULT_INVENTORY_CONFIG, normalizeInventoryConfig } from '../lib/inventoryConfig';
 import { InventoryView } from './inventory/InventoryView';
 
@@ -21,41 +19,42 @@ const BodegaPage: React.FC = () => {
   const [passphrase, setPassphrase] = useState('');
   const [model, setModel] = useState<BodegaReadModel | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLoad = async () => {
     if (!selectedFile) return;
-    try {
-      setError(null);
-      if (isBodegaFileTooLarge(selectedFile.size)) {
-        throw new Error(t('bodega.fileTooLarge') || 'El archivo supera el tamaño máximo permitido (5 MB).');
-      }
-      const text = await selectedFile.text();
-      const snapshot = await openBodegaSnapshot(text, passphrase);
-      const readModel = toReadModel(snapshot);
-      setModel(readModel);
-    } catch (_err: any) {
-      if (_err instanceof BodegaFormatError) {
-        const errorMap: Record<string, string> = {
-          formato: t('bodega.invalidFormat') || 'El archivo no tiene un formato válido de bodega.',
-          clave: t('bodega.invalidKey') || 'La clave es incorrecta o requerida.',
-          alterado: t('bodega.alteredFile') || 'El archivo ha sido alterado o está corrupto.',
-        };
-        setError(errorMap[_err.code] || _err.message);
-      } else {
-        setError(_err.message || t('bodega.unexpectedError') || 'Error inesperado al leer el archivo.');
-      }
+    setError(null);
+    const result = await loadBodegaFile(selectedFile, passphrase);
+    if (result.ok) {
+      setModel(result.model);
+    } else {
+      const errorMap: Record<BodegaLoadErrorCode, string> = {
+        demasiado_grande: t('bodega.fileTooLarge'),
+        formato: t('bodega.invalidFormat'),
+        clave: t('bodega.invalidKey'),
+        alterado: t('bodega.alteredFile'),
+        inesperado: result.message || t('bodega.unexpectedError'),
+      };
+      setError(errorMap[result.code] || result.message || t('bodega.unexpectedError'));
       setModel(null);
+    }
+  };
+
+  const handleClear = () => {
+    setModel(null);
+    setError(null);
+    setPassphrase('');
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
   return (
     <div className="flex flex-col h-full space-y-6">
       <div className="bg-surface-alt border border-foreground/20 rounded-xl p-6">
-        <h2 className="text-2xl font-bold text-white mb-4">{t('nav.bodegas') || 'Bodegas Externas'}</h2>
-        <p className="text-sm text-foreground/70 mb-4">
-          {t('bodega.description') ||
-            'Carga un archivo de instantánea de inventario (.json o .enc.json) para visualizarlo. Los datos de Shelf no se modifican en esta pantalla.'}
-        </p>
+        <h2 className="text-2xl font-bold text-white mb-4">{t('nav.bodegas')}</h2>
+        <p className="text-sm text-foreground/70 mb-4">{t('bodega.description')}</p>
 
         {error && (
           <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-md text-sm">{error}</div>
@@ -63,8 +62,9 @@ const BodegaPage: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <input
+            ref={fileInputRef}
             type="file"
-            aria-label={t('bodega.fileAriaLabel') || 'Archivo de instantánea de bodega'}
+            aria-label={t('bodega.fileAriaLabel')}
             accept=".json,.enc.json,application/json"
             className="block w-full sm:w-auto text-sm text-foreground/70 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-foreground/10 file:text-foreground hover:file:bg-foreground/20 transition-colors"
             onChange={(e) => {
@@ -75,8 +75,8 @@ const BodegaPage: React.FC = () => {
 
           <input
             type="password"
-            aria-label={t('bodega.passphraseAriaLabel') || 'Clave para desencriptar (opcional)'}
-            placeholder={t('bodega.passphrasePlaceholder') || 'Clave (opcional)'}
+            aria-label={t('bodega.passphraseAriaLabel')}
+            placeholder={t('bodega.passphrasePlaceholder')}
             value={passphrase}
             onChange={(e) => setPassphrase(e.target.value)}
             className="w-full sm:w-48 p-2 bg-surface border border-foreground/30 rounded-md focus:outline-none focus:ring-1 focus:ring-foreground text-sm"
@@ -87,19 +87,14 @@ const BodegaPage: React.FC = () => {
             disabled={!selectedFile}
             className="px-4 py-2 text-sm font-semibold bg-accent-green text-primary rounded-md hover:bg-opacity-90 transition-opacity whitespace-nowrap shadow-[0_0_10px_rgba(74,222,128,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {t('bodega.loadButton') || 'Cargar'}
+            {t('bodega.loadButton')}
           </button>
 
           <button
-            onClick={() => {
-              setModel(null);
-              setError(null);
-              setPassphrase('');
-              setSelectedFile(null);
-            }}
+            onClick={handleClear}
             className="px-4 py-2 text-sm text-foreground/70 border border-foreground/20 rounded-md hover:bg-foreground/10 transition-colors whitespace-nowrap"
           >
-            {t('common.clear') || 'Limpiar'}
+            {t('common.clear')}
           </button>
         </div>
       </div>
@@ -108,14 +103,22 @@ const BodegaPage: React.FC = () => {
         <div className="flex-1 bg-surface-alt border border-foreground/20 rounded-xl p-6 min-h-0 flex flex-col">
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-4 border-b border-foreground/10">
             <div>
-              <span className="text-sm font-semibold text-accent-yellow mr-2">Fuente: {model.source.appId}</span>
+              <span className="text-sm font-semibold text-accent-yellow mr-2">
+                {t('bodega.source')} {model.source.appId}
+              </span>
               <span className="text-xs text-foreground/50">
-                Fecha: {new Date(model.source.exportedAt).toLocaleString()}
+                {t('bodega.date')} {new Date(model.source.exportedAt).toLocaleString()}
               </span>
             </div>
             <div className="flex gap-4">
-              <span className="text-sm text-foreground/70">Moneda: {model.currency}</span>
-              {model.unmapped > 0 && <span className="text-sm text-red-400">Sin mapear: {model.unmapped}</span>}
+              <span className="text-sm text-foreground/70">
+                {t('bodega.currency')} {model.currency}
+              </span>
+              {model.unmapped > 0 && (
+                <span className="text-sm text-red-400">
+                  {t('bodega.unmapped')} {model.unmapped}
+                </span>
+              )}
             </div>
           </div>
 

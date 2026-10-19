@@ -12,7 +12,8 @@
     "arqueo": "Arqueo",
     "reports": "Reportes",
     "memoryTuning": "Ajuste de Memoria",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "bodegas": "Bodegas"
   },
   "memoryTuning": {
     "subtitle": "Ajuste y optimización de memoria agentica Xavier para maximizar eficiencia y velocidad de búsqueda local."
@@ -53,7 +54,8 @@
     "done": "Listo",
     "accessDenied": "Acceso restringido",
     "accessDeniedDescription": "No tienes permisos para ver esta sección.",
-    "language": "Idioma"
+    "language": "Idioma",
+    "clear": "Limpiar"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -714,5 +716,21 @@
       "services": "Servicios",
       "general": "General"
     }
+  },
+  "bodega": {
+    "description": "Carga un archivo de instantánea de inventario (.json o .enc.json) para visualizarlo. Los datos de Shelf no se modifican en esta pantalla.",
+    "fileAriaLabel": "Archivo de instantánea de bodega",
+    "passphraseAriaLabel": "Clave para desencriptar (opcional)",
+    "passphrasePlaceholder": "Clave (opcional)",
+    "loadButton": "Cargar",
+    "fileTooLarge": "El archivo supera el tamaño máximo permitido (5 MB).",
+    "invalidFormat": "El archivo no tiene un formato válido de bodega.",
+    "invalidKey": "La clave es incorrecta o requerida.",
+    "alteredFile": "El archivo ha sido alterado o está corrupto.",
+    "unexpectedError": "Error inesperado al leer el archivo.",
+    "source": "Fuente:",
+    "date": "Fecha:",
+    "currency": "Moneda:",
+    "unmapped": "Sin mapear:"
   }
 }
