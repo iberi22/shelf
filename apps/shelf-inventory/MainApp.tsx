@@ -2,6 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 
 import Arqueo from './components/Arqueo';
+import BodegaPage from './components/BodegaPage';
 import Catalog from './components/Catalog';
 import Clients from './components/Clients';
 import Dashboard from './components/Dashboard';
@@ -17,8 +18,8 @@ import Sidebar, { MobileBottomNav } from './components/Sidebar';
 import Suppliers from './components/Suppliers';
 import { useAppContext } from './context/AppContext';
 import { useI18n } from './context/I18nContext';
-
 import { useFeatureFlags } from './hooks/useFeatureFlags';
+import { isNavItemVisible } from './lib/bodega/access';
 
 const AccessDenied = () => {
   const { t } = useI18n();
@@ -33,8 +34,8 @@ const AccessDenied = () => {
   );
 };
 
-const MainApp: React.FC = () => {
-  const [activeComponent, setActiveComponent] = useState('nav.summary');
+const MainApp: React.FC<{ initialComponent?: string }> = ({ initialComponent = 'nav.summary' }) => {
+  const [activeComponent, setActiveComponent] = useState(initialComponent);
   const { state, dispatch } = useAppContext();
   const { isEnabled } = useFeatureFlags();
 
@@ -89,6 +90,12 @@ const MainApp: React.FC = () => {
         return <MemoryTuningPage />;
       case 'nav.settings':
         return <Settings />;
+      case 'nav.bodegas':
+        return isNavItemVisible('nav.bodegas', { role: state.role, permissions: p, isEnabled }) ? (
+          <BodegaPage />
+        ) : (
+          <AccessDenied />
+        );
       default:
         return canView(p?.canViewDashboard) ? <Dashboard /> : <AccessDenied />;
     }
