@@ -5,7 +5,7 @@ import { NAV_ITEMS } from '../constants';
 import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../context/I18nContext';
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
-import { BODEGA_FEATURE_FLAG, canViewBodega } from '../lib/bodega/access';
+import { isNavItemVisible } from '../lib/bodega/access';
 import GlobalSearch from './GlobalSearch';
 
 const NavIcon = ({ nameKey, className = 'w-5 h-5' }: { nameKey: string; className?: string }) => {
@@ -253,35 +253,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeComponent, setActiveComponent }
 
   const activeBranches = state.branches.filter((b) => b.isActive);
 
-  const filteredNavItems = NAV_ITEMS.filter((item) => {
-    // Feature Gating
-    if (item.nameKey === 'nav.purchases' && !isEnabled('SRC-FUN-005')) return false;
-    if (item.nameKey === 'nav.reports' && !isEnabled('SRC-FUN-012')) return false;
-    if (item.nameKey === 'nav.arqueo' && !isEnabled('SRC-FUN-007')) return false;
-    if (item.nameKey === 'nav.inventory' && !isEnabled('SRC-FUN-001')) return false;
-    if (item.nameKey === 'nav.sales' && !isEnabled('SRC-FUN-002')) return false;
-    if (item.nameKey === 'nav.clients' && !isEnabled('SRC-FUN-004')) return false;
-    if (item.nameKey === 'nav.suppliers' && !isEnabled('SRC-FUN-004')) return false;
-    // Bodega: combined feature-flag + permission gate (mirrors the MainApp route).
-    if (
-      item.nameKey === 'nav.bodegas' &&
-      !canViewBodega({ role: state.role, permissions: state.permissions, flagEnabled: isEnabled(BODEGA_FEATURE_FLAG) })
-    )
-      return false;
-
-    // Permissions Gating
-    const p = state.permissions;
-    if (!p || state.role === 'admin' || !state.role) return true;
-    if (item.nameKey === 'nav.summary' && p.canViewDashboard === false) return false;
-    if (item.nameKey === 'nav.inventory' && p.canViewProducts === false) return false;
-    if (item.nameKey === 'nav.sales' && p.canViewSales === false) return false;
-    if (item.nameKey === 'nav.purchases' && p.canViewPurchaseOrders === false) return false;
-    if (item.nameKey === 'nav.clients' && p.canViewClients === false) return false;
-    if (item.nameKey === 'nav.suppliers' && p.canViewSuppliers === false) return false;
-    if (item.nameKey === 'nav.reports' && p.canViewReports === false) return false;
-    if (item.nameKey === 'nav.arqueo' && p.canViewArqueo === false) return false;
-    return true;
-  });
+  const filteredNavItems = NAV_ITEMS.filter((item) =>
+    isNavItemVisible(item, {
+      role: state.role,
+      permissions: state.permissions,
+      isEnabled,
+    }),
+  );
 
   // Close drawer when a nav item is clicked
   const [searchOpen, setSearchOpen] = useState(false);
@@ -549,35 +527,13 @@ export const MobileBottomNav: React.FC<{ activeComponent: string; setActiveCompo
   const { state } = useAppContext();
   const { isEnabled } = useFeatureFlags();
 
-  const filteredNavItems = NAV_ITEMS.filter((item) => {
-    // Feature Gating
-    if (item.nameKey === 'nav.purchases' && !isEnabled('SRC-FUN-005')) return false;
-    if (item.nameKey === 'nav.reports' && !isEnabled('SRC-FUN-012')) return false;
-    if (item.nameKey === 'nav.arqueo' && !isEnabled('SRC-FUN-007')) return false;
-    if (item.nameKey === 'nav.inventory' && !isEnabled('SRC-FUN-001')) return false;
-    if (item.nameKey === 'nav.sales' && !isEnabled('SRC-FUN-002')) return false;
-    if (item.nameKey === 'nav.clients' && !isEnabled('SRC-FUN-004')) return false;
-    if (item.nameKey === 'nav.suppliers' && !isEnabled('SRC-FUN-004')) return false;
-    // Bodega: combined feature-flag + permission gate (mirrors the MainApp route).
-    if (
-      item.nameKey === 'nav.bodegas' &&
-      !canViewBodega({ role: state.role, permissions: state.permissions, flagEnabled: isEnabled(BODEGA_FEATURE_FLAG) })
-    )
-      return false;
-
-    // Permissions Gating
-    const p = state.permissions;
-    if (!p || state.role === 'admin' || !state.role) return true;
-    if (item.nameKey === 'nav.summary' && p.canViewDashboard === false) return false;
-    if (item.nameKey === 'nav.inventory' && p.canViewProducts === false) return false;
-    if (item.nameKey === 'nav.sales' && p.canViewSales === false) return false;
-    if (item.nameKey === 'nav.purchases' && p.canViewPurchaseOrders === false) return false;
-    if (item.nameKey === 'nav.clients' && p.canViewClients === false) return false;
-    if (item.nameKey === 'nav.suppliers' && p.canViewSuppliers === false) return false;
-    if (item.nameKey === 'nav.reports' && p.canViewReports === false) return false;
-    if (item.nameKey === 'nav.arqueo' && p.canViewArqueo === false) return false;
-    return true;
-  });
+  const filteredNavItems = NAV_ITEMS.filter((item) =>
+    isNavItemVisible(item, {
+      role: state.role,
+      permissions: state.permissions,
+      isEnabled,
+    }),
+  );
 
   // Only show the main items on mobile for space
   const mobileNavItems = filteredNavItems.filter((item) =>

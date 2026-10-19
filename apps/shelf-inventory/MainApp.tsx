@@ -19,7 +19,7 @@ import Suppliers from './components/Suppliers';
 import { useAppContext } from './context/AppContext';
 import { useI18n } from './context/I18nContext';
 import { useFeatureFlags } from './hooks/useFeatureFlags';
-import { BODEGA_FEATURE_FLAG, canViewBodega } from './lib/bodega/access';
+import { isNavItemVisible } from './lib/bodega/access';
 
 const AccessDenied = () => {
   const { t } = useI18n();
@@ -34,8 +34,8 @@ const AccessDenied = () => {
   );
 };
 
-const MainApp: React.FC = () => {
-  const [activeComponent, setActiveComponent] = useState('nav.summary');
+const MainApp: React.FC<{ initialComponent?: string }> = ({ initialComponent = 'nav.summary' }) => {
+  const [activeComponent, setActiveComponent] = useState(initialComponent);
   const { state, dispatch } = useAppContext();
   const { isEnabled } = useFeatureFlags();
 
@@ -91,7 +91,7 @@ const MainApp: React.FC = () => {
       case 'nav.settings':
         return <Settings />;
       case 'nav.bodegas':
-        return canViewBodega({ role: state.role, permissions: p, flagEnabled: isEnabled(BODEGA_FEATURE_FLAG) }) ? (
+        return isNavItemVisible('nav.bodegas', { role: state.role, permissions: p, isEnabled }) ? (
           <BodegaPage />
         ) : (
           <AccessDenied />
