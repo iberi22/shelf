@@ -125,6 +125,63 @@ describe('bodega/readSnapshot', () => {
     await expect(openBodegaSnapshot(JSON.stringify(badCurrency))).rejects.toHaveProperty('code', 'formato');
   });
 
+  const badSources = [
+    { desc: '{}', source: {} },
+    { desc: 'missing appId', source: { instanceId: '123', schemaVersion: 1, exportedAt: '2026-10-16T00:00:00Z' } },
+    {
+      desc: 'invalid appId',
+      source: { appId: 'other-app', instanceId: '123', schemaVersion: 1, exportedAt: '2026-10-16T00:00:00Z' },
+    },
+    { desc: 'missing instanceId', source: { appId: 'shelf', schemaVersion: 1, exportedAt: '2026-10-16T00:00:00Z' } },
+    {
+      desc: 'empty instanceId',
+      source: { appId: 'shelf', instanceId: '', schemaVersion: 1, exportedAt: '2026-10-16T00:00:00Z' },
+    },
+    {
+      desc: 'whitespace instanceId',
+      source: { appId: 'shelf', instanceId: '   ', schemaVersion: 1, exportedAt: '2026-10-16T00:00:00Z' },
+    },
+    {
+      desc: 'instanceId is a number',
+      source: { appId: 'shelf', instanceId: 123, schemaVersion: 1, exportedAt: '2026-10-16T00:00:00Z' },
+    },
+    { desc: 'missing exportedAt', source: { appId: 'shelf', instanceId: '123', schemaVersion: 1 } },
+    {
+      desc: 'exportedAt is not an ISO date-time',
+      source: { appId: 'shelf', instanceId: '123', schemaVersion: 1, exportedAt: 'yesterday' },
+    },
+    {
+      desc: 'exportedAt is invalid date',
+      source: { appId: 'shelf', instanceId: '123', schemaVersion: 1, exportedAt: '2026-13-45T00:00:00Z' },
+    },
+    {
+      desc: 'exportedAt is date-only',
+      source: { appId: 'shelf', instanceId: '123', schemaVersion: 1, exportedAt: '2026-10-16' },
+    },
+    {
+      desc: 'exportedAt is a number',
+      source: { appId: 'shelf', instanceId: '123', schemaVersion: 1, exportedAt: 1697414400000 },
+    },
+  ];
+
+  it.each(badSources)('rejects a source with $desc', async ({ source }) => {
+    const bad = { ...validPlain, source };
+    await expect(openBodegaSnapshot(JSON.stringify(bad))).rejects.toHaveProperty('code', 'formato');
+  });
+
+  it('accepts valid sources with varying appIds, fractional seconds, and timezones', async () => {
+    const cases = [
+      { appId: 'fize', instanceId: 'a', schemaVersion: 1, exportedAt: '2026-10-16T00:00:00Z' },
+      { appId: 'gara-g', instanceId: 'b', schemaVersion: 1, exportedAt: '2026-10-16T00:00:00.123Z' },
+      { appId: 'shelf', instanceId: 'c', schemaVersion: 1, exportedAt: '2026-10-16T00:00:00-05:00' },
+      { appId: 'shelf', instanceId: 'c', schemaVersion: 1, exportedAt: '2026-10-16T00:00:00+02:00' },
+    ];
+    for (const source of cases) {
+      const good = { ...validPlain, source };
+      await expect(openBodegaSnapshot(JSON.stringify(good))).resolves.toBeDefined();
+    }
+  });
+
   it('throws formato if movement missing id/itemId or finite qty', async () => {
     const missingId = { ...validPlain, movements: [{ itemId: '1', kind: 'use', qty: 1, at: '' }] };
     await expect(openBodegaSnapshot(JSON.stringify(missingId))).rejects.toHaveProperty('code', 'formato');
