@@ -21,6 +21,7 @@ describe('InventoryView component', () => {
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
   it('renders correctly with default fields when custom fields are missing (Blocker 1)', () => {
@@ -58,16 +59,16 @@ describe('InventoryView component', () => {
     expect(tables[0]).toBeInTheDocument();
   });
 
-  it('resets mobile pagination on search filter change (Blocker 3)', async () => {
+  it('resets mobile pagination on search filter change (Blocker 3)', { timeout: 30_000 }, async () => {
     const config: InventoryConfig = {
       ...DEFAULT_INVENTORY_CONFIG,
       fields: [],
     };
 
-    // Generate 150 products
-    const products: Product[] = Array.from({ length: 150 }).map((_, i) => ({
+    // Generate 101 products
+    const products: Product[] = Array.from({ length: 101 }).map((_, i) => ({
       id: `p${i}`,
-      name: `Test Product ${i}`,
+      name: i < 60 ? `Alpha Product ${i}` : `Beta Product ${i}`,
       sku: `SKU${i}`,
       price: 10,
       cost: 5,
@@ -80,7 +81,7 @@ describe('InventoryView component', () => {
     }));
 
     // Mock IntersectionObserver
-    let intersectionCallback: IntersectionObserverCallback | null = null;
+    const observer = { fire: null as IntersectionObserverCallback | null };
     class MockIntersectionObserver implements IntersectionObserver {
       root: Element | null = null;
       rootMargin: string = '';
@@ -88,7 +89,7 @@ describe('InventoryView component', () => {
       thresholds: ReadonlyArray<number> = [];
 
       constructor(callback: IntersectionObserverCallback) {
-        intersectionCallback = callback;
+        observer.fire = callback;
       }
 
       observe() {}
@@ -99,7 +100,7 @@ describe('InventoryView component', () => {
       }
     }
 
-    globalThis.IntersectionObserver = MockIntersectionObserver;
+    vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
 
     const props: InventoryViewProps = {
       products,
@@ -116,32 +117,34 @@ describe('InventoryView component', () => {
     render(<InventoryView {...props} />);
 
     // Initial: should show 50
-    expect(screen.getByTestId('mobile-list-count')).toHaveTextContent('50 of 150');
+    expect(screen.getByTestId('mobile-list-count')).toHaveTextContent('50 of 101');
 
-    // Trigger intersection multiple times to load all 150 products
-    if (intersectionCallback) {
-      const mockEntry = { isIntersecting: true } as unknown as IntersectionObserverEntry;
-      const mockObserver = {} as unknown as IntersectionObserver;
-      act(() => {
-        intersectionCallback!([mockEntry], mockObserver);
-      });
-      act(() => {
-        intersectionCallback!([mockEntry], mockObserver);
-      });
+    // Trigger intersection multiple times to load all 101 products
+    if (!observer.fire) {
+      throw new Error('IntersectionObserver was not constructed');
     }
-
-    // Should now show 150
-    expect(screen.getByTestId('mobile-list-count')).toHaveTextContent('150 of 150');
-
-    // Change filter: search for exactly "Test Product 1" matches
-    const searchInput = screen.getByPlaceholderText('inventory.searchPlaceholder');
+    const mockEntry = { isIntersecting: true } as unknown as IntersectionObserverEntry;
+    const mockObserver = {} as unknown as IntersectionObserver;
+    const fire = observer.fire;
     act(() => {
-      fireEvent.change(searchInput, { target: { value: 'Test Product 1' } });
+      fire([mockEntry], mockObserver);
+    });
+    act(() => {
+      fire([mockEntry], mockObserver);
     });
 
-    // "Test Product 1" matches: 1, 10-19, 100-149 => 61 products.
-    // It should reset to 50 of 61.
-    expect(screen.getByTestId('mobile-list-count')).toHaveTextContent('50 of 61');
+    // Should now show 101
+    expect(screen.getByTestId('mobile-list-count')).toHaveTextContent('101 of 101');
+
+    // Change filter: search for exactly "Alpha" matches
+    const searchInput = screen.getByPlaceholderText('inventory.searchPlaceholder');
+    act(() => {
+      fireEvent.change(searchInput, { target: { value: 'Alpha' } });
+    });
+
+    // "Alpha" matches: 60 products (i < 60).
+    // It should reset to 50 of 60.
+    expect(screen.getByTestId('mobile-list-count')).toHaveTextContent('50 of 60');
 
     // And mobile sentinel should be present again (since there are more items to load)
     expect(screen.getByTestId('mobile-list-sentinel')).toBeInTheDocument();

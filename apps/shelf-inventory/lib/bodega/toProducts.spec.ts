@@ -156,9 +156,18 @@ describe('toProducts', () => {
     const validItem2 = createValidItem({ id: 'valid-3', name: 'Valid 2' });
 
     const snapshot = createSnapshot([validItem, invalidNameItem, validItem2]);
-    // Freeze to ensure it is not mutated
+    const before = structuredClone(snapshot);
+    // Freeze every level to ensure it is not mutated
     Object.freeze(snapshot);
+    Object.freeze(snapshot.source);
+    Object.freeze(snapshot.locations);
+    for (const location of snapshot.locations) {
+      Object.freeze(location);
+    }
     Object.freeze(snapshot.items);
+    for (const item of snapshot.items) {
+      Object.freeze(item);
+    }
 
     const result = toReadModel(snapshot);
 
@@ -170,6 +179,7 @@ describe('toProducts', () => {
     expect(spyGet).not.toHaveBeenCalled();
     expect(spySet).not.toHaveBeenCalled();
     expect(spyRemove).not.toHaveBeenCalled();
+    expect(snapshot).toEqual(before);
   });
 
   it('11. toReadModel ignores non-string sku and unit, and converts object customFields to strings safely', () => {
