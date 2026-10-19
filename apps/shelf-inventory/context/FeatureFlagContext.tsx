@@ -6,6 +6,8 @@ export interface Feature {
   id: string;
   name: string;
   status: 'draft' | 'approved' | 'implemented' | 'validated' | 'partial' | 'in_progress' | 'planned' | 'out_of_scope';
+  /** Optional runtime toggle separating feature flag evaluation from the ledger completeness record */
+  runtime_enabled?: boolean;
   sdlc?: string;
   priority: string;
   category: string;
@@ -100,9 +102,13 @@ export const FeatureFlagProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (overrides[id] !== undefined) {
         return overrides[id];
       }
-      // 2. Fall back to feature.json status
+      // 2. Check for explicit runtime flag on the feature
       const feature = features.find((f) => f.id === id);
       if (!feature) return false;
+      if (typeof feature.runtime_enabled === 'boolean') {
+        return feature.runtime_enabled;
+      }
+      // 3. Fall back to feature.json status
       // `partial` features are shipped and usable at runtime (see #571), so they
       // gate navigation on like fully implemented ones.
       return ENABLED_FEATURE_STATUSES.includes(feature.status);
@@ -116,7 +122,6 @@ export const FeatureFlagProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (!feature) return;
 
     const currentlyEnabled = isEnabled(id);
-    const targetStatus = currentlyEnabled ? 'draft' : 'implemented';
 
     // 1. Update local storage overrides for immediate local effect
     const updatedOverrides = {
@@ -128,9 +133,7 @@ export const FeatureFlagProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     // 2. If in dev mode, also try to save back to the .gitcore/features.json file
     if (import.meta.env.DEV) {
-      const updatedFeatures = features.map((f) =>
-        f.id === id ? { ...f, status: targetStatus as Feature['status'] } : f,
-      );
+      const updatedFeatures = features.map((f) => (f.id === id ? { ...f, runtime_enabled: !currentlyEnabled } : f));
 
       try {
         const response = await fetch('/api/features', {
