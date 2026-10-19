@@ -2,6 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 
 import Arqueo from './components/Arqueo';
+import BodegaPage from './components/BodegaPage';
 import Catalog from './components/Catalog';
 import Clients from './components/Clients';
 import Dashboard from './components/Dashboard';
@@ -14,7 +15,6 @@ import Reports from './components/Reports';
 import Sales from './components/Sales';
 import Settings from './components/Settings';
 import Sidebar, { MobileBottomNav } from './components/Sidebar';
-import BodegaPage from './components/BodegaPage';
 import Suppliers from './components/Suppliers';
 import { useAppContext } from './context/AppContext';
 import { useI18n } from './context/I18nContext';
@@ -91,7 +91,7 @@ const MainApp: React.FC = () => {
       case 'nav.settings':
         return <Settings />;
       case 'nav.bodegas':
-        return <BodegaPage />;
+        return canView(p?.canViewProducts) ? <BodegaPage /> : <AccessDenied />;
       default:
         return canView(p?.canViewDashboard) ? <Dashboard /> : <AccessDenied />;
     }
