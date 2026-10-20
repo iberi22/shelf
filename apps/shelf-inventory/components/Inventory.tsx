@@ -8,6 +8,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../context/I18nContext';
 import { useUI } from '../context/UIContext';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { downloadMyData } from '../lib/exportMyData';
 import { compressImage } from '../lib/imageCompression';
 import { DEFAULT_INVENTORY_CONFIG, getInventoryFieldValue, normalizeInventoryConfig } from '../lib/inventoryConfig';
 import {
@@ -203,6 +204,14 @@ const Inventory: React.FC = () => {
     }
   };
 
+  const handleExportJson = () => {
+    downloadMyData('json', state);
+  };
+
+  const handleExportSql = () => {
+    downloadMyData('sql', state);
+  };
+
   const handleExportCSV = () => {
     const headers = [
       'id',
@@ -290,6 +299,8 @@ const Inventory: React.FC = () => {
         lowStockThreshold={lowStockThreshold}
         suppliers={suppliers}
         onExportCSV={handleExportCSV}
+        onExportJson={handleExportJson}
+        onExportSql={handleExportSql}
         onBatchImageUpload={handleBatchImageUpload}
         isProcessingBatch={isProcessingBatch}
         onCreate={() => handleOpenModal()}

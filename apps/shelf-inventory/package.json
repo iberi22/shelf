@@ -87,6 +87,7 @@
     "postcss": "^8.5.23",
     "rollup": "^4.62.5",
     "rollup-plugin-visualizer": "^7.1.1",
+    "sql.js": "1.14.2",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vercel": "^59.3.0",
