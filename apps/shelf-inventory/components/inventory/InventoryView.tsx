@@ -22,6 +22,8 @@ export interface InventoryViewProps {
   lowStockThreshold: number;
   suppliers: { id: string; name: string }[];
   onExportCSV?: () => void;
+  onExportJson?: () => void;
+  onExportSql?: () => void;
   onBatchImageUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isProcessingBatch?: boolean;
   // mutations
@@ -44,6 +46,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   lowStockThreshold,
   suppliers,
   onExportCSV,
+  onExportJson,
+  onExportSql,
   onBatchImageUpload,
   isProcessingBatch,
   onCreate,
@@ -210,6 +214,20 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               data-testid="export-csv-button"
             >
               {t('common.exportCsv')}
+            </button>
+            <button
+              onClick={() => onExportJson?.()}
+              className="flex-1 sm:flex-none bg-white/5 border border-white/10 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-white/10 transition-all duration-200 active:scale-95 text-sm"
+              data-testid="export-json-button"
+            >
+              {t('common.exportMyData')} ({t('common.exportJson')})
+            </button>
+            <button
+              onClick={() => onExportSql?.()}
+              className="flex-1 sm:flex-none bg-white/5 border border-white/10 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-white/10 transition-all duration-200 active:scale-95 text-sm"
+              data-testid="export-sql-button"
+            >
+              {t('common.exportMyData')} ({t('common.exportSql')})
             </button>
             {canCreate && (
               <>
