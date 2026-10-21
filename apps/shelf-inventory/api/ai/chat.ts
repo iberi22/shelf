@@ -4,13 +4,37 @@ export const config = {
   runtime: 'edge',
 };
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+const DEFAULT_ALLOWED_ORIGINS = ['https://shelf.swal.co'];
+
+function allowedOrigins(): string[] {
+  const raw = process.env.ALLOWED_ORIGINS;
+  const list = raw
+    ? raw
+        .split(',')
+        .map((o) => o.trim())
+        .filter(Boolean)
+    : [];
+  return list.length ? list : DEFAULT_ALLOWED_ORIGINS;
+}
 
 export default async function handler(req: Request): Promise<Response> {
+  const origin = req.headers.get('origin');
+  const originAllowed = !!origin && allowedOrigins().includes(origin);
+  const CORS_HEADERS: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    Vary: 'Origin',
+    ...(originAllowed && origin ? { 'Access-Control-Allow-Origin': origin } : {}),
+  };
+  const forbidden = () =>
+    new Response(JSON.stringify({ error: 'Forbidden' }), {
+      status: 403,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    });
+
+  // Browsers always send Origin on cross-origin requests; reject foreign ones.
+  if (origin && !originAllowed) return forbidden();
+
   // Preflight: never consumes rate-limit quota, only reports the current budget.
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -25,6 +49,13 @@ export default async function handler(req: Request): Promise<Response> {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     });
   }
+
+  // Paid endpoint. POST requires an allowed Origin (missing Origin, e.g. curl, is rejected).
+  // NOTE: this is NOT authentication. The Bearer check below only verifies a token is
+  // present (abuse deterrent); real authentication comes with the Cloudflare Worker
+  // (the AI chat moves there in a later task).
+  if (!originAllowed) return forbidden();
+  if (!/^Bearer\s+\S+/i.test(req.headers.get('authorization') ?? '')) return forbidden();
 
   // 1. Sliding-window rate limiting (SHELF-106): 30 req/min per user
   //    (localAuth session token via Authorization: Bearer, falling back to IP).

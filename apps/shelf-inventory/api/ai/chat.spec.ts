@@ -15,8 +15,10 @@ const POST = (ip: string, token?: string) =>
     method: 'POST',
     headers: {
       'content-type': 'application/json',
+      origin: 'https://shelf.swal.co',
       ...(ip ? { 'x-forwarded-for': ip } : {}),
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      // Handler requires a Bearer presence check; default to a shared token.
+      authorization: `Bearer ${token || 'default-token'}`,
     },
     body: JSON.stringify({ prompt: 'How many products are low?' }),
   });
