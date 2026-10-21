@@ -12,6 +12,8 @@ describe('seed v2 derivation', () => {
     expect(toHex(a.dsa.publicKey)).toBe(toHex(b.dsa.publicKey));
     expect(a.dataKey).toHaveLength(32);
     expect(toHex(a.dataKey)).toBe(DATA_KEY_VECTOR);
+    expect(toHex(a.dsaSeed)).toBe(DSA_SEED_VECTOR);
+    expect(toHex(a.kemSeed)).toBe(KEM_SEED_VECTOR);
   });
 
   it('keeps dsa, kem and data seeds independent', async () => {
@@ -46,4 +48,7 @@ describe('cross-signed key rotation', () => {
   });
 });
 
-const DATA_KEY_VECTOR = 'd15155ebaff20911935fb45d0ffb62b59a330fecd2b20e332fd979ed83a3a79f';
+const DATA_KEY_VECTOR = '9ea2b72bfd44cc9cbea7bf158dc521e1d644b220aac69606950c43cb8b142b17';
+const DSA_SEED_VECTOR = '40f7c5dc33a999a06399d59a01205780b0cd276e2abec36803f2a80f02fed488';
+const KEM_SEED_VECTOR =
+  '5e5951d9866d88c79f4a7064fa16cdb5ba3b66dfedeb33096704c7a29099b99e788ddf52d840d11292ae7d56b3b468aa4d12d58d0b11803211d07ab9d04c6c53';

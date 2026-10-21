@@ -3,9 +3,9 @@
  * keys and the data key from a recovery phrase.
  *
  *   m       = PBKDF2-SHA512(NFKD(phrase), salt 'swal-seed/v2', 210000, 64B)
- *   dsaSeed = HKDF(m, 'swal-seed/v2|ml-dsa-65', 32)
- *   kemSeed = HKDF(m, 'swal-seed/v2|ml-kem-768', 64)
- *   dataKey = HKDF(m, 'swal-seed/v2|data', 32)
+ *   dsaSeed = HKDF-SHA256(m, 'swal-seed/v2|ml-dsa-65', 32)
+ *   kemSeed = HKDF-SHA256(m, 'swal-seed/v2|ml-kem-768', 64)
+ *   dataKey = HKDF-SHA256(m, 'swal-seed/v2|data', 32)
  *
  * Also holds the cross-signed key rotation used to migrate v1 identities.
  */
@@ -34,7 +34,7 @@ export const normalizePhrase = (phrase: string): string =>
 const hkdf = async (m: Uint8Array, info: string, bytes: number): Promise<Uint8Array> => {
   const base = await crypto.subtle.importKey('raw', m as BufferSource, 'HKDF', false, ['deriveBits']);
   const bits = await crypto.subtle.deriveBits(
-    { name: 'HKDF', hash: 'SHA-512', salt: new Uint8Array(0), info: enc.encode(info) },
+    { name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(0), info: enc.encode(info) },
     base,
     bytes * 8,
   );
