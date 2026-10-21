@@ -103,11 +103,6 @@ export interface MigratePQCResult {
   ciphertext: string;
   /** New KDF metadata. */
   metadata: KDFMetadata;
-  /**
-   * Only present on `rewrapLegacyPBKDF2` results: metadata is NOT persisted
-   * until `commit()` runs.
-   */
-  commit?: (persistCiphertext: (ciphertext: string) => void) => void;
 }
 
 export interface RewrapPBKDF2Result extends MigratePQCResult {
@@ -115,7 +110,7 @@ export interface RewrapPBKDF2Result extends MigratePQCResult {
    * Persists ciphertext first (via the caller's writer), metadata last. If the
    * metadata write fails the old ciphertext is restored and the error rethrown.
    */
-  commit: (persistCiphertext: (ciphertext: string) => void) => void;
+  commit: (persistCiphertext: (ciphertext: string) => void | Promise<void>) => Promise<void>;
 }
 
 // ─── Storage adapters ───────────────────────────────────────────────────────
@@ -429,13 +424,13 @@ export const rewrapLegacyPBKDF2 = async (
     salt: newSalt,
     iterations: PBKDF2_ITERATIONS,
   };
-  const commit = (persistCiphertext: (ciphertext: string) => void): void => {
-    persistCiphertext(newCiphertext);
+  const commit = async (persistCiphertext: (ciphertext: string) => void | Promise<void>): Promise<void> => {
+    await persistCiphertext(newCiphertext);
     try {
       storeKDFMetadata(newSalt, PBKDF2_ITERATIONS, { format: 'pbkdf2', storage });
     } catch (err) {
       try {
-        persistCiphertext(ciphertext);
+        await persistCiphertext(ciphertext);
       } catch {
         // best-effort rollback; original error is more useful
       }

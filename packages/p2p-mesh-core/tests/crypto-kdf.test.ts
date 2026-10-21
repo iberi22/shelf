@@ -326,7 +326,7 @@ describe('600k PBKDF2 for at-rest metadata', () => {
     expect(res).not.toBeNull();
     expect(loadKDFMetadata(storage)?.iterations).toBe(100_000);
     expect(storage.getItem(KDF_METADATA_KEY)).toBe(before);
-    res!.commit((ct) => storage.setItem('vault', ct));
+    await res!.commit((ct) => storage.setItem('vault', ct));
     expect(storage.getItem('vault')).toBe(res!.ciphertext);
     const stored = loadKDFMetadata(storage);
     expect(stored?.iterations).toBe(600_000);
@@ -358,7 +358,7 @@ describe('600k PBKDF2 for at-rest metadata', () => {
     };
     const before = base.getItem(KDF_METADATA_KEY);
     const res = await rewrapLegacyPBKDF2(PIN, ciphertext, { storage });
-    expect(() => res!.commit((ct) => storage.setItem('vault', ct))).toThrow(/QuotaExceeded/);
+    await expect(res!.commit((ct) => storage.setItem('vault', ct))).rejects.toThrow(/QuotaExceeded/);
     expect(base.getItem(KDF_METADATA_KEY)).toBe(before);
     expect(base.getItem('vault')).toBe(ciphertext);
     const unlock = await deriveATRestKey(PIN, { storage: base });
@@ -369,11 +369,39 @@ describe('600k PBKDF2 for at-rest metadata', () => {
     const { storage, ciphertext } = await legacyVault();
     const before = storage.getItem(KDF_METADATA_KEY);
     const res = await rewrapLegacyPBKDF2(PIN, ciphertext, { storage });
-    expect(() =>
+    await expect(
       res!.commit(() => {
         throw new Error('boom');
       }),
-    ).toThrow(/boom/);
+    ).rejects.toThrow(/boom/);
+    expect(storage.getItem(KDF_METADATA_KEY)).toBe(before);
+  });
+
+  it('commit awaits an async persist before writing metadata', async () => {
+    const { storage, ciphertext } = await legacyVault();
+    const before = storage.getItem(KDF_METADATA_KEY);
+    const res = await rewrapLegacyPBKDF2(PIN, ciphertext, { storage });
+    let release!: () => void;
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    const done = res!.commit(async (ct) => {
+      await gate;
+      storage.setItem('vault', ct);
+    });
+    await new Promise((r) => setTimeout(r, 10));
+    expect(storage.getItem(KDF_METADATA_KEY)).toBe(before);
+    release();
+    await done;
+    expect(storage.getItem('vault')).toBe(res!.ciphertext);
+    expect(loadKDFMetadata(storage)?.iterations).toBe(600_000);
+  });
+
+  it('async persist rejection leaves metadata untouched', async () => {
+    const { storage, ciphertext } = await legacyVault();
+    const before = storage.getItem(KDF_METADATA_KEY);
+    const res = await rewrapLegacyPBKDF2(PIN, ciphertext, { storage });
+    await expect(res!.commit(async () => Promise.reject(new Error('async boom')))).rejects.toThrow(/async boom/);
     expect(storage.getItem(KDF_METADATA_KEY)).toBe(before);
   });
 
