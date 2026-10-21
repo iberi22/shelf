@@ -11,7 +11,7 @@ describe('SyncEngine Module', () => {
 
   beforeEach(() => {
     oplog = new OpLog({ docId });
-    engine = new SyncEngine({ docId, opLog: oplog });
+    engine = new SyncEngine({ docId, opLog: oplog, requireSignedEnvelopes: false });
   });
 
   describe('sincronizar', () => {
@@ -45,7 +45,7 @@ describe('SyncEngine Module', () => {
     });
 
     it('should handle pull-only (entrante) direction', async () => {
-      engine = new SyncEngine({ docId, opLog: oplog, direction: 'entrante' });
+      engine = new SyncEngine({ docId, opLog: oplog, requireSignedEnvelopes: false, direction: 'entrante' });
       await oplog.append('t1', { val: 1 }, 'local' as NodoId);
 
       const remoteOps: Operacion[] = [
@@ -71,7 +71,7 @@ describe('SyncEngine Module', () => {
     });
 
     it('should handle push-only (saliente) direction', async () => {
-      engine = new SyncEngine({ docId, opLog: oplog, direction: 'saliente' });
+      engine = new SyncEngine({ docId, opLog: oplog, requireSignedEnvelopes: false, direction: 'saliente' });
       await oplog.append('t1', { val: 1 }, 'local' as NodoId);
 
       const enviar = vi.fn().mockResolvedValue(undefined);
@@ -161,7 +161,6 @@ describe('SyncEngine signed envelope enforcement (SHELF-111)', () => {
   let oplog: OpLog;
   const docId = 'test-doc-signed';
   const peerId = 'peer-1' as NodoId;
-  const GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 
   beforeEach(() => {
     oplog = new OpLog({ docId });
@@ -178,14 +177,14 @@ describe('SyncEngine signed envelope enforcement (SHELF-111)', () => {
     };
   }
 
-  it('rejects unsigned envelopes after the grace period when enforcement is on', async () => {
+  const verificador = (op: unknown) => (op as { firma?: string }).firma === 'firma-valida';
+
+  it('rejects unsigned operations (fail closed)', async () => {
     const engineG = new SyncEngine({
       docId,
       opLog: oplog,
       requireSignedEnvelopes: true,
-      // Enforcement started 10 days ago → 7-day grace already expired.
-      signedEnvelopeEnforcementStartMs: Date.now() - 10 * 24 * 60 * 60 * 1000,
-      signedEnvelopeGracePeriodMs: GRACE_MS,
+      verificarFirma: verificador,
     });
 
     const rechazoSpy = vi.fn();
@@ -208,23 +207,35 @@ describe('SyncEngine signed envelope enforcement (SHELF-111)', () => {
     );
   });
 
-  it('accepts signed envelopes when enforcement is on', async () => {
+  it('rejects garbage non-empty firma strings', async () => {
+    const engineG = new SyncEngine({
+      docId,
+      opLog: oplog,
+      requireSignedEnvelopes: true,
+      verificarFirma: verificador,
+    });
+    const result = await engineG.sincronizar(
+      peerId,
+      async () => {},
+      async () => [{ ...unsignedOp(1), firma: 'garbage' }],
+    );
+    expect(result.operacionesRecibidas).toBe(0);
+    expect(result.operacionesRechazadas).toBe(1);
+    expect(oplog.obtenerUltimaSecuencia()).toBe(0);
+  });
+
+  it('accepts operations with a valid signature', async () => {
     const engineS = new SyncEngine({
       docId,
       opLog: oplog,
       requireSignedEnvelopes: true,
-      signedEnvelopeEnforcementStartMs: 0, // grace expired
+      verificarFirma: verificador,
     });
-
-    const signedOp = {
-      ...unsignedOp(1),
-      firma: 'firma-mldsa-65-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    };
 
     const result = await engineS.sincronizar(
       peerId,
       async () => {},
-      async () => [signedOp],
+      async () => [{ ...unsignedOp(1), firma: 'firma-valida' }],
     );
 
     expect(result.exito).toBe(true);
@@ -233,32 +244,9 @@ describe('SyncEngine signed envelope enforcement (SHELF-111)', () => {
     expect(oplog.obtenerUltimaSecuencia()).toBe(1);
   });
 
-  it('allows unsigned envelopes during the grace period but logs a warning', async () => {
-    const engineG = new SyncEngine({
-      docId,
-      opLog: oplog,
-      requireSignedEnvelopes: true,
-      signedEnvelopeEnforcementStartMs: Date.now(), // grace starts now
-      signedEnvelopeGracePeriodMs: GRACE_MS,
-    });
-
-    const warnSpy = vi.fn();
-    engineG.on('envelopeSinFirma', warnSpy);
-
-    const result = await engineG.sincronizar(
-      peerId,
-      async () => {},
-      async () => [unsignedOp(1)],
-    );
-
-    expect(result.exito).toBe(true);
-    expect(result.operacionesRecibidas).toBe(1);
-    expect(result.operacionesRechazadas).toBe(0);
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        detail: expect.objectContaining({ secuencia: 1, autor: peerId }),
-      }),
-    );
+  it('throws at construction when signatures are required but no verifier is set', () => {
+    expect(() => new SyncEngine({ docId, opLog: oplog, requireSignedEnvelopes: true })).toThrow(/verificarFirma/);
+    expect(() => new SyncEngine({ docId, opLog: oplog })).toThrow(/verificarFirma/);
   });
 
   it('rejects operations whose signature fails verificarFirma', async () => {
@@ -300,12 +288,7 @@ describe('SyncEngine signed envelope enforcement (SHELF-111)', () => {
   });
 
   it('enforces requireSignedEnvelopes as true by default when omitted from config', async () => {
-    const engineDefault = new SyncEngine({
-      docId,
-      opLog: oplog,
-      signedEnvelopeEnforcementStartMs: Date.now() - 10 * 24 * 60 * 60 * 1000,
-      signedEnvelopeGracePeriodMs: GRACE_MS,
-    });
+    const engineDefault = new SyncEngine({ docId, opLog: oplog, verificarFirma: verificador });
 
     const rechazoSpy = vi.fn();
     engineDefault.on('envelopeRechazado', rechazoSpy);

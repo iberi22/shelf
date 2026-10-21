@@ -95,8 +95,10 @@ service cloud.firestore {
 
     // Invitations - used to join organizations
     match /invitations/{invitationId} {
-      // Anyone can read an invitation if they have the ID (to accept it)
-      allow read: if true;
+      // Single-document reads only (by ID, to accept it) and only for signed-in users.
+      // Listing/querying is denied so invitations cannot be enumerated.
+      allow get: if isAuthenticated();
+      allow list: if false;
       // Only admins can create invitations
       allow create: if isAuthenticated() && getRole(request.resource.data.organizationId) == 'admin';
       // Only admins can delete/update
