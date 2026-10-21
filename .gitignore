@@ -85,3 +85,22 @@ coverage/
 # Python cache
 __pycache__/
 *.pyc
+
+# --- Secrets and private backend config (never commit) ---
+.env
+.env.*
+!.env.example
+!.env.template
+!.env.sample
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.wrangler/
+*.pem
+*.p12
+*.pfx
+secrets.json
+*.secret.*
+service-account*.json
+*-adminsdk-*.json
+docs/private/
