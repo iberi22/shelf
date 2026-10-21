@@ -59,7 +59,9 @@ export type {
 // ─── Import extracted modules ──────────────────────────────────────────────
 import { loadOrGenerateKeys, sign as pqcSign, verify as pqcVerify } from './p2p/crypto-handshake';
 import type { MessageHandlerContext } from './p2p/message-handler';
-import { handleMessage, onConnectionOpen } from './p2p/message-handler';
+import { clearV2State, handleMessage, onConnectionOpen } from './p2p/message-handler';
+import { pinnedDsaKeyFor } from './p2p/pinned-key';
+import { frameOutgoingPayload } from './p2p/send-payload';
 import { getOfflineRole, isAuthorityMessage, isLocalAuthorityPeer, shouldEncryptMessage } from './p2p/permissions';
 import type {
   ConnectionErrorInfo,
@@ -246,6 +248,9 @@ class P2PManager {
     };
   }
 
+  /** Per-peer handler context: holds the v2 session cipher used by sendTo. */
+  private sessionContexts = new Map<string, MessageHandlerContext>();
+
   private buildMessageHandlerContext(): MessageHandlerContext {
     return {
       ...this.buildYjsSyncContext(),
@@ -284,6 +289,8 @@ class P2PManager {
       clearPeerCrypto: (peerId) => this.clearPeerCrypto(peerId),
       signFn: (msg) => this.sign(msg),
       verifyFn: (sig, msg, key) => this.verify(sig, msg, key),
+      // Pinned only via the CRDT linkedNodes record; undefined => invitation flow.
+      getPinnedDsaKey: (peerId) => pinnedDsaKeyFor(dbSync.getLinkedNodes(), peerId),
     };
   }
 
@@ -530,6 +537,7 @@ class P2PManager {
 
   private handleConnection(conn: DataConnection) {
     const ctx = this.buildMessageHandlerContext();
+    this.sessionContexts.set(conn.peer, ctx);
 
     conn.on('data', async (data) => {
       await handleMessage(ctx, conn, data);
@@ -543,6 +551,8 @@ class P2PManager {
         return;
       }
       this.clearPeerCrypto(conn.peer);
+      this.sessionContexts.delete(conn.peer);
+      clearV2State(ctx, conn.peer);
       this.connections.delete(conn.peer);
       this.sharedSecrets.delete(conn.peer);
       this.lastMessageTime.delete(conn.peer);
@@ -698,11 +708,11 @@ class P2PManager {
     // Encrypt sensitive messages if we have a shared key (YJS only when dual-ready)
     const key = this.encryptionKeys.get(peerId);
     if (key && shouldEncryptMessage(peerId, message, this.dualReadyEncryption, this.encryptYjsWhenDualReady)) {
-      const ciphertext = await encryptDataHelper(JSON.stringify(message), key);
-      conn.send({
-        type: 'ENCRYPTED_PAYLOAD',
-        payload: { ciphertext },
-      });
+      const sessionCtx = this.sessionContexts.get(peerId);
+      const framed = sessionCtx
+        ? await frameOutgoingPayload(sessionCtx, peerId, message, (pt) => encryptDataHelper(pt, key))
+        : { type: 'ENCRYPTED_PAYLOAD', payload: { ciphertext: await encryptDataHelper(JSON.stringify(message), key) } };
+      conn.send(framed);
     } else {
       conn.send(message);
     }

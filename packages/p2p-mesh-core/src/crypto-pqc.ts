@@ -132,3 +132,169 @@ export const derivePQCKeysFromSeed = async (
     dsa: { publicKey: dsaKeys.publicKey, secretKey: dsaKeys.secretKey },
   };
 };
+
+// ─── Session key v2 (HKDF + AAD + counter nonces) ───────────────────────────
+
+export const CRYPTO_V2_LABEL = 'shelf-p2p/v2';
+const te = new TextEncoder();
+
+const concatBytes = (...parts: Uint8Array[]): Uint8Array => {
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+  let off = 0;
+  for (const p of parts) {
+    out.set(p, off);
+    off += p.length;
+  }
+  return out;
+};
+
+/** Length-prefixed concatenation so field boundaries are unambiguous. */
+const framed = (...parts: Uint8Array[]): Uint8Array =>
+  concatBytes(
+    ...parts.map((p) => {
+      const len = new Uint8Array(4);
+      new DataView(len.buffer).setUint32(0, p.length);
+      return concatBytes(len, p);
+    }),
+  );
+
+const sha256 = async (data: Uint8Array): Promise<Uint8Array> =>
+  new Uint8Array(await crypto.subtle.digest('SHA-256', data as any));
+
+const sortedPair = (a: string, b: string): [string, string] => (a <= b ? [a, b] : [b, a]);
+
+export interface SessionKeyParams {
+  sharedSecret: Uint8Array;
+  kemCiphertext: Uint8Array;
+  initiatorKemPublicKey: Uint8Array;
+  responderKemPublicKey: Uint8Array;
+  peerIdA: string;
+  peerIdB: string;
+}
+
+/**
+ * k = HKDF-SHA256(ss, salt = SHA-256(kemCt || initiatorKemPub || responderKemPub),
+ *                 info = 'shelf-p2p/v2|' + sort(peerIdA, peerIdB)).
+ * Returned as a NON-EXTRACTABLE AES-GCM key.
+ */
+export const deriveSessionKey = async (p: SessionKeyParams): Promise<CryptoKey> => {
+  const salt = await sha256(concatBytes(p.kemCiphertext, p.initiatorKemPublicKey, p.responderKemPublicKey));
+  const [a, b] = sortedPair(p.peerIdA, p.peerIdB);
+  const info = te.encode(`${CRYPTO_V2_LABEL}|${a}|${b}`);
+  const ikm = await crypto.subtle.importKey('raw', p.sharedSecret as any, 'HKDF', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'HKDF', hash: 'SHA-256', salt: salt as any, info: info as any },
+    ikm,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  );
+};
+
+/** AAD = 'shelf-p2p/v2|' + type + '|' + from + '|' + to */
+export const buildAad = (type: string, from: string, to: string): Uint8Array =>
+  te.encode(`${CRYPTO_V2_LABEL}|${type}|${from}|${to}`);
+
+export interface TranscriptParams {
+  initiatorId: string;
+  responderId: string;
+  initiatorKemPublicKey: Uint8Array;
+  responderKemPublicKey: Uint8Array;
+  initiatorDsaPublicKey: Uint8Array;
+  responderDsaPublicKey: Uint8Array;
+  kemCiphertext: Uint8Array;
+  challenge: Uint8Array;
+  responderChallenge: Uint8Array;
+}
+
+/** Hash of the whole handshake; each side signs it (domain-separated by role). */
+export const buildHandshakeTranscript = async (t: TranscriptParams): Promise<Uint8Array> =>
+  sha256(
+    framed(
+      te.encode(`${CRYPTO_V2_LABEL}|transcript`),
+      te.encode(t.initiatorId),
+      te.encode(t.responderId),
+      t.initiatorKemPublicKey,
+      t.responderKemPublicKey,
+      t.initiatorDsaPublicKey,
+      t.responderDsaPublicKey,
+      t.kemCiphertext,
+      t.challenge,
+      t.responderChallenge,
+    ),
+  );
+
+export type TranscriptRole = 'reply' | 'ack';
+
+export const transcriptSigningInput = (transcript: Uint8Array, role: TranscriptRole): Uint8Array =>
+  concatBytes(te.encode(`${CRYPTO_V2_LABEL}|${role}|`), transcript);
+
+/**
+ * Per-direction AES-GCM session cipher. Nonce = 4-byte direction prefix ||
+ * 8-byte big-endian counter; the counter only increments, so a nonce is never
+ * reused under a key. Receive side enforces strictly increasing counters.
+ */
+export class SessionCipher {
+  private sendCounter = 0;
+  private lastRecvCounter = 0;
+  private readonly sendPrefix: number;
+  private readonly recvPrefix: number;
+
+  constructor(
+    private readonly key: CryptoKey,
+    readonly localId: string,
+    readonly remoteId: string,
+  ) {
+    const [first] = sortedPair(localId, remoteId);
+    this.sendPrefix = first === localId ? 1 : 2;
+    this.recvPrefix = this.sendPrefix === 1 ? 2 : 1;
+  }
+
+  private nextNonce(): Uint8Array {
+    if (this.sendCounter >= Number.MAX_SAFE_INTEGER) throw new Error('session nonce counter exhausted');
+    this.sendCounter += 1;
+    const nonce = new Uint8Array(12);
+    const dv = new DataView(nonce.buffer);
+    dv.setUint32(0, this.sendPrefix);
+    dv.setBigUint64(4, BigInt(this.sendCounter));
+    return nonce;
+  }
+
+  async seal(plaintext: string, type: string): Promise<string> {
+    const nonce = this.nextNonce();
+    const aad = buildAad(type, this.localId, this.remoteId);
+    const ct = new Uint8Array(
+      await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: nonce as any, additionalData: aad as any },
+        this.key,
+        te.encode(plaintext),
+      ),
+    );
+    return toBase64(concatBytes(nonce, ct));
+  }
+
+  async open(encoded: string, type: string): Promise<string> {
+    const raw = fromBase64(encoded);
+    if (raw.length < 12 + 16) throw new Error('session message too short');
+    const nonce = raw.slice(0, 12);
+    const dv = new DataView(nonce.buffer);
+    if (dv.getUint32(0) !== this.recvPrefix) throw new Error('wrong nonce direction');
+    const counter = Number(dv.getBigUint64(4));
+    if (counter <= this.lastRecvCounter) throw new Error('replayed or reordered nonce');
+    const aad = buildAad(type, this.remoteId, this.localId);
+    const pt = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: nonce as any, additionalData: aad as any },
+      this.key,
+      raw.slice(12) as any,
+    );
+    this.lastRecvCounter = counter; // only advance after authentication succeeds
+    return new TextDecoder().decode(pt);
+  }
+}
+
+const toBase64 = (b: Uint8Array): string => {
+  let s = '';
+  for (const x of b) s += String.fromCharCode(x);
+  return btoa(s);
+};
+const fromBase64 = (s: string): Uint8Array => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));

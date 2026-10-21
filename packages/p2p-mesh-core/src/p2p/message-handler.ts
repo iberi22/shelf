@@ -6,7 +6,13 @@
  */
 
 import type { DataConnection } from 'peerjs';
-import { decryptData, encryptData, importPQCSharedSecret } from '../crypto';
+import { decryptData } from '../crypto';
+import {
+  buildHandshakeTranscript,
+  deriveSessionKey,
+  SessionCipher,
+  transcriptSigningInput,
+} from '../crypto-pqc';
 import { dbSync } from '../database-sync';
 import type { P2PRole, PeerInfo } from '../types';
 import { logger } from '../utils/logger';
@@ -70,6 +76,82 @@ export interface MessageHandlerContext extends YjsSyncContext {
   // Sign / verify
   signFn: (message: Uint8Array) => Uint8Array;
   verifyFn: (signature: Uint8Array, message: Uint8Array, publicKeyHex: string) => boolean;
+
+  /**
+   * DSA public key (hex) pinned for a peer in the CRDT `linkedNodes` record.
+   * Missing function or undefined result = NOT pinned (never trusted silently).
+   */
+  getPinnedDsaKey?: (peerId: string) => string | undefined;
+}
+
+// ─── Crypto v2 per-context state ────────────────────────────────────────────
+
+/** Protocol version we advertise in PQC_HANDSHAKE. */
+export const LOCAL_CRYPTO_VERSION = 2;
+
+interface PendingV2 {
+  transcript: Uint8Array;
+  sharedSecret: Uint8Array;
+  kemCiphertext: Uint8Array;
+  initiatorKemPublicKey: Uint8Array;
+  responderKemPublicKey: Uint8Array;
+}
+
+interface V2State {
+  /** Peers we sent PQC_HANDSHAKE (cryptoV:2) to: a v1 reply is a downgrade. */
+  advertised: Set<string>;
+  pending: Map<string, PendingV2>;
+  ciphers: Map<string, SessionCipher>;
+}
+
+const v2States = new WeakMap<object, V2State>();
+
+function v2State(ctx: MessageHandlerContext): V2State {
+  let st = v2States.get(ctx);
+  if (!st) {
+    st = { advertised: new Set(), pending: new Map(), ciphers: new Map() };
+    v2States.set(ctx, st);
+  }
+  return st;
+}
+
+/** Session cipher established by a verified v2 handshake, if any. */
+export function getSessionCipher(ctx: MessageHandlerContext, peerId: string): SessionCipher | undefined {
+  return v2State(ctx).ciphers.get(peerId);
+}
+
+/** Seal an outgoing ENCRYPTED_PAYLOAD with the v2 session cipher (counter nonce + AAD). */
+export async function sealSessionPayload(
+  ctx: MessageHandlerContext,
+  peerId: string,
+  plaintext: string,
+): Promise<string | null> {
+  const cipher = getSessionCipher(ctx, peerId);
+  return cipher ? cipher.seal(plaintext, 'ENCRYPTED_PAYLOAD') : null;
+}
+
+export function clearV2State(ctx: MessageHandlerContext, peerId: string): void {
+  const st = v2State(ctx);
+  st.advertised.delete(peerId);
+  st.pending.delete(peerId);
+  st.ciphers.delete(peerId);
+}
+
+/** v2 session keys are only ever bound to a DSA key pinned in linkedNodes. */
+function isPinnedDsaKey(ctx: MessageHandlerContext, peerId: string, dsaHex: string | undefined): boolean {
+  if (!dsaHex) return false;
+  const pinned = ctx.getPinnedDsaKey?.(peerId);
+  const ok = !!pinned && pinned.toLowerCase() === dsaHex.toLowerCase();
+  if (!ok) {
+    logger.warn(`[SECURITY] Peer ${peerId} DSA key not pinned in linkedNodes; invitation flow required`);
+    ctx.emitConnectionError({
+      peerId,
+      type: 'UNPINNED_DSA_KEY',
+      message: 'peer DSA key is not pinned; use the invitation flow',
+      source: 'connection',
+    });
+  }
+  return ok;
 }
 
 // ─── Message routing ────────────────────────────────────────────────────────
@@ -95,17 +177,17 @@ export async function handleMessage(ctx: MessageHandlerContext, conn: DataConnec
 
   // Handle PQC Handshake
   if (message.type === 'PQC_HANDSHAKE') {
-    handlePQCHandshake(ctx, conn, message);
+    await handlePQCHandshake(ctx, conn, message);
     return;
   }
 
   if (message.type === 'PQC_KEM_REPLY') {
-    handlePQCHandshakeResponse(ctx, conn, message as any);
+    await handlePQCHandshakeResponse(ctx, conn, message as any);
     return;
   }
 
   if (message.type === 'PQC_KEM_REPLY_ACK') {
-    handlePQCHandshakeAck(ctx, conn, message as any);
+    await handlePQCHandshakeAck(ctx, conn, message as any);
     return;
   }
 
@@ -237,11 +319,16 @@ function isAuthorizedAuthorityMessage(message: SyncMessage, fromPeerId: string):
 
 // ─── PQC handshake sub-handlers ─────────────────────────────────────────────
 
-function handlePQCHandshake(
+async function handlePQCHandshake(
   ctx: MessageHandlerContext,
   conn: DataConnection,
   message: SyncMessage & { type: 'PQC_HANDSHAKE' },
-): void {
+): Promise<void> {
+  // v1 is accepted ONLY when the peer does not advertise v2 (version cutoff).
+  if ((message.payload as { cryptoV?: number }).cryptoV === 2) {
+    await handleV2Handshake(ctx, conn, message.payload);
+    return;
+  }
   const { ciphertext, sharedSecret } = encapsulate(fromHex(message.payload.kemPublicKey));
   ctx.sharedSecrets.set(conn.peer, sharedSecret);
   ctx.peerDsaKeys.set(conn.peer, message.payload.dsaPublicKey);
@@ -263,7 +350,109 @@ function handlePQCHandshake(
   });
 }
 
-function handlePQCHandshakeResponse(ctx: MessageHandlerContext, conn: DataConnection, message: any): void {
+async function handleV2Handshake(
+  ctx: MessageHandlerContext,
+  conn: DataConnection,
+  payload: { kemPublicKey: string; dsaPublicKey: string; challenge: string },
+): Promise<void> {
+  if (!ctx.localPeerId || !isPinnedDsaKey(ctx, conn.peer, payload.dsaPublicKey)) return;
+  try {
+    const initiatorKem = fromHex(payload.kemPublicKey);
+    const { ciphertext, sharedSecret } = encapsulate(initiatorKem);
+    const responderChallenge = crypto.getRandomValues(new Uint8Array(32));
+    const transcript = await buildHandshakeTranscript({
+      initiatorId: conn.peer,
+      responderId: ctx.localPeerId,
+      initiatorKemPublicKey: initiatorKem,
+      responderKemPublicKey: ctx.kemKeyPair.publicKey,
+      initiatorDsaPublicKey: fromHex(payload.dsaPublicKey),
+      responderDsaPublicKey: ctx.dsaKeyPair.publicKey,
+      kemCiphertext: ciphertext,
+      challenge: fromHex(payload.challenge),
+      responderChallenge,
+    });
+    ctx.peerDsaKeys.set(conn.peer, payload.dsaPublicKey);
+    v2State(ctx).pending.set(conn.peer, {
+      transcript,
+      sharedSecret,
+      kemCiphertext: ciphertext,
+      initiatorKemPublicKey: initiatorKem,
+      responderKemPublicKey: ctx.kemKeyPair.publicKey,
+    });
+    conn.send({
+      type: 'PQC_KEM_REPLY',
+      payload: {
+        cryptoV: 2,
+        ciphertext: toHex(ciphertext),
+        kemPublicKey: toHex(ctx.kemKeyPair.publicKey),
+        dsaPublicKey: toHex(ctx.dsaKeyPair.publicKey),
+        signature: toHex(ctx.signFn(transcriptSigningInput(transcript, 'reply'))),
+        responderChallenge: toHex(responderChallenge),
+      },
+    });
+  } catch (err) {
+    logger.error('v2 handshake failed:', err);
+    conn.close();
+  }
+}
+
+async function handleV2Reply(ctx: MessageHandlerContext, conn: DataConnection, p: any): Promise<void> {
+  if (!ctx.localPeerId || !isPinnedDsaKey(ctx, conn.peer, p.dsaPublicKey)) return;
+  try {
+    const challenges = ctx.pendingChallenges.get(conn.peer);
+    if (!challenges || challenges.size === 0) throw new Error('no pending challenge');
+    const responderKem = fromHex(p.kemPublicKey);
+    const ct = fromHex(p.ciphertext);
+    const sharedSecret = decapsulate(ct, ctx.kemKeyPair.secretKey);
+    let transcript: Uint8Array | null = null;
+    for (const challengeHex of challenges) {
+      const t = await buildHandshakeTranscript({
+        initiatorId: ctx.localPeerId,
+        responderId: conn.peer,
+        initiatorKemPublicKey: ctx.kemKeyPair.publicKey,
+        responderKemPublicKey: responderKem,
+        initiatorDsaPublicKey: ctx.dsaKeyPair.publicKey,
+        responderDsaPublicKey: fromHex(p.dsaPublicKey),
+        kemCiphertext: ct,
+        challenge: fromHex(challengeHex),
+        responderChallenge: fromHex(p.responderChallenge),
+      });
+      if (ctx.verifyFn(fromHex(p.signature), transcriptSigningInput(t, 'reply'), p.dsaPublicKey)) {
+        challenges.delete(challengeHex);
+        transcript = t;
+        break;
+      }
+    }
+    if (!transcript) throw new Error('transcript signature verification failed');
+    ctx.peerDsaKeys.set(conn.peer, p.dsaPublicKey);
+    ctx.sharedSecrets.set(conn.peer, sharedSecret);
+    await setupEncryption(ctx, conn.peer, sharedSecret, {
+      kemCiphertext: ct,
+      initiatorKemPublicKey: ctx.kemKeyPair.publicKey,
+      responderKemPublicKey: responderKem,
+    });
+    conn.send({
+      type: 'PQC_KEM_REPLY_ACK',
+      payload: { cryptoV: 2, signature: toHex(ctx.signFn(transcriptSigningInput(transcript, 'ack'))) },
+    });
+  } catch (err) {
+    logger.error('PQC v2 reply rejected:', err);
+    conn.close();
+  }
+}
+
+async function handlePQCHandshakeResponse(ctx: MessageHandlerContext, conn: DataConnection, message: any): Promise<void> {
+  const st = v2State(ctx);
+  if (message.payload?.cryptoV === 2) {
+    await handleV2Reply(ctx, conn, message.payload);
+    return;
+  }
+  if (st.advertised.has(conn.peer)) {
+    // We advertised v2: a v1 reply is a downgrade attempt.
+    logger.error(`[SECURITY] Rejected v1 PQC_KEM_REPLY from ${conn.peer} (v2 advertised)`);
+    conn.close();
+    return;
+  }
   let sharedSecret = ctx.sharedSecrets.get(conn.peer);
   if (!sharedSecret && message.payload.ciphertext) {
     try {
@@ -310,7 +499,39 @@ function handlePQCHandshakeResponse(ctx: MessageHandlerContext, conn: DataConnec
   }
 }
 
-function handlePQCHandshakeAck(ctx: MessageHandlerContext, conn: DataConnection, message: any): void {
+async function handlePQCHandshakeAck(ctx: MessageHandlerContext, conn: DataConnection, message: any): Promise<void> {
+  const pending = v2State(ctx).pending.get(conn.peer);
+  if (pending) {
+    const dsaHex = ctx.peerDsaKeys.get(conn.peer);
+    let ok = false;
+    try {
+      ok =
+        !!dsaHex &&
+        !!ctx.localPeerId &&
+        ctx.verifyFn(fromHex(message.payload.signature), transcriptSigningInput(pending.transcript, 'ack'), dsaHex);
+    } catch {
+      ok = false;
+    }
+    if (!ok || !ctx.localPeerId) {
+      logger.error('PQC v2 ACK signature verification failed!');
+      v2State(ctx).pending.delete(conn.peer);
+      conn.close();
+      return;
+    }
+    v2State(ctx).pending.delete(conn.peer);
+    ctx.sharedSecrets.set(conn.peer, pending.sharedSecret);
+    await setupEncryption(ctx, conn.peer, pending.sharedSecret, {
+      kemCiphertext: pending.kemCiphertext,
+      initiatorKemPublicKey: pending.initiatorKemPublicKey,
+      responderKemPublicKey: pending.responderKemPublicKey,
+    });
+    return;
+  }
+  if (v2State(ctx).advertised.has(conn.peer)) {
+    logger.error(`[SECURITY] Rejected v1 ACK from ${conn.peer} (v2 advertised)`);
+    conn.close();
+    return;
+  }
   const peerDsaHex = ctx.peerDsaKeys.get(conn.peer);
   const peerChallenges = ctx.pendingChallenges.get(conn.peer);
   if (peerDsaHex && peerChallenges && peerChallenges.size > 0) {
@@ -344,7 +565,10 @@ export async function handleEncryptedMessage(
   }
 
   try {
-    const decrypted = await decryptData(ciphertext, key);
+    const cipher = getSessionCipher(ctx, fromPeerId);
+    const decrypted = cipher
+      ? await cipher.open(ciphertext, 'ENCRYPTED_PAYLOAD')
+      : await decryptData(ciphertext, key);
     const message = JSON.parse(decrypted) as SyncMessage;
 
     if (!isAuthorizedAuthorityMessage(message, fromPeerId)) {
@@ -432,9 +656,11 @@ export function onConnectionOpen(ctx: MessageHandlerContext, conn: DataConnectio
     const peerChallenges = ctx.pendingChallenges.get(conn.peer) || new Set<string>();
     peerChallenges.add(challenge);
     ctx.pendingChallenges.set(conn.peer, peerChallenges);
+    v2State(ctx).advertised.add(conn.peer);
     conn.send({
       type: 'PQC_HANDSHAKE',
       payload: {
+        cryptoV: LOCAL_CRYPTO_VERSION,
         kemPublicKey: toHex(ctx.kemKeyPair.publicKey),
         dsaPublicKey: toHex(ctx.dsaKeyPair.publicKey),
         challenge,
@@ -449,9 +675,23 @@ export async function setupEncryption(
   ctx: MessageHandlerContext,
   peerId: string,
   sharedSecret: Uint8Array,
+  binding: {
+    kemCiphertext: Uint8Array;
+    initiatorKemPublicKey: Uint8Array;
+    responderKemPublicKey: Uint8Array;
+  },
 ): Promise<void> {
-  const key = await importPQCSharedSecret(toHex(sharedSecret));
+  if (!ctx.localPeerId) throw new Error('local peer id required for session key derivation');
+  const key = await deriveSessionKey({
+    sharedSecret,
+    kemCiphertext: binding.kemCiphertext,
+    initiatorKemPublicKey: binding.initiatorKemPublicKey,
+    responderKemPublicKey: binding.responderKemPublicKey,
+    peerIdA: ctx.localPeerId,
+    peerIdB: peerId,
+  });
   ctx.encryptionKeys.set(peerId, key);
+  v2State(ctx).ciphers.set(peerId, new SessionCipher(key, ctx.localPeerId, peerId));
   // Announce we can decrypt ENCRYPTED_PAYLOAD from this peer
   const conn = ctx.connections.get(peerId);
   if ((conn as any)?.open) {
