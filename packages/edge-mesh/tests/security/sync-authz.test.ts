@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CAPACIDAD_ESTANDAR } from '../../src/authz/index.js';
-import { EdgeMesh } from '../../src/edge-mesh.js';
+import { EdgeMesh, firmarOperacion } from '../../src/edge-mesh.js';
 import { createEnvelope, signEnvelope } from '../../src/protocol/index.js';
 import { MemoryTransport } from '../../src/transport/memory.js';
 import type { NodoId } from '../../src/types/index.js';
@@ -173,6 +173,48 @@ describe('EdgeMesh secure sync path', () => {
     await Promise.race([received, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))]);
 
     expect(b.yjsAdapter.getMap('t').get('x')).toBe(42);
+
+    await a.detener();
+    await b.detener();
+  });
+
+  it('EdgeMesh sync engine verifies op signatures against registered peer keys', async () => {
+    const mk = (id: string) =>
+      new EdgeMesh({
+        nodoId: id as NodoId,
+        storageBackend: 'mem',
+        requireSignedEnvelopes: true,
+        heartbeatIntervalMs: 60_000,
+      });
+    const a = mk('op-signer');
+    const b = mk('op-verifier');
+    await a.iniciar();
+    await b.iniciar();
+    b.registrarClavePublica('op-signer' as NodoId, a.identity.exportarPublico());
+
+    const base = {
+      id: 'op-signer:1',
+      tipo: 't1',
+      datos: { v: 1 },
+      timestamp: Date.now(),
+      autor: 'op-signer' as NodoId,
+      secuencia: 1,
+    };
+    const signed = await firmarOperacion(base, a.identity);
+    const tampered = { ...signed, datos: { v: 2 } };
+    const run = async (op: unknown) =>
+      b.obtenerSyncEngine(`doc-${Math.random()}`).sincronizar(
+        'op-signer' as NodoId,
+        async () => {},
+        async () => [op],
+      );
+
+    expect((await run(base)).operacionesRechazadas).toBe(1);
+    expect((await run({ ...base, firma: 'garbage' })).operacionesRechazadas).toBe(1);
+    expect((await run(tampered)).operacionesRechazadas).toBe(1);
+    const ok = await run(signed);
+    expect(ok.operacionesRechazadas).toBe(0);
+    expect(ok.operacionesRecibidas).toBe(1);
 
     await a.detener();
     await b.detener();
