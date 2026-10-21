@@ -4,6 +4,12 @@
  */
 
 const SALT_KEY = 'shelf_app_salt';
+const ITERATIONS_KEY = 'shelf_app_kdf_iterations';
+
+/** PBKDF2 iteration count for all NEW at-rest writes (OWASP 2023, SHA-256). */
+export const PBKDF2_ITERATIONS = 600_000;
+/** Iteration count of data written before the 600k bump (still readable). */
+export const LEGACY_PBKDF2_ITERATIONS_V0 = 100_000;
 
 // Generates or retrieves a persistent salt from localStorage
 const getSalt = (): Uint8Array => {
@@ -16,6 +22,15 @@ const getSalt = (): Uint8Array => {
   return Uint8Array.from(atob(saltStr), (c) => c.charCodeAt(0));
 };
 
+// Iteration count stored next to the salt. A pre-existing salt without a
+// stored count is legacy data (100k); a fresh install records 600k.
+const getIterations = (): number => {
+  const stored = Number(localStorage.getItem(ITERATIONS_KEY));
+  if (Number.isInteger(stored) && stored > 0) return stored;
+  const legacy = localStorage.getItem(SALT_KEY) !== null;
+  return legacy ? LEGACY_PBKDF2_ITERATIONS_V0 : PBKDF2_ITERATIONS;
+};
+
 /**
  * Derives an AES-GCM CryptoKey from a user PIN or password.
  */
@@ -26,18 +41,20 @@ export const deriveKey = async (password: string): Promise<CryptoKey> => {
     'deriveKey',
   ]);
 
+  const iterations = getIterations();
   const salt = getSalt();
+  localStorage.setItem(ITERATIONS_KEY, String(iterations));
 
   return await crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
       salt: salt as unknown as BufferSource,
-      iterations: 100000,
+      iterations,
       hash: 'SHA-256',
     },
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
-    true,
+    false,
     ['encrypt', 'decrypt'],
   );
 };
@@ -113,7 +130,9 @@ export const generateSalt = (): string => {
     .join('');
 };
 
-export const hashPassword = async (password: string, salt: string): Promise<string> => {
+const HASH_PREFIX = 'pbkdf2$';
+
+const pbkdf2Hex = async (password: string, salt: string, iterations: number): Promise<string> => {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), { name: 'PBKDF2' }, false, [
     'deriveBits',
@@ -123,7 +142,7 @@ export const hashPassword = async (password: string, salt: string): Promise<stri
     {
       name: 'PBKDF2',
       salt: saltBuffer,
-      iterations: 100000,
+      iterations,
       hash: 'SHA-256',
     },
     keyMaterial,
@@ -133,6 +152,10 @@ export const hashPassword = async (password: string, salt: string): Promise<stri
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 };
+
+/** New hashes embed their iteration count: `pbkdf2$<iterations>$<hex>`. */
+export const hashPassword = async (password: string, salt: string): Promise<string> =>
+  `${HASH_PREFIX}${PBKDF2_ITERATIONS}$${await pbkdf2Hex(password, salt, PBKDF2_ITERATIONS)}`;
 
 /**
  * Constant-time string comparison to prevent timing attacks
@@ -149,8 +172,16 @@ const secureCompare = (a: string, b: string): boolean => {
 };
 
 export const verifyPassword = async (password: string, salt: string, hash: string): Promise<boolean> => {
-  const attemptHash = await hashPassword(password, salt);
-  return secureCompare(attemptHash, hash);
+  let iterations = LEGACY_PBKDF2_ITERATIONS_V0;
+  let expected = hash;
+  if (hash.startsWith(HASH_PREFIX)) {
+    const [, count, hex] = hash.split('$');
+    const n = Number(count);
+    if (!Number.isInteger(n) || n <= 0 || !hex) return false;
+    iterations = n;
+    expected = hex;
+  }
+  return secureCompare(await pbkdf2Hex(password, salt, iterations), expected);
 };
 
 // Legacy wrapper for localAuth.ts that passed 3 arguments (data, password, email)
