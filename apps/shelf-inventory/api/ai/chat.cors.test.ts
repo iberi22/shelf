@@ -19,7 +19,7 @@ beforeEach(() => {
   );
 });
 
-describe('chat CORS + auth', () => {
+describe('chat CORS + Origin/Bearer presence check (not real auth)', () => {
   it('never answers with a wildcard origin', async () => {
     const res = await handler(req({ origin: 'https://evil.example', authorization: 'Bearer t' }, 'OPTIONS'));
     expect(res.headers.get('access-control-allow-origin')).not.toBe('*');
@@ -30,10 +30,19 @@ describe('chat CORS + auth', () => {
     expect(res.status).toBe(403);
     expect(fetch).not.toHaveBeenCalled();
   });
-  it('rejects missing token with 403', async () => {
+  it('rejects a missing Bearer token with 403 (presence check only)', async () => {
     const res = await handler(req({ origin: 'https://shelf.swal.co' }));
     expect(res.status).toBe(403);
     expect(fetch).not.toHaveBeenCalled();
+  });
+  it('rejects POST without Origin (curl) with 403 and no upstream call', async () => {
+    const res = await handler(req({ authorization: 'Bearer t' }));
+    expect(res.status).toBe(403);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+  it('allows POST with allowed Origin and Bearer', async () => {
+    const res = await handler(req({ origin: 'https://shelf.swal.co', authorization: 'Bearer x' }));
+    expect(res.status).toBe(200);
   });
   it('allows the app origin with a token and echoes it', async () => {
     const res = await handler(req({ origin: 'https://shelf.swal.co', authorization: 'Bearer t' }));

@@ -50,7 +50,11 @@ export default async function handler(req: Request): Promise<Response> {
     });
   }
 
-  // Paid endpoint: an authenticated bearer token is mandatory.
+  // Paid endpoint. POST requires an allowed Origin (missing Origin, e.g. curl, is rejected).
+  // NOTE: this is NOT authentication. The Bearer check below only verifies a token is
+  // present (abuse deterrent); real authentication comes with the Cloudflare Worker
+  // (the AI chat moves there in a later task).
+  if (!originAllowed) return forbidden();
   if (!/^Bearer\s+\S+/i.test(req.headers.get('authorization') ?? '')) return forbidden();
 
   // 1. Sliding-window rate limiting (SHELF-106): 30 req/min per user
