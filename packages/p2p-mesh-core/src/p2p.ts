@@ -13,14 +13,35 @@
  */
 import { createPeerHealthMonitor, getReconnectDelay, type PeerHealthState } from 'edge-mesh';
 import { type DataConnection, Peer } from 'peerjs';
-import { encryptData as encryptDataHelper } from './crypto';
-import { derivePQCKeysFromSeed, toHex as toHexHelper } from './crypto-pqc';
+import { decryptData as decryptDataHelper, encryptData as encryptDataHelper, getSessionKey } from './crypto';
+import { toHex as toHexHelper } from './crypto-pqc';
 import { dbSync } from './database-sync';
 import { canInvite as checkCanInvite } from './database-sync/authority-checks';
 import type { P2PRole, PeerInfo } from './types';
+import { createKeyRotation, deriveSeedV2, SEED_KDF_MARKER_KEY, SEED_KDF_V2 } from './seed-kdf';
 import { logger, setLoggerPeerId } from './utils/logger';
 
-export type SignalingStatus = 'online' | 'offline' | 'connecting';
+export type SignalingStatus = 'online' | 'offline' | 'connecting' | 'unconfigured';
+
+/** Self-hosted PeerJS signaling server (e.g. parsed from VITE_SHELF_SIGNALING_URL). */
+export interface SignalingOptions {
+  host: string;
+  port: number;
+  path: string;
+  secure: boolean;
+}
+
+/** Parse a signaling URL such as `wss://sig.example.com:443/peerjs`. Returns undefined if invalid. */
+export function parseSignalingUrl(url: string | undefined): SignalingOptions | undefined {
+  if (!url) return undefined;
+  try {
+    const u = new URL(url);
+    const secure = u.protocol === 'https:' || u.protocol === 'wss:';
+    return { host: u.hostname, port: u.port ? Number(u.port) : secure ? 443 : 80, path: u.pathname || '/', secure };
+  } catch {
+    return undefined;
+  }
+}
 
 export { canInvite } from './database-sync/authority-checks';
 
@@ -264,7 +285,7 @@ class P2PManager {
     };
   }
 
-  public init(peerId?: string) {
+  public init(peerId?: string, options?: { signaling?: SignalingOptions }) {
     if (this.peer && !this.peer.destroyed) return;
     this.initYjsSyncBridge();
     this.bindPeerHealthEvents();
@@ -287,6 +308,11 @@ class P2PManager {
         'process' in globalThis &&
         !!(globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env &&
         (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV === 'development');
+    const signaling =
+      options?.signaling ??
+      parseSignalingUrl(
+        (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_SHELF_SIGNALING_URL,
+      );
     const peerOptions = isDev
       ? {
           host: '127.0.0.1',
@@ -299,10 +325,16 @@ class P2PManager {
             iceServers: [],
           },
         }
-      : {
-          debug: 1,
-          pingInterval: 5000,
-        };
+      : signaling
+        ? { ...signaling, debug: 1, pingInterval: 5000 }
+        : null;
+
+    if (!peerOptions) {
+      // Fail closed: never fall back to the public 0.peerjs.com broker in production.
+      logger.error('[P2P] No signaling server configured (set VITE_SHELF_SIGNALING_URL); P2P disabled.');
+      this.setSignalingStatus('unconfigured');
+      return;
+    }
 
     this.peer = finalPeerId ? new Peer(finalPeerId, peerOptions) : new Peer(peerOptions);
     this.setSignalingStatus('connecting');
@@ -927,17 +959,67 @@ class P2PManager {
     });
   }
 
+  /** Wrap a secret with the at-rest key before it touches localStorage. */
+  private async wrapAtRest(plaintext: string): Promise<string> {
+    return encryptDataHelper(plaintext, await getSessionKey());
+  }
+
+  /** Read back the phrase stored wrapped (undefined if absent / unreadable). */
+  public async getStoredSeedPhrase(): Promise<string | undefined> {
+    if (typeof localStorage === 'undefined') return undefined;
+    const wrapped = localStorage.getItem('shelf_pqc_seed_phrase_wrapped');
+    if (wrapped) {
+      try {
+        return await decryptDataHelper(wrapped, await getSessionKey());
+      } catch {
+        return undefined;
+      }
+    }
+    return localStorage.getItem('shelf_pqc_seed_phrase') || undefined; // v1 plaintext, migrated on unlock
+  }
+
+  /**
+   * On unlock: a missing `shelf_seed_kdf` marker means v1 -> derive v2 and cross-sign a rotation.
+   * With a v2 marker, secret keys exist only wrapped, so restore them from the wrapped phrase
+   * when the in-memory keypair does not match it.
+   */
+  public async migrateSeedIfNeeded(): Promise<boolean> {
+    if (typeof localStorage === 'undefined') return false;
+    const phrase = await this.getStoredSeedPhrase();
+    if (!phrase) return false;
+    if (localStorage.getItem(SEED_KDF_MARKER_KEY) === SEED_KDF_V2) {
+      const v2 = await deriveSeedV2(phrase);
+      if (toHexHelper(v2.dsa.publicKey) === toHexHelper(this.dsaKeyPair.publicKey)) return false;
+    }
+    await this.setKeysFromSeedPhrase(phrase);
+    return true;
+  }
+
   public async setKeysFromSeedPhrase(seedPhrase: string): Promise<void> {
-    const keys = await derivePQCKeysFromSeed(seedPhrase);
+    const oldDsa = this.dsaKeyPair;
+    const isMigration =
+      typeof localStorage !== 'undefined' && localStorage.getItem(SEED_KDF_MARKER_KEY) !== SEED_KDF_V2;
+    const v2 = await deriveSeedV2(seedPhrase);
+    const keys = { kem: v2.kem, dsa: v2.dsa };
     this.kemKeyPair = keys.kem;
     this.dsaKeyPair = keys.dsa;
+    const rotation =
+      isMigration && oldDsa && toHexHelper(oldDsa.publicKey) !== toHexHelper(keys.dsa.publicKey)
+        ? createKeyRotation(oldDsa, keys.dsa)
+        : undefined;
 
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('shelf_kem_public_key', toHexHelper(keys.kem.publicKey));
-      localStorage.setItem('shelf_kem_secret_key', toHexHelper(keys.kem.secretKey));
       localStorage.setItem('shelf_dsa_public_key', toHexHelper(keys.dsa.publicKey));
-      localStorage.setItem('shelf_dsa_secret_key', toHexHelper(keys.dsa.secretKey));
-      localStorage.setItem('shelf_pqc_seed_phrase', seedPhrase);
+      // Secret keys and phrase live ONLY wrapped by the at-rest key.
+      localStorage.setItem('shelf_kem_secret_key_wrapped', await this.wrapAtRest(toHexHelper(keys.kem.secretKey)));
+      localStorage.setItem('shelf_dsa_secret_key_wrapped', await this.wrapAtRest(toHexHelper(keys.dsa.secretKey)));
+      localStorage.setItem('shelf_pqc_seed_phrase_wrapped', await this.wrapAtRest(seedPhrase));
+      localStorage.setItem(SEED_KDF_MARKER_KEY, SEED_KDF_V2);
+      // Delete every plaintext remnant (v1 migration).
+      localStorage.removeItem('shelf_kem_secret_key');
+      localStorage.removeItem('shelf_dsa_secret_key');
+      localStorage.removeItem('shelf_pqc_seed_phrase');
     }
 
     logger.log('[PQC] Rotated/Restored PQC keys deterministically from seed phrase.');
@@ -948,7 +1030,8 @@ class P2PManager {
         this.localPeerId,
         {
           dsaPublicKey: toHexHelper(keys.dsa.publicKey),
-        },
+          ...(rotation ? { keyRotation: rotation } : {}),
+        } as Parameters<typeof dbSync.updateLinkedNode>[1],
         this.localPeerId,
       );
     }
