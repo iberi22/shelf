@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
+import { BIP39_EN } from './bip39-en';
 import { generateSeed, getWordList, seedToString, stringToSeed, validateSeed } from './seedGenerator';
 
 // ─── generateSeed ─────────────────────────────────────────────
 
 describe('generateSeed', () => {
-  it('generates a 12-word seed by default', () => {
+  it('generates a 24-word seed by default', () => {
     const seed = generateSeed();
-    expect(seed).toHaveLength(12);
+    expect(seed).toHaveLength(24);
+  });
+
+  it('generates a 12-word seed when requested', () => {
+    expect(generateSeed(12)).toHaveLength(12);
   });
 
   it('generates a 24-word seed when requested', () => {
@@ -130,5 +135,38 @@ describe('getWordList', () => {
     const list2 = getWordList();
     expect(list1).not.toBe(list2);
     expect(list1).toEqual(list2);
+  });
+});
+
+// ─── BIP39 word list & checksum ───────────────────────────────
+
+describe('BIP39 english list', () => {
+  it('has 2048 unique words, abandon first and zoo last', () => {
+    expect(BIP39_EN).toHaveLength(2048);
+    expect(new Set(BIP39_EN).size).toBe(2048);
+    expect(BIP39_EN[0]).toBe('abandon');
+    expect(BIP39_EN[2047]).toBe('zoo');
+  });
+});
+
+describe('24-word checksum validation', () => {
+  const VALID = `${'abandon '.repeat(23)}art`.split(' ');
+
+  it('accepts the canonical BIP39 24-word vector', () => {
+    expect(validateSeed(VALID)).toBe(true);
+  });
+
+  it('rejects a 24-word phrase with a bad checksum', () => {
+    const bad = [...VALID.slice(0, 23), 'zoo'];
+    expect(validateSeed(bad)).toBe(false);
+  });
+
+  it('rejects free text and generated phrases validate', () => {
+    expect(validateSeed('my dog is called rex and i like very long passwords ok'.split(' '))).toBe(false);
+    for (let i = 0; i < 20; i++) expect(validateSeed(generateSeed(24))).toBe(true);
+  });
+
+  it('accepts the canonical 12-word vector', () => {
+    expect(validateSeed(`${'abandon '.repeat(11)}about`.split(' '))).toBe(true);
   });
 });
