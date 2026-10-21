@@ -321,14 +321,60 @@ describe('600k PBKDF2 for at-rest metadata', () => {
     expect(unlock.metadata.iterations).toBe(100_000);
     await expect(decryptData(ciphertext, unlock.key)).resolves.toBe(SECRET);
 
+    const before = storage.getItem(KDF_METADATA_KEY);
     const res = await rewrapLegacyPBKDF2(PIN, ciphertext, { storage });
     expect(res).not.toBeNull();
+    expect(loadKDFMetadata(storage)?.iterations).toBe(100_000);
+    expect(storage.getItem(KDF_METADATA_KEY)).toBe(before);
+    res!.commit((ct) => storage.setItem('vault', ct));
+    expect(storage.getItem('vault')).toBe(res!.ciphertext);
     const stored = loadKDFMetadata(storage);
     expect(stored?.iterations).toBe(600_000);
     expect(stored?.salt).not.toBe(saltHex);
     const again = await deriveATRestKey(PIN, { storage });
     await expect(decryptData(res!.ciphertext, again.key)).resolves.toBe(SECRET);
     await expect(rewrapLegacyPBKDF2(PIN, res!.ciphertext, { storage })).resolves.toBeNull();
+  });
+
+  it('does not persist metadata before commit', async () => {
+    const { storage, ciphertext } = await legacyVault();
+    const before = storage.getItem(KDF_METADATA_KEY);
+    await rewrapLegacyPBKDF2(PIN, ciphertext, { storage });
+    expect(storage.getItem(KDF_METADATA_KEY)).toBe(before);
+  });
+
+  it('commit failing on the metadata write rolls back: old ciphertext + metadata still decrypt', async () => {
+    const { storage: base, ciphertext } = await legacyVault();
+    base.setItem('vault', ciphertext);
+    let writes = 0;
+    const storage: KDFStorage = {
+      getItem: (k) => base.getItem(k),
+      removeItem: (k) => base.removeItem(k),
+      setItem: (k, v) => {
+        writes += 1;
+        if (writes === 2) throw new Error('QuotaExceeded');
+        base.setItem(k, v);
+      },
+    };
+    const before = base.getItem(KDF_METADATA_KEY);
+    const res = await rewrapLegacyPBKDF2(PIN, ciphertext, { storage });
+    expect(() => res!.commit((ct) => storage.setItem('vault', ct))).toThrow(/QuotaExceeded/);
+    expect(base.getItem(KDF_METADATA_KEY)).toBe(before);
+    expect(base.getItem('vault')).toBe(ciphertext);
+    const unlock = await deriveATRestKey(PIN, { storage: base });
+    await expect(decryptData(base.getItem('vault')!, unlock.key)).resolves.toBe(SECRET);
+  });
+
+  it('commit failing on the ciphertext write leaves metadata untouched', async () => {
+    const { storage, ciphertext } = await legacyVault();
+    const before = storage.getItem(KDF_METADATA_KEY);
+    const res = await rewrapLegacyPBKDF2(PIN, ciphertext, { storage });
+    expect(() =>
+      res!.commit(() => {
+        throw new Error('boom');
+      }),
+    ).toThrow(/boom/);
+    expect(storage.getItem(KDF_METADATA_KEY)).toBe(before);
   });
 
   it('wrong PIN fails and leaves metadata untouched', async () => {

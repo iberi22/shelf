@@ -101,8 +101,21 @@ export interface ATRestKeyResult extends PQCKDFResult {
 export interface MigratePQCResult {
   /** Re-encrypted (PQC-wrapped) ciphertext — store in place of the old one. */
   ciphertext: string;
-  /** New KDF metadata — already persisted by this call. */
+  /** New KDF metadata. */
   metadata: KDFMetadata;
+  /**
+   * Only present on `rewrapLegacyPBKDF2` results: metadata is NOT persisted
+   * until `commit()` runs.
+   */
+  commit?: (persistCiphertext: (ciphertext: string) => void) => void;
+}
+
+export interface RewrapPBKDF2Result extends MigratePQCResult {
+  /**
+   * Persists ciphertext first (via the caller's writer), metadata last. If the
+   * metadata write fails the old ciphertext is restored and the error rethrown.
+   */
+  commit: (persistCiphertext: (ciphertext: string) => void) => void;
 }
 
 // ─── Storage adapters ───────────────────────────────────────────────────────
@@ -393,13 +406,13 @@ export const migratePBKDF2ToPQC = async (
  * Re-wraps a legacy PBKDF2 vault (stored iterations < PBKDF2_ITERATIONS) with
  * PBKDF2 at PBKDF2_ITERATIONS and a fresh salt. Call after a successful
  * unlock. Decryption happens first, so a wrong PIN throws and leaves the
- * stored metadata untouched. Returns null when no re-wrap is needed.
+ * stored metadata untouched. Nothing is persisted until `commit()`. Returns null when no re-wrap is needed.
  */
 export const rewrapLegacyPBKDF2 = async (
   pin: string,
   ciphertext: string,
   opts: { storage?: KDFStorage } = {},
-): Promise<MigratePQCResult | null> => {
+): Promise<RewrapPBKDF2Result | null> => {
   const storage = opts.storage ?? getDefaultKDFStorage();
   const metadata = loadKDFMetadata(storage);
   if (!metadata || metadata.format !== 'pbkdf2' || metadata.iterations >= PBKDF2_ITERATIONS) return null;
@@ -410,6 +423,24 @@ export const rewrapLegacyPBKDF2 = async (
   const newSalt = generateKDFSalt();
   const { key: newKey } = await derivePBKDF2Key(pin, newSalt, PBKDF2_ITERATIONS);
   const newCiphertext = await encryptData(plaintext, newKey);
-  const newMetadata = storeKDFMetadata(newSalt, PBKDF2_ITERATIONS, { format: 'pbkdf2', storage });
-  return { ciphertext: newCiphertext, metadata: newMetadata };
+  const newMetadata: KDFMetadata = {
+    version: KDF_METADATA_VERSION,
+    format: 'pbkdf2',
+    salt: newSalt,
+    iterations: PBKDF2_ITERATIONS,
+  };
+  const commit = (persistCiphertext: (ciphertext: string) => void): void => {
+    persistCiphertext(newCiphertext);
+    try {
+      storeKDFMetadata(newSalt, PBKDF2_ITERATIONS, { format: 'pbkdf2', storage });
+    } catch (err) {
+      try {
+        persistCiphertext(ciphertext);
+      } catch {
+        // best-effort rollback; original error is more useful
+      }
+      throw err;
+    }
+  };
+  return { ciphertext: newCiphertext, metadata: newMetadata, commit };
 };
