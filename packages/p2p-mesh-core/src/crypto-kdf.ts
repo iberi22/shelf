@@ -27,7 +27,10 @@
  */
 
 import { ml_kem768 } from '@noble/post-quantum/ml-kem.js';
-import { decryptData, encryptData } from './crypto';
+import { decryptData, encryptData, PBKDF2_ITERATIONS } from './crypto';
+
+/** Iteration count for every NEW PBKDF2 at-rest metadata write. */
+export { PBKDF2_ITERATIONS };
 import { fromHex, toHex } from './crypto-pqc';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -204,7 +207,7 @@ export const derivePQCKDF = async (
   const rawKey = new Uint8Array(
     await crypto.subtle.digest('SHA-256', concatBytes(sharedSecret, domainTag('pqc-kdf/key-v1'))),
   );
-  const key = await crypto.subtle.importKey('raw', rawKey, { name: 'AES-GCM' }, true, ['encrypt', 'decrypt']);
+  const key = await crypto.subtle.importKey('raw', rawKey, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
   return { key, rawKey };
 };
 
@@ -224,14 +227,14 @@ export const derivePBKDF2Key = async (
     'deriveKey',
   ]);
   const saltBuffer = typeof salt === 'string' ? fromHex(salt) : salt;
-  const key = await crypto.subtle.deriveKey(
+  const bits = await crypto.subtle.deriveBits(
     { name: 'PBKDF2', salt: saltBuffer as BufferSource, iterations, hash: 'SHA-256' },
     keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    true,
-    ['encrypt', 'decrypt'],
+    256,
   );
-  const raw = new Uint8Array(await crypto.subtle.exportKey('raw', key));
+  const raw = new Uint8Array(bits);
+  // The CryptoKey itself is non-extractable.
+  const key = await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
   return { key, rawKey: raw };
 };
 
@@ -384,4 +387,29 @@ export const migratePBKDF2ToPQC = async (
 
   const newMetadata = storeKDFMetadata(newSalt, pqcRounds, { format: 'pqc-kem', storage });
   return { ciphertext, metadata: newMetadata };
+};
+
+/**
+ * Re-wraps a legacy PBKDF2 vault (stored iterations < PBKDF2_ITERATIONS) with
+ * PBKDF2 at PBKDF2_ITERATIONS and a fresh salt. Call after a successful
+ * unlock. Decryption happens first, so a wrong PIN throws and leaves the
+ * stored metadata untouched. Returns null when no re-wrap is needed.
+ */
+export const rewrapLegacyPBKDF2 = async (
+  pin: string,
+  ciphertext: string,
+  opts: { storage?: KDFStorage } = {},
+): Promise<MigratePQCResult | null> => {
+  const storage = opts.storage ?? getDefaultKDFStorage();
+  const metadata = loadKDFMetadata(storage);
+  if (!metadata || metadata.format !== 'pbkdf2' || metadata.iterations >= PBKDF2_ITERATIONS) return null;
+
+  const { key: oldKey } = await derivePBKDF2Key(pin, metadata.salt, metadata.iterations);
+  const plaintext = await decryptData(ciphertext, oldKey);
+
+  const newSalt = generateKDFSalt();
+  const { key: newKey } = await derivePBKDF2Key(pin, newSalt, PBKDF2_ITERATIONS);
+  const newCiphertext = await encryptData(plaintext, newKey);
+  const newMetadata = storeKDFMetadata(newSalt, PBKDF2_ITERATIONS, { format: 'pbkdf2', storage });
+  return { ciphertext: newCiphertext, metadata: newMetadata };
 };
