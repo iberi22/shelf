@@ -235,6 +235,22 @@ describe('handshake v2', () => {
     expect(a.ctx.emitConnectionError).toHaveBeenCalledWith(expect.objectContaining({ type: 'UNPINNED_DSA_KEY' }));
   });
 
+  it('initiator rejects a KEM reply signed by an unpinned DSA key (INIT-PIN)', async () => {
+    const { z, a, zToA, aToZ } = await setup();
+    const other = generateDSAKeyPair();
+    // responder a pins z correctly; initiator z pins key X for a, while a presents Y
+    (z.ctx as any).getPinnedDsaKey = (p: string) => (p === 'peer-a' ? toHex(other.publicKey) : undefined);
+    onConnectionOpen(z.ctx, zToA);
+    await handleMessage(a.ctx, aToZ, zToA.sent.find((m: any) => m.type === 'PQC_HANDSHAKE'));
+    const reply = aToZ.sent.find((m: any) => m.type === 'PQC_KEM_REPLY');
+    expect(reply).toBeDefined();
+    await handleMessage(z.ctx, zToA, reply);
+    expect(zToA.sent.some((m: any) => m.type === 'PQC_KEM_REPLY_ACK')).toBe(false);
+    expect(getSessionCipher(z.ctx, 'peer-a')).toBeUndefined();
+    expect(z.ctx.encryptionKeys.size).toBe(0);
+    expect(z.ctx.emitConnectionError).toHaveBeenCalledWith(expect.objectContaining({ type: 'UNPINNED_DSA_KEY' }));
+  });
+
   it('still accepts v1 from a peer that does not advertise v2', async () => {
     const { a, aToZ } = await setup();
     const z = makeNode('peer-z');
