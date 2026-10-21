@@ -60,6 +60,7 @@ export type {
 import { loadOrGenerateKeys, sign as pqcSign, verify as pqcVerify } from './p2p/crypto-handshake';
 import type { MessageHandlerContext } from './p2p/message-handler';
 import { clearV2State, handleMessage, onConnectionOpen } from './p2p/message-handler';
+import { pinnedDsaKeyFor } from './p2p/pinned-key';
 import { frameOutgoingPayload } from './p2p/send-payload';
 import { getOfflineRole, isAuthorityMessage, isLocalAuthorityPeer, shouldEncryptMessage } from './p2p/permissions';
 import type {
@@ -289,7 +290,7 @@ class P2PManager {
       signFn: (msg) => this.sign(msg),
       verifyFn: (sig, msg, key) => this.verify(sig, msg, key),
       // Pinned only via the CRDT linkedNodes record; undefined => invitation flow.
-      getPinnedDsaKey: (peerId) => dbSync.getLinkedNodes().find((n) => n.id === peerId)?.dsaPublicKey || undefined,
+      getPinnedDsaKey: (peerId) => pinnedDsaKeyFor(dbSync.getLinkedNodes(), peerId),
     };
   }
 

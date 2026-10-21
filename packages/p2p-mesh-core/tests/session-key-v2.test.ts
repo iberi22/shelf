@@ -222,6 +222,19 @@ describe('handshake v2', () => {
     expect(a.ctx.encryptionKeys.size).toBe(0);
   });
 
+  it('rejects a pinned peer that presents a DIFFERENT DSA key (PIN2)', async () => {
+    const { z, a, zToA, aToZ } = await setup();
+    const other = generateDSAKeyPair();
+    // a pins key X (not z's real key); z presents its own key Y
+    (a.ctx as any).getPinnedDsaKey = (p: string) => (p === 'peer-z' ? toHex(other.publicKey) : undefined);
+    onConnectionOpen(z.ctx, zToA);
+    await handleMessage(a.ctx, aToZ, zToA.sent.find((m: any) => m.type === 'PQC_HANDSHAKE'));
+    expect(aToZ.sent.find((m: any) => m.type === 'PQC_KEM_REPLY')).toBeUndefined();
+    expect(getSessionCipher(a.ctx, 'peer-z')).toBeUndefined();
+    expect(a.ctx.encryptionKeys.size).toBe(0);
+    expect(a.ctx.emitConnectionError).toHaveBeenCalledWith(expect.objectContaining({ type: 'UNPINNED_DSA_KEY' }));
+  });
+
   it('still accepts v1 from a peer that does not advertise v2', async () => {
     const { a, aToZ } = await setup();
     const z = makeNode('peer-z');

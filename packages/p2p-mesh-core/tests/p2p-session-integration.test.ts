@@ -87,6 +87,7 @@ describe('2-peer session integration (v2)', () => {
     expect(m1.type).toBe('ENCRYPTED_PAYLOAD');
     expect(legacy).not.toHaveBeenCalled();
     await handleEncryptedMessage(z.ctx, 'peer-a', m1.payload.ciphertext);
+    expect(z.received).toEqual([{ m: { type: 'PING', payload: { n: 1 } }, from: 'peer-a' }]);
 
     const cz = getSessionCipher(z.ctx, 'peer-a')!;
     const ca = getSessionCipher(a.ctx, 'peer-z')!;
