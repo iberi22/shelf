@@ -83,7 +83,7 @@ const MainApp: React.FC<{ initialComponent?: string }> = ({ initialComponent = '
       case 'nav.catalog':
         return <Catalog />;
       case 'nav.arqueo':
-        return isEnabled('SRC-FUN-007') && canView(p?.canViewArqueo) ? <Arqueo /> : <AccessDenied />;
+        return isEnabled('SRC-FUN-026') && canView(p?.canViewArqueo) ? <Arqueo /> : <AccessDenied />;
       case 'nav.reports':
         return isEnabled('SRC-FUN-012') && canView(p?.canViewReports) ? <Reports /> : <AccessDenied />;
       case 'nav.memoryTuning':
