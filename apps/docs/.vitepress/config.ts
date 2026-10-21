@@ -2,6 +2,11 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: "Shelf Docs",
+  vite: {
+    build: { target: 'es2022' },
+    esbuild: { target: 'es2022' },
+    optimizeDeps: { esbuildOptions: { target: 'es2022' } }
+  },
   description: "Documentación técnica del ecosistema descentralizado Shelf.",
   themeConfig: {
     nav: [

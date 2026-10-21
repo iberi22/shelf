@@ -207,6 +207,10 @@ jobs:
       - name: Build workspace packages
         run: pnpm --filter "./packages/**" run build
 
+      - name: Install Cypress binary
+        run: pnpm exec cypress install
+        working-directory: apps/shelf-inventory
+
       - name: Run Cypress Component Tests
         run: pnpm test:ct
         working-directory: apps/shelf-inventory
