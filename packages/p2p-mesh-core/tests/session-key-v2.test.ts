@@ -182,14 +182,35 @@ describe('handshake v2', () => {
   });
 
   it('rejects a v1 reply when we advertised v2 (downgrade)', async () => {
-    const { z, zToA } = await setup();
+    const { z, a, zToA } = await setup();
     onConnectionOpen(z.ctx, zToA);
     await handleMessage(z.ctx, zToA, {
       type: 'PQC_KEM_REPLY',
-      payload: { ciphertext: '00', signature: '00', responderChallenge: '00' },
+      payload: {
+        ciphertext: toHex(encapsulate(z.ctx.kemKeyPair.publicKey).ciphertext), // decapsulates fine
+        dsaPublicKey: a.dsaHex,
+        signature: '00',
+        responderChallenge: '00',
+      },
     } as any);
     expect(zToA.close).toHaveBeenCalled();
     expect(z.ctx.sharedSecrets.size).toBe(0);
+    expect(zToA.sent.some((m: any) => m.type === 'PQC_KEM_REPLY_ACK')).toBe(false);
+    expect(getSessionCipher(z.ctx, 'peer-a')).toBeUndefined();
+  });
+
+  it('responder has no cipher after a bad ACK signature', async () => {
+    const { z, a, zToA, aToZ } = await setup();
+    onConnectionOpen(z.ctx, zToA);
+    await handleMessage(a.ctx, aToZ, zToA.sent.find((m: any) => m.type === 'PQC_HANDSHAKE'));
+    await handleMessage(z.ctx, zToA, aToZ.sent.find((m: any) => m.type === 'PQC_KEM_REPLY'));
+    const ack = zToA.sent.find((m: any) => m.type === 'PQC_KEM_REPLY_ACK');
+    const sig = ack.payload.signature as string;
+    ack.payload.signature = (sig[0] === '0' ? '1' : '0') + sig.slice(1);
+    await handleMessage(a.ctx, aToZ, ack);
+    expect(aToZ.close).toHaveBeenCalled();
+    expect(getSessionCipher(a.ctx, 'peer-z')).toBeUndefined();
+    expect(a.ctx.encryptionKeys.size).toBe(0);
   });
 
   it('does not trust an unpinned DSA key silently (invitation flow)', async () => {
