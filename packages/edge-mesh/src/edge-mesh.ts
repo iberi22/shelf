@@ -25,8 +25,45 @@ import { SyncEngine } from './sync/engine.js';
 import { MemoryTransport } from './transport/memory.js';
 import { PeerJSTransport, type PeerJSTransportOptions } from './transport/peerjs.js';
 import type { ITransport } from './transport/types.js';
-import type { EdgeMeshConfig, EdgeMeshEventMap, Envolvente, NodoId, ParPublico, TipoMensaje } from './types/index.js';
+import type {
+  EdgeMeshConfig,
+  EdgeMeshEventMap,
+  Envolvente,
+  NodoId,
+  Operacion,
+  ParPublico,
+  TipoMensaje,
+} from './types/index.js';
 import { TIPO_MENSAJE } from './types/index.js';
+
+function base64ABytes(b64: string): Uint8Array | null {
+  try {
+    return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  } catch {
+    return null;
+  }
+}
+
+/** Maps an op-log operation onto the envelope shape that is signed/verified (firma = base64). */
+function operacionComoEnvolvente(op: Operacion): Envolvente {
+  return {
+    id: op.id,
+    tipo: TIPO_MENSAJE.SYNC,
+    origen: op.autor,
+    destino: '*',
+    timestamp: op.timestamp,
+    firma: base64ABytes(op.firma ?? ''),
+    payload: { tipo: op.tipo, datos: op.datos, secuencia: op.secuencia },
+    version: 1,
+    nonce: op.id,
+  };
+}
+
+/** Signs an op-log operation with the node identity; returns the op with a base64 `firma`. */
+export async function firmarOperacion(op: Omit<Operacion, 'firma'>, identity: PostQuantumIdentity): Promise<Operacion> {
+  const firmado = await signEnvelope(operacionComoEnvolvente({ ...op, firma: undefined }), identity);
+  return { ...op, firma: btoa(String.fromCharCode(...(firmado.firma ?? new Uint8Array()))) };
+}
 
 // ─── YJS ADAPTER ───────────────────────────────────────────────────────────
 
@@ -439,6 +476,20 @@ export class EdgeMesh {
     return verifyEnvelopeSignature(env, pub, this.identity);
   }
 
+  /** Verifies the signature of a received op against the author's registered public key. */
+  private async verificarFirmaOperacion(op: unknown): Promise<boolean> {
+    if (typeof op !== 'object' || op === null) return false;
+    const o = op as Partial<Operacion>;
+    if (typeof o.autor !== 'string' || typeof o.firma !== 'string') return false;
+    const pub = this.peerPublicKeys.get(o.autor);
+    if (!pub) return false;
+    try {
+      return await verifyEnvelopeSignature(operacionComoEnvolvente(o as Operacion), pub, this.identity);
+    } catch {
+      return false;
+    }
+  }
+
   private decodeSyncBytes(datos: unknown): Uint8Array | null {
     if (datos instanceof Uint8Array) return datos;
     if (Array.isArray(datos)) return new Uint8Array(datos);
@@ -611,6 +662,7 @@ export class EdgeMesh {
       docId,
       opLog,
       requireSignedEnvelopes: this.requireSignedEnvelopes,
+      verificarFirma: (op) => this.verificarFirmaOperacion(op),
     });
 
     this.syncs.set(docId, sync);

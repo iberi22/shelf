@@ -5,10 +5,6 @@ import type { NodoId } from '../types/index.js';
 
 const MAX_BATCH_SIZE = 500 as const;
 const TIEMPO_ESPERA_SYNC_MS = 2_000 as const;
-/** SHELF-111: grace period for nodes that still emit unsigned CRDT envelopes. */
-const GRACIA_FIRMA_DEFAULT_MS = 7 * 24 * 60 * 60 * 1_000;
-/** SHELF-111: enforcement clock starts at rollout (2026-08-26T00:00:00Z). */
-const INICIO_ENFORCEMENT_FIRMA_DEFAULT_MS = Date.UTC(2026, 7, 26);
 
 // ─── SYNC ENGINE ───────────────────────────────────────────────────────────
 
@@ -21,17 +17,12 @@ export interface SyncEngineConfig {
   readonly timeoutMs?: number;
   readonly direction?: SyncDirection;
   /**
-   * SHELF-111: when true (default), received CRDT operations must carry a
-   * signature (`firma`). Unsigned operations are logged during the grace period
-   * (`signedEnvelopeGracePeriodMs` starting at `signedEnvelopeEnforcementStartMs`)
-   * and hard-rejected afterwards with a clear error.
+   * SHELF-111: when true (default), received CRDT operations must carry a valid
+   * signature (`firma`). Unsigned or unverifiable operations are rejected
+   * (fail closed). Requires `verificarFirma`; construction throws otherwise.
    */
   readonly requireSignedEnvelopes?: boolean;
-  /** Grace window for unsigned envelopes (default: 7 days). */
-  readonly signedEnvelopeGracePeriodMs?: number;
-  /** Envelope-enforcement start timestamp (default: SHELF-111 rollout 2026-08-26). */
-  readonly signedEnvelopeEnforcementStartMs?: number;
-  /** Optional signature verifier for operations that carry a `firma`. */
+  /** Signature verifier for received operations (required when signatures are enforced). */
   readonly verificarFirma?: (op: unknown) => boolean | Promise<boolean>;
 }
 
@@ -66,14 +57,7 @@ export interface SyncEngineEventMap {
     readonly operacionLocal: unknown;
     readonly operacionRemota: unknown;
   }>;
-  /** SHELF-111: unsigned envelope accepted during grace period (logged, allowed). */
-  envelopeSinFirma: CustomEvent<{
-    readonly docId: string;
-    readonly peerId: NodoId;
-    readonly secuencia: number;
-    readonly autor: string;
-  }>;
-  /** SHELF-111: unsigned/invalid envelope hard-rejected after grace period. */
+  /** SHELF-111: unsigned/invalid envelope rejected (fail closed). */
   envelopeRechazado: CustomEvent<{
     readonly docId: string;
     readonly peerId: NodoId;
@@ -91,8 +75,6 @@ export class SyncEngine {
   private readonly timeoutMs: number;
   private readonly _direction: SyncDirection;
   private readonly requireSignedEnvelopes: boolean;
-  private readonly signedEnvelopeGracePeriodMs: number;
-  private readonly signedEnvelopeEnforcementStartMs: number;
   private readonly verificarFirmaFn: ((op: unknown) => boolean | Promise<boolean>) | null;
   private sincronizando: boolean = false;
   private clockLocal: number = 0;
@@ -106,10 +88,10 @@ export class SyncEngine {
     this.timeoutMs = config.timeoutMs ?? TIEMPO_ESPERA_SYNC_MS;
     this._direction = config.direction ?? 'bidireccional';
     this.requireSignedEnvelopes = config.requireSignedEnvelopes !== false;
-    this.signedEnvelopeGracePeriodMs = config.signedEnvelopeGracePeriodMs ?? GRACIA_FIRMA_DEFAULT_MS;
-    this.signedEnvelopeEnforcementStartMs =
-      config.signedEnvelopeEnforcementStartMs ?? INICIO_ENFORCEMENT_FIRMA_DEFAULT_MS;
     this.verificarFirmaFn = config.verificarFirma ?? null;
+    if (this.requireSignedEnvelopes && this.verificarFirmaFn === null) {
+      throw new Error('SyncEngine: requireSignedEnvelopes necesita un verificarFirma (fail closed)');
+    }
     this.clocksRemotos = new Map();
   }
 
@@ -250,9 +232,8 @@ export class SyncEngine {
 
   /**
    * SHELF-111: admite solo operaciones firmadas cuando `requireSignedEnvelopes`
-   * está activo. Durante el período de gracia las operaciones sin firma se
-   * registran (evento `envelopeSinFirma`) pero se permiten; una vez vencido el
-   * período se rechazan con un evento `envelopeRechazado`.
+   * está activo. Las operaciones sin firma o con firma inválida se rechazan
+   * con un evento `envelopeRechazado`.
    */
   private async admitirEnvolventesFirmadas(
     peerId: NodoId,
@@ -264,45 +245,34 @@ export class SyncEngine {
 
     const admitidas: unknown[] = [];
     let rechazadas = 0;
-    const finGracia = this.signedEnvelopeEnforcementStartMs + this.signedEnvelopeGracePeriodMs;
 
     for (const opRaw of operaciones) {
       const op = opRaw as Record<string, unknown>;
       const firma = op.firma;
 
-      if (typeof firma === 'string' && firma.length > 0) {
-        // Firma presente: verificar si hay callback de verificación configurado.
-        if (this.verificarFirmaFn !== null) {
-          const valida = await this.verificarFirmaFn(opRaw);
-          if (!valida) {
-            rechazadas++;
-            this.emit('envelopeRechazado', {
-              docId: this.docId,
-              peerId,
-              secuencia: typeof op.secuencia === 'number' ? op.secuencia : 0,
-              autor: typeof op.autor === 'string' ? op.autor : '',
-              motivo: 'firma-invalida',
-            });
-            continue;
-          }
+      if (typeof firma === 'string' && firma.length > 0 && this.verificarFirmaFn !== null) {
+        let valida = false;
+        try {
+          valida = await this.verificarFirmaFn(opRaw);
+        } catch {
+          valida = false;
         }
-        admitidas.push(opRaw);
-        continue;
-      }
-
-      // Firma ausente: durante la gracia se registra el warning pero se permite.
-      if (Date.now() < finGracia) {
-        this.emit('envelopeSinFirma', {
+        if (valida) {
+          admitidas.push(opRaw);
+          continue;
+        }
+        rechazadas++;
+        this.emit('envelopeRechazado', {
           docId: this.docId,
           peerId,
           secuencia: typeof op.secuencia === 'number' ? op.secuencia : 0,
           autor: typeof op.autor === 'string' ? op.autor : '',
+          motivo: 'firma-invalida',
         });
-        admitidas.push(opRaw);
         continue;
       }
 
-      // Gracia vencida: rechazo duro con mensaje claro.
+      // Firma ausente: rechazo duro.
       rechazadas++;
       this.emit('envelopeRechazado', {
         docId: this.docId,
