@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import shippedLedger from '../../../.gitcore/features.json';
 import { ENABLED_FEATURE_STATUSES, FeatureFlagProvider, useFeatureFlagsContext } from './FeatureFlagContext';
@@ -84,5 +84,108 @@ describe('FeatureFlagContext enablement', () => {
 
     expect(result.current.isEnabled('SRC-FUN-002')).toBe(false);
     expect(result.current.isEnabled('SRC-FUN-004')).toBe(true);
+  });
+
+  it('respects runtime_enabled independently of status when available', async () => {
+    const mockLedger = {
+      metadata: {},
+      features: [
+        { id: 'F1', status: 'implemented', runtime_enabled: false },
+        { id: 'F2', status: 'planned', runtime_enabled: true },
+        { id: 'F3', status: 'planned' },
+      ],
+    };
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockLedger,
+      }),
+    );
+
+    expect(import.meta.env.DEV).toBe(true);
+    const { result } = renderFlags();
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.isEnabled('F1')).toBe(false); // implemented but runtime_enabled=false
+    expect(result.current.isEnabled('F2')).toBe(true); // planned but runtime_enabled=true
+    expect(result.current.isEnabled('F3')).toBe(false); // planned, no runtime_enabled
+  });
+
+  it('still lets a local override win over runtime_enabled', async () => {
+    const mockLedger = {
+      metadata: {},
+      features: [{ id: 'F1', status: 'planned', runtime_enabled: true }],
+    };
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockLedger,
+      }),
+    );
+
+    localStorage.setItem('shelf_feature_overrides', JSON.stringify({ F1: false }));
+
+    const { result } = renderFlags();
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.isEnabled('F1')).toBe(false);
+  });
+
+  it('toggleFeature writes runtime_enabled state without modifying status', async () => {
+    const mockLedger = {
+      metadata: { total_features: 2 },
+      features: [
+        { id: 'SRC-FUN-002', status: 'partial' }, // partial is enabled by default
+        { id: 'SRC-FUN-003', status: 'planned', runtime_enabled: false },
+      ],
+    };
+
+    const fetchStub = vi
+      .fn<
+        (
+          url: string | URL | Request,
+          init?: { method?: string; body?: string },
+        ) => Promise<{ ok: boolean; json: () => Promise<unknown> }>
+      >()
+      .mockResolvedValue({
+        ok: true,
+        json: async () => mockLedger,
+      });
+    vi.stubGlobal('fetch', fetchStub);
+
+    const { result } = renderFlags();
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    await result.current.toggleFeature('SRC-FUN-002');
+
+    const postCalls = fetchStub.mock.calls.filter((call) => call[1]?.method === 'POST');
+    expect(postCalls.length).toBe(1);
+
+    const postBody = JSON.parse(postCalls[0][1]?.body as string);
+    expect(postBody.features).toEqual([
+      {
+        id: 'SRC-FUN-002',
+        status: 'partial',
+        runtime_enabled: false,
+      },
+      {
+        id: 'SRC-FUN-003',
+        status: 'planned',
+        runtime_enabled: false,
+      },
+    ]);
   });
 });
