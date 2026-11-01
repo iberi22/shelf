@@ -12,6 +12,7 @@ import {
 import { NamespaceManager } from './namespaces/index.js';
 import { OpLog } from './op-log/index.js';
 import { PresenceManager } from './presence/index.js';
+import { canonicalStringify } from './protocol/canonical.js';
 import {
   createEnvelope,
   MessageDeduplicator,
@@ -611,6 +612,19 @@ export class EdgeMesh {
       docId,
       opLog,
       requireSignedEnvelopes: this.requireSignedEnvelopes,
+      verificarFirma: async (opRaw: unknown) => {
+        const op = opRaw as Record<string, unknown>;
+        const firma = op.firma;
+        if (typeof firma !== 'string' || typeof op.autor !== 'string') return false;
+
+        const pub = this.peerPublicKeys.get(op.autor as NodoId);
+        if (!pub) return false;
+
+        const { firma: _firmaRemoved, ...rest } = op;
+        const canonical = canonicalStringify(rest);
+
+        return this.identity.verify(canonical, firma, pub);
+      },
     });
 
     this.syncs.set(docId, sync);
