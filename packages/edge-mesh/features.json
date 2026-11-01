@@ -24,14 +24,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 55,
-      "gaps": [
-        "enviar/transmitir are placeholders",
-        "conectar only flips state machine"
-      ],
+      "gaps": ["enviar/transmitir are placeholders", "conectar only flips state machine"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/core/node.test.ts"
-      ],
+      "tests": ["tests/core/node.test.ts"],
       "notes": "Enviar/transmitir siguen siendo placeholders; el ciclo de vida del nodo tiene cobertura unit verde."
     },
     {
@@ -61,15 +56,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 78,
-      "gaps": [
-        "No auto Yjs onUpdate broadcast in EdgeMesh",
-        "OpLog SyncEngine not unified with Yjs path"
-      ],
+      "gaps": ["No auto Yjs onUpdate broadcast in EdgeMesh", "OpLog SyncEngine not unified with Yjs path"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/sync/engine.test.ts",
-        "tests/sync/shared-ydoc.test.ts"
-      ],
+      "tests": ["tests/sync/engine.test.ts", "tests/sync/shared-ydoc.test.ts"],
       "notes": "SyncEngine y doc compartido verdes; la unificacion con el path Yjs de EdgeMesh sigue pendiente."
     },
     {
@@ -85,10 +74,7 @@
         "Envelopes not always signed/verified"
       ],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/identity/index.test.ts",
-        "tests/identity/sign-verify.test.ts"
-      ],
+      "tests": ["tests/identity/index.test.ts", "tests/identity/sign-verify.test.ts"],
       "notes": "index + sign-verify verdes (ML-DSA); ML-KEM no esta en el core de edge-mesh."
     },
     {
@@ -98,13 +84,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 82,
-      "gaps": [
-        "Single sequence model not multi-author vector clock"
-      ],
+      "gaps": ["Single sequence model not multi-author vector clock"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/op-log/index.test.ts"
-      ],
+      "tests": ["tests/op-log/index.test.ts"],
       "notes": "Op-log verde; sigue con modelo de secuencia unica, no vector clock multi-autor."
     },
     {
@@ -114,13 +96,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 78,
-      "gaps": [
-        "Local only; no authenticated snapshot protocol"
-      ],
+      "gaps": ["Local only; no authenticated snapshot protocol"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/snapshot/index.test.ts"
-      ],
+      "tests": ["tests/snapshot/index.test.ts"],
       "notes": "Snapshot verde; sin protocolo de snapshot autenticado."
     },
     {
@@ -130,13 +108,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 85,
-      "gaps": [
-        "IDB path mostly mocked in tests"
-      ],
+      "gaps": ["IDB path mostly mocked in tests"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/storage/index.test.ts"
-      ],
+      "tests": ["tests/storage/index.test.ts"],
       "notes": "Storage verde; el path IDB sigue mayormente mockeado."
     },
     {
@@ -146,15 +120,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 78,
-      "gaps": [
-        "On-wire typing depends on transport envelope tipo"
-      ],
+      "gaps": ["On-wire typing depends on transport envelope tipo"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/presence/index.test.ts",
-        "tests/presence/health.test.ts",
-        "tests/presence/peer-health.test.ts"
-      ],
+      "tests": ["tests/presence/index.test.ts", "tests/presence/health.test.ts", "tests/presence/peer-health.test.ts"],
       "notes": "Presence/health/peer-health verdes."
     },
     {
@@ -164,14 +132,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 62,
-      "gaps": [
-        "Threshold semantics weak",
-        "Remote votes not crypto-verified"
-      ],
+      "gaps": ["Threshold semantics weak", "Remote votes not crypto-verified"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/governance/index.test.ts"
-      ],
+      "tests": ["tests/governance/index.test.ts"],
       "notes": "Governance verde a nivel unit; semantica de umbral y votos remotos sin verificar."
     },
     {
@@ -181,14 +144,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 80,
-      "gaps": [
-        "Local Yjs; network fan-out not guaranteed by EdgeMesh"
-      ],
+      "gaps": ["Local Yjs; network fan-out not guaranteed by EdgeMesh"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/chat/index.test.ts",
-        "tests/chat/offline-buffer.test.ts"
-      ],
+      "tests": ["tests/chat/index.test.ts", "tests/chat/offline-buffer.test.ts"],
       "notes": "Chat + buffer offline verdes; fan-out de red no garantizado por EdgeMesh."
     },
     {
@@ -198,13 +156,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 72,
-      "gaps": [
-        "Separate docs vs EdgeMesh.yjsAdapter in places"
-      ],
+      "gaps": ["Separate docs vs EdgeMesh.yjsAdapter in places"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/salones/manager.test.ts"
-      ],
+      "tests": ["tests/salones/manager.test.ts"],
       "notes": "Salones verdes; convive con docs separados del yjsAdapter."
     },
     {
@@ -214,13 +168,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 70,
-      "gaps": [
-        "Not fully integrated into EdgeMesh.procesarMensaje"
-      ],
+      "gaps": ["Not fully integrated into EdgeMesh.procesarMensaje"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/mesh/index.test.ts"
-      ],
+      "tests": ["tests/mesh/index.test.ts"],
       "notes": "Mesh gossip verde; integracion total en procesarMensaje pendiente."
     },
     {
@@ -230,14 +180,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 85,
-      "gaps": [
-        "Structural validation only unless signature helpers used"
-      ],
+      "gaps": ["Structural validation only unless signature helpers used"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/protocol/index.test.ts",
-        "tests/protocol/utils.test.ts"
-      ],
+      "tests": ["tests/protocol/index.test.ts", "tests/protocol/utils.test.ts"],
       "notes": "Protocolo + utils verdes; validacion estructural salvo uso de helpers de firma."
     },
     {
@@ -247,14 +192,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 85,
-      "gaps": [
-        "Local grants work; remote AUTHZ must not be free-for-all"
-      ],
+      "gaps": ["Local grants work; remote AUTHZ must not be free-for-all"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/authz/index.test.ts",
-        "tests/security/sync-authz.test.ts"
-      ],
+      "tests": ["tests/authz/index.test.ts", "tests/security/sync-authz.test.ts"],
       "notes": "Authz + sync-authz verdes; el path remoto debe seguir sin ser free-for-all."
     },
     {
@@ -264,13 +204,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 82,
-      "gaps": [
-        "Not enforced on transport path"
-      ],
+      "gaps": ["Not enforced on transport path"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/namespaces/index.test.ts"
-      ],
+      "tests": ["tests/namespaces/index.test.ts"],
       "notes": "Namespaces verdes; no aplicado en el path de transporte."
     },
     {
@@ -286,9 +222,7 @@
         "Few PeerJS multi-peer E2E"
       ],
       "last_tested": "2026-10-15",
-      "tests": [
-        "tests/** (39 archivos, 236 tests)"
-      ],
+      "tests": ["tests/** (39 archivos, 236 tests)"],
       "notes": "Medido 2026-10-15: 39 archivos / 236 tests PASS en vitest del monorepo (el bloqueo previo de @vitest/utils ya no aplica). Sigue faltando E2E multi-peer con PeerJS."
     },
     {
@@ -298,14 +232,9 @@
       "status": "partial",
       "maturity": "unit",
       "implementation_percentage": 72,
-      "gaps": [
-        "docs/ exists (api, architecture, SRS)",
-        "Architecture oversells integrated secure path"
-      ],
+      "gaps": ["docs/ exists (api, architecture, SRS)", "Architecture oversells integrated secure path"],
       "last_tested": "2026-10-15",
-      "tests": [
-        "docs/ (api, architecture, SRS)"
-      ],
+      "tests": ["docs/ (api, architecture, SRS)"],
       "notes": "docs/ existe (api, architecture, SRS); la arquitectura sigue sobrevendiendo el path seguro integrado."
     },
     {
@@ -321,9 +250,7 @@
         "No coverage thresholds"
       ],
       "last_tested": "2026-10-15",
-      "tests": [
-        ".github/workflows/ci.yml"
-      ],
+      "tests": [".github/workflows/ci.yml"],
       "notes": "Workflow presente (.github/workflows/ci.yml) pero GitHub Actions falla por billing: sin estado verde consultable. Sin umbrales de cobertura."
     }
   ],

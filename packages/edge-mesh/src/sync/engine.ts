@@ -285,6 +285,17 @@ export class SyncEngine {
             });
             continue;
           }
+        } else {
+          // Fall closed: si no hay verificador configurado, se rechaza
+          rechazadas++;
+          this.emit('envelopeRechazado', {
+            docId: this.docId,
+            peerId,
+            secuencia: typeof op.secuencia === 'number' ? op.secuencia : 0,
+            autor: typeof op.autor === 'string' ? op.autor : '',
+            motivo: 'firma-invalida',
+          });
+          continue;
         }
         admitidas.push(opRaw);
         continue;
